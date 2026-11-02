@@ -481,14 +481,14 @@ function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTML
 function GmsLoader({label="Getting the sound system ready…"}:{label?:string}){
  return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
   <div className="gms-loader-panel">
-   <div className="gms-loader-brand-row"><span className="gms-loader-mark"><Church size={19}/></span><span className="gms-loader-brand">GMS <b>Sound Scheduling</b></span></div>
+   <p className="gms-loader-brand">GMS Sound Scheduling System</p>
    <div className="gms-equalizer" aria-hidden="true">
-    {[30,52,76,100,76,52,30].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*95}ms`} as CSSProperties}/>)}
+    {[34,58,82,100,82,58,34].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*90}ms`} as CSSProperties}/>) }
    </div>
    <h2>{label}</h2>
-   <p className="gms-loader-caption">Preparing your serving experience</p>
-   <div className="gms-loader-progress" aria-hidden="true"><span/></div>
-   <p className="gms-loader-footnote">A moment while everything gets in sync.</p>
+   <p className="gms-loader-caption">Animated equalizer loading experience</p>
+   <div className="gms-loader-divider"/>
+   <p className="gms-loader-footnote">Also includes animated page transitions, schedule-loading animation and reduced-motion accessibility support.</p>
   </div>
  </div>;
 }
@@ -512,7 +512,7 @@ function ServantInformationPanel({servants,memberDirectory,locations,schedules,r
  const cgCounts=countBy(r=>value(r,"cg_category")); const roleCounts=countBy(r=>value(r,"cg_status")); const domicileCounts=countBy(r=>value(r,"domicile_area"));
  const filtered=rows.filter(r=>{const hay=[r.servant.full_name,r.profile?.email,r.profile?.username,value(r,"cg_number"),value(r,"cg_category"),value(r,"phone_number")].join(" ").toLowerCase();return (!query||hay.includes(query.toLowerCase()))&&(!locationFilter||servantLocationNames(r.servant.id).some(name=>locations.find(l=>l.id===locationFilter)?.name===name))&&(!cgFilter||value(r,"cg_category")===cgFilter)&&(!statusFilter||(statusFilter==="linked"?!!r.servant.auth_user_id:statusFilter==="unlinked"?!r.servant.auth_user_id:r.servant.active));});
  const toggle=(id:string)=>setExpanded(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
- const section=(key:keyof typeof openSummary,title:string,sub:string,body:ReactNode)=><details className="servant-summary-section" open={openSummary[key]} onToggle={e=>setOpenSummary(v=>({...v,[key]:(e.currentTarget as HTMLDetailsElement).open}))}><summary><span><b>{title}</b><small>{sub}</small></span><ChevronDown size={18}/></summary><div className="servant-summary-body">{body}</div></details>;
+ const section=(key:keyof typeof openSummary,title:string,sub:string,body:ReactNode)=><details className="servant-summary-section" open={openSummary[key]} onToggle={e=>{const isOpen=(e.currentTarget as HTMLDetailsElement).open;setOpenSummary(v=>({...v,[key]:isOpen}));}}><summary><span><b>{title}</b><small>{sub}</small></span><ChevronDown size={18}/></summary><div className="servant-summary-body">{body}</div></details>;
  const bars=(items:[string,number][])=> <div className="servant-bars">{items.map(([name,n])=><div className="servant-bar-row" key={name}><div><span>{name}</span><b>{n} <small>({rows.length?Math.round(n/rows.length*100):0}%)</small></b></div><div className="servant-bar-track"><i style={{width:`${rows.length?n/rows.length*100:0}%`}}/></div></div>)}</div>;
  return <div className="servant-info-page">
   <div className="toolbar"><div><h2>Servant Information</h2><p className="subtle">A complete overview of the serving community, CG structure and profile readiness.</p></div><button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button></div>
