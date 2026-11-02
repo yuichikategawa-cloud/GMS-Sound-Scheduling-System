@@ -112,3 +112,8 @@ The `assignments` table has unique constraints to prevent assigning the same rol
 - The initial version does not send email/WhatsApp notifications.
 - For a production church deployment, enable email confirmation, use strong passwords, restrict who can sign up if desired, and appoint at least two trusted admins.
 - Current time/date display follows the browser's local timezone. Store dates as `date` and service times as `time` in Postgres.
+
+
+## Daily overview
+
+The Schedule tab includes a daily summary grouped by service date and church location. It shows each service time, FOH/Monitor/Assistant assignments, and required-role coverage (FOH and Monitor). The summary follows the active schedule filters.
