@@ -339,3 +339,19 @@
   }
 }
 
+
+
+/* Collapsible recurring weekend generator and two-line helper text */
+.generate-panel.generate-panel-collapsible{display:block;padding:16px}
+.generate-panel-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;list-style:none}
+.generate-panel-summary::-webkit-details-marker{display:none}
+.generate-panel-summary::marker{content:""}
+.generate-panel-summary .generate-heading{margin:0;min-width:0}
+.generate-panel-summary .generate-heading p{margin:5px 0 0}
+.generate-toggle-hint{flex:0 0 auto;color:var(--muted);font-size:11px;font-weight:700;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.generate-panel-collapsible[open] .generate-toggle-hint::after{content:"  ↑"}
+.generate-panel-collapsible:not([open]) .generate-toggle-hint::after{content:"  ↓"}
+.generate-panel-content{display:block;margin-top:14px}
+.generate-note{display:grid;gap:5px}
+.generate-note p{margin:0;line-height:1.6}
+@media(max-width:600px){.generate-panel-summary{align-items:flex-start}.generate-toggle-hint{font-size:10px;white-space:nowrap}}
