@@ -182,7 +182,7 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS WEEKEND OPERATIONS</p><h1>{authMode==="login"?"Welcome back":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND Scheduling System</p><h1>{authMode==="login"?"Welcome Home":"Create your account"}</h1><p className="subtle">Serving schedule management for GMS Banten.</p>
     <form onSubmit={submitAuth} className="stack">
       {authMode==="signup"&&<label>Full name<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></label>}
       <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
@@ -197,7 +197,7 @@ export default function App() {
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?"open":""}`}>
-      <div className="brand"><div className="brand-mark"><Church size={21}/></div><div><b>GMS Serving</b><small>WEEKEND OPERATIONS</small></div></div>
+      <div className="brand"><div className="brand-mark"><Church size={21}/></div><div><b>GMS Serving</b><small>SERVING SCHEDULE</small></div></div>
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       {isAdmin&&<button className={`nav-item ${tab==="people"?"active":""}`} onClick={()=>{setTab("people");setMobileNav(false);}}><Users size={18}/> Servant directory</button>}
