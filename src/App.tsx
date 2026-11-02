@@ -20,7 +20,7 @@ export default function App() {
   const [locations,setLocations] = useState<Location[]>([]);
   const [servants,setServants] = useState<Servant[]>([]);
   const [templates,setTemplates] = useState<any[]>([]);
-  const [tab,setTab] = useState<"schedule"|"people"|"availability"|"statistics"|"audit">("schedule");
+  const [tab,setTab] = useState<"schedule"|"people"|"availability"|"statistics"|"audit"|"profile">("schedule");
   const [availability,setAvailability] = useState<any[]>([]);
   const [requests,setRequests] = useState<any[]>([]);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
@@ -35,8 +35,12 @@ export default function App() {
   const [editing,setEditing] = useState<ScheduleView|null>(null);
   const [authMode,setAuthMode] = useState<"login"|"signup">("login");
   const [email,setEmail] = useState("");
+  const [username,setUsername] = useState("");
+  const [memberProfile,setMemberProfile] = useState<any>(null);
+  const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
   const [password,setPassword] = useState("");
   const [fullName,setFullName] = useState("");
+  const [signupCgStatus,setSignupCgStatus] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
 
   useEffect(() => {
@@ -62,7 +66,7 @@ export default function App() {
     if (!supabase) return;
     setLoading(true); setMessage("");
     try {
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes,memberRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -71,9 +75,10 @@ export default function App() {
         supabase.from("servant_availability").select("*").order("service_date",{ascending:true}),
         supabase.from("serving_requests").select("*").order("created_at",{ascending:false}),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
-        supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100)
+        supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100),
+        supabase.from("member_profiles").select("*")
       ]);
-      for (const r of [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes]) if (r.error) throw r.error;
+      for (const r of [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes,memberRes]) if (r.error) throw r.error;
       const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
       const assignments=(assignRes.data??[]) as Assignment[];
       const byId=new Map(people.map(p=>[p.id,p.full_name]));
@@ -84,23 +89,43 @@ export default function App() {
           id:a.id,role:a.role,servant_id:a.servant_id,servant_name:byId.get(a.servant_id)??"Unknown servant",confirmation_status:a.confirmation_status??"pending"
         }))
       })) as ScheduleView[];
-      setLocations(locs);setServants(people);setTemplates(tempRes.data??[]);setSchedules(mapped);setAvailability(availRes.data??[]);setRequests(requestRes.data??[]);setAvailabilityDeadline(settingRes.data?.value??"");setAuditLogs(auditRes.data??[]);
+      setLocations(locs);setServants(people);setTemplates(tempRes.data??[]);setSchedules(mapped);setAvailability(availRes.data??[]);setRequests(requestRes.data??[]);setAvailabilityDeadline(settingRes.data?.value??"");setAuditLogs(auditRes.data??[]);setMemberDirectory(memberRes.data??[]);setMemberProfile((memberRes.data??[]).find((x:any)=>x.user_id===session.user.id)??null);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }
   }
 
   useEffect(()=>{if(profile) void loadData();},[profile]);
 
-  async function submitAuth(e:FormEvent) {
-    e.preventDefault(); if(!supabase)return;setMessage("");setAuthLoading(true);
+  async function submitAuth(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); if(!supabase)return; setMessage(""); setAuthLoading(true);
+    const fd=new FormData(e.currentTarget);
     try {
       if(authMode==="signup") {
-        const {error}=await supabase.auth.signUp({email,password,options:{data:{full_name:fullName}}});
+        const days=fd.getAll("cg_days").map(String);
+        if(!days.length)throw new Error("Please select at least one CG day.");
+        const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
+        const meta={
+          username:String(fd.get("username")).trim().toLowerCase(), full_name:String(fd.get("full_name")).trim(), email:String(fd.get("email")).trim(),
+          gender:String(fd.get("gender")), date_of_birth:String(fd.get("date_of_birth")), nij:String(fd.get("nij")).trim(), phone_number:String(fd.get("phone_number")).trim(),
+          domicile_area:String(fd.get("domicile_area")), domicile_other:String(fd.get("domicile_other")||""), cg_category:String(fd.get("cg_category")),
+          cg_status:String(fd.get("cg_status")), cg_number:String(fd.get("cg_number")).trim(), cg_days:days, cg_time:String(fd.get("cg_time")),
+          team_leader_name:String(fd.get("team_leader_name")||""), coach_name:String(fd.get("coach_name")||""), cg_leader_name:String(fd.get("cg_leader_name")||""), leader_phone_numbers:leaderPhones
+        };
+        if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
+        if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
+        if(meta.cg_status==="Team Leader")meta.team_leader_name="";
+        if(meta.cg_status==="Coach")meta.coach_name="";
+        if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
+        const {error}=await supabase.auth.signUp({email:meta.email,password:String(fd.get("password")),options:{data:meta}});
         if(error)throw error;
-        setMessage("Account created. If email confirmation is enabled, verify your email before signing in.");
+        setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
         setAuthMode("login");
       } else {
-        const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;
+        const {data,error}=await supabase.functions.invoke("username-login",{body:{username:String(fd.get("username")).trim(),password:String(fd.get("password"))}});
+        if(error)throw new Error("Username login is not configured yet. Deploy the username-login Edge Function and try again.");
+        if(!data?.access_token||!data?.refresh_token)throw new Error(data?.error||"Invalid username or password.");
+        const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+        if(sessionError)throw sessionError;
       }
     } catch(e){setMessage(errorText(e));}
     finally{setAuthLoading(false);}
@@ -113,6 +138,7 @@ export default function App() {
   const filtered=useMemo(()=>{
     const q=personFilter.trim().toLowerCase();
     return schedules.filter(s=>
+      s.service_date>=today() &&
       (isAdmin || (s.status==="published" && !!myServant && s.assignments.some(a=>a.servant_id===myServant.id))) &&
       (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
       (!locationFilter||s.location_id===locationFilter) &&
@@ -276,6 +302,14 @@ export default function App() {
     const {error}=await supabase.from("assignments").update({confirmation_status:status}).eq("schedule_id",schedule.id).eq("servant_id",myServant.id);
     if(error)setMessage(error.message);else {setMessage(status==="confirmed"?"Serving assignment confirmed.":"Assignment declined. Please submit a replacement request if needed.");await loadData();}
   }
+  async function exportScheduleHistory(){
+    if(!supabase||!isAdmin)return;
+    const {data,error}=await supabase.from("schedules").select("*,locations(name),assignments(role,servants(full_name))").lt("service_date",today()).order("service_date",{ascending:false});
+    if(error){setMessage(error.message);return;}
+    const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),...(data??[]).map((s:any)=>[s.service_date,s.locations?.name??"",s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments?.find((a:any)=>a.role===r)?.servants?.full_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
+    const blob=new Blob([rows.join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-schedule-history.csv";a.click();URL.revokeObjectURL(url);
+  }
+
   function exportCsv(){
     const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),
       ...filtered.map(s=>[s.service_date,s.location_name,s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments.find(a=>a.role===r)?.servant_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
@@ -286,13 +320,31 @@ export default function App() {
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
   if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
-    <form onSubmit={submitAuth} className="stack">
-      {authMode==="signup"&&<label>Full name<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></label>}
-      <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
-      <label>Password<input type="password" required minLength={6} value={password} onChange={e=>setPassword(e.target.value)} placeholder="At least 6 characters"/></label>
+    <form onSubmit={submitAuth} className="stack auth-registration">
+      <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
+      {authMode==="signup"&&<>
+        <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
+        <label>Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com"/></label>
+        <label>Gender<select name="gender" required defaultValue=""><option value="" disabled>Select gender</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
+        <label>Date of birth<input name="date_of_birth" type="date" required/></label>
+        <label>NIJ – Nomor Induk Jemaat<input name="nij" required placeholder="Your NIJ"/></label>
+        <label>Phone number<input name="phone_number" type="tel" required placeholder="e.g. +62812..."/></label>
+        <label>Domicile area<select name="domicile_area" required defaultValue="Alam Sutera"><option>Alam Sutera</option><option>BSD</option><option>Karawaci</option><option>Others</option></select></label>
+        <label>Other domicile area (if Others)<input name="domicile_other" placeholder="Specify area"/></label>
+        <label>CG category<select name="cg_category" required defaultValue=""><option value="" disabled>Select CG</option>{["AOG Teen","AOG Youth","Young Adult","Family","Senior"].map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>CG status<select name="cg_status" required value={signupCgStatus} onChange={e=>setSignupCgStatus(e.target.value)}><option value="" disabled>Select status</option>{["Team Leader","Coach","CG Leader","Sponsor","Member"].map(x=><option key={x}>{x}</option>)}</select></label>
+        <label>CG number<input name="cg_number" required/></label>
+        <fieldset className="days-field"><legend>CG day (select multiple)</legend>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(x=><label key={x}><input type="checkbox" name="cg_days" value={x}/>{x}</label>)}</fieldset>
+        <label>CG time<input name="cg_time" required placeholder="e.g. 19:00"/></label>
+        <label className={signupCgStatus==="Team Leader"?"field-disabled":""}>Team Leader name<input name="team_leader_name" disabled={signupCgStatus==="Team Leader"} placeholder="Not required if you are Team Leader"/></label>
+        <label className={signupCgStatus==="Coach"?"field-disabled":""}>Coach name<input name="coach_name" disabled={signupCgStatus==="Coach"} placeholder="Not required if you are Coach"/></label>
+        <label className={signupCgStatus==="CG Leader"?"field-disabled":""}>CG Leader name<input name="cg_leader_name" disabled={signupCgStatus==="CG Leader"} placeholder="Not required if you are CG Leader"/></label>
+        <label>Leader phone number(s)<textarea name="leader_phone_numbers" required placeholder="At least one number; separate multiple numbers with commas" rows={2}/></label>
+      </>}
+      <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
     </form>
-    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
+    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
     {message&&<p className="message">{message}</p>}
   </div></div>;
 
@@ -304,6 +356,7 @@ export default function App() {
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
+      <button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>
       {isAdmin&&<>
         <button className={`nav-item ${tab==="people"?"active":""}`} onClick={()=>{setTab("people");setMobileNav(false);}}><Users size={18}/> Servant directory</button>
         <button className={`nav-item ${tab==="statistics"?"active":""}`} onClick={()=>{setTab("statistics");setMobileNav(false);}}><BarChart3 size={18}/> Statistics</button>
@@ -312,11 +365,11 @@ export default function App() {
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="availability"?"Availability management":tab==="audit"?"Audit log":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main className="content">
-        {message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
+        {memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button></div></div>
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           <section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
@@ -336,7 +389,7 @@ export default function App() {
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
-        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:<AuditPanel logs={auditLogs}/>}
+        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:<MemberProfilePanel profile={memberProfile} isAdmin={isAdmin} directory={memberDirectory} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>}
       </main>
     </div>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule}/>}
@@ -429,14 +482,34 @@ function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants
  for(const s of schedules)for(const a of s.assignments){const c=counts.get(a.servant_id)??{total:0,FOH:0,Monitor:0,Assistant:0};c.total++;c[a.role]++;counts.set(a.servant_id,c);}
  const rows=servants.filter(p=>p.active).map(p=>{const c=counts.get(p.id)??{total:0,FOH:0,Monitor:0,Assistant:0};return {id:p.id,name:p.full_name,...c};}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
  const totalAssignments=rows.reduce((n,r)=>n+r.total,0);const filledRequired=schedules.reduce((n,s)=>n+s.assignments.filter(a=>a.role!=="Assistant").length,0);const requiredSlots=schedules.length*2;
+ const allConfirmations=schedules.flatMap(s=>s.assignments);const confirmed=allConfirmations.filter(a=>a.confirmation_status==="confirmed").length;const declined=allConfirmations.filter(a=>a.confirmation_status==="declined").length;const confirmationRate=allConfirmations.length?Math.round(confirmed/allConfirmations.length*100):0;const activeServants=servants.filter(p=>p.active).length;const notScheduled=Math.max(0,activeServants-rows.filter(r=>r.total>0).length);
  const locationCounts=new Map<string,number>();for(const s of schedules)locationCounts.set(s.location_name,(locationCounts.get(s.location_name)??0)+s.assignments.length);
  return <><div className="toolbar"><div><h2>Serving statistics</h2><p className="subtle">Based on the currently selected schedule filters.</p></div></div>
-  <section className="stats-grid stats-grid-wide"><Stat label="TOTAL ASSIGNMENTS" value={totalAssignments}/><Stat label="REQUIRED ROLES FILLED" value={filledRequired}/><Stat label="REQUIRED ROLE GAPS" value={Math.max(0,requiredSlots-filledRequired)}/><Stat label="SERVANTS ASSIGNED" value={rows.length}/></section>
+  <section className="stats-grid stats-grid-wide"><Stat label="TOTAL ASSIGNMENTS" value={totalAssignments}/><Stat label="REQUIRED ROLES FILLED" value={filledRequired}/><Stat label="REQUIRED ROLE GAPS" value={Math.max(0,requiredSlots-filledRequired)}/><Stat label="SERVANTS ASSIGNED" value={rows.length}/><Stat label="CONFIRMATION RATE" value={`${confirmationRate}%`}/><Stat label="DECLINED ASSIGNMENTS" value={declined}/><Stat label="ACTIVE SERVANTS NOT SCHEDULED" value={notScheduled}/></section>
   <section className="filter-panel"><div className="filter-title"><BarChart3 size={17}/><b>Assignments by church location</b></div><div className="location-stat-list">{[...locationCounts.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([name,count])=><div className="location-stat" key={name}><span>{name}</span><b>{count}</b></div>)}</div></section>
   <section className="filter-panel fairness-panel"><div className="filter-title"><ShieldCheck size={17}/><b>Fairness checker</b></div><p className="subtle">Workload comparison for the selected date range. Use this as a review aid, not a performance ranking.</p><div className="fairness-metrics"><div><small>Average assignments</small><b>{rows.length?(totalAssignments/rows.length).toFixed(1):"0"}</b></div><div><small>Highest workload</small><b>{rows[0]?.total??0}</b></div><div><small>Lowest workload</small><b>{rows.length?Math.min(...rows.map(r=>r.total)):0}</b></div></div>{rows.length>1&&rows[0].total-Math.min(...rows.map(r=>r.total))>=3&&<div className="fairness-alert">Workload difference is 3 or more assignments. Consider reviewing upcoming assignments and availability.</div>}</section>
   <div className="list-heading"><h2>Assignments by servant</h2><span>{rows.length} servants</span></div>
   <div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div>
  </>;
+}
+
+function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
+ const [saving,setSaving]=useState(false);
+ const current=profile??{full_name:"",email:"",gender:"Prefer not to say",date_of_birth:"",nij:"",phone_number:"",domicile_area:"Alam Sutera",domicile_other:"",cg_category:"AOG Youth",cg_status:"Member",cg_number:"",cg_days:[],cg_time:"",team_leader_name:"",coach_name:"",cg_leader_name:"",leader_phone_numbers:[],last_verified_at:new Date().toISOString()};
+ const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+ return <><section className="availability-form-panel"><div className="toolbar"><div><h2>{profile?"My member information":"Complete your member profile"}</h2><p className="subtle">{profile?"You can update these details at any time. Please verify them every three months.":"Complete your member information to finish setting up your account."}</p></div></div>
+ <div className="message-banner">Last verified: <b>{profile?new Date(current.last_verified_at).toLocaleDateString():"Not yet verified"}</b>{!profile?" · Complete the form below.":(Date.now()-new Date(current.last_verified_at).getTime())>90*86400000?" · Please review your information now.":" · Next review is due in 3 months."}</div>
+ <form className="profile-edit-grid" onSubmit={async e=>{e.preventDefault();setSaving(true);const fd=new FormData(e.currentTarget);const phones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);await onSave({full_name:String(fd.get("full_name")),email:String(fd.get("email")),gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")),phone_number:String(fd.get("phone_number")),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")),cg_days:fd.getAll("cg_days").map(String),cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:phones});setSaving(false);}}>
+ {([['Full name','full_name'],['Email address','email'],['NIJ – Nomor Induk Jemaat','nij'],['Phone number','phone_number'],['Date of birth','date_of_birth'],['CG number','cg_number'],['CG time','cg_time'],['Team Leader name','team_leader_name'],['Coach name','coach_name'],['CG Leader name','cg_leader_name'],['Leader phone number(s)','leader_phone_numbers']] as const).map(([label,key])=><label key={key}>{label}{key==='leader_phone_numbers'?<textarea name={key} rows={2} defaultValue={(current[key]??[]).join(', ')}/>:<input name={key} type={key==='date_of_birth'?'date':'text'} defaultValue={key==='date_of_birth'?String(current[key]??'').slice(0,10):current[key]??''} required={!['team_leader_name','coach_name','cg_leader_name'].includes(key)}/>}</label>)}
+ <label>Gender<select name="gender" defaultValue={current.gender}><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
+ <label>Domicile area<select name="domicile_area" defaultValue={current.domicile_area}>{['Alam Sutera','BSD','Karawaci','Others'].map(x=><option key={x}>{x}</option>)}</select></label>
+ <label>Other domicile area<input name="domicile_other" defaultValue={current.domicile_other??''}/></label>
+ <label>CG category<select name="cg_category" defaultValue={current.cg_category}>{['AOG Teen','AOG Youth','Young Adult','Family','Senior'].map(x=><option key={x}>{x}</option>)}</select></label>
+ <label>CG status<select name="cg_status" defaultValue={current.cg_status}>{['Team Leader','Coach','CG Leader','Sponsor','Member'].map(x=><option key={x}>{x}</option>)}</select></label>
+ <fieldset className="days-field"><legend>CG days</legend>{days.map(d=><label key={d}><input type="checkbox" name="cg_days" value={d} defaultChecked={(current.cg_days??[]).includes(d)}/>{d}</label>)}</fieldset>
+ <button className="btn primary" disabled={saving}>{saving?'Saving…':'Save and verify profile'}</button>
+ </form></section>
+ {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
 }
 
 function SetupScreen(){

@@ -90,3 +90,20 @@
 
 .audit-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 16px;border-bottom:1px solid #edf0f5}.audit-row:last-child{border-bottom:0}.audit-row>div{display:flex;flex-direction:column;gap:3px}.audit-row b{font-size:13px;text-transform:capitalize}.audit-row small,.audit-row span{font-size:11px;color:#64748b}
 @media(max-width:760px){.audit-row{align-items:flex-start;flex-direction:column}}
+
+/* v4 registration, member profile and mobile touch targets */
+.auth-registration{max-height:72vh;overflow:auto;padding:2px 5px 8px 0}
+.auth-registration label{font-size:13px;gap:7px}
+.auth-registration input,.auth-registration select,.auth-registration textarea,.profile-edit-grid input,.profile-edit-grid select,.profile-edit-grid textarea{width:100%;min-width:0;border:1px solid #d8dee9;border-radius:9px;padding:12px 13px;background:#fff;color:#1f2937;font:inherit;font-size:14px}
+.auth-registration input:focus,.auth-registration select:focus,.auth-registration textarea:focus,.profile-edit-grid input:focus,.profile-edit-grid select:focus,.profile-edit-grid textarea:focus{outline:3px solid #e0e7ff;border-color:#6366f1}
+.days-field{border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.days-field legend{font-size:13px;font-weight:800;padding:0 5px;color:#475569}
+.days-field label{display:flex;align-items:center;gap:8px;font-size:13px}
+.days-field input{width:18px;height:18px;flex:none}
+.profile-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:end}
+.profile-edit-grid>label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700;color:#475569}
+.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:1/-1}
+.availability-filter{display:grid;grid-template-columns:minmax(0,240px) auto;align-items:end;justify-content:start;gap:12px}
+.availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:#f8fafc;font-size:13px;white-space:nowrap}
+@media(max-width:600px){.availability-filter{grid-template-columns:1fr;align-items:stretch}.availability-filter label{max-width:none;width:100%}.availability-filter .clear-btn{width:100%;margin:0;padding:12px}.profile-edit-grid{grid-template-columns:1fr}.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:auto}.auth-card{max-width:100%;padding:22px}.auth-registration{max-height:68vh}}
+.field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}
