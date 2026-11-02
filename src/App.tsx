@@ -24,6 +24,7 @@ export default function App() {
   const [authLoading,setAuthLoading] = useState(true);
   const [loading,setLoading] = useState(false);
   const [message,setMessage] = useState("");
+  const [scheduleError,setScheduleError] = useState("");
   const [schedules,setSchedules] = useState<ScheduleView[]>([]);
   const [locations,setLocations] = useState<Location[]>([]);
   const [servants,setServants] = useState<Servant[]>([]);
@@ -166,11 +167,16 @@ export default function App() {
   const isAdmin=profile?.role==="admin";
   const myServant=servants.find(p=>p.auth_user_id===session?.user?.id);
 
+  const myPublishedSchedules=useMemo(()=>myServant?schedules.filter(s=>s.status==="published"&&s.assignments.some(a=>a.servant_id===myServant.id)):[],[schedules,myServant?.id]);
+  // Count distinct calendar days, not individual service slots. Two services on one date count as one serving day.
+  const myDaysServed=new Set(myPublishedSchedules.filter(s=>s.service_date<today()).map(s=>s.service_date)).size;
+  const nextMySchedule=[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))[0]??null;
+
   const filtered=useMemo(()=>{
     const q=personFilter.trim().toLowerCase();
     return schedules.filter(s=>
       s.service_date>=today() &&
-      (isAdmin || s.status==="published") &&
+      (isAdmin || (s.status==="published" && !!myServant && s.assignments.some(a=>a.servant_id===myServant.id))) &&
       (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
       (!locationFilter||s.location_id===locationFilter) &&
       (!serviceFilter||s.service_name===serviceFilter) &&
@@ -195,19 +201,20 @@ export default function App() {
 
   async function saveSchedule(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();if(!supabase||!isAdmin)return;
+    setScheduleError("");
     const fd=new FormData(e.currentTarget);
     const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time")),status:editing?.status==="published"?"draft":editing?.status??"draft"};
     const selected:Record<Role,string>={FOH:String(fd.get("FOH")||""),Monitor:String(fd.get("Monitor")||""),Assistant:String(fd.get("Assistant")||"")};
     const chosen=Object.entries(selected).filter(([,id])=>id).map(([role,id])=>({role,id}));
     const duplicateInService=chosen.find((entry,index)=>chosen.some((other,j)=>j!==index&&other.id===entry.id));
-    if(duplicateInService){setMessage("One servant cannot fill more than one role in the same service.");return;}
+    if(duplicateInService){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
     const conflicts=chosen.map(entry=>({ ...entry, other:schedules.find(s=>s.service_date===payload.service_date&&s.location_id!==payload.location_id&&s.id!==editing?.id&&s.assignments.some(a=>a.servant_id===entry.id)) })).filter(x=>x.other);
-    if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.id)?.full_name??"A servant"} (${c.other?.location_name} · ${c.other?.service_name})`);setMessage(`Cannot save: ${names.join(", ")} already assigned at another church location on ${payload.service_date}.`);return;}
+    if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.id)?.full_name??"A servant"} (${c.other?.location_name} · ${c.other?.service_name})`);setScheduleError(`Cannot save this schedule. ${names.join(", ")} ${conflicts.length===1?"is":"are"} already assigned at another church location on ${fmtDate(payload.service_date)}. A servant can only serve at one church location per day.`);return;}
     const toMinutes=(t:string)=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
     const overlaps=chosen.map(entry=>({ ...entry, other:schedules.find(s=>s.service_date===payload.service_date&&s.location_id===payload.location_id&&s.id!==editing?.id&&s.assignments.some(a=>a.servant_id===entry.id)&&toMinutes(payload.start_time)<toMinutes(s.end_time)&&toMinutes(payload.end_time)>toMinutes(s.start_time)) })).filter(x=>x.other);
-    if(overlaps.length){setMessage(`Cannot save: ${overlaps.map(c=>servants.find(p=>p.id===c.id)?.full_name??"A servant").join(", ")} has an overlapping service at the same location.`);return;}
+    if(overlaps.length){setScheduleError(`Cannot save this schedule. ${overlaps.map(c=>servants.find(p=>p.id===c.id)?.full_name??"A servant").join(", ")} ${overlaps.length===1?"has":"have"} an overlapping service at this location.`);return;}
     const unavailable=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="unavailable"));
-    if(unavailable.length){setMessage(`Cannot assign: ${unavailable.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked unavailable on ${payload.service_date}.`);return;}
+    if(unavailable.length){setScheduleError(`Cannot assign this schedule. ${unavailable.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked unavailable on ${fmtDate(payload.service_date)}.`);return;}
     const preferNot=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="prefer_not"));
     if(preferNot.length&&!confirm(`${preferNot.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Assign anyway?`))return;
     setLoading(true);setMessage("");
@@ -222,7 +229,7 @@ export default function App() {
       const rows=ROLES.filter(r=>selected[r]).map(r=>({schedule_id:scheduleId,servant_id:selected[r],role:r,confirmation_status:"pending"}));
       if(rows.length){const {error}=await supabase.from("assignments").insert(rows);if(error)throw error;}
       setModal(null);setEditing(null);await loadData();
-    }catch(e){setMessage(errorText(e));setLoading(false);}
+    }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
   async function generateWeekend(date:string,weeks=1) {
@@ -240,7 +247,7 @@ export default function App() {
       const {error}=await supabase.from("schedules").upsert(rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:true});
       if(error)throw error;
       await loadData();setMessage(`${weeks} weekend(s) generated. New services are drafts; assign servants and publish when ready.`);
-    }catch(e){setMessage(errorText(e));setLoading(false);}
+    }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
   async function saveAvailability(e:FormEvent<HTMLFormElement>) {
@@ -267,13 +274,14 @@ export default function App() {
 
   async function savePerson(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();if(!supabase||!isAdmin)return;
+    setScheduleError("");
     const fd=new FormData(e.currentTarget);const name=String(fd.get("full_name")).trim();
     if(!name)return;
     setLoading(true);
     try{
       const {error}=await supabase.from("servants").insert({full_name:name,active:true});if(error)throw error;
       setModal(null);await loadData();
-    }catch(e){setMessage(errorText(e));setLoading(false);}
+    }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
   async function togglePerson(p:Servant){
     if(!supabase||!isAdmin)return;
@@ -309,6 +317,7 @@ export default function App() {
   }
   async function saveDeadline(e:FormEvent<HTMLFormElement>){
     e.preventDefault();if(!supabase||!isAdmin)return;
+    setScheduleError("");
     const fd=new FormData(e.currentTarget);const value=String(fd.get("deadline")||"");
     const {error}=await supabase.from("system_settings").upsert({key:"availability_deadline",value,updated_by:session.user.id},{onConflict:"key"});
     if(error)setMessage(error.message);else {setAvailabilityDeadline(value);setMessage("Availability deadline updated.");}
@@ -402,7 +411,8 @@ export default function App() {
       <main className="content">
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"Overall serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"View published schedules across all church locations, including your own assignments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
+          {!isAdmin&&<MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id??""}/>}
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           <section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
@@ -425,11 +435,21 @@ export default function App() {
         </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
-    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule}/>}
+    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
   </div>;
 }
 
+
+function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;upcoming:ScheduleView|null;servantId:string}){
+ const myRole=upcoming?.assignments.find(a=>a.servant_id===servantId)?.role;
+ return <section className="my-schedule-summary">
+  <div className="my-days-card"><span className="my-schedule-label">DAYS SERVED</span><strong>{daysServed}</strong><small>{daysServed===1?"calendar day served":"calendar days served"}</small></div>
+  <div className="my-next-card"><div className="my-next-heading"><CalendarDays size={17}/><b>My next serving schedule</b></div>
+   {upcoming?<><div className="my-next-date">{fmtDate(upcoming.service_date)}</div><div className="my-next-detail"><b>{upcoming.location_name}</b><span>{upcoming.service_name} · {shortTime(upcoming.start_time)}–{shortTime(upcoming.end_time)}</span><span>Your role: <b>{myRole??"Assigned"}</b></span></div></>:<p className="my-next-empty">No upcoming published assignment.</p>}
+  </div>
+ </section>;
+}
 
 function DailySummary({date,items}:{date:string;items:ScheduleView[]}){
  const locations=[...new Map(items.map(item=>[item.location_id,{id:item.location_id,name:item.location_name}])).values()];
@@ -466,13 +486,13 @@ function GeneratePanel({onGenerate}:{onGenerate:(date:string,weeks:number)=>void
  const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7));return d.toLocaleDateString("en-CA");});const [weeks,setWeeks]=useState(1);
  return <section className="generate-panel"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Creates recurring Saturday and Sunday services for all active locations. Existing slots remain unchanged.</p></div><div className="generate-controls"><input type="date" value={date} onChange={e=>setDate(e.target.value)}/><select value={weeks} onChange={e=>setWeeks(Number(e.target.value))}><option value={1}>1 weekend</option><option value={2}>2 weekends</option><option value={4}>4 weekends</option><option value={8}>8 weekends</option><option value={12}>12 weekends</option></select><button className="btn primary" onClick={()=>onGenerate(date,weeks)}><CalendarDays size={16}/> Generate</button></div></section>;
 }
-function ScheduleModal({locations,servants,editing,onClose,onSave}:{locations:Location[];servants:Servant[];editing:ScheduleView|null;onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
+function ScheduleModal({locations,servants,editing,onClose,onSave,error}:{locations:Location[];servants:Servant[];editing:ScheduleView|null;onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void;error:string}){
  const existing=(role:Role)=>editing?.assignments.find(a=>a.role===role)?.servant_id??"";
  return <div className="modal-backdrop"><form className="modal-card" onSubmit={onSave}><div className="modal-head"><div><h2>{editing?"Edit service assignment":"Add service assignment"}</h2><p className="subtle">Add a regular or special service on any date, including weekdays. FOH and Monitor are required; Assistant is optional.</p></div><button type="button" className="icon-btn" onClick={onClose}><X/></button></div>
   <div className="form-grid"><label>Date<input name="service_date" type="date" required defaultValue={editing?.service_date??today()}/></label><label>Location<select name="location_id" required defaultValue={editing?.location_id??locations[0]?.id}>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
    <label className="wide">Service name<input name="service_name" required defaultValue={editing?.service_name??""} placeholder="e.g. Special Service, Christmas, Prayer Meeting"/></label><label>Start time<input name="start_time" type="time" required defaultValue={shortTime(editing?.start_time??"09:00")}/></label><label>End time<input name="end_time" type="time" required defaultValue={shortTime(editing?.end_time??"11:00")}/></label>
    {ROLES.map(r=><label className="wide" key={r}>{r}{r==="Assistant"?" (optional)":" (required)"}<select name={r} required={r!=="Assistant"} defaultValue={existing(r)}><option value="">{r==="Assistant"?"Not assigned":"Select servant"}</option>{servants.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>)}
-  </div><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Save assignment</button></div>
+  </div>{error&&<div className="schedule-error" role="alert"><AlertTriangle size={18}/><span>{error}</span></div>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Save assignment</button></div>
  </form></div>;
 }
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
