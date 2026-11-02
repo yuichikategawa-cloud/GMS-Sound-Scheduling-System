@@ -33,6 +33,7 @@ export default function App() {
   const [availability,setAvailability] = useState<any[]>([]);
   const [requests,setRequests] = useState<any[]>([]);
   const [requestReads,setRequestReads] = useState<any[]>([]);
+  const [notifications,setNotifications] = useState<any[]>([]);
   const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
   const [availabilityDeadline,setAvailabilityDeadline] = useState("");
@@ -78,7 +79,7 @@ export default function App() {
     if (!supabase) return;
     setLoading(true); setMessage("");
     try {
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,readRes,settingRes,auditRes,memberRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -87,6 +88,7 @@ export default function App() {
         supabase.from("servant_availability").select("*").order("service_date",{ascending:true}),
         supabase.from("serving_requests").select("*").order("created_at",{ascending:false}),
         supabase.from("serving_request_reads").select("*"),
+        supabase.from("serving_notifications").select("*").order("created_at",{ascending:false}),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100),
         supabase.from("member_profiles").select("*")
@@ -94,7 +96,7 @@ export default function App() {
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,requestRes,readRes,settingRes,auditRes,memberRes]
+      const optionalErrors = [tempRes,availRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -110,7 +112,7 @@ export default function App() {
       })) as ScheduleView[];
       const safeMemberRows = memberRes.error ? [] : (memberRes.data ?? []);
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
-      setAvailability(availRes.error?[]:(availRes.data??[]));setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));
+      setAvailability(availRes.error?[]:(availRes.data??[]));setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
     } catch(e) { setMessage(errorText(e)); }
@@ -403,11 +405,37 @@ export default function App() {
     if(error)setMessage(error.message);else {setMessage(approve?(request.request_type==="swap"?"Swap approved and assignments exchanged.":"Request approved. Please update the assignment if a replacement is needed."):"Request declined.");await loadData();}
   }
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
-    if(!supabase||!myServant)return;
-    const assignment=(schedule.assignments as any[]).find(a=>a.servant_id===myServant.id);
+    if(!supabase||!myServant||!session)return;
+    const assignment=schedule.assignments.find(a=>a.servant_id===myServant.id);
     if(!assignment)return;
-    const {error}=await supabase.from("assignments").update({confirmation_status:status}).eq("schedule_id",schedule.id).eq("servant_id",myServant.id);
-    if(error)setMessage(error.message);else {setMessage(status==="confirmed"?"Serving assignment confirmed.":"Assignment declined. Please submit a replacement request if needed.");await loadData();}
+    if(status==="declined"){
+      const reason=prompt("Please provide a reason for declining (optional):");
+      if(reason===null)return;
+      const {error}=await supabase.from("assignments").update({confirmation_status:"declined"}).eq("id",assignment.id);
+      if(error){setMessage(error.message);return;}
+      const existing=requests.find(r=>r.assignment_id===assignment.id&&r.request_type==="replacement"&&r.status==="pending");
+      if(!existing){
+        const {error:requestError}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:assignment.id,requester_servant_id:myServant.id,request_type:"replacement",details:reason.trim()||"Servant declined the assignment and requests a replacement.",status:"pending"});
+        if(requestError){setMessage("Decline saved, but replacement request could not be created: "+requestError.message);await loadData();return;}
+      }
+      setMessage("Assignment declined. A replacement request has been sent to the administrator.");await loadData();return;
+    }
+    const {error}=await supabase.from("assignments").update({confirmation_status:"confirmed"}).eq("id",assignment.id);
+    if(error){setMessage(error.message);return;}
+    const {error:notifyError}=await supabase.rpc("notify_admin_assignment_confirmation",{p_assignment_id:assignment.id});
+    if(notifyError)console.warn("Confirmation saved but admin notification failed:",notifyError.message);
+    setMessage("Serving assignment confirmed. The administrator has been notified.");await loadData();
+  }
+  async function markNotificationRead(id:string){
+    if(!supabase)return;
+    const {error}=await supabase.from("serving_notifications").update({is_read:true}).eq("id",id);
+    if(!error)setNotifications(v=>v.map(n=>n.id===id?{...n,is_read:true}:n));
+  }
+  async function resolveReplacement(request:any,replacementServantId:string){
+    if(!supabase||!isAdmin)return;
+    const {error}=await supabase.rpc("admin_resolve_replacement",{p_request_id:request.id,p_replacement_servant_id:replacementServantId});
+    if(error){setMessage(error.message);return;}
+    setMessage("Replacement assigned. Both servants have been notified.");await loadData();
   }
   async function exportScheduleHistory(){
     if(!supabase||!isAdmin)return;
@@ -466,7 +494,7 @@ export default function App() {
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
       {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><ClipboardCheck size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length}</span>}</button>}
-      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><ClipboardCheck size={18}/> Servant Requests{requests.filter(r=>r.status==="pending").length>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length}</span>}</button>}
+      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><ClipboardCheck size={18}/> Servant Requests{(requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length)>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length}</span>}</button>}
       {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
       {isAdmin&&<>
         <button className={`nav-item ${tab==="servantInfo"?"active":""}`} onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
@@ -503,7 +531,7 @@ export default function App() {
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><AdminSchedulingCenter schedules={schedules} requests={requests} servants={servants}/><GeneratePanel onGenerate={generateWeekend}/></>}
-        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
+        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
@@ -665,21 +693,44 @@ function AvailabilityPanel({servants,availability,isAdmin,currentUserId,onSave,o
  </>;
 }
 
-function ServantInbox({requests,schedules,reads,onRead}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void}){
+function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void}){
  const decisions=requests.filter(r=>["approved","declined","rejected"].includes(String(r.status??"").toLowerCase())).sort((a,b)=>String(b.reviewed_at??b.created_at).localeCompare(String(a.reviewed_at??a.created_at)));
  const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
- return <section className="servant-inbox">
-  <div className="inbox-intro"><div><h2>Request updates</h2><p className="subtle">Updates from the administrator about your swap and replacement requests.</p></div><span>{decisions.length} decisions</span></div>
-  {decisions.length===0&&pending.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No request updates yet</b><p>When an administrator reviews your swap or replacement request, the result will appear here.</p></div>:<div className="inbox-list">
-   {decisions.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);const approved=String(r.status).toLowerCase()==="approved";return <article className={`inbox-item ${reads.some(x=>x.request_id===r.id)?"read": "unread"}`} key={r.id} onClick={()=>onRead(r.id)}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className={`inbox-status ${approved?"approved":"rejected"}`}>{approved?"Approved":"Rejected"}</span></div><p>{approved?"Your request has been approved by the administrator.":"Your request was not approved by the administrator."}</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}<small>Reviewed: {r.reviewed_at?new Date(r.reviewed_at).toLocaleString():"Recently"}</small></div></article>;})}
-   {pending.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);return <article className={`inbox-item ${reads.some(x=>x.request_id===r.id)?"read": "unread"}`} key={r.id} onClick={()=>onRead(r.id)}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className="inbox-status pending">Pending</span></div><p>Your request is waiting for administrator review.</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}</div></article>;})}
-  </div>}
+ const unread=notifications.filter(n=>!n.is_read).length;
+ return <section className="servant-inbox"><div className="inbox-intro"><div><h2>Inbox</h2><p className="subtle">Assignment confirmations and replacement updates.</p></div><span>{unread} unread</span></div>
+ {notifications.map(n => (
+    <article className={`inbox-item ${n.is_read ? "read" : "unread"}`} key={n.id} onClick={() => onNotificationRead(n.id)}>
+      <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
+      <div className="inbox-item-body">
+        <div className="inbox-item-title"><b>{n.title}</b><span className="inbox-status approved">{n.is_read ? "Read" : "New"}</span></div>
+        <p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small>
+      </div>
+    </article>
+  ))}
+  {decisions.map(r => {
+    const s = schedules.find(x => x.id === r.schedule_id);
+    const approved = String(r.status).toLowerCase() === "approved";
+    return (
+      <article className={`inbox-item ${reads.some(x => x.request_id === r.id) ? "read" : "unread"}`} key={r.id} onClick={() => onRead(r.id)}>
+        <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
+        <div className="inbox-item-body">
+          <div className="inbox-item-title"><b>{r.request_type === "swap" ? "Swap request" : "Replacement request"}</b><span className={`inbox-status ${approved ? "approved" : "rejected"}`}>{approved ? "Approved" : "Rejected"}</span></div>
+          <p>{approved ? "Your request has been approved by the administrator." : "Your request was not approved by the administrator."}</p>
+          <small>{s ? `${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}` : "Schedule details unavailable"}</small>
+          {r.details && <small>{r.details}</small>}
+        </div>
+      </article>
+    );
+  })}
+  {pending.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);return <article className="inbox-item" key={r.id}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className="inbox-status pending">Pending</span></div><p>Your request is waiting for administrator review.</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small></div></article>;})}
+ {notifications.length+decisions.length+pending.length===0&&<div className="empty-state"><ClipboardCheck size={28}/><b>No notifications yet</b><p>You'll be notified when assignments or requests change.</p></div>}
  </section>;
 }
 
-function RequestsPanel({requests,schedules,servants,onReview}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void}){
+function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void}){
  const pending=requests.filter(r=>r.status==="pending");
- return <section className="requests-panel"><div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}{r.request_type==="swap"&&r.target_schedule_id&&<small>Requested swap: {(()=>{const t=schedules.find(x=>x.id===r.target_schedule_id);const a=t?.assignments.find(x=>x.id===r.target_assignment_id);return t?`${fmtDate(t.service_date)} · ${t.location_name} · ${t.service_name} · ${a?.servant_name??"Servant"}`:"Target assignment unavailable";})()}</small>}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions"><button className="btn tiny primary" onClick={()=>onReview(r,true)}>Approve</button><button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline</button></div>}</div>;})}</div>}</section>;
+ const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
+ return <section className="requests-panel">{notifications.filter(n=>!n.is_read).map(n=><article className="inbox-item unread" key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div></article>)}<div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
 }
 
 function AuditPanel({logs}:{logs:any[]}){
