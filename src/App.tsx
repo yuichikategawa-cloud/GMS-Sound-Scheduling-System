@@ -20,7 +20,7 @@ export default function App() {
   const [locations,setLocations] = useState<Location[]>([]);
   const [servants,setServants] = useState<Servant[]>([]);
   const [templates,setTemplates] = useState<any[]>([]);
-  const [tab,setTab] = useState<"schedule"|"people"|"members"|"availability"|"statistics"|"audit"|"profile">("schedule");
+  const [tab,setTab] = useState<"schedule"|"people"|"availability"|"statistics"|"audit"|"profile">("schedule");
   const [availability,setAvailability] = useState<any[]>([]);
   const [requests,setRequests] = useState<any[]>([]);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
@@ -40,7 +40,6 @@ export default function App() {
   const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
   const [password,setPassword] = useState("");
   const [recoveryMode,setRecoveryMode] = useState(false);
-  const [newPassword,setNewPassword] = useState("");
   const [fullName,setFullName] = useState("");
   const [signupCgStatus,setSignupCgStatus] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
@@ -48,7 +47,7 @@ export default function App() {
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
     supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthLoading(false);});
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{setSession(next);if(event==="PASSWORD_RECOVERY")setRecoveryMode(true);});
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{setSession(next); if(event==="PASSWORD_RECOVERY") setRecoveryMode(true);});
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -103,19 +102,22 @@ export default function App() {
     const fd=new FormData(e.currentTarget);
     try {
       if(authMode==="signup") {
-        const usernameValue=String(fd.get("username")).trim().toLowerCase();
-        const fullNameValue=String(fd.get("full_name")).trim();
-        const emailValue=String(fd.get("email")).trim();
         const days=fd.getAll("cg_days").map(String);
         if(!days.length)throw new Error("Please select at least one CG day.");
         const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
-        const meta:any={username:usernameValue,full_name:fullNameValue,email:emailValue,gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")).trim(),phone_number:String(fd.get("phone_number")).trim(),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")).trim(),cg_days:days,cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:leaderPhones};
+        const meta={
+          username:String(fd.get("username")).trim().toLowerCase(), full_name:String(fd.get("full_name")).trim(), email:String(fd.get("email")).trim(),
+          gender:String(fd.get("gender")), date_of_birth:String(fd.get("date_of_birth")), nij:String(fd.get("nij")).trim(), phone_number:String(fd.get("phone_number")).trim(),
+          domicile_area:String(fd.get("domicile_area")), domicile_other:String(fd.get("domicile_other")||""), cg_category:String(fd.get("cg_category")),
+          cg_status:String(fd.get("cg_status")), cg_number:String(fd.get("cg_number")).trim(), cg_days:days, cg_time:String(fd.get("cg_time")),
+          team_leader_name:String(fd.get("team_leader_name")||""), coach_name:String(fd.get("coach_name")||""), cg_leader_name:String(fd.get("cg_leader_name")||""), leader_phone_numbers:leaderPhones
+        };
         if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
         if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
         if(meta.cg_status==="Team Leader")meta.team_leader_name="";
         if(meta.cg_status==="Coach")meta.coach_name="";
         if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
-        const {error}=await supabase.auth.signUp({email:emailValue,password:String(fd.get("password")),options:{data:meta}});
+        const {error}=await supabase.auth.signUp({email:meta.email,password:String(fd.get("password")),options:{data:meta}});
         if(error)throw error;
         setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
         setAuthMode("login");
@@ -130,15 +132,18 @@ export default function App() {
     finally{setAuthLoading(false);}
   }
 
-
-  async function adminSendPasswordReset(emailAddress:string){
-    if(!isAdmin||!supabase)return;
-    if(!emailAddress){setMessage("This member has no registered email address.");return;}
-    if(!confirm(`Send a password reset email to ${emailAddress}?`))return;
-    const {error}=await supabase.auth.resetPasswordForEmail(emailAddress,{redirectTo:`${window.location.origin}/`});
-    setMessage(error?`Could not send reset email: ${error.message}`:`Password reset email requested for ${emailAddress}.`);
+  async function sendPasswordReset(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); if(!supabase)return; setAuthLoading(true); setMessage("");
+    const fd=new FormData(e.currentTarget); const recoveryEmail=String(fd.get("recovery_email")||"").trim();
+    try { const {error}=await supabase.auth.resetPasswordForEmail(recoveryEmail,{redirectTo:`${window.location.origin}/`}); if(error)throw error; setMessage("If an account exists for that email, a password reset link has been sent. Please check your inbox."); }
+    catch(e){setMessage(errorText(e));} finally{setAuthLoading(false);}
   }
-
+  async function updateRecoveredPassword(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault(); if(!supabase)return; const fd=new FormData(e.currentTarget); const next=String(fd.get("new_password")||"");
+    if(next.length<8){setMessage("Password must be at least 8 characters.");return;} setAuthLoading(true);setMessage("");
+    try {const {error}=await supabase.auth.updateUser({password:next});if(error)throw error;setRecoveryMode(false);setMessage("Password updated. You can now continue using your new password.");}
+    catch(e){setMessage(errorText(e));}finally{setAuthLoading(false);}
+  }
   async function signOut(){await supabase?.auth.signOut();setProfile(null);setSession(null);}
   const isAdmin=profile?.role==="admin";
   const myServant=servants.find(p=>p.auth_user_id===session?.user?.id);
@@ -147,7 +152,7 @@ export default function App() {
     const q=personFilter.trim().toLowerCase();
     return schedules.filter(s=>
       s.service_date>=today() &&
-      (isAdmin || s.status==="published") &&
+      (isAdmin || (s.status==="published" && !!myServant && s.assignments.some(a=>a.servant_id===myServant.id))) &&
       (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
       (!locationFilter||s.location_id===locationFilter) &&
       (!serviceFilter||s.service_name===serviceFilter) &&
@@ -326,10 +331,10 @@ export default function App() {
   }
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
-  if(authLoading)return <SoundLoader message="Getting the sound system ready..."/>;
-  if(recoveryMode && session) return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form className="stack" onSubmit={async e=>{e.preventDefault();if(newPassword.length<8){setMessage("Use at least 8 characters.");return;}const {error}=await supabase!.auth.updateUser({password:newPassword});if(error){setMessage(error.message);return;}setRecoveryMode(false);setNewPassword("");setMessage("Password updated successfully. You can continue using your account.");}}><label>New password<input type="password" minLength={8} required value={newPassword} onChange={e=>setNewPassword(e.target.value)} autoComplete="new-password"/></label><button className="btn primary full">Update password</button></form>{message&&<p className="message">{message}</p>}</div></div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
-    <form onSubmit={submitAuth} className="stack auth-registration">
+  if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
+  if(recoveryMode && session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form onSubmit={updateRecoveredPassword} className="stack"><label>New password<input name="new_password" type="password" required minLength={8} autoComplete="new-password" placeholder="At least 8 characters"/></label><button className="btn primary full" disabled={authLoading}>Update password</button></form>{message&&<p className="message">{message}</p>}</div></div>;
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":authMode==="signup"?"Create your account":"Reset your password"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
+    {authMode==="reset"?<form onSubmit={sendPasswordReset} className="stack"><label>Registered email address<input name="recovery_email" type="email" required autoComplete="email" placeholder="you@example.com"/></label><button className="btn primary full" disabled={authLoading}>Send reset link</button><button type="button" className="link-btn" onClick={()=>{setAuthMode("login");setMessage("");}}>Back to sign in</button></form>:<form onSubmit={submitAuth} className="stack auth-registration">
       <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
       {authMode==="signup"&&<>
         <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
@@ -352,12 +357,13 @@ export default function App() {
       </>}
       <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
-    </form>
-    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
+    </form>}
+    {authMode==="login"&&<button type="button" className="link-btn" onClick={()=>{setAuthMode("reset");setMessage("");}}>Forgot password?</button>}
+    {authMode!=="reset"&&<button type="button" className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>}
     {message&&<p className="message">{message}</p>}
   </div></div>;
 
-  if(!profile)return <SoundLoader message="Preparing your serving workspace..."/>;
+  if(!profile)return <div className="center-screen"><div className="loader"/>Loading your profile...</div>;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?"open":""}`}>
@@ -365,21 +371,20 @@ export default function App() {
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
-      {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
+      <button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>
       {isAdmin&&<>
         <button className={`nav-item ${tab==="people"?"active":""}`} onClick={()=>{setTab("people");setMobileNav(false);}}><Users size={18}/> Servant directory</button>
-        <button className={`nav-item ${tab==="members"?"active":""}`} onClick={()=>{setTab("members");setMobileNav(false);}}><Users size={18}/> Member information</button>
         <button className={`nav-item ${tab==="statistics"?"active":""}`} onClick={()=>{setTab("statistics");setMobileNav(false);}}><BarChart3 size={18}/> Statistics</button>
         <button className={`nav-item ${tab==="audit"?"active":""}`} onClick={()=>{setTab("audit");setMobileNav(false);}}><ClipboardCheck size={18}/> Audit log</button>
       </>}
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="members"?"Member information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
-      <main key={tab} className="content page-enter">
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <main className="content">
         {memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"Church serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"View published schedules across all church locations to coordinate and arrange swaps."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           <section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
@@ -395,11 +400,11 @@ export default function App() {
           </details>
           <details className="collapsible-panel service-panel" open>
             <summary><span><b>Service details</b><small>{filtered.length} service slots · expand a service to see assignments</small></span><ChevronDown size={20}/></summary>
-            {loading?<div className="empty-state"><SoundLoader message="Tuning the schedule..." compact/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
+            {loading?<div className="empty-state"><div className="loader"/>Loading schedule...</div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
-        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="members"&&isAdmin?<AdminMemberPanel directory={memberDirectory} servants={servants} onReset={adminSendPasswordReset}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:<MemberProfilePanel profile={memberProfile} isAdmin={isAdmin} directory={memberDirectory} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>}
+        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:<MemberProfilePanel profile={memberProfile} isAdmin={isAdmin} directory={memberDirectory} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>}
       </main>
     </div>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule}/>}
@@ -429,7 +434,7 @@ function DailySummary({date,items}:{date:string;items:ScheduleView[]}){
  </details>;
 }
 
-function Stat({label,value}:{label:string;value:string|number}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
+function Stat({label,value}:{label:string;value:number}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
 function ScheduleCard({item,isAdmin,onEdit,onDelete,onPublish,myServantId,onConfirm,onRequest}:{item:ScheduleView;isAdmin:boolean;onEdit:()=>void;onDelete:()=>void;onPublish:()=>void;myServantId:string;onConfirm:(status:"confirmed"|"declined")=>void;onRequest:(kind:"replacement"|"swap")=>void}){
  const own=item.assignments.find(a=>a.servant_id===myServantId);
  return <details className="schedule-card" open><summary className="schedule-card-summary"><div><div className="date-text">{fmtDate(item.service_date)} <span className={`status-chip ${item.status||"draft"}`}>{item.status||"draft"}</span></div><div className="location-text">{item.location_name}</div><div className="service-title">{item.service_name}</div><div className="time-text">{shortTime(item.start_time)} – {shortTime(item.end_time)}</div></div><ChevronDown size={19}/></summary>
@@ -458,7 +463,7 @@ function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTML
 function PeoplePanel({servants,isAdmin,onAdd,onToggle}:{servants:Servant[];isAdmin:boolean;onAdd:()=>void;onToggle:(p:Servant)=>void}){
  const [q,setQ]=useState("");
  const rows=servants.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase()));
- return <><div className="toolbar"><div><h2>Servant directory</h2><p className="subtle">Manage the names available for role assignments.</p></div>{isAdmin&&<button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button>}</div><section className="filter-panel"><label className="search-field"><span>Search people</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name"/></label></section><div className="people-list">{rows.map(p=><div className="person-row" key={p.id}><div className="avatar">{p.full_name.slice(0,1).toUpperCase()}</div><div className="person-name"><b>{p.full_name}</b><small>{p.active?"Active":"Inactive"} · <span className={p.auth_user_id?"linked-status":"unlinked-status"}>{p.auth_user_id?"Account linked":"Not linked to login"}</span></small></div>{isAdmin&&<button className={`btn tiny ${p.active?"secondary":"primary"}`} onClick={()=>onToggle(p)}>{p.active?"Deactivate":"Activate"}</button>}</div>)}</div></>;
+ return <><div className="toolbar"><div><h2>Servant directory</h2><p className="subtle">Manage the names available for role assignments.</p></div>{isAdmin&&<button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button>}</div><section className="filter-panel"><label className="search-field"><span>Search people</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name"/></label></section><div className="people-list">{rows.map(p=><div className="person-row" key={p.id}><div className="avatar">{p.full_name.slice(0,1).toUpperCase()}</div><div className="person-name"><b>{p.full_name}</b><small>{p.active?"Active":"Inactive"}</small></div>{isAdmin&&<button className={`btn tiny ${p.active?"secondary":"primary"}`} onClick={()=>onToggle(p)}>{p.active?"Deactivate":"Activate"}</button>}</div>)}</div></>;
 }
 function AvailabilityPanel({servants,availability,isAdmin,currentUserId,onSave,onDelete,deadline,onSaveDeadline}:{servants:Servant[];availability:any[];isAdmin:boolean;currentUserId:string;onSave:(e:FormEvent<HTMLFormElement>)=>void;onDelete:(id:string)=>void;deadline:string;onSaveDeadline:(e:FormEvent<HTMLFormElement>)=>void}){
  const [dateFilter,setDateFilter]=useState("");
@@ -503,12 +508,6 @@ function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants
  </>;
 }
 
-function AdminMemberPanel({directory,servants,onReset}:{directory:any[];servants:Servant[];onReset:(email:string)=>void}){
- const [query,setQuery]=useState("");
- const rows=directory.filter(p=>[p.full_name,p.email,p.nij,p.cg_category,p.cg_status].some(v=>String(v??"").toLowerCase().includes(query.toLowerCase())));
- return <><div className="toolbar"><div><h2>All servant member information</h2><p className="subtle">Admin-only directory of member profiles, CG leadership and contact information.</p></div><span className="role-tag">{directory.length} profiles</span></div><section className="filter-panel member-admin-filter"><label className="search-field"><span>Search members</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name, email, NIJ or CG"/></label></section><div className="member-admin-grid">{rows.map(p=>{const servant=servants.find(s=>s.auth_user_id===p.user_id);return <article className="member-admin-card" key={p.user_id}><div className="member-admin-head"><div><b>{p.full_name||"Unnamed member"}</b><small>{p.email||"No email recorded"} · {servant?.auth_user_id?"Account linked":"No linked servant record"}</small></div><button className="btn tiny secondary" disabled={!p.email} onClick={()=>onReset(p.email)}>Send password reset</button></div><div className="member-admin-details"><span><b>NIJ</b>{p.nij||"—"}</span><span><b>Phone</b>{p.phone_number||"—"}</span><span><b>Gender / DOB</b>{[p.gender,p.date_of_birth].filter(Boolean).join(" · ")||"—"}</span><span><b>Domicile</b>{[p.domicile_area,p.domicile_other].filter(Boolean).join(" · ")||"—"}</span><span><b>CG</b>{[p.cg_category,p.cg_number].filter(Boolean).join(" · ")||"—"}</span><span><b>CG status / days / time</b>{[p.cg_status,(p.cg_days??[]).join(", "),p.cg_time].filter(Boolean).join(" · ")||"—"}</span><span><b>Team Leader</b>{p.team_leader_name||"—"}</span><span><b>Coach</b>{p.coach_name||"—"}</span><span><b>CG Leader</b>{p.cg_leader_name||"—"}</span><span><b>Leader phone(s)</b>{(p.leader_phone_numbers??[]).join(", ")||"—"}</span></div></article>})}{rows.length===0&&<div className="empty-state">No member profiles found.</div>}</div></>;
-}
-
 function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
  const [saving,setSaving]=useState(false);
  const current=profile??{full_name:"",email:"",gender:"Prefer not to say",date_of_birth:"",nij:"",phone_number:"",domicile_area:"Alam Sutera",domicile_other:"",cg_category:"AOG Youth",cg_status:"Member",cg_number:"",cg_days:[],cg_time:"",team_leader_name:"",coach_name:"",cg_leader_name:"",leader_phone_numbers:[],last_verified_at:new Date().toISOString()};
@@ -525,11 +524,8 @@ function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAd
  <fieldset className="days-field"><legend>CG days</legend>{days.map(d=><label key={d}><input type="checkbox" name="cg_days" value={d} defaultChecked={(current.cg_days??[]).includes(d)}/>{d}</label>)}</fieldset>
  <button className="btn primary" disabled={saving}>{saving?'Saving…':'Save and verify profile'}</button>
  </form></section>
- {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th><th>Team Leader</th><th>Coach</th><th>CG Leader</th><th>Leader phone(s)</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td><td>{p.team_leader_name||"—"}</td><td>{p.coach_name||"—"}</td><td>{p.cg_leader_name||"—"}</td><td>{(p.leader_phone_numbers??[]).join(", ")||"—"}</td></tr>)}</tbody></table></div></section>}</>;
+ {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
 }
-
-
-function SoundLoader({message,compact=false}:{message:string;compact?:boolean}){return <div className={`sound-loader ${compact?"compact":""}`} role="status" aria-live="polite"><div className="sound-loader-mark"><span/><span/><span/><span/><span/><span/><span/></div><b>{message}</b><small>GMS Sound Scheduling System</small></div>}
 
 function SetupScreen(){
  return <div className="auth-page"><div className="auth-card setup-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Connect your Supabase project</h1><p className="subtle">The app is ready. Add your Supabase project credentials to enable shared login and scheduling.</p><ol><li>Create a Supabase project.</li><li>Run <code>supabase/schema.sql</code> in the SQL Editor.</li><li>Copy <code>.env.example</code> to <code>.env</code> and fill in your Project URL and anon/publishable key.</li><li>Restart the development server.</li></ol><p className="message">No database password or service-role key is needed in this frontend.</p></div></div>;
