@@ -478,18 +478,16 @@ function ScheduleModal({locations,servants,editing,onClose,onSave}:{locations:Lo
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
  return <div className="modal-backdrop"><form className="modal-card compact" onSubmit={onSave}><div className="modal-head"><h2>Add servant</h2><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><label>Full name<input name="full_name" required autoFocus placeholder="Servant's full name"/></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Add person</button></div></form></div>;
 }
-function GmsLoader({label="Getting the sound system ready…"}:{label?:string}){
+function GmsLoader({label="Getting the sound system ready..."}:{label?:string}){
  return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
-  <div className="gms-loader-panel">
-   <div className="gms-loader-brand-row"><span className="gms-loader-mark"><Church size={19}/></span><span className="gms-loader-brand">GMS <b>Sound Scheduling</b></span></div>
+  <main className="gms-loader-content">
+   <h1 className="gms-loader-title">GMS Sound Scheduling System</h1>
    <div className="gms-equalizer" aria-hidden="true">
-    {[30,52,76,100,76,52,30].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*95}ms`} as CSSProperties}/>)}
+    {[42,66,88,100,88,66,42].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*110}ms`} as CSSProperties}/>)}
    </div>
-   <h2>{label}</h2>
-   <p className="gms-loader-caption">Preparing your serving experience</p>
-   <div className="gms-loader-progress" aria-hidden="true"><span/></div>
-   <p className="gms-loader-footnote">A moment while everything gets in sync.</p>
-  </div>
+   <h2 className="gms-loader-message">{label}</h2>
+   <p className="gms-loader-caption">Animated equalizer loading experience</p>
+  </main>
  </div>;
 }
 function ServantInformationPanel({servants,memberDirectory,locations,schedules,requests,onAdd,onToggle}:{servants:Servant[];memberDirectory:any[];locations:Location[];schedules:ScheduleView[];requests:any[];onAdd:()=>void;onToggle:(p:Servant)=>void}){
