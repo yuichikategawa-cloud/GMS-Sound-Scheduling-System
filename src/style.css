@@ -129,7 +129,9 @@
 .gms-loader-caption{margin:0;color:#a6a6a6;font-size:clamp(16px,2.7vw,29px);line-height:1.4;font-weight:400}
 @keyframes gms-eq-pulse{0%{transform:scaleY(.58);opacity:.78}100%{transform:scaleY(1);opacity:1}}
 @media(max-width:600px){.gms-loader-screen{padding:22px}.gms-loader-title{margin-bottom:36px}.gms-equalizer{height:142px;gap:8px;margin-bottom:36px}.gms-equalizer span{width:13px}.gms-loader-message{margin-bottom:16px}}
-@media(prefers-reduced-motion:reduce){.gms-equalizer span{animation:none;transform:scaleY(.82)}}.gms-equalizer span{transform:scaleY(.78)}.gms-loader-progress span{width:100%}}
+@media(prefers-reduced-motion:reduce){.gms-equalizer span{animation:none;transform:scaleY(.82)}}
+.gms-equalizer span{transform:scaleY(.78)}
+.gms-loader-progress span{width:100%}
 
 /* Explicit empty state for the Servant Information directory */
 .servant-empty-state{padding:28px 18px;text-align:center;border:1px dashed var(--border,#3a3a3a);border-radius:14px;color:var(--text,#fff)}
