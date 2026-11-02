@@ -238,3 +238,27 @@
 .inbox-item.unread:after{content:"NEW";align-self:flex-start;font-size:9px;font-weight:900;color:#6d4bb1;background:#eee8fb;border-radius:99px;padding:4px 6px}
 @media(max-width:850px){.control-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.control-center-grid{grid-template-columns:1fr 1fr}.swap-modal .modal-actions button{flex:1}}
+
+
+/* Admin schedule layout: local-church grouping and recurring template controls */
+.schedule-location-groups{display:flex;flex-direction:column;gap:18px}
+.schedule-location-group{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fafbfe}
+.schedule-location-group>h3{font-size:14px;margin:0 0 11px;color:var(--ink);padding:2px 2px 9px;border-bottom:1px solid var(--line)}
+.schedule-location-group .schedule-grid{padding:0}
+.generate-panel{display:block}
+.generate-heading{display:flex;justify-content:space-between;gap:12px}
+.template-picker{background:#fff;border:1px solid #dfe3ff;border-radius:11px;padding:12px;margin-top:12px}
+.template-picker-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px}
+.template-picker-head span{color:var(--muted)}
+.template-picker-head .clear-btn{margin-left:auto}
+.template-location{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.template-location> b{font-size:12px}
+.template-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 14px;margin-top:8px}
+.template-options label{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink);min-width:0}
+.template-options input{width:15px;height:15px;accent-color:#5145e5;flex:0 0 auto}
+.template-options span{overflow-wrap:anywhere}
+.generate-footer{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin-top:13px}
+.generate-footer label{display:grid;gap:5px;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}
+.generate-footer input,.generate-footer select{min-height:39px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);font:inherit;text-transform:none}
+.generate-note{font-size:10px;color:var(--muted);margin:11px 0 0;line-height:1.5}
+@media(max-width:700px){.template-options{grid-template-columns:1fr}.generate-footer{align-items:stretch;flex-direction:column}.generate-footer label,.generate-footer input,.generate-footer select,.generate-footer button{width:100%}.schedule-location-group{padding:10px}}

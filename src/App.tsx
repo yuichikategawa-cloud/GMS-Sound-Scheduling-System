@@ -240,21 +240,23 @@ export default function App() {
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
-  async function generateWeekend(date:string,weeks=1) {
+  async function generateWeekend(date:string,weeks=1,templateIds:string[]=[],mode:"add"|"replace"="add") {
     if(!supabase||!isAdmin)return;
     const d=new Date(`${date}T12:00:00`);
     if(d.getDay()!==6){setMessage("Choose a Saturday to generate the weekend.");return;}
     const dates:{date:string;day:number}[]=[];
     for(let w=0;w<weeks;w++){const sat=new Date(d);sat.setDate(d.getDate()+w*7);const sun=new Date(sat);sun.setDate(sat.getDate()+1);dates.push({date:sat.toLocaleDateString("en-CA"),day:6},{date:sun.toLocaleDateString("en-CA"),day:0});}
-    setLoading(true);setMessage("");
+    const selected=templates.filter(t=>templateIds.includes(String(t.id)));
+    if(!selected.length){setMessage("Select at least one service template to generate.");return;}
+    setLoading(true);setMessage("");setScheduleError("");
     try {
-      const rows=dates.flatMap(x=>templates.filter(t=>Number(t.day_of_week)===x.day).map(t=>({
+      const rows=dates.flatMap(x=>selected.filter(t=>Number(t.day_of_week)===x.day).map(t=>({
         service_date:x.date,location_id:t.location_id,service_name:t.service_name,start_time:t.start_time,end_time:t.end_time
       })));
-      if(!rows.length)throw new Error("No service templates found. Check that the database setup SQL has been run.");
-      const {error}=await supabase.from("schedules").upsert(rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:true});
+      if(!rows.length)throw new Error("The selected templates do not include Saturday or Sunday services.");
+      const {error}=await supabase.from("schedules").upsert(rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:mode==="add"});
       if(error)throw error;
-      await loadData();setMessage(`${weeks} weekend(s) generated. New services are drafts; assign servants and publish when ready.`);
+      await loadData();setMessage(`${weeks} weekend(s) generated using ${selected.length} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
@@ -527,6 +529,7 @@ export default function App() {
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           {isAdmin&&<section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>}
           {isAdmin&&<ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>}
+          {isAdmin&&<AdminSchedulingCenter schedules={schedules} requests={requests} servants={servants} availability={availability}/>}
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
             <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
             <label><span>Church location</span><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
@@ -541,9 +544,9 @@ export default function App() {
           <details className="collapsible-panel service-panel" open>
             <summary><span><b>Service details</b><small>{filtered.length} service slots · expand a service to see assignments</small></span><ChevronDown size={20}/></summary>
             {loading?<div className="empty-state"><GmsLoader label="Loading schedule…"/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
-              <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
+              <div className="schedule-location-groups">{locations.filter(l=>filtered.some(s=>s.location_id===l.id)).map(location=><section className="schedule-location-group" key={location.id}><h3>{location.name}</h3><div className="schedule-grid">{filtered.filter(s=>s.location_id===location.id).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time)).map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div></section>)}</div>}
           </details>
-          {isAdmin&&<><AdminSchedulingCenter schedules={schedules} requests={requests} servants={servants} availability={availability}/><GeneratePanel onGenerate={generateWeekend}/></>}
+          {isAdmin&&<GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend}/>}
         </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
@@ -634,9 +637,21 @@ function ScheduleCard({item,isAdmin,onEdit,onDelete,onPublish,myServantId,onConf
  </details>;
 }
 
-function GeneratePanel({onGenerate}:{onGenerate:(date:string,weeks:number)=>void}){
- const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7));return d.toLocaleDateString("en-CA");});const [weeks,setWeeks]=useState(1);
- return <section className="generate-panel"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Creates recurring Saturday and Sunday services for all active locations. Existing slots remain unchanged.</p></div><div className="generate-controls"><input type="date" value={date} onChange={e=>setDate(e.target.value)}/><select value={weeks} onChange={e=>setWeeks(Number(e.target.value))}><option value={1}>1 weekend</option><option value={2}>2 weekends</option><option value={4}>4 weekends</option><option value={8}>8 weekends</option><option value={12}>12 weekends</option></select><button className="btn primary" onClick={()=>onGenerate(date,weeks)}><CalendarDays size={16}/> Generate</button></div></section>;
+function GeneratePanel({templates,locations,onGenerate}:{templates:any[];locations:Location[];onGenerate:(date:string,weeks:number,templateIds:string[],mode:"add"|"replace")=>void}){
+ const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7));return d.toLocaleDateString("en-CA");});
+ const [weeks,setWeeks]=useState(1); const [mode,setMode]=useState<"add"|"replace">("add");
+ const [selected,setSelected]=useState<string[]>(()=>templates.filter(t=>t.active!==false).map(t=>String(t.id)));
+ useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
+ const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
+ const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
+ return <section className="generate-panel"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div>
+  <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select active</button></div>
+   {locations.map(location=>{const items=templates.filter(t=>t.location_id===location.id&&t.active!==false);return items.length?<div className="template-location" key={location.id}><b>{location.name}</b><div className="template-options">{items.map(t=><label key={t.id}><input type="checkbox" checked={selected.includes(String(t.id))} onChange={()=>toggle(String(t.id))}/><span>{dayName(t.day_of_week)} · {t.service_name} ({shortTime(t.start_time)}–{shortTime(t.end_time)})</span></label>)}</div></div>:null;})}
+   {templates.filter(t=>t.active!==false).length===0&&<p className="subtle">No active templates. Add recurring services first.</p>}
+  </div>
+  <div className="generate-footer"><label>Start Saturday<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Duration<select value={weeks} onChange={e=>setWeeks(Number(e.target.value))}><option value={1}>1 weekend</option><option value={2}>2 weekends</option><option value={4}>4 weekends</option><option value={8}>8 weekends</option><option value={12}>12 weekends</option></select></label><label>Existing matching slots<select value={mode} onChange={e=>setMode(e.target.value as "add"|"replace")}><option value="add">Add missing only</option><option value="replace">Replace times from template</option></select></label><button className="btn primary" disabled={!selected.length||!templates.length} onClick={()=>onGenerate(date,weeks,selected,mode)}><CalendarDays size={16}/> Generate</button></div>
+  <p className="generate-note"><b>Add missing only:</b> leaves existing slots unchanged. <b>Replace times from template:</b> updates matching service times while preserving existing assignments; it does not delete other services.</p>
+ </section>;
 }
 function ScheduleModal({locations,servants,availability,schedules,editing,onClose,onSave,error}:{locations:Location[];servants:Servant[];availability:any[];schedules:ScheduleView[];editing:ScheduleView|null;onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void;error:string}){
  const [serviceDate,setServiceDate]=useState(editing?.service_date??today());
