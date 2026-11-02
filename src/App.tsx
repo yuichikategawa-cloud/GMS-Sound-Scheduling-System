@@ -109,6 +109,11 @@ export default function App() {
       (!fromDate||s.service_date>=fromDate) && (!toDate||s.service_date<=toDate)
     );
   },[schedules,personFilter,locationFilter,serviceFilter,fromDate,toDate]);
+  const dailyGroups=useMemo(()=>{
+    const groups=new Map<string,ScheduleView[]>();
+    for(const item of filtered){const current=groups.get(item.service_date)??[];current.push(item);groups.set(item.service_date,current);}
+    return [...groups.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,items])=>({date,items}));
+  },[filtered]);
 
   async function saveSchedule(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();if(!supabase||!isAdmin)return;
@@ -177,7 +182,7 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS BANTEN SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome Home":"Create your account"}</h1><p className="subtle">Serving schedule management system for GMS Banten.</p>
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS WEEKEND OPERATIONS</p><h1>{authMode==="login"?"Welcome back":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     <form onSubmit={submitAuth} className="stack">
       {authMode==="signup"&&<label>Full name<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></label>}
       <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
@@ -212,7 +217,9 @@ export default function App() {
             <label><span>From</span><input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label>
             <label><span>To</span><input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label>
           </div><button className="clear-btn" onClick={()=>{setPersonFilter("");setLocationFilter("");setServiceFilter("");setFromDate("");setToDate("");}}>Clear all filters</button></section>
-          <div className="list-heading"><h2>Schedule</h2><span>{filtered.length} service slots</span></div>
+          <div className="list-heading"><h2>Daily overview</h2><span>{dailyGroups.length} days</span></div>
+          {dailyGroups.length>0&&<div className="daily-overview">{dailyGroups.map(group=><DailySummary key={group.date} date={group.date} items={group.items}/>)}</div>}
+          <div className="list-heading schedule-list-heading"><h2>Service details</h2><span>{filtered.length} service slots</span></div>
           {loading?<div className="empty-state"><div className="loader"/>Loading schedule...</div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
             <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)}/>)}</div>}
           {isAdmin&&<GeneratePanel onGenerate={generateWeekend}/>}
@@ -222,6 +229,24 @@ export default function App() {
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
   </div>;
+}
+
+
+function DailySummary({date,items}:{date:string;items:ScheduleView[]}){
+ const locations=[...new Map(items.map(item=>[item.location_id,{id:item.location_id,name:item.location_name}])).values()];
+ const assigned=items.reduce((n,item)=>n+item.assignments.filter(a=>a.servant_id&&a.role!=="Assistant").length,0);
+ const required=items.length*2;
+ const dayLabel=new Date(`${date}T12:00:00`).toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+ return <section className="daily-card">
+  <div className="daily-head"><div><div className="daily-date">{dayLabel}</div><div className="daily-subtitle">{items.length} services · {locations.length} {locations.length===1?"location":"locations"}</div></div><div className={`coverage-pill ${assigned>=required?"complete":"pending"}`}>{assigned}/{required} required roles filled</div></div>
+  <div className="daily-locations">{locations.map(location=>{
+   const services=items.filter(item=>item.location_id===location.id).sort((a,b)=>a.start_time.localeCompare(b.start_time));
+   return <div className="daily-location" key={location.id}><div className="daily-location-name">{location.name}</div><div className="daily-services">{services.map(item=><div className="daily-service" key={item.id}>
+    <div className="daily-service-top"><b>{item.service_name}</b><span>{shortTime(item.start_time)}–{shortTime(item.end_time)}</span></div>
+    <div className="daily-roles">{ROLES.map(role=>{const assignment=item.assignments.find(a=>a.role===role);return <span className={!assignment&&role!=="Assistant"?"role-missing":""} key={role}><b>{role}:</b> {assignment?.servant_name??(role==="Assistant"?"Optional":"Unassigned")}</span>;})}</div>
+   </div>)}</div></div>;
+  })}</div>
+ </section>;
 }
 
 function Stat({label,value}:{label:string;value:number}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
