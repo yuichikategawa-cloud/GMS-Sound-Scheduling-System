@@ -39,6 +39,9 @@ export default function App() {
   const [memberProfile,setMemberProfile] = useState<any>(null);
   const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
   const [password,setPassword] = useState("");
+  const [resetEmail,setResetEmail] = useState("");
+  const [recoveryMode,setRecoveryMode] = useState(false);
+  const [newPassword,setNewPassword] = useState("");
   const [fullName,setFullName] = useState("");
   const [signupCgStatus,setSignupCgStatus] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
@@ -46,7 +49,7 @@ export default function App() {
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
     supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthLoading(false);});
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,next)=>{setSession(next);});
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{setSession(next);if(event==="PASSWORD_RECOVERY")setRecoveryMode(true);});
     return ()=>subscription.unsubscribe();
   },[]);
 
@@ -128,6 +131,13 @@ export default function App() {
     finally{setAuthLoading(false);}
   }
 
+  async function requestPasswordReset(){
+    if(!supabase){setMessage("Supabase is not configured.");return;}
+    if(!resetEmail.trim()){setMessage("Enter the email address registered to your account to receive a password reset link.");return;}
+    const {error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:`${window.location.origin}/`});
+    setMessage(error?error.message:"If the email is registered, a password reset link will be sent. Please check your inbox and spam folder.");
+  }
+
   async function signOut(){await supabase?.auth.signOut();setProfile(null);setSession(null);}
   const isAdmin=profile?.role==="admin";
   const myServant=servants.find(p=>p.auth_user_id===session?.user?.id);
@@ -136,7 +146,7 @@ export default function App() {
     const q=personFilter.trim().toLowerCase();
     return schedules.filter(s=>
       s.service_date>=today() &&
-      (isAdmin || (s.status==="published" && !!myServant && s.assignments.some(a=>a.servant_id===myServant.id))) &&
+      (isAdmin || s.status==="published") &&
       (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
       (!locationFilter||s.location_id===locationFilter) &&
       (!serviceFilter||s.service_name===serviceFilter) &&
@@ -316,6 +326,7 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <SoundLoader message="Getting the sound system ready..."/>;
+  if(recoveryMode && session) return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form className="stack" onSubmit={async e=>{e.preventDefault();if(newPassword.length<8){setMessage("Use at least 8 characters.");return;}const {error}=await supabase!.auth.updateUser({password:newPassword});if(error){setMessage(error.message);return;}setRecoveryMode(false);setNewPassword("");setMessage("Password updated successfully. You can continue using your account.");}}><label>New password<input type="password" minLength={8} required value={newPassword} onChange={e=>setNewPassword(e.target.value)} autoComplete="new-password"/></label><button className="btn primary full">Update password</button></form>{message&&<p className="message">{message}</p>}</div></div>;
   if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     <form onSubmit={submitAuth} className="stack auth-registration">
       <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
@@ -340,6 +351,7 @@ export default function App() {
       </>}
       <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
+      {authMode==="login"&&<div className="password-reset-box"><label>Forgot password? Enter your registered email<input type="email" value={resetEmail} onChange={e=>setResetEmail(e.target.value)} placeholder="you@example.com"/></label><button type="button" className="link-btn" onClick={requestPasswordReset}>Send password reset link</button></div>}
     </form>
     <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
     {message&&<p className="message">{message}</p>}
@@ -353,7 +365,7 @@ export default function App() {
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
-      <button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>
+      {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
       {isAdmin&&<>
         <button className={`nav-item ${tab==="people"?"active":""}`} onClick={()=>{setTab("people");setMobileNav(false);}}><Users size={18}/> Servant directory</button>
         <button className={`nav-item ${tab==="statistics"?"active":""}`} onClick={()=>{setTab("statistics");setMobileNav(false);}}><BarChart3 size={18}/> Statistics</button>
@@ -366,7 +378,7 @@ export default function App() {
       <main key={tab} className="content page-enter">
         {memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"Church serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"View published schedules across all church locations to coordinate and arrange swaps."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           <section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
@@ -445,7 +457,7 @@ function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTML
 function PeoplePanel({servants,isAdmin,onAdd,onToggle}:{servants:Servant[];isAdmin:boolean;onAdd:()=>void;onToggle:(p:Servant)=>void}){
  const [q,setQ]=useState("");
  const rows=servants.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase()));
- return <><div className="toolbar"><div><h2>Servant directory</h2><p className="subtle">Manage the names available for role assignments.</p></div>{isAdmin&&<button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button>}</div><section className="filter-panel"><label className="search-field"><span>Search people</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name"/></label></section><div className="people-list">{rows.map(p=><div className="person-row" key={p.id}><div className="avatar">{p.full_name.slice(0,1).toUpperCase()}</div><div className="person-name"><b>{p.full_name}</b><small>{p.active?"Active":"Inactive"}</small></div>{isAdmin&&<button className={`btn tiny ${p.active?"secondary":"primary"}`} onClick={()=>onToggle(p)}>{p.active?"Deactivate":"Activate"}</button>}</div>)}</div></>;
+ return <><div className="toolbar"><div><h2>Servant directory</h2><p className="subtle">Manage the names available for role assignments.</p></div>{isAdmin&&<button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button>}</div><section className="filter-panel"><label className="search-field"><span>Search people</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name"/></label></section><div className="people-list">{rows.map(p=><div className="person-row" key={p.id}><div className="avatar">{p.full_name.slice(0,1).toUpperCase()}</div><div className="person-name"><b>{p.full_name}</b><small>{p.active?"Active":"Inactive"} · <span className={p.auth_user_id?"linked-status":"unlinked-status"}>{p.auth_user_id?"Account linked":"Not linked to login"}</span></small></div>{isAdmin&&<button className={`btn tiny ${p.active?"secondary":"primary"}`} onClick={()=>onToggle(p)}>{p.active?"Deactivate":"Activate"}</button>}</div>)}</div></>;
 }
 function AvailabilityPanel({servants,availability,isAdmin,currentUserId,onSave,onDelete,deadline,onSaveDeadline}:{servants:Servant[];availability:any[];isAdmin:boolean;currentUserId:string;onSave:(e:FormEvent<HTMLFormElement>)=>void;onDelete:(id:string)=>void;deadline:string;onSaveDeadline:(e:FormEvent<HTMLFormElement>)=>void}){
  const [dateFilter,setDateFilter]=useState("");
@@ -506,7 +518,7 @@ function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAd
  <fieldset className="days-field"><legend>CG days</legend>{days.map(d=><label key={d}><input type="checkbox" name="cg_days" value={d} defaultChecked={(current.cg_days??[]).includes(d)}/>{d}</label>)}</fieldset>
  <button className="btn primary" disabled={saving}>{saving?'Saving…':'Save and verify profile'}</button>
  </form></section>
- {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
+ {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th><th>Team Leader</th><th>Coach</th><th>CG Leader</th><th>Leader phone(s)</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td><td>{p.team_leader_name||"—"}</td><td>{p.coach_name||"—"}</td><td>{p.cg_leader_name||"—"}</td><td>{(p.leader_phone_numbers??[]).join(", ")||"—"}</td></tr>)}</tbody></table></div></section>}</>;
 }
 
 

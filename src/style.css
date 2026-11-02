@@ -126,3 +126,22 @@
 .admin-signup-note p{margin:5px 0 0}
 .stack select{border:1px solid #dfe4ec;border-radius:8px;padding:11px;color:#293448;background:#fff;min-width:0;font-size:13px}
 @media(prefers-reduced-motion:reduce){.sound-loader-mark span,.page-enter{animation:none!important}}
+
+/* v4 usability refinements */
+.search-field{display:grid;grid-template-columns:minmax(120px,auto) minmax(0,1fr);align-items:center;gap:12px;width:100%}
+.search-field input{width:100%;min-width:0;box-sizing:border-box}
+.generate-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(130px,.8fr) auto;gap:10px;align-items:center;width:100%}
+.generate-controls input,.generate-controls select{min-width:0;width:100%;box-sizing:border-box}
+.linked-status{color:#15803d;font-weight:700}.unlinked-status{color:#b45309;font-weight:700}
+.password-reset-box{display:grid;gap:6px;margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}
+.password-reset-box label{display:flex;flex-direction:column;gap:6px}
+@media(max-width:760px){
+ .search-field{grid-template-columns:1fr;align-items:stretch}
+ .search-field span{display:block}
+ .generate-controls{grid-template-columns:1fr}
+ .generate-controls .btn{width:100%}
+ .filter-panel{padding:14px}
+ .person-row{flex-wrap:wrap}
+ .person-name{min-width:0}
+ .stats-table-wrap{overflow-x:auto}
+}
