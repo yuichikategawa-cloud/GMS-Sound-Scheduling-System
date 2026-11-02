@@ -1,22 +1,20 @@
-# GMS Sound Scheduling System v4 — Member Access & UI Patch
+# GMS Sound Scheduling System v5 update
 
-## Files
-- Replace `src/App.tsx`
-- Replace `src/style.css`
+## Included
+- Renames the admin navigation section to **Servant Information**.
+- Adds a data-driven summary dashboard: total/active servants, linked accounts, verification follow-up, church location distribution, CG category, domicile, CG status/leadership roles, incomplete profile indicators, pending serving requests and published service counts.
+- Adds independently collapsible summary sections.
+- Adds detailed servant records that expand inline, with search and filters for church, CG category and account linkage/status.
+- Adds the branded GMS loading animation to the global authentication/profile/schedule loading states, including password recovery and password update loading.
+- Keeps the existing Forgot Password email flow and the TypeScript fixes from the working v4 recovery patch.
 
-## Changes
-- Admin accounts no longer see or need to complete the servant "My profile" form.
-- Admin member overview now includes Team Leader, Coach, CG Leader and leader phone numbers.
-- Members can request a password reset using their registered email and set a new password from the recovery link.
-- All servants can see all published schedules across locations (not drafts), to coordinate swaps.
-- Servant directory marks linked login accounts vs unlinked directory-only records.
-- Search field and bulk-generation controls use responsive layouts to avoid overlap on mobile and narrow screens.
+## Apply the patch
+Replace `src/App.tsx` and `src/style.css` in the existing repository with the files in this patch, then commit and deploy through Vercel.
 
-## Important
-No database migration is required. The existing RLS policies in the v4 schema already allow authenticated users to read published schedules and their assignments. If the live project has older/custom RLS policies, verify those policies before rollout.
+## Database and security notes
+This update uses the existing `servants`, `member_profiles`, `schedules`, and `serving_requests` tables and does not require a schema migration. Summary counts are calculated from rows visible to the current admin under existing Supabase RLS policies.
 
-After replacing files, run:
-`npm install`
-`npm run build`
+This frontend update does **not** by itself implement or certify server-side rate limiting, session policy, admin-only audit enforcement, or additional RLS hardening. Those must be reviewed and tested in Supabase separately; hiding a control in the UI is not an authorization boundary. No user accounts or records are deleted or recreated.
 
-Test password recovery with a real member email. Configure the Supabase Auth Site URL and Redirect URLs to include your deployed Vercel domain.
+## Validation
+The source files are packaged, but a full local `npm run build` could not be run in this environment because dependencies could not be installed. Run `npm install` and `npm run build` in the project before merging. Resolve any build errors before production deployment.
