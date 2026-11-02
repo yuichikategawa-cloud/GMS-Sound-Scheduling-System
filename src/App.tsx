@@ -34,7 +34,6 @@ export default function App() {
   const [modal,setModal] = useState<"schedule"|"person"|null>(null);
   const [editing,setEditing] = useState<ScheduleView|null>(null);
   const [authMode,setAuthMode] = useState<"login"|"signup">("login");
-  const [signupType,setSignupType] = useState<"servant"|"admin">("servant");
   const [email,setEmail] = useState("");
   const [username,setUsername] = useState("");
   const [memberProfile,setMemberProfile] = useState<any>(null);
@@ -105,22 +104,19 @@ export default function App() {
         const usernameValue=String(fd.get("username")).trim().toLowerCase();
         const fullNameValue=String(fd.get("full_name")).trim();
         const emailValue=String(fd.get("email")).trim();
-        let meta:any={username:usernameValue,full_name:fullNameValue,email:emailValue};
-        if(signupType==="servant") {
-          const days=fd.getAll("cg_days").map(String);
-          if(!days.length)throw new Error("Please select at least one CG day.");
-          const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
-          meta={...meta,gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")).trim(),phone_number:String(fd.get("phone_number")).trim(),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")).trim(),cg_days:days,cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:leaderPhones};
-          if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
-          if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
-          if(meta.cg_status==="Team Leader")meta.team_leader_name="";
-          if(meta.cg_status==="Coach")meta.coach_name="";
-          if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
-        }
+        const days=fd.getAll("cg_days").map(String);
+        if(!days.length)throw new Error("Please select at least one CG day.");
+        const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
+        const meta:any={username:usernameValue,full_name:fullNameValue,email:emailValue,gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")).trim(),phone_number:String(fd.get("phone_number")).trim(),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")).trim(),cg_days:days,cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:leaderPhones};
+        if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
+        if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
+        if(meta.cg_status==="Team Leader")meta.team_leader_name="";
+        if(meta.cg_status==="Coach")meta.coach_name="";
+        if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
         const {error}=await supabase.auth.signUp({email:emailValue,password:String(fd.get("password")),options:{data:meta}});
         if(error)throw error;
-        setMessage(signupType==="admin"?"Administrator account created with basic details. For security, it remains a regular account until an existing administrator or trusted project owner promotes it in Supabase. Use the promotion SQL in the README.":"Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
-        setAuthMode("login");setSignupType("servant");
+        setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
+        setAuthMode("login");
       } else {
         const {data,error}=await supabase.functions.invoke("username-login",{body:{username:String(fd.get("username")).trim(),password:String(fd.get("password"))}});
         if(error)throw new Error("Username login is not configured yet. Deploy the username-login Edge Function and try again.");
@@ -326,8 +322,6 @@ export default function App() {
       {authMode==="signup"&&<>
         <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
         <label>Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com"/></label>
-        <label>Account setup<select value={signupType} onChange={e=>setSignupType(e.target.value as "servant"|"admin")}><option value="servant">Servant registration</option><option value="admin">Administrator account setup</option></select></label>
-        {signupType==="admin"?<div className="admin-signup-note"><b>Administrator setup</b><p>Only username, password, full name and email are needed. This does not grant administrator privileges automatically. A trusted administrator must promote the account after registration.</p></div>:<>
         <label>Gender<select name="gender" required defaultValue=""><option value="" disabled>Select gender</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
         <label>Date of birth<input name="date_of_birth" type="date" required/></label>
         <label>NIJ – Nomor Induk Jemaat<input name="nij" required placeholder="Your NIJ"/></label>
@@ -343,12 +337,11 @@ export default function App() {
         <label className={signupCgStatus==="Coach"?"field-disabled":""}>Coach name<input name="coach_name" disabled={signupCgStatus==="Coach"} placeholder="Not required if you are Coach"/></label>
         <label className={signupCgStatus==="CG Leader"?"field-disabled":""}>CG Leader name<input name="cg_leader_name" disabled={signupCgStatus==="CG Leader"} placeholder="Not required if you are CG Leader"/></label>
         <label>Leader phone number(s)<textarea name="leader_phone_numbers" required placeholder="At least one number; separate multiple numbers with commas" rows={2}/></label>
-        </>}
       </>}
       <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
     </form>
-    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setSignupType("servant");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
+    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
     {message&&<p className="message">{message}</p>}
   </div></div>;
 
