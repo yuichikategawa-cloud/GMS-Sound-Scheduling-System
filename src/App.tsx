@@ -34,6 +34,7 @@ export default function App() {
   const [modal,setModal] = useState<"schedule"|"person"|null>(null);
   const [editing,setEditing] = useState<ScheduleView|null>(null);
   const [authMode,setAuthMode] = useState<"login"|"signup">("login");
+  const [signupType,setSignupType] = useState<"servant"|"admin">("servant");
   const [email,setEmail] = useState("");
   const [username,setUsername] = useState("");
   const [memberProfile,setMemberProfile] = useState<any>(null);
@@ -101,25 +102,25 @@ export default function App() {
     const fd=new FormData(e.currentTarget);
     try {
       if(authMode==="signup") {
-        const days=fd.getAll("cg_days").map(String);
-        if(!days.length)throw new Error("Please select at least one CG day.");
-        const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
-        const meta={
-          username:String(fd.get("username")).trim().toLowerCase(), full_name:String(fd.get("full_name")).trim(), email:String(fd.get("email")).trim(),
-          gender:String(fd.get("gender")), date_of_birth:String(fd.get("date_of_birth")), nij:String(fd.get("nij")).trim(), phone_number:String(fd.get("phone_number")).trim(),
-          domicile_area:String(fd.get("domicile_area")), domicile_other:String(fd.get("domicile_other")||""), cg_category:String(fd.get("cg_category")),
-          cg_status:String(fd.get("cg_status")), cg_number:String(fd.get("cg_number")).trim(), cg_days:days, cg_time:String(fd.get("cg_time")),
-          team_leader_name:String(fd.get("team_leader_name")||""), coach_name:String(fd.get("coach_name")||""), cg_leader_name:String(fd.get("cg_leader_name")||""), leader_phone_numbers:leaderPhones
-        };
-        if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
-        if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
-        if(meta.cg_status==="Team Leader")meta.team_leader_name="";
-        if(meta.cg_status==="Coach")meta.coach_name="";
-        if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
-        const {error}=await supabase.auth.signUp({email:meta.email,password:String(fd.get("password")),options:{data:meta}});
+        const usernameValue=String(fd.get("username")).trim().toLowerCase();
+        const fullNameValue=String(fd.get("full_name")).trim();
+        const emailValue=String(fd.get("email")).trim();
+        let meta:any={username:usernameValue,full_name:fullNameValue,email:emailValue};
+        if(signupType==="servant") {
+          const days=fd.getAll("cg_days").map(String);
+          if(!days.length)throw new Error("Please select at least one CG day.");
+          const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
+          meta={...meta,gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")).trim(),phone_number:String(fd.get("phone_number")).trim(),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")).trim(),cg_days:days,cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:leaderPhones};
+          if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
+          if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
+          if(meta.cg_status==="Team Leader")meta.team_leader_name="";
+          if(meta.cg_status==="Coach")meta.coach_name="";
+          if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
+        }
+        const {error}=await supabase.auth.signUp({email:emailValue,password:String(fd.get("password")),options:{data:meta}});
         if(error)throw error;
-        setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
-        setAuthMode("login");
+        setMessage(signupType==="admin"?"Administrator account created with basic details. For security, it remains a regular account until an existing administrator or trusted project owner promotes it in Supabase. Use the promotion SQL in the README.":"Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
+        setAuthMode("login");setSignupType("servant");
       } else {
         const {data,error}=await supabase.functions.invoke("username-login",{body:{username:String(fd.get("username")).trim(),password:String(fd.get("password"))}});
         if(error)throw new Error("Username login is not configured yet. Deploy the username-login Edge Function and try again.");
@@ -318,13 +319,15 @@ export default function App() {
   }
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
-  if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
+  if(authLoading)return <SoundLoader message="Getting the sound system ready..."/>;
   if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     <form onSubmit={submitAuth} className="stack auth-registration">
       <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
       {authMode==="signup"&&<>
         <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
         <label>Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com"/></label>
+        <label>Account setup<select value={signupType} onChange={e=>setSignupType(e.target.value as "servant"|"admin")}><option value="servant">Servant registration</option><option value="admin">Administrator account setup</option></select></label>
+        {signupType==="admin"?<div className="admin-signup-note"><b>Administrator setup</b><p>Only username, password, full name and email are needed. This does not grant administrator privileges automatically. A trusted administrator must promote the account after registration.</p></div>:<>
         <label>Gender<select name="gender" required defaultValue=""><option value="" disabled>Select gender</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
         <label>Date of birth<input name="date_of_birth" type="date" required/></label>
         <label>NIJ – Nomor Induk Jemaat<input name="nij" required placeholder="Your NIJ"/></label>
@@ -340,15 +343,16 @@ export default function App() {
         <label className={signupCgStatus==="Coach"?"field-disabled":""}>Coach name<input name="coach_name" disabled={signupCgStatus==="Coach"} placeholder="Not required if you are Coach"/></label>
         <label className={signupCgStatus==="CG Leader"?"field-disabled":""}>CG Leader name<input name="cg_leader_name" disabled={signupCgStatus==="CG Leader"} placeholder="Not required if you are CG Leader"/></label>
         <label>Leader phone number(s)<textarea name="leader_phone_numbers" required placeholder="At least one number; separate multiple numbers with commas" rows={2}/></label>
+        </>}
       </>}
       <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
     </form>
-    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
+    <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setSignupType("servant");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
     {message&&<p className="message">{message}</p>}
   </div></div>;
 
-  if(!profile)return <div className="center-screen"><div className="loader"/>Loading your profile...</div>;
+  if(!profile)return <SoundLoader message="Preparing your serving workspace..."/>;
 
   return <div className="app-shell">
     <aside className={`sidebar ${mobileNav?"open":""}`}>
@@ -366,7 +370,7 @@ export default function App() {
     </aside>
     <div className="main-area">
       <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
-      <main className="content">
+      <main key={tab} className="content page-enter">
         {memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
           <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
@@ -385,7 +389,7 @@ export default function App() {
           </details>
           <details className="collapsible-panel service-panel" open>
             <summary><span><b>Service details</b><small>{filtered.length} service slots · expand a service to see assignments</small></span><ChevronDown size={20}/></summary>
-            {loading?<div className="empty-state"><div className="loader"/>Loading schedule...</div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
+            {loading?<div className="empty-state"><SoundLoader message="Tuning the schedule..." compact/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
@@ -511,6 +515,9 @@ function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAd
  </form></section>
  {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
 }
+
+
+function SoundLoader({message,compact=false}:{message:string;compact?:boolean}){return <div className={`sound-loader ${compact?"compact":""}`} role="status" aria-live="polite"><div className="sound-loader-mark"><span/><span/><span/><span/><span/><span/><span/></div><b>{message}</b><small>GMS Sound Scheduling System</small></div>}
 
 function SetupScreen(){
  return <div className="auth-page"><div className="auth-card setup-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Connect your Supabase project</h1><p className="subtle">The app is ready. Add your Supabase project credentials to enable shared login and scheduling.</p><ol><li>Create a Supabase project.</li><li>Run <code>supabase/schema.sql</code> in the SQL Editor.</li><li>Copy <code>.env.example</code> to <code>.env</code> and fill in your Project URL and anon/publishable key.</li><li>Restart the development server.</li></ol><p className="message">No database password or service-role key is needed in this frontend.</p></div></div>;
