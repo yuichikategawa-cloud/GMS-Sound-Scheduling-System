@@ -214,7 +214,7 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS WEEKEND OPERATIONS</p><h1>{authMode==="login"?"Welcome back":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome Home":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     <form onSubmit={submitAuth} className="stack">
       {authMode==="signup"&&<label>Full name<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></label>}
       <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
@@ -244,7 +244,7 @@ export default function App() {
       <main className="content">
         {message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
-          <div className="toolbar"><div><h2>Weekend assignments</h2><p className="subtle">Find who is serving, where, and in which role.</p></div><div className="toolbar-actions">{isAdmin&&<button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add service</button>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button></div></div>
+          <div className="toolbar"><div><h2>Service assignments</h2><p className="subtle">Find who is serving, where, and in which role.</p></div><div className="toolbar-actions">{isAdmin&&<button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add service</button>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button></div></div>
           <section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
             <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
