@@ -106,3 +106,34 @@ Ensure each email maps to exactly one active servant record.
 ## WhatsApp
 
 This release keeps WhatsApp notifications as a manual/click-to-send workflow recommendation. Automatic WhatsApp messages require WhatsApp Business Platform/API setup and may incur message/provider charges; no paid API is configured in this project.
+
+## v4 update: username login and member profiles
+
+This release adds username-based sign-in, member registration/profile details, a self-service profile page, a three-month profile verification reminder, past-schedule hiding, and admin-only schedule-history CSV export.
+
+### Existing Supabase project upgrade
+1. Run `supabase/migrations_20261104.sql` once in Supabase SQL Editor, after the v3 migrations.
+2. Deploy the username login Edge Function from the project root:
+   ```bash
+   supabase functions deploy username-login --no-verify-jwt
+   ```
+3. Ensure the function has the standard Supabase secrets configured. `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are available as Edge Function environment variables in standard Supabase projects. Never put the service-role key in the frontend or GitHub.
+4. Keep Supabase Auth email confirmation enabled if you want registered email ownership verified. Users enter their username at login, but the account's registered email is still used internally by Supabase Auth.
+5. The first administrator role remains managed through the existing secure SQL promotion process.
+
+### Username login security
+The browser sends the username and password to the `username-login` Edge Function over HTTPS. The function performs a private username lookup with the server-only service-role key, then asks Supabase Auth to verify the password. It returns only the normal short-lived Supabase session tokens. Passwords are never stored in the application database. Supabase Auth hashes passwords; passwords should be hashed rather than reversibly encrypted. The service-role key must remain server-side. The function returns the same error for unknown usernames and incorrect passwords to reduce account enumeration.
+
+Deploy the function with `--no-verify-jwt` because sign-in happens before a user session exists. Protect this public endpoint with Supabase Auth rate limits and, for larger deployments, add an IP/device rate limiter or CAPTCHA before production.
+
+### Member profile access
+`member_profiles` uses Row Level Security: members can read/update only their own profile; administrators can read the member directory. Registration metadata is copied by the Auth trigger. New registrations also create/link their servant directory record to the Auth user automatically. Existing accounts created before v4 need their username and member profile populated by an admin-assisted migration or profile-completion process.
+
+### Notes
+- NIJ means Nomor Induk Jemaat and is unique in the member profile table.
+- CG days are stored as an array, allowing multiple selections.
+- Leader phone numbers are stored as an array; at least one is required.
+- Past schedules are hidden from the normal schedule view, not deleted. Admins can download past schedule history as CSV.
+- The three-month reminder is shown to the signed-in member when their last verification is older than 90 days.
+
+For the one-time username assignment and profile onboarding steps for accounts that existed before v4, see `supabase/EXISTING_USERS_MIGRATION.md`. Assign usernames before switching users to the username login screen.
