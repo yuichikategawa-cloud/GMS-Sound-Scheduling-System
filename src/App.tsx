@@ -327,24 +327,6 @@ export default function App() {
     }catch(e){setMessage(`Delete all failed: ${errorText(e)}`);}
     finally{setLoading(false);}
   }
-  async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
-    if(!supabase||!isAdmin||!locationId)return;
-    const location=locations.find(l=>l.id===locationId);
-    if(!confirm(`${status==="published"?"Publish":"Unpublish"} ALL schedules for ${location?.name??"this church"}?`))return;
-    setLoading(true);setScheduleError("");setMessage("");
-    try{const {error}=await supabase.from("schedules").update({status}).eq("location_id",locationId);if(error)throw error;await loadData();setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}.`);}
-    catch(e){setMessage(`Bulk update failed: ${errorText(e)}`);}finally{setLoading(false);}
-  }
-  async function deleteAllLocationSchedules(locationId:string){
-    if(!supabase||!isAdmin||!locationId)return;
-    const location=locations.find(l=>l.id===locationId);
-    const typed=prompt(`Permanently delete ALL schedules and assignments for ${location?.name??"this church"}? This cannot be undone.\n\nType exactly: I do understand`);
-    if(typed!=="I do understand"){if(typed!==null)setMessage("Delete all cancelled: confirmation text did not match.");return;}
-    if(!confirm(`Final confirmation: delete every schedule for ${location?.name??"this church"}?`))return;
-    setLoading(true);setScheduleError("");setMessage("");
-    try{const {error}=await supabase.from("schedules").delete().eq("location_id",locationId);if(error)throw error;await loadData();setMessage(`All schedules for ${location?.name??"this church"} have been deleted.`);}
-    catch(e){setMessage(`Delete all failed: ${errorText(e)}`);}finally{setLoading(false);}
-  }
   async function addLocation(){
     if(!supabase||!isAdmin)return;
     const name=prompt("Enter the new church location name:");if(!name?.trim())return;
