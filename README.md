@@ -117,3 +117,32 @@ The `assignments` table has unique constraints to prevent assigning the same rol
 ## Daily overview
 
 The Schedule tab includes a daily summary grouped by service date and church location. It shows each service time, FOH/Monitor/Assistant assignments, and required-role coverage (FOH and Monitor). The summary follows the active schedule filters.
+
+## Updates in the November 2026 dashboard build
+
+- Daily overview and service details are expandable/collapsible.
+- FOH, Monitor and Assistant labels and servant names use larger, higher-contrast text.
+- Admin navigation includes Availability and Statistics.
+- Servants can submit their own availability once their login is linked to their servant directory record; admins can manage all records. Statuses: Available, Unavailable, Prefer not to serve, with optional notes.
+- Statistics summarize assignments by servant, role and church location, following the active schedule filters.
+- Cross-location same-day double-booking is checked in the UI and enforced by a Supabase database trigger.
+
+### Existing Supabase project: apply the migration
+
+If you already ran the original `supabase/schema.sql`, run `supabase/migrations_20261102.sql` once in Supabase Dashboard → SQL Editor. This creates the availability table and its access policies and installs the database-level assignment conflict guard. Do not rerun the original schema just to get these updates.
+
+### Fresh Supabase project
+
+For a new project, run the updated complete `supabase/schema.sql` as usual. It now includes the availability and conflict-protection setup.
+
+### Link a servant login for self-service availability
+
+Each servant can manage only their own availability after an administrator links their existing Supabase login to their servant directory record. Run this SQL for each person, replacing the email and exact servant name:
+
+```sql
+update public.servants
+set auth_user_id = (select id from auth.users where email = 'servant@example.com')
+where full_name = 'Servant Full Name';
+```
+
+Make sure the email exists in Supabase Authentication → Users and that the servant name matches exactly. Admins can manage availability for everyone; linked servants can create, update and delete only their own records.
