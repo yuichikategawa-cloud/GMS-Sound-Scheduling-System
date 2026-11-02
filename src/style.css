@@ -161,3 +161,23 @@
 .church-group-count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:20px;background:#e9eaff;color:#4544b8;font-size:12px;font-weight:850}
 .church-schedule-group .schedule-grid{padding-top:0}
 @media(max-width:760px){.church-schedule-group{padding:11px}.church-schedule-heading h3{font-size:18px}}
+
+/* Personal assignment cards and church-wide admin actions */
+.church-bulk-actions,.my-upcoming-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px 18px;margin:14px 0;box-shadow:var(--shadow)}
+.church-bulk-actions>div:first-child p,.my-upcoming-panel-head p{margin:4px 0 0}
+.church-bulk-controls{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;margin-top:12px}
+.church-bulk-controls label{min-width:220px;flex:1}
+.church-bulk-controls button{white-space:nowrap}
+.my-upcoming-panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.my-upcoming-panel-head h3{margin:0;font-size:17px}
+.my-upcoming-panel-head>span{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+.my-upcoming-location{margin-top:14px}
+.my-upcoming-location h4{margin:0 0 8px;font-size:15px;color:var(--ink)}
+.my-upcoming-list{display:grid;gap:8px}
+.my-upcoming-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px;border:1px solid var(--line);border-radius:11px;background:#fbfcff}
+.my-upcoming-info{display:grid;gap:3px;min-width:0}
+.my-upcoming-info b{font-size:14px}
+.my-upcoming-info span,.my-upcoming-info small{font-size:12px;color:var(--muted)}
+.my-upcoming-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.my-upcoming-empty{font-size:13px;color:var(--muted);margin:12px 0 2px}
+@media(max-width:720px){.church-bulk-controls{align-items:stretch}.church-bulk-controls label{min-width:100%;flex-basis:100%}.my-upcoming-item{align-items:flex-start;flex-direction:column}.my-upcoming-actions{justify-content:flex-start}}

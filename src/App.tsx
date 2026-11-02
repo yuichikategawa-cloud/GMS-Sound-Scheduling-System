@@ -228,7 +228,7 @@ export default function App() {
       const {error:delError}=await supabase.from("assignments").delete().eq("schedule_id",scheduleId);if(delError)throw delError;
       const rows=ROLES.filter(r=>selected[r]).map(r=>({schedule_id:scheduleId,servant_id:selected[r],role:r,confirmation_status:"pending"}));
       if(rows.length){const {error}=await supabase.from("assignments").insert(rows);if(error)throw error;}
-      setModal(null);setEditing(null);await loadData();
+      setScheduleError("");setModal(null);setEditing(null);await loadData();
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
@@ -297,6 +297,53 @@ export default function App() {
     if(!supabase||!isAdmin)return;
     const {error}=await supabase.from("schedules").update({status:s.status==="published"?"draft":"published"}).eq("id",s.id);
     if(error)setMessage(error.message);else {setMessage(s.status==="published"?"Schedule moved back to draft.":"Schedule published. Servants can now see and confirm it.");await loadData();}
+  }
+  async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
+    if(!supabase||!isAdmin||!locationId)return;
+    const location=locations.find(l=>l.id===locationId);
+    const action=status==="published"?"publish":"unpublish";
+    if(!confirm(`${action==="publish"?"Publish":"Unpublish"} ALL schedules for ${location?.name??"this church"}?`))return;
+    setLoading(true);setScheduleError("");setMessage("");
+    try{
+      const {error}=await supabase.from("schedules").update({status}).eq("location_id",locationId);
+      if(error)throw error;
+      await loadData();
+      setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}.`);
+    }catch(e){setMessage(`Bulk ${action} failed: ${errorText(e)}`);}
+    finally{setLoading(false);}
+  }
+  async function deleteAllLocationSchedules(locationId:string){
+    if(!supabase||!isAdmin||!locationId)return;
+    const location=locations.find(l=>l.id===locationId);
+    const confirmation=prompt(`This will permanently delete ALL schedules and their assignments for ${location?.name??"this church"}. This cannot be undone.\n\nType exactly: I do understand`);
+    if(confirmation!=="I do understand"){if(confirmation!==null)setMessage("Delete all cancelled: confirmation text did not match.");return;}
+    if(!confirm(`Final confirmation: permanently delete every schedule for ${location?.name??"this church"}?`))return;
+    setLoading(true);setScheduleError("");setMessage("");
+    try{
+      const {error}=await supabase.from("schedules").delete().eq("location_id",locationId);
+      if(error)throw error;
+      await loadData();
+      setMessage(`All schedules for ${location?.name??"this church"} have been deleted.`);
+    }catch(e){setMessage(`Delete all failed: ${errorText(e)}`);}
+    finally{setLoading(false);}
+  }
+  async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
+    if(!supabase||!isAdmin||!locationId)return;
+    const location=locations.find(l=>l.id===locationId);
+    if(!confirm(`${status==="published"?"Publish":"Unpublish"} ALL schedules for ${location?.name??"this church"}?`))return;
+    setLoading(true);setScheduleError("");setMessage("");
+    try{const {error}=await supabase.from("schedules").update({status}).eq("location_id",locationId);if(error)throw error;await loadData();setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}.`);}
+    catch(e){setMessage(`Bulk update failed: ${errorText(e)}`);}finally{setLoading(false);}
+  }
+  async function deleteAllLocationSchedules(locationId:string){
+    if(!supabase||!isAdmin||!locationId)return;
+    const location=locations.find(l=>l.id===locationId);
+    const typed=prompt(`Permanently delete ALL schedules and assignments for ${location?.name??"this church"}? This cannot be undone.\n\nType exactly: I do understand`);
+    if(typed!=="I do understand"){if(typed!==null)setMessage("Delete all cancelled: confirmation text did not match.");return;}
+    if(!confirm(`Final confirmation: delete every schedule for ${location?.name??"this church"}?`))return;
+    setLoading(true);setScheduleError("");setMessage("");
+    try{const {error}=await supabase.from("schedules").delete().eq("location_id",locationId);if(error)throw error;await loadData();setMessage(`All schedules for ${location?.name??"this church"} have been deleted.`);}
+    catch(e){setMessage(`Delete all failed: ${errorText(e)}`);}finally{setLoading(false);}
   }
   async function addLocation(){
     if(!supabase||!isAdmin)return;
@@ -412,9 +459,11 @@ export default function App() {
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
           {!isAdmin&&<MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id??""}/>}
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
+          {!isAdmin&&<MyUpcomingAssignments items={[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))} servantId={myServant?.id??""} onConfirm={confirmAssignment} onRequest={submitServingRequest}/>}
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className="toolbar-actions">{isAdmin&&<><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           {isAdmin&&<section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>}
+          {isAdmin&&<ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>}
           <section className="filter-panel"><div className="filter-title"><Search size={17}/> <b>Filter schedule</b></div><div className="filters">
             <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
             <label><span>Church location</span><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
@@ -429,17 +478,27 @@ export default function App() {
           <details className="collapsible-panel service-panel" open>
             <summary><span><b>Service details</b><small>{filtered.length} service slots · expand a service to see assignments</small></span><ChevronDown size={20}/></summary>
             {loading?<div className="empty-state"><GmsLoader label="Loading schedule…"/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
-              <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
+              <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
         </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
-    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
+    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
   </div>;
 }
 
+
+function ChurchBulkActions({locations,disabled,onPublish,onUnpublish,onDelete}:{locations:Location[];disabled:boolean;onPublish:(id:string)=>void;onUnpublish:(id:string)=>void;onDelete:(id:string)=>void}){
+ const [locationId,setLocationId]=useState("");
+ useEffect(()=>{if(!locationId&&locations.length)setLocationId(locations[0].id);else if(locationId&&!locations.some(l=>l.id===locationId))setLocationId(locations[0]?.id??"");},[locations,locationId]);
+ return <section className="church-bulk-actions"><div><b>Church-wide schedule actions</b><p className="subtle">Publish, unpublish or delete all service slots for one church location.</p></div><div className="church-bulk-controls"><label><span>Church location</span><select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!locations.length||disabled}>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label><button className="btn primary" disabled={!locationId||disabled} onClick={()=>onPublish(locationId)}>Publish all</button><button className="btn secondary" disabled={!locationId||disabled} onClick={()=>onUnpublish(locationId)}>Unpublish all</button><button className="btn danger" disabled={!locationId||disabled} onClick={()=>onDelete(locationId)}><Trash2 size={14}/> Delete all</button></div></section>;
+}
+function MyUpcomingAssignments({items,servantId,onConfirm,onRequest}:{items:ScheduleView[];servantId:string;onConfirm:(s:ScheduleView,status:"confirmed"|"declined")=>void;onRequest:(s:ScheduleView,kind:"replacement"|"swap")=>void}){
+ const grouped=[...new Map(items.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
+ return <section className="my-upcoming-panel"><div className="my-upcoming-panel-head"><div><h3>My upcoming serving assignments</h3><p className="subtle">Confirm your upcoming service or request a replacement or swap.</p></div><span>{items.length} upcoming</span></div>{!items.length?<p className="my-upcoming-empty">You have no upcoming published assignments.</p>:grouped.map(location=><div className="my-upcoming-location" key={location.id}><h4>{location.name}</h4><div className="my-upcoming-list">{items.filter(s=>s.location_id===location.id).map(s=>{const own=s.assignments.find(a=>a.servant_id===servantId);return <article className="my-upcoming-item" key={s.id}><div className="my-upcoming-info"><b>{fmtDate(s.service_date)} · {s.service_name}</b><span>{shortTime(s.start_time)}–{shortTime(s.end_time)} · Your role: {own?.role??"Assigned"}</span><small>Confirmation: {own?.confirmation_status??"pending"}</small></div><div className="my-upcoming-actions"><button className="btn tiny primary" onClick={()=>onConfirm(s,"confirmed")}>Accept</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"swap")}>Request swap</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"replacement")}>Request replacement</button></div></article>;})}</div></div>)}</section>;
+}
 
 function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;upcoming:ScheduleView|null;servantId:string}){
  const myRole=upcoming?.assignments.find(a=>a.servant_id===servantId)?.role;
