@@ -33,7 +33,7 @@ export default function App() {
   const [toDate,setToDate] = useState("");
   const [modal,setModal] = useState<"schedule"|"person"|null>(null);
   const [editing,setEditing] = useState<ScheduleView|null>(null);
-  const [authMode,setAuthMode] = useState<"login"|"signup">("login");
+  const [authMode,setAuthMode] = useState<"login"|"signup"|"reset">("login");
   const [email,setEmail] = useState("");
   const [username,setUsername] = useState("");
   const [memberProfile,setMemberProfile] = useState<any>(null);
@@ -434,7 +434,7 @@ function DailySummary({date,items}:{date:string;items:ScheduleView[]}){
  </details>;
 }
 
-function Stat({label,value}:{label:string;value:number}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
+function Stat({label,value}:{label:string;value:number|string}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
 function ScheduleCard({item,isAdmin,onEdit,onDelete,onPublish,myServantId,onConfirm,onRequest}:{item:ScheduleView;isAdmin:boolean;onEdit:()=>void;onDelete:()=>void;onPublish:()=>void;myServantId:string;onConfirm:(status:"confirmed"|"declined")=>void;onRequest:(kind:"replacement"|"swap")=>void}){
  const own=item.assignments.find(a=>a.servant_id===myServantId);
  return <details className="schedule-card" open><summary className="schedule-card-summary"><div><div className="date-text">{fmtDate(item.service_date)} <span className={`status-chip ${item.status||"draft"}`}>{item.status||"draft"}</span></div><div className="location-text">{item.location_name}</div><div className="service-title">{item.service_name}</div><div className="time-text">{shortTime(item.start_time)} – {shortTime(item.end_time)}</div></div><ChevronDown size={19}/></summary>
