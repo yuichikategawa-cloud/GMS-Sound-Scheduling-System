@@ -137,3 +137,38 @@ Deploy the function with `--no-verify-jwt` because sign-in happens before a user
 - The three-month reminder is shown to the signed-in member when their last verification is older than 90 days.
 
 For the one-time username assignment and profile onboarding steps for accounts that existed before v4, see `supabase/EXISTING_USERS_MIGRATION.md`. Assign usernames before switching users to the username login screen.
+
+
+## Administrator account provisioning (updated)
+
+Public registration is **servant-only**. The website no longer displays an administrator registration option. Every account created through the public sign-up form receives the default `servant` role.
+
+To create an administrator, use the Supabase project owner workflow instead:
+
+1. In Supabase Dashboard, open **Authentication → Users → Add user**. Create the account with the administrator's email and a temporary/initial password. This creates the Auth identity using Supabase's supported mechanism; do not insert rows directly into `auth.users` with SQL.
+2. Open **SQL Editor** and run the following, replacing the email address.
+
+   ```sql
+   update public.profiles p
+   set role = 'admin'
+   from auth.users u
+   where p.id = u.id
+     and lower(u.email) = lower('admin@example.com');
+   ```
+
+3. Verify the role:
+
+   ```sql
+   select u.email, p.username, p.role
+   from auth.users u
+   join public.profiles p on p.id = u.id
+   where lower(u.email) = lower('admin@example.com');
+   ```
+
+4. Have the administrator sign in through the normal username login. Ensure the account has a unique username in `public.profiles`; assign one through the authorized admin workflow/SQL if it was not populated during account provisioning.
+
+**Important:** Do not create Auth users by manually inserting into `auth.users`; Supabase manages internal password hashes, identity records and required metadata. Do not expose the service-role key in the browser or commit it to GitHub. Only trusted project owners should be able to promote accounts.
+
+## Loading experience
+
+Loading states now use an animated audio equalizer branded for GMS Sound Scheduling System. Page content also uses a short fade/slide transition. Reduced-motion preferences are respected.
