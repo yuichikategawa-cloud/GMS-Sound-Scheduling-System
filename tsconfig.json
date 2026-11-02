@@ -2,3 +2,9 @@
   "files": [],
   "references": [{ "path": "./tsconfig.app.json" }]
 }
+{
+  "compilerOptions": {
+    ...
+  },
+  "include": ["src", "./env.d.ts"]
+}
