@@ -20,7 +20,7 @@ export default function App() {
   const [locations,setLocations] = useState<Location[]>([]);
   const [servants,setServants] = useState<Servant[]>([]);
   const [templates,setTemplates] = useState<any[]>([]);
-  const [tab,setTab] = useState<"schedule"|"people"|"availability"|"statistics"|"audit"|"profile">("schedule");
+  const [tab,setTab] = useState<"schedule"|"people"|"members"|"availability"|"statistics"|"audit"|"profile">("schedule");
   const [availability,setAvailability] = useState<any[]>([]);
   const [requests,setRequests] = useState<any[]>([]);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
@@ -39,7 +39,6 @@ export default function App() {
   const [memberProfile,setMemberProfile] = useState<any>(null);
   const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
   const [password,setPassword] = useState("");
-  const [resetEmail,setResetEmail] = useState("");
   const [recoveryMode,setRecoveryMode] = useState(false);
   const [newPassword,setNewPassword] = useState("");
   const [fullName,setFullName] = useState("");
@@ -131,11 +130,13 @@ export default function App() {
     finally{setAuthLoading(false);}
   }
 
-  async function requestPasswordReset(){
-    if(!supabase){setMessage("Supabase is not configured.");return;}
-    if(!resetEmail.trim()){setMessage("Enter the email address registered to your account to receive a password reset link.");return;}
-    const {error}=await supabase.auth.resetPasswordForEmail(resetEmail.trim(),{redirectTo:`${window.location.origin}/`});
-    setMessage(error?error.message:"If the email is registered, a password reset link will be sent. Please check your inbox and spam folder.");
+
+  async function adminSendPasswordReset(emailAddress:string){
+    if(!isAdmin||!supabase)return;
+    if(!emailAddress){setMessage("This member has no registered email address.");return;}
+    if(!confirm(`Send a password reset email to ${emailAddress}?`))return;
+    const {error}=await supabase.auth.resetPasswordForEmail(emailAddress,{redirectTo:`${window.location.origin}/`});
+    setMessage(error?`Could not send reset email: ${error.message}`:`Password reset email requested for ${emailAddress}.`);
   }
 
   async function signOut(){await supabase?.auth.signOut();setProfile(null);setSession(null);}
@@ -351,7 +352,6 @@ export default function App() {
       </>}
       <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
       <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
-      {authMode==="login"&&<div className="password-reset-box"><label>Forgot password? Enter your registered email<input type="email" value={resetEmail} onChange={e=>setResetEmail(e.target.value)} placeholder="you@example.com"/></label><button type="button" className="link-btn" onClick={requestPasswordReset}>Send password reset link</button></div>}
     </form>
     <button className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>
     {message&&<p className="message">{message}</p>}
@@ -368,13 +368,14 @@ export default function App() {
       {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
       {isAdmin&&<>
         <button className={`nav-item ${tab==="people"?"active":""}`} onClick={()=>{setTab("people");setMobileNav(false);}}><Users size={18}/> Servant directory</button>
+        <button className={`nav-item ${tab==="members"?"active":""}`} onClick={()=>{setTab("members");setMobileNav(false);}}><Users size={18}/> Member information</button>
         <button className={`nav-item ${tab==="statistics"?"active":""}`} onClick={()=>{setTab("statistics");setMobileNav(false);}}><BarChart3 size={18}/> Statistics</button>
         <button className={`nav-item ${tab==="audit"?"active":""}`} onClick={()=>{setTab("audit");setMobileNav(false);}}><ClipboardCheck size={18}/> Audit log</button>
       </>}
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="people"?"Servant directory":tab==="members"?"Member information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main key={tab} className="content page-enter">
         {memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
@@ -398,7 +399,7 @@ export default function App() {
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
           {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
-        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:<MemberProfilePanel profile={memberProfile} isAdmin={isAdmin} directory={memberDirectory} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>}
+        </>:tab==="people"?<PeoplePanel servants={servants} isAdmin={isAdmin} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="members"&&isAdmin?<AdminMemberPanel directory={memberDirectory} servants={servants} onReset={adminSendPasswordReset}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:<MemberProfilePanel profile={memberProfile} isAdmin={isAdmin} directory={memberDirectory} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>}
       </main>
     </div>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setModal(null);setEditing(null);}} onSave={saveSchedule}/>}
@@ -500,6 +501,12 @@ function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants
   <div className="list-heading"><h2>Assignments by servant</h2><span>{rows.length} servants</span></div>
   <div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div>
  </>;
+}
+
+function AdminMemberPanel({directory,servants,onReset}:{directory:any[];servants:Servant[];onReset:(email:string)=>void}){
+ const [query,setQuery]=useState("");
+ const rows=directory.filter(p=>[p.full_name,p.email,p.nij,p.cg_category,p.cg_status].some(v=>String(v??"").toLowerCase().includes(query.toLowerCase())));
+ return <><div className="toolbar"><div><h2>All servant member information</h2><p className="subtle">Admin-only directory of member profiles, CG leadership and contact information.</p></div><span className="role-tag">{directory.length} profiles</span></div><section className="filter-panel member-admin-filter"><label className="search-field"><span>Search members</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Name, email, NIJ or CG"/></label></section><div className="member-admin-grid">{rows.map(p=>{const servant=servants.find(s=>s.auth_user_id===p.user_id);return <article className="member-admin-card" key={p.user_id}><div className="member-admin-head"><div><b>{p.full_name||"Unnamed member"}</b><small>{p.email||"No email recorded"} · {servant?.auth_user_id?"Account linked":"No linked servant record"}</small></div><button className="btn tiny secondary" disabled={!p.email} onClick={()=>onReset(p.email)}>Send password reset</button></div><div className="member-admin-details"><span><b>NIJ</b>{p.nij||"—"}</span><span><b>Phone</b>{p.phone_number||"—"}</span><span><b>Gender / DOB</b>{[p.gender,p.date_of_birth].filter(Boolean).join(" · ")||"—"}</span><span><b>Domicile</b>{[p.domicile_area,p.domicile_other].filter(Boolean).join(" · ")||"—"}</span><span><b>CG</b>{[p.cg_category,p.cg_number].filter(Boolean).join(" · ")||"—"}</span><span><b>CG status / days / time</b>{[p.cg_status,(p.cg_days??[]).join(", "),p.cg_time].filter(Boolean).join(" · ")||"—"}</span><span><b>Team Leader</b>{p.team_leader_name||"—"}</span><span><b>Coach</b>{p.coach_name||"—"}</span><span><b>CG Leader</b>{p.cg_leader_name||"—"}</span><span><b>Leader phone(s)</b>{(p.leader_phone_numbers??[]).join(", ")||"—"}</span></div></article>})}{rows.length===0&&<div className="empty-state">No member profiles found.</div>}</div></>;
 }
 
 function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
