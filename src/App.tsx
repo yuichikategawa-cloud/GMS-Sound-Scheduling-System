@@ -9,6 +9,14 @@ const today = () => new Date().toLocaleDateString("en-CA");
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
 const shortTime = (t: string) => t?.slice(0,5) ?? "";
 const errorText = (e: unknown) => e instanceof Error ? e.message : String(e);
+const displayList = (v: unknown) => {
+  if (Array.isArray(v)) return v.filter(Boolean).join(", ");
+  if (typeof v === "string") {
+    try { const parsed = JSON.parse(v); if (Array.isArray(parsed)) return parsed.filter(Boolean).join(", "); } catch {}
+    return v;
+  }
+  return "";
+};
 
 export default function App() {
   const [session,setSession] = useState<any>(null);
@@ -79,7 +87,13 @@ export default function App() {
         supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100),
         supabase.from("member_profiles").select("*")
       ]);
-      for (const r of [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes,memberRes]) if (r.error) throw r.error;
+      // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
+      // when their RLS policy or migration is not yet configured.
+      for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
+      const optionalErrors = [tempRes,availRes,requestRes,settingRes,auditRes,memberRes]
+        .filter((r:any) => r.error)
+        .map((r:any) => r.error.message);
+      if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
       const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
       const assignments=(assignRes.data??[]) as Assignment[];
       const byId=new Map(people.map(p=>[p.id,p.full_name]));
@@ -90,7 +104,11 @@ export default function App() {
           id:a.id,role:a.role,servant_id:a.servant_id,servant_name:byId.get(a.servant_id)??"Unknown servant",confirmation_status:a.confirmation_status??"pending"
         }))
       })) as ScheduleView[];
-      setLocations(locs);setServants(people);setTemplates(tempRes.data??[]);setSchedules(mapped);setAvailability(availRes.data??[]);setRequests(requestRes.data??[]);setAvailabilityDeadline(settingRes.data?.value??"");setAuditLogs(auditRes.data??[]);setMemberDirectory(memberRes.data??[]);setMemberProfile((memberRes.data??[]).find((x:any)=>x.user_id===session.user.id)??null);
+      const safeMemberRows = memberRes.error ? [] : (memberRes.data ?? []);
+      setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
+      setAvailability(availRes.error?[]:(availRes.data??[]));setRequests(requestRes.error?[]:(requestRes.data??[]));
+      setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
+      setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }
   }
@@ -506,8 +524,8 @@ function ServantInformationPanel({servants,memberDirectory,locations,schedules,r
   {section("health","5. Profile health","Records requiring follow-up or verification",<div className="servant-health-list"><div><span>Verified within 90 days</span><b>{verified}</b></div><div><span>Verification overdue / not recorded</span><b>{overdue}</b></div><div><span>Missing phone number</span><b>{missingPhone}</b></div><div><span>Missing CG information</span><b>{missingCg}</b></div></div>)}
   <div className="servant-directory-block"><div className="servant-directory-heading"><div><h3>Detailed servant information</h3><p className="subtle">Expand an individual record to view personal, CG, leadership and account details.</p></div><b>{filtered.length} records</b></div>
    <div className="servant-filters"><input aria-label="Search servant" placeholder="Search name, username, email, phone or CG" value={query} onChange={e=>setQuery(e.target.value)}/><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select><select value={cgFilter} onChange={e=>setCgFilter(e.target.value)}><option value="">All CG categories</option>{["AOG Teen","AOG Youth","Young Adult","Family","Senior"].map(x=><option key={x}>{x}</option>)}</select><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">All accounts/status</option><option value="linked">Linked account</option><option value="unlinked">Not linked</option><option value="active">Active only</option></select></div>
-   <div className="servant-record-list">{filtered.map(({servant:s,profile:m})=><article className="servant-record" key={s.id}><button className="servant-record-summary" onClick={()=>toggle(s.id)}><span className="servant-avatar">{s.full_name.slice(0,1).toUpperCase()}</span><span className="servant-record-name"><b>{s.full_name}</b><small>{value({servant:s,profile:m},"cg_category")||"CG not recorded"} · {servantLocationNames(s.id).join(", ")||"No serving assignment"}</small></span><span className={`servant-account-chip ${s.auth_user_id?"linked":"unlinked"}`}>{s.auth_user_id?"Linked":"Not linked"}</span><ChevronDown size={18}/></button>
-    {expanded.includes(s.id)&&<div className="servant-record-detail"><div><h4>Personal information</h4><p><b>Email:</b> {m?.email||"—"}</p><p><b>Gender:</b> {value({servant:s,profile:m},"gender")||"—"}</p><p><b>Date of birth:</b> {value({servant:s,profile:m},"date_of_birth")||"—"}</p><p><b>NIJ:</b> {value({servant:s,profile:m},"nij")||"—"}</p><p><b>Phone:</b> {value({servant:s,profile:m},"phone_number")||"—"}</p><p><b>Domicile:</b> {[value({servant:s,profile:m},"domicile_area"),value({servant:s,profile:m},"domicile_other")].filter(Boolean).join(" · ")||"—"}</p></div><div><h4>CG information</h4><p><b>Category:</b> {value({servant:s,profile:m},"cg_category")||"—"}</p><p><b>Status:</b> {value({servant:s,profile:m},"cg_status")||"—"}</p><p><b>CG number:</b> {value({servant:s,profile:m},"cg_number")||"—"}</p><p><b>Days:</b> {(value({servant:s,profile:m},"cg_days")||[]).join?.(", ")||"—"}</p><p><b>Time:</b> {value({servant:s,profile:m},"cg_time")||"—"}</p></div><div><h4>Leadership & account</h4><p><b>Team Leader:</b> {value({servant:s,profile:m},"team_leader_name")||"—"}</p><p><b>Coach:</b> {value({servant:s,profile:m},"coach_name")||"—"}</p><p><b>CG Leader:</b> {value({servant:s,profile:m},"cg_leader_name")||"—"}</p><p><b>Leader phone(s):</b> {(value({servant:s,profile:m},"leader_phone_numbers")||[]).join?.(", ")||"—"}</p><p><b>Account:</b> {m?.username||"No username linked"}</p><p><b>Profile verified:</b> {m?.last_verified_at?new Date(m.last_verified_at).toLocaleDateString():"Not yet verified"}</p><p><b>Serving status:</b> {s.active?"Active":"Inactive"}</p>{<button className={`btn tiny ${s.active?"secondary":"primary"}`} onClick={()=>onToggle(s)}>{s.active?"Deactivate servant":"Activate servant"}</button>}</div></div>}
+   <div className="servant-record-list">{filtered.length===0?<div className="servant-empty-state"><b>No servant records to display</b><p>{servants.length===0?"No servant rows were returned. Check the Supabase servants table and its SELECT policy for the admin role.":"No servants match the current search or filters."}</p><button className="btn secondary" onClick={()=>{setQuery("");setLocationFilter("");setCgFilter("");setStatusFilter("");}}>Clear filters</button></div>:filtered.map(({servant:s,profile:m})=><article className="servant-record" key={s.id}><button className="servant-record-summary" onClick={()=>toggle(s.id)}><span className="servant-avatar">{s.full_name.slice(0,1).toUpperCase()}</span><span className="servant-record-name"><b>{s.full_name}</b><small>{value({servant:s,profile:m},"cg_category")||"CG not recorded"} · {servantLocationNames(s.id).join(", ")||"No serving assignment"}</small></span><span className={`servant-account-chip ${s.auth_user_id?"linked":"unlinked"}`}>{s.auth_user_id?"Linked":"Not linked"}</span><ChevronDown size={18}/></button>
+    {expanded.includes(s.id)&&<div className="servant-record-detail"><div><h4>Personal information</h4><p><b>Email:</b> {m?.email||"—"}</p><p><b>Gender:</b> {value({servant:s,profile:m},"gender")||"—"}</p><p><b>Date of birth:</b> {value({servant:s,profile:m},"date_of_birth")||"—"}</p><p><b>NIJ:</b> {value({servant:s,profile:m},"nij")||"—"}</p><p><b>Phone:</b> {value({servant:s,profile:m},"phone_number")||"—"}</p><p><b>Domicile:</b> {[value({servant:s,profile:m},"domicile_area"),value({servant:s,profile:m},"domicile_other")].filter(Boolean).join(" · ")||"—"}</p></div><div><h4>CG information</h4><p><b>Category:</b> {value({servant:s,profile:m},"cg_category")||"—"}</p><p><b>Status:</b> {value({servant:s,profile:m},"cg_status")||"—"}</p><p><b>CG number:</b> {value({servant:s,profile:m},"cg_number")||"—"}</p><p><b>Days:</b> {displayList(value({servant:s,profile:m},"cg_days"))||"—"}</p><p><b>Time:</b> {value({servant:s,profile:m},"cg_time")||"—"}</p></div><div><h4>Leadership & account</h4><p><b>Team Leader:</b> {value({servant:s,profile:m},"team_leader_name")||"—"}</p><p><b>Coach:</b> {value({servant:s,profile:m},"coach_name")||"—"}</p><p><b>CG Leader:</b> {value({servant:s,profile:m},"cg_leader_name")||"—"}</p><p><b>Leader phone(s):</b> {displayList(value({servant:s,profile:m},"leader_phone_numbers"))||"—"}</p><p><b>Account:</b> {m?.username||"No username linked"}</p><p><b>Profile verified:</b> {m?.last_verified_at?new Date(m.last_verified_at).toLocaleDateString():"Not yet verified"}</p><p><b>Serving status:</b> {s.active?"Active":"Inactive"}</p>{<button className={`btn tiny ${s.active?"secondary":"primary"}`} onClick={()=>onToggle(s)}>{s.active?"Deactivate servant":"Activate servant"}</button>}</div></div>}
    </article>)}</div>
   </div>
  </div>;

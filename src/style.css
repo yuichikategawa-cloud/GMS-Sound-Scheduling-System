@@ -132,3 +132,8 @@
 @keyframes gms-eq-pulse{0%{transform:scaleY(.58);opacity:.72}100%{transform:scaleY(1);opacity:1}}
 @media(max-width:600px){.gms-loader-screen{padding:14px}.gms-loader-panel{border-radius:20px;padding:26px 18px 22px}.gms-loader-brand{margin:8px 0 28px}.gms-equalizer{height:140px;gap:9px;margin-bottom:25px}.gms-equalizer span{width:14px}.gms-loader-panel h2{margin-bottom:18px}.gms-loader-caption{margin-bottom:30px}.gms-loader-divider{margin-bottom:28px}}
 @media(prefers-reduced-motion:reduce){.gms-equalizer span{animation:none;transform:scaleY(.82)}}
+
+
+/* Explicit empty state for the Servant Information directory */
+.servant-empty-state{padding:28px 18px;text-align:center;border:1px dashed var(--border,#3a3a3a);border-radius:14px;color:var(--text,#fff)}
+.servant-empty-state p{max-width:560px;margin:8px auto 16px;color:var(--muted,#999);line-height:1.5}
