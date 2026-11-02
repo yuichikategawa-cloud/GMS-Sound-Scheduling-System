@@ -481,14 +481,14 @@ function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTML
 function GmsLoader({label="Getting the sound system ready…"}:{label?:string}){
  return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
   <div className="gms-loader-panel">
-   <p className="gms-loader-brand">GMS Sound Scheduling System</p>
+   <div className="gms-loader-brand-row"><span className="gms-loader-mark"><Church size={19}/></span><span className="gms-loader-brand">GMS <b>Sound Scheduling</b></span></div>
    <div className="gms-equalizer" aria-hidden="true">
-    {[34,58,82,100,82,58,34].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*90}ms`} as CSSProperties}/>) }
+    {[30,52,76,100,76,52,30].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*95}ms`} as CSSProperties}/>)}
    </div>
    <h2>{label}</h2>
-   <p className="gms-loader-caption">Animated equalizer loading experience</p>
-   <div className="gms-loader-divider"/>
-   <p className="gms-loader-footnote">Also includes animated page transitions, schedule-loading animation and reduced-motion accessibility support.</p>
+   <p className="gms-loader-caption">Preparing your serving experience</p>
+   <div className="gms-loader-progress" aria-hidden="true"><span/></div>
+   <p className="gms-loader-footnote">A moment while everything gets in sync.</p>
   </div>
  </div>;
 }
