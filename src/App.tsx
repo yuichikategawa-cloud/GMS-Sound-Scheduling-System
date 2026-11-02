@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
@@ -460,8 +460,19 @@ function ScheduleModal({locations,servants,editing,onClose,onSave}:{locations:Lo
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
  return <div className="modal-backdrop"><form className="modal-card compact" onSubmit={onSave}><div className="modal-head"><h2>Add servant</h2><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><label>Full name<input name="full_name" required autoFocus placeholder="Servant's full name"/></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Add person</button></div></form></div>;
 }
-function GmsLoader({label="Loading…"}:{label?:string}){
- return <div className="center-screen gms-v3-loader"><div className="loader"/><span>{label}</span></div>;
+function GmsLoader({label="Getting the sound system ready…"}:{label?:string}){
+ return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
+  <div className="gms-loader-panel">
+   <p className="gms-loader-brand">GMS Sound Scheduling System</p>
+   <div className="gms-equalizer" aria-hidden="true">
+    {[34,58,82,100,82,58,34].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*90}ms`} as CSSProperties}/>) }
+   </div>
+   <h2>{label}</h2>
+   <p className="gms-loader-caption">Animated equalizer loading experience</p>
+   <div className="gms-loader-divider"/>
+   <p className="gms-loader-footnote">Also includes animated page transitions, schedule-loading animation and reduced-motion accessibility support.</p>
+  </div>
+ </div>;
 }
 function ServantInformationPanel({servants,memberDirectory,locations,schedules,requests,onAdd,onToggle}:{servants:Servant[];memberDirectory:any[];locations:Location[];schedules:ScheduleView[];requests:any[];onAdd:()=>void;onToggle:(p:Servant)=>void}){
  const [query,setQuery]=useState(""); const [locationFilter,setLocationFilter]=useState(""); const [cgFilter,setCgFilter]=useState(""); const [statusFilter,setStatusFilter]=useState("");
