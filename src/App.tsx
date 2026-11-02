@@ -177,7 +177,7 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><div className="loader"/>Loading...</div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS WEEKEND OPERATIONS</p><h1>{authMode==="login"?"Welcome back":"Create your account"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS BANTEN SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome Home":"Create your account"}</h1><p className="subtle">Serving schedule management system for GMS Banten.</p>
     <form onSubmit={submitAuth} className="stack">
       {authMode==="signup"&&<label>Full name<input required value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your name"/></label>}
       <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
