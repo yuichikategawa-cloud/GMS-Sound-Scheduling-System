@@ -176,7 +176,7 @@ export default function App() {
     const q=personFilter.trim().toLowerCase();
     return schedules.filter(s=>
       s.service_date>=today() &&
-      (isAdmin || (s.status==="published" && !!myServant && s.assignments.some(a=>a.servant_id===myServant.id))) &&
+      (isAdmin || s.status==="published") &&
       (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
       (!locationFilter||s.location_id===locationFilter) &&
       (!serviceFilter||s.service_name===serviceFilter) &&
