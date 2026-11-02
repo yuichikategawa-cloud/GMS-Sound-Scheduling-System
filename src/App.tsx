@@ -29,9 +29,11 @@ export default function App() {
   const [locations,setLocations] = useState<Location[]>([]);
   const [servants,setServants] = useState<Servant[]>([]);
   const [templates,setTemplates] = useState<any[]>([]);
-  const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox">("schedule");
+  const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox"|"requests">("schedule");
   const [availability,setAvailability] = useState<any[]>([]);
   const [requests,setRequests] = useState<any[]>([]);
+  const [requestReads,setRequestReads] = useState<any[]>([]);
+  const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
   const [availabilityDeadline,setAvailabilityDeadline] = useState("");
   const [calendarView,setCalendarView] = useState<"week"|"month">("week");
@@ -76,7 +78,7 @@ export default function App() {
     if (!supabase) return;
     setLoading(true); setMessage("");
     try {
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,settingRes,auditRes,memberRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,requestRes,readRes,settingRes,auditRes,memberRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -84,6 +86,7 @@ export default function App() {
         supabase.from("assignments").select("*"),
         supabase.from("servant_availability").select("*").order("service_date",{ascending:true}),
         supabase.from("serving_requests").select("*").order("created_at",{ascending:false}),
+        supabase.from("serving_request_reads").select("*"),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100),
         supabase.from("member_profiles").select("*")
@@ -91,7 +94,7 @@ export default function App() {
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,requestRes,settingRes,auditRes,memberRes]
+      const optionalErrors = [tempRes,availRes,requestRes,readRes,settingRes,auditRes,memberRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -107,7 +110,7 @@ export default function App() {
       })) as ScheduleView[];
       const safeMemberRows = memberRes.error ? [] : (memberRes.data ?? []);
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
-      setAvailability(availRes.error?[]:(availRes.data??[]));setRequests(requestRes.error?[]:(requestRes.data??[]));
+      setAvailability(availRes.error?[]:(availRes.data??[]));setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
     } catch(e) { setMessage(errorText(e)); }
@@ -352,17 +355,52 @@ export default function App() {
     if(error)setMessage(error.message);else {setAvailabilityDeadline(value);setMessage("Availability deadline updated.");}
   }
   async function submitServingRequest(schedule:ScheduleView,kind:"replacement"|"swap"){
+    if(kind==="swap"){setSwapDraft(schedule);return;}
     if(!supabase||!myServant)return;
     const own=schedule.assignments.find(a=>a.servant_id===myServant.id);if(!own)return;
-    const note=prompt(kind==="replacement"?"Why do you need a replacement?":"Enter the full name of the servant you would like to swap with:");
+    const note=prompt("Why do you need a replacement?");
     if(note===null)return;
-    const {error}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:schedule.assignments.find(a=>a.servant_id===myServant.id)?.id??null,requester_servant_id:myServant.id,request_type:kind,details:note.trim(),status:"pending"});
-    if(error)setMessage(error.message);else {setMessage("Your request has been sent to the administrator.");await loadData();}
+    const {error}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"replacement",details:note.trim(),status:"pending"});
+    if(error)setMessage(error.message);else {setMessage("Your replacement request has been sent to the administrator.");await loadData();}
+  }
+  async function submitDirectSwap(targetScheduleId:string,targetAssignmentId:string,details:string){
+    if(!supabase||!myServant||!swapDraft)return;
+    const source=swapDraft, own=source.assignments.find(a=>a.servant_id===myServant.id);
+    const targetSchedule=schedules.find(s=>s.id===targetScheduleId);
+    const target=targetSchedule?.assignments.find(a=>a.id===targetAssignmentId);
+    if(!own||!targetSchedule||!target){setMessage("Please select a valid servant assignment to swap with.");return;}
+    if(target.servant_id===myServant.id){setMessage("You cannot swap with yourself.");return;}
+    if(source.id===targetSchedule.id){setMessage("Choose an assignment on a different service date.");return;}
+    const conflicts=(personId:string,date:string,excludeIds:string[])=>schedules.some(s=>s.service_date===date&&s.location_id!== (date===source.service_date?source.location_id:targetSchedule.location_id) && !excludeIds.includes(s.id) && s.assignments.some(a=>a.servant_id===personId));
+    // Each servant must be free of another church assignment on the day they would receive.
+    const targetConflict=schedules.some(s=>s.service_date===source.service_date&&s.location_id!==source.location_id&&s.assignments.some(a=>a.servant_id===target.servant_id));
+    const requesterConflict=schedules.some(s=>s.service_date===targetSchedule.service_date&&s.location_id!==targetSchedule.location_id&&s.assignments.some(a=>a.servant_id===myServant.id));
+    if(targetConflict||requesterConflict){setMessage(targetConflict?`${target.servant_name} already has an assignment at another church on ${fmtDate(source.service_date)}.`:`You already have an assignment at another church on ${fmtDate(targetSchedule.service_date)}.`);return;}
+    const {error}=await supabase.from("serving_requests").insert({schedule_id:source.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"swap",details:details.trim(),status:"pending",target_schedule_id:targetSchedule.id,target_assignment_id:target.id,target_servant_id:target.servant_id});
+    if(error)setMessage(error.message);else {setSwapDraft(null);setMessage("Your cross-date swap request has been sent for admin approval.");await loadData();}
+  }
+  async function markRequestRead(requestId:string){
+    if(!supabase||!session)return;
+    const {error}=await supabase.from("serving_request_reads").upsert({request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()},{onConflict:"request_id,user_id"});
+    if(error)console.warn("Could not mark request notification as read:",error.message);
+    else setRequestReads(v=>[...v.filter(x=>x.request_id!==requestId),{request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()}]);
   }
   async function reviewRequest(request:any,approve:boolean){
     if(!supabase||!isAdmin)return;
+    if(approve&&request.request_type==="swap"&&request.target_assignment_id){
+      const source=schedules.find(s=>s.id===request.schedule_id);
+      const targetSchedule=schedules.find(s=>s.id===request.target_schedule_id);
+      const sourceAssignment=source?.assignments.find(a=>a.id===request.assignment_id);
+      const targetAssignment=targetSchedule?.assignments.find(a=>a.id===request.target_assignment_id);
+      if(!source||!targetSchedule||!sourceAssignment||!targetAssignment){setMessage("Swap cannot be approved because one of the assignments no longer exists.");return;}
+      const conflict=(personId:string,date:string,destinationLocationId:string,excludeScheduleIds:string[])=>schedules.some(s=>s.service_date===date&&s.location_id!==destinationLocationId&&!excludeScheduleIds.includes(s.id)&&s.assignments.some(a=>a.servant_id===personId));
+      if(conflict(targetAssignment.servant_id,source.service_date,source.location_id,[source.id,targetSchedule.id])||conflict(sourceAssignment.servant_id,targetSchedule.service_date,targetSchedule.location_id,[source.id,targetSchedule.id])){setMessage("Swap approval blocked: one servant now has another assignment on the destination date. Review the schedule first.");return;}
+      const {error:swapError}=await supabase.rpc("admin_execute_servant_swap",{p_request_id:request.id});
+      if(swapError){setMessage(swapError.message);return;}
+      setMessage("Swap approved and assignments exchanged.");await loadData();return;
+    }
     const {error}=await supabase.from("serving_requests").update({status:approve?"approved":"declined",reviewed_by:session.user.id,reviewed_at:new Date().toISOString()}).eq("id",request.id);
-    if(error)setMessage(error.message);else {setMessage(approve?"Request approved. Please update the assignment if a replacement is needed.":"Request declined.");await loadData();}
+    if(error)setMessage(error.message);else {setMessage(approve?(request.request_type==="swap"?"Swap approved and assignments exchanged.":"Request approved. Please update the assignment if a replacement is needed."):"Request declined.");await loadData();}
   }
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
     if(!supabase||!myServant)return;
@@ -427,7 +465,8 @@ export default function App() {
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
-      {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><ClipboardCheck size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())).length}</span>}</button>}
+      {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><ClipboardCheck size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length}</span>}</button>}
+      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><ClipboardCheck size={18}/> Servant Requests{requests.filter(r=>r.status==="pending").length>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length}</span>}</button>}
       {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
       {isAdmin&&<>
         <button className={`nav-item ${tab==="servantInfo"?"active":""}`} onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
@@ -437,7 +476,7 @@ export default function App() {
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main className="content">
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}
         {tab==="schedule"?<>
@@ -463,12 +502,13 @@ export default function App() {
             {loading?<div className="empty-state"><GmsLoader label="Loading schedule…"/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
               <div className="schedule-grid">{filtered.map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div>}
           </details>
-          {isAdmin&&<><GeneratePanel onGenerate={generateWeekend}/><RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/></>}
-        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
+          {isAdmin&&<><AdminSchedulingCenter schedules={schedules} requests={requests} servants={servants}/><GeneratePanel onGenerate={generateWeekend}/></>}
+        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
+    {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
   </div>;
 }
 
@@ -481,6 +521,17 @@ function ChurchBulkActions({locations,disabled,onPublish,onUnpublish,onDelete}:{
 function MyUpcomingAssignments({items,servantId,onConfirm,onRequest}:{items:ScheduleView[];servantId:string;onConfirm:(s:ScheduleView,status:"confirmed"|"declined")=>void;onRequest:(s:ScheduleView,kind:"replacement"|"swap")=>void}){
  const grouped=[...new Map(items.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
  return <section className="my-upcoming-panel"><div className="my-upcoming-panel-head"><div><h3>My upcoming serving assignments</h3><p className="subtle">Confirm your upcoming service or request a replacement or swap.</p></div><span>{items.length} upcoming</span></div>{!items.length?<p className="my-upcoming-empty">You have no upcoming published assignments.</p>:grouped.map(location=><div className="my-upcoming-location" key={location.id}><h4>{location.name}</h4><div className="my-upcoming-list">{items.filter(s=>s.location_id===location.id).map(s=>{const own=s.assignments.find(a=>a.servant_id===servantId);return <article className="my-upcoming-item" key={s.id}><div className="my-upcoming-info"><b>{fmtDate(s.service_date)} · {s.service_name}</b><span>{shortTime(s.start_time)}–{shortTime(s.end_time)} · Your role: {own?.role??"Assigned"}</span><small>Confirmation: {own?.confirmation_status??"pending"}</small></div><div className="my-upcoming-actions"><button className="btn tiny primary" onClick={()=>onConfirm(s,"confirmed")}>Accept</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"swap")}>Request swap</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"replacement")}>Request replacement</button></div></article>;})}</div></div>)}</section>;
+}
+
+function DirectSwapModal({source,schedules,servantId,onClose,onSubmit}:{source:ScheduleView;schedules:ScheduleView[];servantId:string;onClose:()=>void;onSubmit:(scheduleId:string,assignmentId:string,details:string)=>void}){
+ const candidates=schedules.filter(s=>s.status==="published"&&s.id!==source.id&&s.service_date!==source.service_date&&s.assignments.some(a=>a.servant_id&&a.servant_id!==servantId));
+ const [targetId,setTargetId]=useState("");const [assignmentId,setAssignmentId]=useState("");const [details,setDetails]=useState("");
+ const selected=candidates.find(s=>s.id===targetId);const eligible=selected?.assignments.filter(a=>a.servant_id&&a.servant_id!==servantId)??[];
+ return <div className="modal-backdrop"><section className="modal-card swap-modal"><div className="modal-heading"><div><h2>Request a schedule swap</h2><p className="subtle">Choose another servant's published assignment, even on a different date.</p></div><button className="icon-btn" onClick={onClose}><X/></button></div><div className="swap-source"><b>Your assignment</b><span>{fmtDate(source.service_date)} · {source.location_name} · {source.service_name}</span></div><label>Swap with service<select value={targetId} onChange={e=>{setTargetId(e.target.value);setAssignmentId("");}}><option value="">Select another date and service</option>{candidates.map(s=><option key={s.id} value={s.id}>{fmtDate(s.service_date)} · {s.location_name} · {s.service_name}</option>)}</select></label><label>Servant assignment<select value={assignmentId} onChange={e=>setAssignmentId(e.target.value)} disabled={!selected}><option value="">Select servant</option>{eligible.map(a=><option key={a.id} value={a.id}>{a.servant_name} · {a.role}</option>)}</select></label><label>Note (optional)<textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Add a note for the administrator"/></label><div className="modal-actions"><button className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!targetId||!assignmentId} onClick={()=>onSubmit(targetId,assignmentId,details)}>Submit swap request</button></div></section></div>;
+}
+function AdminSchedulingCenter({schedules,requests,servants}:{schedules:ScheduleView[];requests:any[];servants:Servant[]}){
+ const upcoming=schedules.filter(s=>s.service_date>=today());const incomplete=upcoming.filter(s=>!["FOH","Monitor"].every(role=>s.assignments.some(a=>a.role===role&&a.servant_id)));const pending=requests.filter(r=>r.status==="pending").length;const unconfirmed=upcoming.reduce((n,s)=>n+s.assignments.filter(a=>a.servant_id&&a.confirmation_status!=="confirmed").length,0);
+ return <section className="admin-control-center"><div className="control-center-head"><div><h2>Scheduling control center</h2><p className="subtle">A quick operational view of upcoming coverage and servant requests.</p></div></div><div className="control-center-grid"><div><small>Incomplete services</small><b>{incomplete.length}</b><span>Missing FOH or Monitor</span></div><div><small>Pending requests</small><b>{pending}</b><span>Awaiting admin review</span></div><div><small>Awaiting confirmation</small><b>{unconfirmed}</b><span>Upcoming assignments</span></div><div><small>Upcoming services</small><b>{upcoming.length}</b><span>All church locations</span></div></div>{incomplete.length>0&&<div className="control-center-alert"><AlertTriangle size={16}/><span>{incomplete.length} service(s) need FOH or Monitor coverage.</span></div>}</section>;
 }
 
 function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;upcoming:ScheduleView|null;servantId:string}){
@@ -614,21 +665,21 @@ function AvailabilityPanel({servants,availability,isAdmin,currentUserId,onSave,o
  </>;
 }
 
-function ServantInbox({requests,schedules}:{requests:any[];schedules:ScheduleView[]}){
+function ServantInbox({requests,schedules,reads,onRead}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void}){
  const decisions=requests.filter(r=>["approved","declined","rejected"].includes(String(r.status??"").toLowerCase())).sort((a,b)=>String(b.reviewed_at??b.created_at).localeCompare(String(a.reviewed_at??a.created_at)));
  const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
  return <section className="servant-inbox">
   <div className="inbox-intro"><div><h2>Request updates</h2><p className="subtle">Updates from the administrator about your swap and replacement requests.</p></div><span>{decisions.length} decisions</span></div>
   {decisions.length===0&&pending.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No request updates yet</b><p>When an administrator reviews your swap or replacement request, the result will appear here.</p></div>:<div className="inbox-list">
-   {decisions.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);const approved=String(r.status).toLowerCase()==="approved";return <article className="inbox-item" key={r.id}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className={`inbox-status ${approved?"approved":"rejected"}`}>{approved?"Approved":"Rejected"}</span></div><p>{approved?"Your request has been approved by the administrator.":"Your request was not approved by the administrator."}</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}<small>Reviewed: {r.reviewed_at?new Date(r.reviewed_at).toLocaleString():"Recently"}</small></div></article>;})}
-   {pending.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);return <article className="inbox-item" key={r.id}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className="inbox-status pending">Pending</span></div><p>Your request is waiting for administrator review.</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}</div></article>;})}
+   {decisions.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);const approved=String(r.status).toLowerCase()==="approved";return <article className={`inbox-item ${reads.some(x=>x.request_id===r.id)?"read": "unread"}`} key={r.id} onClick={()=>onRead(r.id)}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className={`inbox-status ${approved?"approved":"rejected"}`}>{approved?"Approved":"Rejected"}</span></div><p>{approved?"Your request has been approved by the administrator.":"Your request was not approved by the administrator."}</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}<small>Reviewed: {r.reviewed_at?new Date(r.reviewed_at).toLocaleString():"Recently"}</small></div></article>;})}
+   {pending.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);return <article className={`inbox-item ${reads.some(x=>x.request_id===r.id)?"read": "unread"}`} key={r.id} onClick={()=>onRead(r.id)}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className="inbox-status pending">Pending</span></div><p>Your request is waiting for administrator review.</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small>{r.details&&<small>Your note: {r.details}</small>}</div></article>;})}
   </div>}
  </section>;
 }
 
 function RequestsPanel({requests,schedules,servants,onReview}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void}){
  const pending=requests.filter(r=>r.status==="pending");
- return <section className="requests-panel"><div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions"><button className="btn tiny primary" onClick={()=>onReview(r,true)}>Approve</button><button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline</button></div>}</div>;})}</div>}</section>;
+ return <section className="requests-panel"><div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}{r.request_type==="swap"&&r.target_schedule_id&&<small>Requested swap: {(()=>{const t=schedules.find(x=>x.id===r.target_schedule_id);const a=t?.assignments.find(x=>x.id===r.target_assignment_id);return t?`${fmtDate(t.service_date)} · ${t.location_name} · ${t.service_name} · ${a?.servant_name??"Servant"}`:"Target assignment unavailable";})()}</small>}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions"><button className="btn tiny primary" onClick={()=>onReview(r,true)}>Approve</button><button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline</button></div>}</div>;})}</div>}</section>;
 }
 
 function AuditPanel({logs}:{logs:any[]}){

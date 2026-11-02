@@ -218,3 +218,23 @@
 .inbox-status.rejected{background:#fff0ef;color:#b93832}
 .inbox-status.pending{background:#fff6e8;color:#98620b}
 @media(max-width:640px){.daily-role-row{grid-template-columns:92px 1fr}.inbox-intro{align-items:flex-start}.inbox-item{padding:12px}}
+
+/* Phase 1-4 workflow enhancements */
+.admin-control-center{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;margin:16px 0;box-shadow:var(--shadow)}
+.control-center-head h2{margin:0;font-size:18px}.control-center-head p{margin:4px 0 0}
+.control-center-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.control-center-grid>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#fbfcff}
+.control-center-grid small{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.control-center-grid b{font-size:25px;color:var(--ink)}.control-center-grid span{font-size:11px;color:var(--muted)}
+.control-center-alert{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;border-radius:9px;background:#fff6e8;color:#8b5a0a;font-size:12px;font-weight:700}
+.swap-modal{width:min(560px,calc(100vw - 28px));display:grid;gap:14px}
+.swap-modal label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--ink)}
+.swap-modal select,.swap-modal textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;color:var(--ink);font:inherit}
+.swap-modal textarea{min-height:78px;resize:vertical}
+.swap-source{display:grid;gap:5px;padding:12px;border:1px solid #dcd4f4;border-radius:10px;background:#f7f4ff}
+.swap-source span{font-size:12px;color:var(--muted)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.inbox-item{cursor:pointer}.inbox-item.unread{border-color:#cfc3ee;background:#fcfaff}.inbox-item.read{opacity:.82}
+.inbox-item.unread:after{content:"NEW";align-self:flex-start;font-size:9px;font-weight:900;color:#6d4bb1;background:#eee8fb;border-radius:99px;padding:4px 6px}
+@media(max-width:850px){.control-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.control-center-grid{grid-template-columns:1fr 1fr}.swap-modal .modal-actions button{flex:1}}
