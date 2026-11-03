@@ -86,9 +86,10 @@ export default function App() {
   },[]);
 
   useEffect(() => {
+    setTab("schedule");setMobileNav(false);
     if (!session || !supabase) { setProfile(null); return; }
     void loadProfile();
-  },[session]);
+  },[session?.user?.id]);
 
   async function loadProfile() {
     if (!supabase || !session) return;
@@ -190,7 +191,7 @@ export default function App() {
     try {const {error}=await supabase.auth.updateUser({password:next});if(error)throw error;setRecoveryMode(false);setMessage("Password updated. You can now continue using your new password.");}
     catch(e){setMessage(errorText(e));}finally{setAuthLoading(false);}
   }
-  async function signOut(){await supabase?.auth.signOut();setProfile(null);setSession(null);}
+  async function signOut(){setTab("schedule");setMobileNav(false);await supabase?.auth.signOut();setProfile(null);setSession(null);}
   const isAdmin=profile?.role==="admin";
   const myServant=servants.find(p=>p.auth_user_id===session?.user?.id);
 
@@ -710,7 +711,7 @@ function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDeleteTem
  const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
  return <details className="generate-panel generate-panel-collapsible" open><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
-  <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select active</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
+  <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select active</button><button type="button" className="clear-btn" onClick={()=>setSelected([])} disabled={selected.length===0}>Unselect all</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
    {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);setFormError("");try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){setFormError(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
     <label>Church location<select value={newLocation} onChange={e=>setNewLocation(e.target.value)} required>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
     <label>Service day<select value={newDay} onChange={e=>setNewDay(Number(e.target.value))}><option value={6}>Saturday</option><option value={0}>Sunday</option></select></label>
@@ -884,7 +885,7 @@ function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants
   <section className="filter-panel"><div className="filter-title"><BarChart3 size={17}/><b>Assignments by church location</b></div><div className="location-stat-list">{[...locationCounts.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([name,count])=><div className="location-stat" key={name}><span>{name}</span><b>{count}</b></div>)}</div></section>
   <section className="filter-panel fairness-panel"><div className="filter-title"><ShieldCheck size={17}/><b>Fairness checker</b></div><p className="subtle">Workload comparison for the selected date range. Use this as a review aid, not a performance ranking.</p><div className="fairness-metrics"><div><small>Average assignments</small><b>{rows.length?(totalAssignments/rows.length).toFixed(1):"0"}</b></div><div><small>Highest workload</small><b>{rows[0]?.total??0}</b></div><div><small>Lowest workload</small><b>{rows.length?Math.min(...rows.map(r=>r.total)):0}</b></div></div>{rows.length>1&&rows[0].total-Math.min(...rows.map(r=>r.total))>=3&&<div className="fairness-alert">Workload difference is 3 or more assignments. Consider reviewing upcoming assignments and availability.</div>}</section>
   <div className="list-heading"><h2>Assignments by servant</h2><span>{rows.length} servants</span></div>
-  <div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div>
+  <div className="stats-table-wrap stats-desktop-table"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div><div className="stats-servant-cards">{rows.map(r=><article className="stats-servant-card" key={r.id}><b className="stats-servant-name">{r.name}</b><div className="stats-servant-metrics"><div><small>Total</small><strong>{r.total}</strong></div><div><small>FOH</small><strong>{r.FOH}</strong></div><div><small>Monitor</small><strong>{r.Monitor}</strong></div><div><small>Assistant</small><strong>{r.Assistant}</strong></div></div></article>)}</div>
  </>;
 }
 
