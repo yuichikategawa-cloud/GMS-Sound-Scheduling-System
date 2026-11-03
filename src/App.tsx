@@ -310,7 +310,7 @@ export default function App() {
     finally{setLoading(false);}
   }
   async function saveBulkAvailability(rows:any[]) {
-    if(!supabase)return;
+    if(!supabase)return false;
     const conflicts=rows.filter(row=>availability.some(a=>a.servant_id===row.servant_id&&a.service_date===row.service_date&&a.status!==row.status));
     if(conflicts.length){setMessage(`Cannot save: ${conflicts.length} date/person combination(s) already have a different availability status. Resolve the conflicts first.`);return false;}
     setLoading(true);setMessage("");
