@@ -540,3 +540,19 @@
   .mobile-more-menu button:active,.mobile-more-menu button:hover{background:#f2f3fa}
   .mobile-more-menu .mobile-more-signout{color:#be123c;border-top:1px solid #edf0f5;border-radius:0;margin-top:5px}
 }
+
+/* Clear, card-style guidance inside the service assignment modal. */
+.availability-guidance{display:grid;gap:7px;margin-top:16px;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;color:var(--ink);font-size:12px;line-height:1.5}
+.availability-guidance-title{display:flex;align-items:center;gap:8px;color:#30245b;font-size:13px}
+.availability-guidance-title svg{color:var(--brand);flex:0 0 auto}
+.availability-guidance p{margin:0;color:var(--muted)}
+.my-days-card{display:grid;grid-template-columns:1fr;align-content:center;gap:3px}
+.my-days-card strong{margin:0;font-size:34px;line-height:1.1}
+.my-days-card small{line-height:1.45}
+.action-dialog-backdrop{z-index:1000}
+.action-dialog{width:min(480px,calc(100vw - 32px));padding:22px}
+.action-dialog .modal-head{align-items:flex-start}
+.action-dialog-message{white-space:pre-line;line-height:1.6;margin-top:8px;max-width:56ch}
+.action-dialog .modal-actions{margin-top:22px}
+.action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}
+@media(max-width:600px){.availability-guidance{padding:13px;gap:8px}.my-days-card{grid-template-columns:1fr}.my-days-card .my-schedule-label{grid-column:auto}.my-days-card strong{grid-row:auto;font-size:30px}.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}

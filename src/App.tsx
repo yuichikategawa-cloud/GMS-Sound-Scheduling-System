@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
@@ -56,6 +56,22 @@ export default function App() {
   const [fullName,setFullName] = useState("");
   const [signupCgStatus,setSignupCgStatus] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
+  const [actionDialog,setActionDialog] = useState<{title:string;message:string;confirmLabel?:string;danger?:boolean;inputLabel?:string;requiredText?:string}|null>(null);
+  const [actionDialogInput,setActionDialogInput] = useState("");
+  const actionDialogResolver = useRef<((accepted:boolean)=>void)|null>(null);
+  const actionTextResolver = useRef<((value:string|null)=>void)|null>(null);
+  function askAction(title:string,message:string,confirmLabel="Continue",danger=false):Promise<boolean>{
+    return new Promise(resolve=>{actionDialogResolver.current=resolve;setActionDialog({title,message,confirmLabel,danger});});
+  }
+  function askText(title:string,message:string,inputLabel:string,requiredText?:string):Promise<string|null>{
+    return new Promise(resolve=>{actionTextResolver.current=resolve;setActionDialogInput("");setActionDialog({title,message,inputLabel,requiredText,confirmLabel:"Continue",danger:true});});
+  }
+  function closeActionDialog(accepted:boolean){
+    setActionDialog(null);
+    if(actionTextResolver.current){actionTextResolver.current(accepted?actionDialogInput:null);actionTextResolver.current=null;}
+    else {actionDialogResolver.current?.(accepted);actionDialogResolver.current=null;}
+    setActionDialogInput("");
+  }
 
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
@@ -175,7 +191,8 @@ export default function App() {
 
   const myPublishedSchedules=useMemo(()=>myServant?schedules.filter(s=>s.status==="published"&&s.assignments.some(a=>a.servant_id===myServant.id)):[],[schedules,myServant?.id]);
   // Count distinct calendar days, not individual service slots. Two services on one date count as one serving day.
-  const myDaysServed=new Set(myPublishedSchedules.filter(s=>s.service_date<today()).map(s=>s.service_date)).size;
+  const thirtyDaysAgoForMyStats=new Date(Date.now()-30*86400000).toLocaleDateString("en-CA");
+  const myDaysServed=new Set(myPublishedSchedules.filter(s=>s.service_date>=thirtyDaysAgoForMyStats&&s.service_date<today()).map(s=>s.service_date)).size;
   const nextMySchedule=[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))[0]??null;
 
   const filtered=useMemo(()=>{
@@ -222,10 +239,10 @@ export default function App() {
     const unavailable=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="unavailable"));
     if(unavailable.length){setScheduleError(`Cannot assign this schedule. ${unavailable.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked unavailable on ${fmtDate(payload.service_date)}.`);return;}
     const preferNot=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="prefer_not"));
-    if(preferNot.length&&!confirm(`${preferNot.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Assign anyway?`))return;
+    if(preferNot.length&&!await askAction("Availability preference",`${preferNot.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Do you want to continue with this manual assignment?`,"Assign anyway",true))return;
     const thirtyDaysAgo=new Date(new Date(`${payload.service_date}T12:00:00`).getTime()-30*86400000).toLocaleDateString("en-CA");
     const highWorkload=chosen.map(entry=>({...entry,days:new Set(schedules.filter(s=>s.service_date<payload.service_date&&s.service_date>=thirtyDaysAgo&&s.assignments.some(a=>a.servant_id===entry.id)).map(s=>s.service_date)).size})).filter(x=>x.days>=5);
-    if(highWorkload.length&&!confirm(`Workload warning: ${highWorkload.map(x=>`${servants.find(p=>p.id===x.id)?.full_name??"Servant"} (${x.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`))return;
+    if(highWorkload.length&&!await askAction("High workload warning",`${highWorkload.map(x=>`${servants.find(p=>p.id===x.id)?.full_name??"Servant"} (${x.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
     setLoading(true);setMessage("");
     try {
       let scheduleId=editing?.id;
@@ -300,7 +317,7 @@ export default function App() {
     if(error)setMessage(error.message);else await loadData();
   }
   async function deleteSchedule(s:ScheduleView){
-    if(!supabase||!isAdmin||!confirm(`Delete ${s.service_name} on ${s.service_date}?`))return;
+    if(!supabase||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This also removes its assignments.`,"Delete service",true))return;
     const {error}=await supabase.from("schedules").delete().eq("id",s.id);
     if(error)setMessage(error.message);else await loadData();
   }
@@ -320,10 +337,10 @@ export default function App() {
       const conflicts=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&schedules.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))).map(a=>`${a.servant_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
       if(missing.length||unavailable.length||conflicts.length){
         const report=[missing.length?`${missing.length} service(s) missing FOH or Monitor`:null,unavailable.length?`Unavailable servants: ${unavailable.join("; ")}`:null,conflicts.length?`Cross-church conflicts: ${conflicts.join("; ")}`:null].filter(Boolean).join("\\n");
-        if(!confirm(`Scheduling validation found issues for ${location?.name??"this church"}:\\n${report}\\n\\nPublish anyway?`))return;
+        if(!await askAction("Scheduling validation warning",`There are issues for ${location?.name??"this church"}:\n${report}\n\nDo you want to publish anyway?`,"Publish anyway",true))return;
       }
     }
-    if(!confirm(`${action==="publish"?"Publish":"Unpublish"} ALL schedules for ${location?.name??"this church"}?`))return;
+    if(!await askAction(`${action==="publish"?"Publish":"Unpublish"} all schedules?`,`${action==="publish"?"Publish":"Unpublish"} all schedules for ${location?.name??"this church"}?`,action==="publish"?"Publish all":"Unpublish all",action!=="publish"))return;
     setLoading(true);setScheduleError("");setMessage("");
     try{
       const {error}=await supabase.from("schedules").update({status}).eq("location_id",locationId);
@@ -336,9 +353,9 @@ export default function App() {
   async function deleteAllLocationSchedules(locationId:string){
     if(!supabase||!isAdmin||!locationId)return;
     const location=locations.find(l=>l.id===locationId);
-    const confirmation=prompt(`This will permanently delete ALL schedules and their assignments for ${location?.name??"this church"}. This cannot be undone.\n\nType exactly: I do understand`);
+    const confirmation=await askText("Confirm permanent deletion",`This will permanently delete ALL schedules and their assignments for ${location?.name??"this church"}. This cannot be undone.`,"Type exactly: I do understand","I do understand");
     if(confirmation!=="I do understand"){if(confirmation!==null)setMessage("Delete all cancelled: confirmation text did not match.");return;}
-    if(!confirm(`Final confirmation: permanently delete every schedule for ${location?.name??"this church"}?`))return;
+    if(!await askAction("Final deletion confirmation",`Permanently delete every schedule and assignment for ${location?.name??"this church"}? This cannot be undone.`,"Delete permanently",true))return;
     setLoading(true);setScheduleError("");setMessage("");
     try{
       const {error}=await supabase.from("schedules").delete().eq("location_id",locationId);
@@ -526,7 +543,7 @@ export default function App() {
         {tab==="schedule"?<>
           {!isAdmin&&<MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id??""}/>}
           {!isAdmin&&<MyUpcomingAssignments items={[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))} servantId={myServant?.id??""} onConfirm={confirmAssignment} onRequest={submitServingRequest}/>}
-          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"My serving schedule"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Your published assignments and serving commitments."}</p></div><div className={`toolbar-actions serving-toolbar-actions${isAdmin?" admin-toolbar-actions":""}`}>{isAdmin&&<><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
+          <div className="toolbar"><div><h2>{isAdmin?"Serving assignments":"All published schedules"}</h2><p className="subtle">{isAdmin?"Manage services across all church locations.":"Browse published serving assignments across all church locations."}</p></div><div className={`toolbar-actions serving-toolbar-actions${isAdmin?" admin-toolbar-actions":""}`}>{isAdmin&&<><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></>}<button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button>{isAdmin&&<button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button>}</div></div>
           {isAdmin&&<div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>}
           {isAdmin&&<section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>}
           {isAdmin&&<ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>}
@@ -547,7 +564,7 @@ export default function App() {
             {loading?<div className="empty-state"><GmsLoader label="Loading schedule…"/></div>:filtered.length===0?<div className="empty-state"><CalendarDays size={30}/><b>No service slots found</b><p>Try changing your filters or generate a weekend schedule.</p></div>:
               <div className="schedule-location-groups">{locations.filter(l=>filtered.some(s=>s.location_id===l.id)).map(location=><section className="schedule-location-group" key={location.id}><h3>{location.name}</h3><div className="schedule-grid">{filtered.filter(s=>s.location_id===location.id).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time)).map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div></section>)}</div>}
           </details>
-          {isAdmin&&<GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend} onAddTemplate={async(locationId,day,name,start,end)=>{if(!supabase||!isAdmin)return;const {error}=await supabase.from("service_templates").upsert({location_id:locationId,day_of_week:day,service_name:name,start_time:start,end_time:end,active:true},{onConflict:"location_id,day_of_week,service_name"});if(error)throw error;await loadData();setMessage(`${name} template saved. Select it above to generate future weekends.`);}} onDeleteTemplate={async(template)=>{if(!supabase||!isAdmin)return;const ok=window.confirm(`Remove ${template.service_name} (${dayNameForTemplate(template.day_of_week)}) from future recurring generation? Existing schedules already generated from this template will not be deleted.`);if(!ok)return;const {error}=await supabase.from("service_templates").update({active:false}).eq("id",template.id);if(error){setMessage(error.message);return;}await loadData();setMessage(`${template.service_name} was removed from active templates. Existing schedules were preserved.`);}}/>}
+          {isAdmin&&<GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend} onAddTemplate={async(locationId,day,name,start,end)=>{if(!supabase||!isAdmin)return;const {error}=await supabase.from("service_templates").upsert({location_id:locationId,day_of_week:day,service_name:name,start_time:start,end_time:end,active:true},{onConflict:"location_id,day_of_week,service_name"});if(error)throw error;await loadData();setMessage(`${name} template saved. Select it above to generate future weekends.`);}} onDeleteTemplate={async(template)=>{if(!supabase||!isAdmin)return;const ok=await askAction("Remove service template",`Remove ${template.service_name} (${dayNameForTemplate(template.day_of_week)}) from future recurring generation? Existing schedules already generated from this template will not be deleted.`,"Remove template",true);if(!ok)return;const {error}=await supabase.from("service_templates").update({active:false}).eq("id",template.id);if(error){setMessage(error.message);return;}await loadData();setMessage(`${template.service_name} was removed from active templates. Existing schedules were preserved.`);}}/>}
         </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
@@ -578,6 +595,7 @@ export default function App() {
         <button className="mobile-more-signout" onClick={signOut}><LogOut size={18}/> Sign out</button>
       </div>
     </div>}
+    {actionDialog&&<div className="modal-backdrop action-dialog-backdrop" role="presentation"><section className="modal-card action-dialog" role="alertdialog" aria-modal="true" aria-labelledby="action-dialog-title"><div className="modal-head"><div><h2 id="action-dialog-title">{actionDialog.title}</h2><p className="subtle action-dialog-message">{actionDialog.message}</p></div><button type="button" className="icon-btn" aria-label="Close" onClick={()=>closeActionDialog(false)}><X/></button></div>{actionDialog.inputLabel&&<label className="action-dialog-input">{actionDialog.inputLabel}<input autoFocus value={actionDialogInput} onChange={e=>setActionDialogInput(e.target.value)}/></label>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={()=>closeActionDialog(false)}>Cancel</button><button type="button" className={`btn ${actionDialog.danger?"danger":"primary"}`} disabled={!!actionDialog.requiredText&&actionDialogInput!==actionDialog.requiredText} onClick={()=>closeActionDialog(true)}>{actionDialog.confirmLabel??"Continue"}</button></div></section></div>}
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
     {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
@@ -627,7 +645,7 @@ function AdminSchedulingCenter({schedules,requests,servants,availability}:{sched
 function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;upcoming:ScheduleView|null;servantId:string}){
  const myRole=upcoming?.assignments.find(a=>a.servant_id===servantId)?.role;
  return <section className="my-schedule-summary">
-  <div className="my-days-card"><span className="my-schedule-label">DAYS SERVED</span><strong>{daysServed}</strong><small>{daysServed===1?"calendar day served":"calendar days served"}</small></div>
+  <div className="my-days-card"><span className="my-schedule-label">YOUR SERVING DAYS</span><strong>{daysServed}</strong><small>Unique days served in the last 30 days</small></div>
   <div className="my-next-card"><div className="my-next-heading"><CalendarDays size={17}/><b>My next serving schedule</b></div>
    {upcoming?<><div className="my-next-date">{fmtDate(upcoming.service_date)}</div><div className="my-next-detail"><b>{upcoming.location_name}</b><span>{upcoming.service_name} · {shortTime(upcoming.start_time)}–{shortTime(upcoming.end_time)}</span><span>Your role: <b>{myRole??"Assigned"}</b></span></div></>:<p className="my-next-empty">No upcoming published assignment.</p>}
   </div>
@@ -704,7 +722,7 @@ function ScheduleModal({locations,servants,availability,schedules,editing,onClos
   <div className="form-grid"><label>Date<input name="service_date" type="date" required value={serviceDate} onChange={e=>setServiceDate(e.target.value)}/></label><label>Location<select name="location_id" required defaultValue={editing?.location_id??locations[0]?.id}>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
    <label className="wide">Service name<input name="service_name" required defaultValue={editing?.service_name??""} placeholder="e.g. Special Service, Christmas, Prayer Meeting"/></label><label>Start time<input name="start_time" type="time" required defaultValue={shortTime(editing?.start_time??"09:00")}/></label><label>End time<input name="end_time" type="time" required defaultValue={shortTime(editing?.end_time??"11:00")}/></label>
    {ROLES.map(r=><label className="wide" key={r}>{r}{r==="Assistant"?" (optional)":" (required)"}<select name={r} required={r!=="Assistant"} defaultValue={existing(r)}><option value="">{r==="Assistant"?"Not assigned":"Select servant"}</option>{servants.map(p=>{const av=availabilityStatus(p.id);const days=workloadDays(p.id);const label=av==="unavailable"?" · UNAVAILABLE":av==="prefer_not"?" · PREFERS NOT TO SERVE":av==="available"?" · Available": " · Availability not submitted";return <option key={p.id} value={p.id}>{p.full_name}{label} · {days} days served in prior 30d</option>;})}</select></label>)}
-  </div><div className="availability-guidance"><b>Assignment guidance</b><span>Servant options show availability and calendar days served in the previous 30 days. Unavailable and high-workload selections are checked again before saving.</span></div>{error&&<div className="schedule-error" role="alert"><AlertTriangle size={18}/><span>{error}</span></div>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Save assignment</button></div>
+  </div><div className="availability-guidance"><div className="availability-guidance-title"><ShieldCheck size={17}/><b>Assignment guidance</b></div><p>Servant options show their availability and workload over the previous 30 days.</p><p>Unavailable servants and high-workload selections are checked again before saving.</p></div>{error&&<div className="schedule-error" role="alert"><AlertTriangle size={18}/><span>{error}</span></div>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Save assignment</button></div>
  </form></div>;
 }
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
