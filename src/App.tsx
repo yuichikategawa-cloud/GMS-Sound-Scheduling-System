@@ -555,25 +555,30 @@ export default function App() {
   }
   async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
     if(!supabase||!isAdmin||!locationId)return;
+    const allChurches=locationId==="__all_churches__";
     const location=locations.find(l=>l.id===locationId);
+    const scopeName=allChurches?"all church locations":location?.name??"this church";
     const action=status==="published"?"publish":"unpublish";
     if(status==="published"){
-      const candidates=schedules.filter(s=>s.location_id===locationId&&s.service_date>=today());
+      const candidates=schedules.filter(s=>(allChurches||s.location_id===locationId)&&s.service_date>=today());
       const missing=candidates.filter(s=>!["FOH","Monitor"].every(role=>s.assignments.some(a=>a.role===role&&a.servant_id)));
-      const unavailable=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&availability.some(v=>v.servant_id===a.servant_id&&v.service_date===s.service_date&&v.status==="unavailable")).map(a=>`${a.servant_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
-      const conflicts=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&schedules.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))).map(a=>`${a.servant_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
+      const unavailable=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&availability.some(v=>v.servant_id===a.servant_id&&v.service_date===s.service_date&&v.status==="unavailable")).map(a=>`${a.servant_name} · ${s.location_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
+      const conflicts=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&schedules.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))).map(a=>`${a.servant_name} · ${s.location_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
       if(missing.length||unavailable.length||conflicts.length){
-        const report=[missing.length?`${missing.length} service(s) missing FOH or Monitor`:null,unavailable.length?`Unavailable servants: ${unavailable.join("; ")}`:null,conflicts.length?`Cross-church conflicts: ${conflicts.join("; ")}`:null].filter(Boolean).join("\\n");
-        if(!await askAction("Scheduling validation warning",`There are issues for ${location?.name??"this church"}:\n${report}\n\nDo you want to publish anyway?`,"Publish anyway",true))return;
+        const report=[missing.length?`${missing.length} service(s) missing FOH or Monitor`:null,unavailable.length?`Unavailable servants: ${unavailable.join("; ")}`:null,conflicts.length?`Cross-church conflicts: ${conflicts.join("; ")}`:null].filter(Boolean).join("\n");
+        if(!await askAction("Scheduling validation warning",`There are issues across ${scopeName}:\n${report}\n\nDo you want to publish anyway?`,"Publish anyway",true))return;
       }
     }
-    if(!await askAction(`${action==="publish"?"Publish":"Unpublish"} all schedules?`,`${action==="publish"?"Publish":"Unpublish"} all schedules for ${location?.name??"this church"}?`,action==="publish"?"Publish all":"Unpublish all",action!=="publish"))return;
+    const confirmationDetail=allChurches
+      ? `${action==="publish"?"Publish":"Unpublish"} all service schedules across ${locations.length} church locations? Servants will receive one grouped notification per account.`
+      : `${action==="publish"?"Publish":"Unpublish"} all schedules for ${scopeName}?`;
+    if(!await askAction(`${action==="publish"?"Publish":"Unpublish"} all schedules?`,confirmationDetail,action==="publish"?"Publish all":"Unpublish all",action!=="publish"))return;
     setLoading(true);setScheduleError("");setMessage("");
     try{
-      const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:locationId,p_schedule_ids:null,p_status:status});
+      const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:allChurches?null:locationId,p_schedule_ids:null,p_status:status});
       if(error)throw error;
       await loadData();
-      setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}. Each affected servant receives one grouped notification.`);
+      setMessage(`All schedules across ${scopeName} have been ${status==="published"?"published":"unpublished"}. Each affected servant receives one grouped notification.`);
     }catch(e){setMessage(`Bulk ${action} failed: ${errorText(e)}`);}
     finally{setLoading(false);}
   }
@@ -828,7 +833,7 @@ export default function App() {
             </section>
 
             <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView!=="assignments"}>
-              <div className="toolbar assignment-workspace-heading"><div><h2>Assignment management</h2><p className="subtle">Create services, manage church-wide actions and assign servants across multiple services.</p></div><div className="toolbar-actions"><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></div></div>
+              <div className="toolbar assignment-workspace-heading"><div><h2>Assignment management</h2><p className="subtle">Create services, manage church-wide actions and assign servants across multiple services.</p></div><div className="toolbar-actions assignment-management-actions"><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></div></div>
               <ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>
               <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={servingPreferences} disabled={loading} onApply={applyBulkAssignments}/>
               <GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend} onAddTemplate={async(locationId,day,name,start,end)=>{if(!supabase||!isAdmin)return;const {error}=await supabase.from("service_templates").upsert({location_id:locationId,day_of_week:day,service_name:name,start_time:start,end_time:end,active:true},{onConflict:"location_id,day_of_week,service_name"});if(error)throw error;await loadData();setMessage(`${name} template saved. Select it above to generate future weekends.`);}} onDeleteTemplate={async(template)=>{if(!supabase||!isAdmin)return;const ok=await askAction("Remove service template",`Remove ${template.service_name} (${dayNameForTemplate(template.day_of_week)}) from future recurring generation? Existing schedules already generated from this template will not be deleted.`,`Remove template`,true);if(!ok)return;const {error}=await supabase.from("service_templates").update({active:false}).eq("id",template.id);if(error){setMessage(error.message);return;}await loadData();setMessage(`${template.service_name} was removed from active templates. Existing schedules were preserved.`);}}/>
@@ -1038,9 +1043,10 @@ function BulkAssignmentCenter({schedules,servants,availability,preferences,disab
   </details>;
 }
 function ChurchBulkActions({locations,disabled,onPublish,onUnpublish,onDelete}:{locations:Location[];disabled:boolean;onPublish:(id:string)=>void;onUnpublish:(id:string)=>void;onDelete:(id:string)=>void}){
- const [locationId,setLocationId]=useState("");
- useEffect(()=>{if(!locationId&&locations.length)setLocationId(locations[0].id);else if(locationId&&!locations.some(l=>l.id===locationId))setLocationId(locations[0]?.id??"");},[locations,locationId]);
- return <section className="church-bulk-actions"><div><b>Church-wide schedule actions</b><p className="subtle">Publish, unpublish or delete all service slots for one church location.</p></div><div className="church-bulk-controls"><label className="church-location-picker"><span>Church location</span><select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!locations.length||disabled}>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label><button className="btn primary" disabled={!locationId||disabled} onClick={()=>onPublish(locationId)}>Publish all</button><button className="btn secondary" disabled={!locationId||disabled} onClick={()=>onUnpublish(locationId)}>Unpublish all</button><button className="btn danger" disabled={!locationId||disabled} onClick={()=>onDelete(locationId)}><Trash2 size={14}/> Delete all</button></div></section>;
+ const [locationId,setLocationId]=useState("__all_churches__");
+ useEffect(()=>{if(locationId!=="__all_churches__"&&locationId&&!locations.some(l=>l.id===locationId))setLocationId("__all_churches__");},[locations,locationId]);
+ const allChurches=locationId==="__all_churches__";
+ return <section className="church-bulk-actions"><div><b>Church-wide schedule actions</b><p className="subtle">Publish or unpublish schedules across one church or all church locations.</p></div><div className="church-bulk-controls"><label className="church-location-picker"><span>Church location</span><select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!locations.length||disabled}><option value="__all_churches__">All churches</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label><button className="btn primary" disabled={!locations.length||disabled} onClick={()=>onPublish(locationId)}>Publish all</button><button className="btn secondary" disabled={!locations.length||disabled} onClick={()=>onUnpublish(locationId)}>Unpublish all</button><button className="btn danger" disabled={allChurches||!locationId||disabled} title={allChurches?"Select one church to delete its schedules":"Delete all schedules for this church"} onClick={()=>onDelete(locationId)}><Trash2 size={14}/> Delete all</button></div>{allChurches&&<small className="church-bulk-safety-note">Delete all is available only after selecting an individual church, to prevent accidental deletion across every location.</small>}</section>;
 }
 function MyUpcomingAssignments({items,servantId,onConfirm,onRequest}:{items:ScheduleView[];servantId:string;onConfirm:(s:ScheduleView,status:"confirmed"|"declined")=>void;onRequest:(s:ScheduleView,kind:"replacement"|"swap")=>void}){
  const grouped=[...new Map(items.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
@@ -1106,7 +1112,7 @@ function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDeleteTem
  useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
  const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
- return <details className="generate-panel generate-panel-collapsible" open><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
+ return <details className="generate-panel generate-panel-collapsible"><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
   <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select all</button><button type="button" className="clear-btn" onClick={()=>setSelected([])} disabled={selected.length===0}>Clear selection</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
    {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);setFormError("");try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){setFormError(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
     <label>Church location<select value={newLocation} onChange={e=>setNewLocation(e.target.value)} required>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
