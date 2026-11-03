@@ -2852,3 +2852,664 @@
     align-items: flex-start;
   }
 }
+
+/* --------------------------------------------------------------------------
+   GMS 2026-11-03 final review: matrix selection, calendar, availability forms
+   -------------------------------------------------------------------------- */
+
+/* Per-church selection buttons: show a clear action once any rows are selected. */
+.bulk-church-group > summary .link-btn {
+  min-width: 112px;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f0f3f8;
+  color: #3f4d66;
+  border-color: #cfd7e5;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn {
+  background: #33435d !important;
+  color: #f1f5fb !important;
+  border-color: #60718c !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn:hover {
+  background: #405371 !important;
+  color: #ffffff !important;
+}
+
+/* Matrix column headings use stronger contrast, especially the sticky Actions column. */
+.bulk-matrix th,
+.bulk-matrix th:last-child {
+  background: #e8edf5 !important;
+  color: #34435d !important;
+  font-weight: 850 !important;
+  letter-spacing: .065em;
+  border-bottom: 1px solid #cbd5e3 !important;
+  text-shadow: none !important;
+}
+:root[data-theme="dark"] .bulk-matrix th,
+:root[data-theme="dark"] .bulk-matrix th:last-child {
+  background: #33445f !important;
+  color: #f4f7fc !important;
+  border-color: #5b6d88 !important;
+  font-weight: 850 !important;
+}
+
+/* Same-church, same-day non-overlapping assignments are normal and need no amber note. */
+.assignment-field-feedback.warning {
+  margin-top: 5px;
+}
+
+/* Daily overview rebuilt as a compact church-grouped matrix, matching Assignments. */
+.daily-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 14px !important;
+}
+.daily-card > .daily-head {
+  min-height: 66px;
+  padding: 15px 18px !important;
+  background: #f8f9fc;
+  border: 0 !important;
+}
+.daily-card[open] > .daily-head {
+  border-bottom: 1px solid #dfe5ef !important;
+}
+.daily-head-right {
+  flex: 0 0 auto;
+}
+.daily-locations {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 14px !important;
+  padding: 15px 16px 17px !important;
+}
+.daily-location {
+  min-width: 0;
+  border: 1px solid #dfe5ef;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.daily-location-name {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px !important;
+  margin: 0 !important;
+  border: 0;
+  border-bottom: 1px solid #d7deea;
+  border-radius: 0 !important;
+  background: #e9eef6 !important;
+  color: #253650 !important;
+  font-size: 13px !important;
+  line-height: 1.35;
+}
+.daily-location-name b {
+  font-size: 13px;
+  font-weight: 850;
+}
+.daily-location-name span {
+  color: #64738d;
+  font-size: 10px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.daily-service-table {
+  width: 100%;
+  min-width: 0;
+}
+.daily-service-table-head,
+.daily-service-row {
+  display: grid;
+  align-items: stretch;
+  min-width: 0;
+}
+.daily-service-table-head {
+  background: #f1f4f8;
+  border-bottom: 1px solid #dfe5ef;
+  color: #465570;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.daily-service-table-head > span {
+  padding: 9px 11px;
+  min-width: 0;
+}
+.daily-service-table-head > span + span {
+  border-left: 1px solid #dfe5ef;
+}
+.daily-service-row {
+  background: #ffffff;
+  border-bottom: 1px solid #e6ebf2;
+}
+.daily-service-row:last-child {
+  border-bottom: 0;
+}
+.daily-service-identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 11px 12px;
+  min-width: 0;
+}
+.daily-service-identity b {
+  color: #25334b;
+  font-size: 12px;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+.daily-service-identity small {
+  color: #6c7890;
+  font-size: 10px;
+  font-weight: 700;
+}
+.daily-assignee-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 11px;
+  border-left: 1px solid #e6ebf2;
+  background: #ffffff;
+}
+.daily-assignee-cell > small {
+  display: none;
+}
+.daily-assignee-cell > span {
+  color: #273750;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.daily-assignee-cell.missing {
+  background: #fff8ef;
+}
+.daily-assignee-cell.missing > span {
+  color: #a34d12;
+  font-weight: 850;
+}
+.daily-assignee-cell.optional > span {
+  color: #8490a4;
+  font-weight: 650;
+  font-style: italic;
+}
+:root[data-theme="dark"] .daily-card > .daily-head {
+  background: #202f46 !important;
+}
+:root[data-theme="dark"] .daily-card[open] > .daily-head {
+  border-bottom-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-date {
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .daily-subtitle {
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .daily-location {
+  background: #1b263a !important;
+  border-color: #465a77 !important;
+}
+:root[data-theme="dark"] .daily-location-name {
+  background: #30415c !important;
+  color: #f2f6fc !important;
+  border-bottom-color: #4b5d79 !important;
+}
+:root[data-theme="dark"] .daily-location-name span {
+  color: #d1dced !important;
+}
+:root[data-theme="dark"] .daily-service-table-head {
+  background: #293a54 !important;
+  color: #e9eff8 !important;
+  border-bottom-color: #465a77 !important;
+}
+:root[data-theme="dark"] .daily-service-table-head > span + span,
+:root[data-theme="dark"] .daily-assignee-cell {
+  border-left-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-service-row {
+  background: #202f46 !important;
+  border-bottom-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-service-identity b {
+  color: #f1f5fc !important;
+}
+:root[data-theme="dark"] .daily-service-identity small {
+  color: #becbe0 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell {
+  background: #202f46 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell > span {
+  color: #e8eef8 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.missing {
+  background: #3a302b !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.missing > span {
+  color: #ffd09a !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.optional > span {
+  color: #aab7cb !important;
+}
+
+/* Availability forms: make every grid item and native date control stay inside its card. */
+.availability-form-panel,
+.availability-form-panel form,
+.bulk-availability-form,
+.bulk-form-grid,
+.recurring-rule-form,
+.serving-preference-form,
+.rule-inline,
+.bulk-servant-picker {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.bulk-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start;
+  gap: 14px;
+}
+.bulk-form-grid > *,
+.recurring-rule-form > *,
+.serving-preference-form > *,
+.rule-inline > * {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.bulk-form-grid > .availability-self-name {
+  grid-column: auto !important;
+  align-self: end;
+  min-height: 44px;
+  padding: 8px 11px;
+}
+.bulk-form-grid input:not([type="checkbox"]),
+.bulk-form-grid select,
+.recurring-rule-form input,
+.recurring-rule-form select,
+.serving-preference-form input:not([type="checkbox"]),
+.serving-preference-form select {
+  box-sizing: border-box !important;
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.bulk-form-grid input[type="date"],
+.recurring-rule-form input[type="date"],
+.availability-form input[type="date"] {
+  padding-inline: 10px !important;
+  overflow: hidden;
+}
+.recurring-rule-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  max-width: 100% !important;
+  align-items: end;
+  gap: 14px;
+}
+.recurring-rule-form > .rule-inline,
+.recurring-rule-form > label:last-of-type,
+.recurring-rule-form > button {
+  grid-column: 1 / -1;
+}
+.recurring-rule-form > .rule-inline {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+.bulk-servant-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  width: 100%;
+}
+.bulk-servant-list label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .bulk-form-grid,
+  .recurring-rule-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .bulk-form-grid > .availability-self-name,
+  .bulk-form-grid .wide,
+  .bulk-form-grid .bulk-weekdays,
+  .recurring-rule-form > .rule-inline,
+  .recurring-rule-form > label:last-of-type,
+  .recurring-rule-form > button {
+    grid-column: 1 !important;
+  }
+  .bulk-form-grid > *,
+  .recurring-rule-form > *,
+  .serving-preference-form > *,
+  .rule-inline > * {
+    grid-column: 1 !important;
+  }
+  .bulk-servant-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 430px) {
+  .bulk-servant-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Servant weekly/monthly calendar selector shares the same segmented treatment as admin. */
+.servant-calendar-switch {
+  margin: 0 0 14px;
+  width: fit-content;
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .servant-calendar-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .servant-calendar-switch > span {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Destructive servant state action is deliberately red and easy to hit. */
+.servant-status-toggle {
+  min-width: 176px;
+  min-height: 36px;
+  justify-content: center;
+  font-weight: 800;
+}
+.servant-status-toggle.danger,
+.btn.danger.servant-status-toggle {
+  background: #fff0f0 !important;
+  color: #b42332 !important;
+  border: 1px solid #f0b8bd !important;
+}
+.servant-status-toggle.danger:hover {
+  background: #ffe1e3 !important;
+  border-color: #dc7b85 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger,
+:root[data-theme="dark"] .btn.danger.servant-status-toggle {
+  background: #4b2932 !important;
+  color: #ffc3c9 !important;
+  border-color: #8e4a58 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger:hover {
+  background: #60313c !important;
+}
+
+/* Fix the clipped/faint left edge of the login password input and focus ring. */
+.auth-card {
+  overflow: visible !important;
+  min-width: 0;
+}
+.auth-card .stack,
+.auth-card .stack label {
+  width: 100%;
+  min-width: 0;
+}
+.auth-card .stack input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  padding: 12px 14px;
+  background: #ffffff;
+  color: #1f2937;
+}
+.auth-card .stack input:focus-visible {
+  outline: 2px solid #746bf0;
+  outline-offset: 2px;
+  border-color: #746bf0;
+  box-shadow: 0 0 0 3px rgba(116,107,240,.16);
+}
+:root[data-theme="dark"] .auth-card .stack input {
+  background: #111c2e !important;
+  color: #f3f6fc !important;
+  border-color: #50617d !important;
+}
+:root[data-theme="dark"] .auth-card .stack input:focus-visible {
+  outline-color: #a69cff;
+  border-color: #a69cff !important;
+  box-shadow: 0 0 0 3px rgba(166,156,255,.18);
+}
+
+/* More obvious calendar headings and compact matrix-like service rows on phones. */
+@media (max-width: 760px) {
+  .daily-card > .daily-head {
+    align-items: center !important;
+    flex-direction: row !important;
+    gap: 8px;
+    padding: 13px 14px !important;
+  }
+  .daily-head-right {
+    align-self: center;
+  }
+  .daily-locations {
+    padding: 11px !important;
+    gap: 11px !important;
+  }
+  .daily-location-name {
+    padding: 10px 11px !important;
+  }
+  .daily-service-table-head {
+    display: none;
+  }
+  .daily-service-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0;
+    padding: 9px;
+  }
+  .daily-service-identity {
+    grid-column: 1 / -1;
+    padding: 5px 4px 9px;
+  }
+  .daily-assignee-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-height: 52px;
+    padding: 8px;
+    border: 1px solid #e6ebf2;
+    border-radius: 8px;
+  }
+  .daily-assignee-cell > small {
+    display: block;
+    color: #6c7890;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  :root[data-theme="dark"] .daily-assignee-cell {
+    border-color: #465a77 !important;
+  }
+  :root[data-theme="dark"] .daily-assignee-cell > small {
+    color: #c0cce0 !important;
+  }
+}
+@media (max-width: 760px) {
+  .bulk-servant-picker { grid-row: auto !important; }
+}
+
+/* Final pass: field controls stay inside their card at every breakpoint. */
+.availability-form,
+.bulk-availability-form,
+.bulk-form-grid,
+.recurring-rule-form,
+.serving-preference-form,
+.rule-inline,
+.profile-edit-grid,
+.days-field {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.availability-form > *,
+.bulk-form-grid > *,
+.recurring-rule-form > *,
+.serving-preference-form > *,
+.rule-inline > *,
+.profile-edit-grid > * {
+  box-sizing: border-box;
+  min-width: 0 !important;
+  max-width: 100%;
+}
+.availability-form input:not([type="checkbox"]),
+.availability-form select,
+.bulk-form-grid input:not([type="checkbox"]),
+.bulk-form-grid select,
+.recurring-rule-form input,
+.recurring-rule-form select,
+.serving-preference-form input:not([type="checkbox"]),
+.serving-preference-form select,
+.profile-edit-grid input:not([type="checkbox"]),
+.profile-edit-grid select {
+  box-sizing: border-box !important;
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+.availability-form input[type="date"],
+.bulk-form-grid input[type="date"],
+.recurring-rule-form input[type="date"],
+.serving-preference-form input[type="date"],
+.profile-edit-grid input[type="date"] {
+  padding-inline: 11px 34px !important;
+  overflow: hidden;
+}
+.availability-form input[type="date"]::-webkit-calendar-picker-indicator,
+.bulk-form-grid input[type="date"]::-webkit-calendar-picker-indicator,
+.recurring-rule-form input[type="date"]::-webkit-calendar-picker-indicator,
+.serving-preference-form input[type="date"]::-webkit-calendar-picker-indicator,
+.profile-edit-grid input[type="date"]::-webkit-calendar-picker-indicator {
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Stronger assignment matrix column headings in both light and dark themes. */
+.bulk-matrix th {
+  background: #edf2f8 !important;
+  color: #35445b !important;
+  border-color: #d5deeb !important;
+  font-weight: 850 !important;
+  letter-spacing: .055em;
+}
+:root[data-theme="dark"] .bulk-matrix th {
+  background: #293951 !important;
+  color: #edf3fc !important;
+  border-color: #4c607d !important;
+  font-weight: 850 !important;
+}
+
+/* Login focus uses an inset ring so its left edge is never clipped by the card. */
+.auth-card .stack input:focus,
+.auth-card .stack input:focus-visible {
+  outline: none !important;
+  border-color: #6558ed !important;
+  box-shadow: inset 0 0 0 1px #6558ed, 0 0 0 2px rgba(101,88,237,.13) !important;
+}
+:root[data-theme="dark"] .auth-card .stack input:focus,
+:root[data-theme="dark"] .auth-card .stack input:focus-visible {
+  border-color: #aa9fff !important;
+  box-shadow: inset 0 0 0 1px #aa9fff, 0 0 0 2px rgba(170,159,255,.17) !important;
+}
+
+/* Profile CG days: checkbox, label and weekday stay together and wrap naturally. */
+.days-field {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px 16px;
+  overflow: hidden;
+}
+.days-field label {
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 9px;
+  min-width: 0;
+  margin: 0;
+  white-space: normal;
+}
+.days-field label input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .days-field { grid-template-columns: minmax(0, 1fr) !important; }
+  .bulk-form-grid,
+  .recurring-rule-form,
+  .serving-preference-form,
+  .profile-edit-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .availability-form { grid-template-columns: minmax(0, 1fr) !important; }
+  .availability-form > *,
+  .bulk-form-grid > *,
+  .recurring-rule-form > *,
+  .serving-preference-form > *,
+  .profile-edit-grid > * { grid-column: 1 !important; }
+}
+
+/* Per-church group actions expose both selection operations at the same time. */
+.bulk-group-selection-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.bulk-group-selection-actions .link-btn {
+  border: 1px solid #d9e1ee;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #f8faff;
+  color: #4b46c8;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bulk-group-selection-actions .link-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+:root[data-theme="dark"] .bulk-group-selection-actions .link-btn {
+  background: #293951 !important;
+  border-color: #4c607d !important;
+  color: #e1dcff !important;
+}
+:root[data-theme="dark"] .bulk-group-selection-actions .link-btn:disabled {
+  color: #9eabc0 !important;
+}
+@media (max-width: 520px) {
+  .bulk-group-selection-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 10px 0 0;
+    width: 100%;
+  }
+  .bulk-group-selection-actions .link-btn {
+    width: 100%;
+    padding: 8px 6px;
+  }
+}
+.servant-status-toggle { min-width: 190px; }
