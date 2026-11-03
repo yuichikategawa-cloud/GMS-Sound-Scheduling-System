@@ -66,6 +66,29 @@ Deno.serve(async (req: Request) => {
         continue;
       }
 
+      const { data: preferences, error: preferencesError } = await db
+        .from("serving_notification_preferences")
+        .select("new_assignments,schedule_changes,confirmation_reminders,availability_deadlines,request_updates")
+        .eq("user_id", notification.recipient_user_id)
+        .maybeSingle();
+      if (preferencesError) throw preferencesError;
+      const prefs = preferences ?? {};
+      const notificationType = String(notification.notification_type ?? "");
+      const preferenceKey =
+        notificationType === "new_assignment" || notificationType === "replacement_assigned" ? "new_assignments" :
+        notificationType === "schedule_changed" || notificationType === "schedule_unpublished" || notificationType === "assignment_changed" ? "schedule_changes" :
+        notificationType.includes("confirm") || notificationType.includes("reminder") ? "confirmation_reminders" :
+        notificationType.includes("availability") || notificationType.includes("profile") ? "availability_deadlines" :
+        notificationType.includes("request") || notificationType.includes("replacement") || notificationType.includes("swap") ? "request_updates" : null;
+      if (preferenceKey && prefs[preferenceKey] === false) {
+        await db.from("serving_push_queue").update({
+          processed_at: new Date().toISOString(),
+          last_error: "Push disabled by recipient preference; Inbox notification retained.",
+        }).eq("notification_id", item.notification_id);
+        processed++;
+        continue;
+      }
+
       const { data: subscriptions, error: subscriptionsError } = await db
         .from("serving_push_subscriptions")
         .select("id,endpoint,p256dh,auth")
