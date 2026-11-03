@@ -960,3 +960,54 @@
   .audit-toolbar{flex-direction:column;align-items:stretch;gap:12px}
   .audit-toolbar>.btn{width:100%;white-space:normal;line-height:1.35;text-align:center}
 }
+
+
+/* Bulk Assignment Center */
+.bulk-assignment-center{background:#fff;border:1px solid #dfe5f2;border-radius:18px;padding:22px;margin:22px 0;box-shadow:0 4px 18px rgba(24,35,70,.035);min-width:0}
+.bulk-assignment-heading,.bulk-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.bulk-assignment-heading h2,.bulk-preview-heading h3{margin:0 0 5px;font-size:18px}
+.bulk-assignment-heading .subtle{margin:0;max-width:760px}
+.bulk-selected-count{white-space:nowrap;background:#f0efff;color:#5145e8;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700}
+.bulk-copy-panel{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;background:#f7f8ff;border:1px solid #e4e7ff;border-radius:13px;padding:15px;margin:18px 0}
+.bulk-copy-panel>div:first-child{display:grid;gap:5px;max-width:360px}
+.bulk-copy-panel small,.bulk-matrix td small{display:block;color:#74809a;font-size:12px;line-height:1.45;margin-top:4px}
+.bulk-copy-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.bulk-copy-controls label{display:grid;gap:5px;font-size:11px;font-weight:700;color:#68748d}
+.bulk-copy-controls input,.bulk-matrix select{border:1px solid #d9e0ef;border-radius:9px;background:#fff;padding:10px 11px;min-height:40px;color:#17233d;font:inherit}
+.bulk-matrix-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:18px 0 10px}
+.bulk-matrix-toolbar>div{display:flex;gap:14px;flex-wrap:wrap}
+.bulk-matrix-toolbar .link-btn{padding:4px 0}
+.bulk-matrix-wrap{width:100%;overflow-x:auto;border:1px solid #e2e7f1;border-radius:12px}
+.bulk-matrix{width:100%;border-collapse:collapse;min-width:850px;font-size:12px}
+.bulk-matrix th,.bulk-matrix td{padding:11px 10px;text-align:left;border-bottom:1px solid #edf0f6;vertical-align:middle}
+.bulk-matrix th{background:#f8f9fc;color:#65718b;font-size:10px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.bulk-matrix tr:last-child td{border-bottom:0}
+.bulk-matrix td:first-child{width:54px;text-align:center}
+.bulk-matrix td input[type=checkbox]{width:17px;height:17px;accent-color:#5145e8}
+.bulk-matrix td b{display:block;min-width:120px}
+.bulk-matrix select{width:150px;max-width:100%;font-size:12px;padding:9px}
+.bulk-apply-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;color:#68748d;font-size:12px}
+.bulk-preview-panel{margin-top:16px;padding:16px;border:1px solid #dfe5f2;border-radius:13px;background:#fbfcff;display:grid;gap:12px}
+.bulk-preview-heading .subtle{margin:0;font-size:12px}
+.bulk-preview-stats{display:flex;gap:20px;flex-wrap:wrap;color:#68748d;font-size:12px}
+.bulk-preview-stats b{color:#18243d;font-size:16px;margin-right:4px}
+@media(max-width:700px){
+ .bulk-assignment-center{padding:15px;margin:16px 0;border-radius:15px}
+ .bulk-assignment-heading{display:block}
+ .bulk-selected-count{display:inline-flex;margin-top:10px}
+ .bulk-copy-panel{display:grid;gap:12px}
+ .bulk-copy-controls{display:grid;grid-template-columns:1fr 1fr;align-items:end}
+ .bulk-copy-controls label input{width:100%;min-width:0}
+ .bulk-copy-controls .btn{grid-column:1/-1;width:100%}
+ .bulk-matrix-toolbar{align-items:flex-start;flex-direction:column}
+ .bulk-apply-footer{align-items:stretch;flex-direction:column}
+ .bulk-apply-footer .btn{width:100%}
+}
+
+.notification-preference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-top:12px}
+.notification-preference-grid label{display:flex;align-items:center;gap:8px;font-size:12px;color:#46536d;font-weight:600}
+.notification-preference-grid input{width:16px;height:16px;accent-color:#5145e8;flex:0 0 auto}
+.workload-warning{background:#fff9e9;border:1px solid #f2dfaa;border-radius:10px;padding:12px;color:#775b17;font-size:12px}
+.workload-warning p{margin:5px 0 10px;line-height:1.5}
+.workload-warning label{display:flex;align-items:center;gap:8px;font-weight:600}
+@media(max-width:700px){.notification-preference-grid{grid-template-columns:1fr}}

@@ -43,6 +43,7 @@ export default function App() {
   const [requests,setRequests] = useState<any[]>([]);
   const [requestReads,setRequestReads] = useState<any[]>([]);
   const [notifications,setNotifications] = useState<any[]>([]);
+  const [notificationPrefs,setNotificationPrefs] = useState<any>({new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true});
   const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
   const [availabilityDeadline,setAvailabilityDeadline] = useState("");
@@ -159,7 +160,7 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,notificationPrefsRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -173,12 +174,13 @@ export default function App() {
         supabase.from("serving_notifications").select("*").gte("created_at",notificationCutoff).order("created_at",{ascending:false}).limit(100),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
-        supabase.from("member_profiles").select("*")
+        supabase.from("member_profiles").select("*"),
+        supabase.from("serving_notification_preferences").select("*").eq("user_id",session?.user?.id??"").maybeSingle()
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes]
+      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,notificationPrefsRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -202,6 +204,7 @@ export default function App() {
       setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
+      setNotificationPrefs(notificationPrefsRes.error||!notificationPrefsRes.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationPrefsRes.data);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }
   }
@@ -539,8 +542,15 @@ export default function App() {
   }
   async function publishSchedule(s:ScheduleView){
     if(!supabase||!isAdmin)return;
-    const {error}=await supabase.from("schedules").update({status:s.status==="published"?"draft":"published"}).eq("id",s.id);
-    if(error)setMessage(error.message);else {setMessage(s.status==="published"?"Schedule moved back to draft.":"Schedule published. Servants can now see and confirm it.");await loadData();}
+    const nextStatus=s.status==="published"?"draft":"published";
+    if(nextStatus==="published"){
+      const missing=["FOH","Monitor"].filter(role=>!s.assignments.some(a=>a.role===role&&a.servant_id));
+      if(missing.length&&!await askAction("Incomplete service",`${s.service_name} is missing ${missing.join(" and ")}. Publish anyway?`,"Publish anyway",true))return;
+    }
+    const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:null,p_schedule_ids:[s.id],p_status:nextStatus});
+    if(error){setMessage(error.message);return;}
+    setMessage(nextStatus==="published"?"Schedule published. Affected servants receive one grouped notification.":"Schedule moved back to draft.");
+    await loadData();
   }
   async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
     if(!supabase||!isAdmin||!locationId)return;
@@ -559,11 +569,23 @@ export default function App() {
     if(!await askAction(`${action==="publish"?"Publish":"Unpublish"} all schedules?`,`${action==="publish"?"Publish":"Unpublish"} all schedules for ${location?.name??"this church"}?`,action==="publish"?"Publish all":"Unpublish all",action!=="publish"))return;
     setLoading(true);setScheduleError("");setMessage("");
     try{
-      const {error}=await supabase.from("schedules").update({status}).eq("location_id",locationId);
+      const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:locationId,p_schedule_ids:null,p_status:status});
       if(error)throw error;
       await loadData();
-      setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}.`);
+      setMessage(`All schedules for ${location?.name??"this church"} have been ${status==="published"?"published":"unpublished"}. Each affected servant receives one grouped notification.`);
     }catch(e){setMessage(`Bulk ${action} failed: ${errorText(e)}`);}
+    finally{setLoading(false);}
+  }
+  async function applyBulkAssignments(rows:any[]){
+    if(!supabase||!isAdmin)return false;
+    setLoading(true);setMessage("");
+    try{
+      const {error}=await supabase.rpc("admin_bulk_assignments_grouped",{p_assignments:rows,p_batch_label:"Bulk schedule assignment"});
+      if(error)throw error;
+      await loadData();
+      setMessage("Bulk assignments saved. Each affected servant receives one consolidated notification.");
+      return true;
+    }catch(e){setMessage(`Bulk assignment failed: ${errorText(e)}`);return false;}
     finally{setLoading(false);}
   }
   async function deleteAllLocationSchedules(locationId:string){
@@ -674,6 +696,13 @@ export default function App() {
     const {error:notifyError}=await supabase.rpc("notify_admin_assignment_confirmation",{p_assignment_id:assignment.id});
     if(notifyError)console.warn("Confirmation saved but admin notification failed:",notifyError.message);
     setMessage("Serving assignment confirmed. The administrator has been notified.");await loadData();
+  }
+  async function onSaveNotificationPreferences(next:any){
+    if(!supabase||!session?.user?.id)return;
+    const payload={user_id:session.user.id,new_assignments:!!next.new_assignments,schedule_changes:!!next.schedule_changes,confirmation_reminders:!!next.confirmation_reminders,availability_deadlines:!!next.availability_deadlines,request_updates:!!next.request_updates,updated_at:new Date().toISOString()};
+    const {error}=await supabase.from("serving_notification_preferences").upsert(payload,{onConflict:"user_id"});
+    if(error){setMessage(error.message);return;}
+    setNotificationPrefs(payload);setMessage("Notification preferences saved. In-app Inbox history remains enabled.");
   }
   async function markNotificationRead(id:string){
     if(!supabase)return;
@@ -786,6 +815,7 @@ export default function App() {
           {isAdmin&&<section className="stats-grid"><Stat label="VISIBLE SERVICES" value={filtered.length}/><Stat label="SERVANTS ASSIGNED" value={new Set(filtered.flatMap(s=>s.assignments.map(a=>a.servant_id))).size}/><Stat label="CHURCH LOCATIONS" value={new Set(filtered.map(s=>s.location_id)).size}/></section>}
           {isAdmin&&<ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>}
           {isAdmin&&<AdminSchedulingCenter schedules={schedules} requests={requests} servants={servants} availability={availability}/>}
+          {isAdmin&&<BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={servingPreferences} disabled={loading} onApply={applyBulkAssignments}/>}
           <details className="filter-panel filter-panel-collapsible" open><summary className="filter-title"><span><Search size={17}/> <b>Filter schedule</b></span><ChevronDown size={18}/></summary><div className="filters">
             <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
             <label><span>Church location</span><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
@@ -840,6 +870,89 @@ export default function App() {
   </div>;
 }
 
+
+
+function BulkAssignmentCenter({schedules,servants,availability,preferences,disabled,onApply}:{schedules:ScheduleView[];servants:Servant[];availability:any[];preferences:any[];disabled:boolean;onApply:(rows:any[])=>Promise<boolean>}){
+ const upcoming=schedules.filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time));
+ const [selected,setSelected]=useState<string[]>([]);
+ const [draft,setDraft]=useState<Record<string,Record<string,string>>>({});
+ const [sourceDate,setSourceDate]=useState("");
+ const [targetDate,setTargetDate]=useState("");
+ const [preview,setPreview]=useState(false);
+ const [acceptWorkload,setAcceptWorkload]=useState(false);
+ useEffect(()=>{
+  setDraft(current=>{
+   const next={...current};
+   for(const s of upcoming){if(!next[s.id])next[s.id]=Object.fromEntries(ROLES.map(role=>[role,s.assignments.find(a=>a.role===role)?.servant_id??""]));}
+   return next;
+  });
+  setSelected(current=>current.filter(id=>upcoming.some(s=>s.id===id)));
+ },[schedules.length]);
+ const toggle=(id:string)=>{setAcceptWorkload(false);setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);};
+ const setRole=(scheduleId:string,role:string,servantId:string)=>setDraft(v=>({...v,[scheduleId]:{...(v[scheduleId]??{}),[role]:servantId}}));
+ const copyPrevious=()=>{
+  if(!sourceDate||!targetDate)return;
+  const source=upcoming.filter(s=>s.service_date===sourceDate);
+  const target=upcoming.filter(s=>s.service_date===targetDate);
+  let copied=0;
+  setDraft(current=>{
+   const next={...current};
+   for(const targetService of target){
+    const sourceService=source.find(x=>x.location_id===targetService.location_id&&x.service_name===targetService.service_name);
+    if(!sourceService)continue;
+    next[targetService.id]={...(next[targetService.id]??{}),...Object.fromEntries(ROLES.map(role=>[role,sourceService.assignments.find(a=>a.role===role)?.servant_id??""]))};
+    copied++;
+   }
+   return next;
+  });
+  setSelected(current=>[...new Set([...current,...target.filter(t=>source.some(x=>x.location_id===t.location_id&&x.service_name===t.service_name)).map(t=>t.id)])]);
+  setPreview(false);
+ };
+ const rows=selected.flatMap(id=>ROLES.map(role=>({schedule_id:id,role,servant_id:draft[id]?.[role]||null})));
+ const conflicts=selected.flatMap(id=>{
+  const schedule=upcoming.find(s=>s.id===id);if(!schedule)return [];
+  return ROLES.flatMap(role=>{
+   const servantId=draft[id]?.[role];if(!servantId)return [];
+   const person=servants.find(x=>x.id===servantId);
+   const unavailable=availability.some(a=>a.servant_id===servantId&&a.service_date===schedule.service_date&&a.status==="unavailable");
+   const duplicate=ROLES.some(other=>other!==role&&draft[id]?.[other]===servantId);
+   const otherHasServant=(other:ScheduleView)=>ROLES.some(otherRole=>(draft[other.id]?.[otherRole]??other.assignments.find(a=>a.role===otherRole)?.servant_id??"")===servantId);
+   const cross=upcoming.some(other=>other.id!==id&&other.service_date===schedule.service_date&&other.location_id!==schedule.location_id&&otherHasServant(other));
+   const prefs=preferences.filter(p=>p.servant_id===servantId&&p.active!==false&&(!p.effective_from||p.effective_from<=schedule.service_date)&&(!p.effective_until||p.effective_until>=schedule.service_date));
+   const dow=new Date(`${schedule.service_date}T12:00:00`).getDay();
+   const timeRules=prefs.filter(p=>p.rule_type==="allowed_time_window");
+   const scopeRules=prefs.filter(p=>p.rule_type==="allowed_service_scope");
+   const timeBlocked=timeRules.length>0&&!timeRules.some(p=>(!p.days_of_week?.length||p.days_of_week.includes(dow))&&shortTime(schedule.start_time)>=String(p.start_time).slice(0,5)&&shortTime(schedule.end_time)<=String(p.end_time).slice(0,5));
+   const scopeBlocked=scopeRules.length>0&&!scopeRules.some(p=>p.location_id===schedule.location_id&&(!p.service_names?.length||p.service_names.includes(schedule.service_name)));
+   const overlapping=upcoming.some(other=>other.id!==id&&other.service_date===schedule.service_date&&other.location_id===schedule.location_id&&otherHasServant(other)&&Number(schedule.start_time.slice(0,2))*60+Number(schedule.start_time.slice(3,5))<Number(other.end_time.slice(0,2))*60+Number(other.end_time.slice(3,5))&&Number(schedule.end_time.slice(0,2))*60+Number(schedule.end_time.slice(3,5))>Number(other.start_time.slice(0,2))*60+Number(other.start_time.slice(3,5)));
+   const reason=unavailable?"Unavailable":duplicate?"Duplicate role":cross?"Other church assignment":overlapping?"Overlapping service":timeBlocked?"Time-window restriction":scopeBlocked?"Service/location restriction":"";
+   return reason?[`${person?.full_name??"Servant"} · ${schedule.service_name} · ${reason}`]:[];
+  });
+ });
+ const workloadWarnings=selected.flatMap(id=>{
+  const schedule=upcoming.find(s=>s.id===id);if(!schedule)return [];
+  return ROLES.flatMap(role=>{
+   const servantId=draft[id]?.[role];if(!servantId)return [];
+   const from=new Date(`${schedule.service_date}T12:00:00`);from.setDate(from.getDate()-30);const fromDate=from.toLocaleDateString("en-CA");
+   const days=new Set(schedules.filter(x=>x.service_date>=fromDate&&x.service_date<schedule.service_date&&x.assignments.some(a=>a.servant_id===servantId)).map(x=>x.service_date)).size;
+   const personName=servants.find(x=>x.id===servantId)?.full_name??"Servant";
+   const warnings:string[]=[];
+   if(days>=5)warnings.push(`${personName} already served ${days} days in the previous 30 days`);
+   if(availability.some(a=>a.servant_id===servantId&&a.service_date===schedule.service_date&&a.status==="prefer_not"))warnings.push(`${personName} prefers not to serve on ${fmtDate(schedule.service_date)}`);
+   return warnings;
+  });
+ });
+ const commit=async()=>{if(!selected.length)return;const ok=await onApply(rows);if(ok){setSelected([]);setPreview(false);}};
+ return <section className="bulk-assignment-center">
+  <div className="bulk-assignment-heading"><div><h2>Bulk Assignment Center</h2><p className="subtle">Edit multiple service assignments in one place, copy a previous weekend and review conflicts before applying.</p></div><span className="bulk-selected-count">{selected.length} selected</span></div>
+  <div className="bulk-copy-panel"><div><b>Copy previous weekend</b><small>Copy matching church and service names into another weekend. Review every copied assignment before applying.</small></div><div className="bulk-copy-controls"><label>From Saturday<input type="date" value={sourceDate} onChange={e=>setSourceDate(e.target.value)}/></label><label>To Saturday<input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)}/></label><button className="btn secondary" disabled={!sourceDate||!targetDate||disabled} onClick={copyPrevious}>Copy assignments</button></div></div>
+  <div className="bulk-matrix-toolbar"><b>Assignment distribution matrix</b><div><button className="link-btn" onClick={()=>setSelected(upcoming.slice(0,60).map(s=>s.id))}>Select all listed</button><button className="link-btn" onClick={()=>setSelected([])}>Clear selection</button></div></div>
+  <div className="bulk-matrix-wrap"><table className="bulk-matrix"><thead><tr><th>Select</th><th>Service</th><th>Date / time</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{upcoming.slice(0,60).map(s=><tr key={s.id}><td><input aria-label={`Select ${s.service_name}`} type="checkbox" checked={selected.includes(s.id)} onChange={()=>toggle(s.id)}/></td><td><b>{s.location_name}</b><small>{s.service_name}</small></td><td>{fmtDate(s.service_date)}<small>{shortTime(s.start_time)}–{shortTime(s.end_time)}</small></td>{ROLES.map(role=><td key={role}><select aria-label={`${role} for ${s.service_name}`} value={draft[s.id]?.[role]??""} onChange={e=>setRole(s.id,role,e.target.value)}><option value="">Unassigned</option>{servants.filter(p=>p.active).map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></td>)}</tr>)}</tbody></table></div>
+  {upcoming.length>60&&<p className="subtle">Showing the first 60 upcoming services. Use the schedule filters to narrow the list.</p>}
+  <div className="bulk-apply-footer"><span>{selected.length} services · {rows.length} role slots in the update</span><button className="btn primary" disabled={!selected.length||disabled} onClick={()=>setPreview(true)}>Review assignments</button></div>
+  {preview&&<div className="bulk-preview-panel"><div className="bulk-preview-heading"><div><h3>Review bulk assignments</h3><p className="subtle">No assignments are changed until you confirm.</p></div><button className="icon-btn" onClick={()=>setPreview(false)}><X size={17}/></button></div><div className="bulk-preview-stats"><span><b>{selected.length}</b> services</span><span><b>{rows.filter(r=>r.servant_id).length}</b> assigned roles</span><span><b>{conflicts.length}</b> blocking conflicts</span><span><b>{workloadWarnings.length}</b> workload warnings</span></div>{conflicts.length>0?<div className="control-center-alert"><AlertTriangle size={16}/><span>{conflicts.slice(0,12).join("; ")}. Correct conflicts before applying.</span></div>:<p className="workload-status">No blocking availability, preference or scheduling conflicts detected. Database checks run again when saving.</p>}{workloadWarnings.length>0&&<div className="workload-warning"><b>Fairness warnings</b><p>{workloadWarnings.slice(0,8).join("; ")}</p><label><input type="checkbox" checked={acceptWorkload} onChange={e=>setAcceptWorkload(e.target.checked)}/> I reviewed these workload warnings and want to continue.</label></div>}<button className="btn primary" disabled={disabled||conflicts.length>0||(workloadWarnings.length>0&&!acceptWorkload)} onClick={()=>void commit()}>Confirm and apply assignments</button></div>}
+ </section>;
+}
 
 function ChurchBulkActions({locations,disabled,onPublish,onUnpublish,onDelete}:{locations:Location[];disabled:boolean;onPublish:(id:string)=>void;onUnpublish:(id:string)=>void;onDelete:(id:string)=>void}){
  const [locationId,setLocationId]=useState("");
@@ -931,7 +1044,7 @@ function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDeleteTem
  const [savingTemplate,setSavingTemplate]=useState(false); const [formError,setFormError]=useState("");
  const [selected,setSelected]=useState<string[]>(()=>templates.filter(t=>t.active!==false).map(t=>String(t.id)));
  useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
- const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
+ const toggle=(id:string)=>{setAcceptWorkload(false);setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);};
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
  return <details className="generate-panel generate-panel-collapsible" open><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
   <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select all</button><button type="button" className="clear-btn" onClick={()=>setSelected([])} disabled={selected.length===0}>Clear selection</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
@@ -1077,9 +1190,10 @@ function AvailabilityPanel({servants,availability,rules,preferences,locations,sc
  </>;
 }
 
-function PushNotificationSettings({enabled,busy,onEnable,onDisable}:{enabled:boolean;busy:boolean;onEnable:()=>void;onDisable:()=>void}){
+function PushNotificationSettings({enabled,busy,onEnable,onDisable,preferences,onSavePreferences}:{enabled:boolean;busy:boolean;onEnable:()=>void;onDisable:()=>void;preferences:any;onSavePreferences:(next:any)=>void}){
  const configured=!!(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
- return <section className="push-settings-card"><div className="push-settings-icon"><Bell size={19}/></div><div className="push-settings-copy"><b>Device notifications</b><p>In-app Inbox is your primary notification history. Enable push alerts to receive important updates when GMS is not open.</p>{!configured&&<small>Push delivery setup is still pending. The in-app Inbox continues to work.</small>}</div><button className="btn secondary tiny" disabled={busy||(!configured&&!enabled)} onClick={enabled?onDisable:onEnable}>{busy?"Please wait…":enabled?"Disable on this device":"Enable push"}</button></section>;
+ const options=[["new_assignments","New serving assignments"],["schedule_changes","Schedule changes"],["confirmation_reminders","Confirmation reminders"],["availability_deadlines","Availability deadline reminders"],["request_updates","Swap and replacement updates"]];
+ return <section className="push-settings-card"><div className="push-settings-icon"><Bell size={19}/></div><div className="push-settings-copy"><b>Device notifications</b><p>In-app Inbox is your primary notification history. Choose which optional push alerts this account receives.</p>{!configured&&<small>Push delivery setup is still pending. The in-app Inbox continues to work.</small>}<div className="notification-preference-grid">{options.map(([key,label])=><label key={key}><input type="checkbox" checked={preferences?.[key]!==false} onChange={e=>onSavePreferences({...preferences,[key]:e.target.checked})}/>{label}</label>)}</div></div><button className="btn secondary tiny" disabled={busy||(!configured&&!enabled)} onClick={enabled?onDisable:onEnable}>{busy?"Please wait…":enabled?"Disable on this device":"Enable push"}</button></section>;
 }
 
 function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void}){
@@ -1087,7 +1201,7 @@ function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificat
  const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
  const unread=notifications.filter(n=>!n.is_read).length;
  return <section className="servant-inbox"><div className="inbox-intro"><div><h2>Inbox</h2><p className="subtle">Assignment confirmations and replacement updates.</p></div><span className="inbox-unread-count">{unread} unread</span></div>
- <PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/>
+ <PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>
  <div className="list-heading"><h3>Notification history</h3><span>{notifications.length} recent</span></div>
  {notifications.map(n => (
     <article className={`inbox-item ${n.is_read ? "read" : "unread"}`} key={n.id} onClick={() => onNotificationRead(n.id)}>
@@ -1121,7 +1235,7 @@ function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificat
 function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
- return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} in the last 30 days</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading requests-section-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
+ return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} in the last 30 days</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading requests-section-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
 }
 
 function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
