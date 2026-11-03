@@ -213,7 +213,7 @@ export default function App() {
     const ua=navigator.userAgent.toLowerCase();
     const ios=/iphone|ipad|ipod/.test(ua);
     const message=ios?"To install Sound Scheduling on your iPhone: open this page in Safari, tap the Share button, choose Add to Home Screen, then tap Add. The installed icon will open Sound Scheduling in its own app window.":"To install Sound Scheduling: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";
-    await askAction("Install Sound Scheduling App",message,"Got it",false);
+    await askAction("Install app",message,"Got it",false);
   }
 
   function decodeVapidKey(value:string){const padding="=".repeat((4-value.length%4)%4);const base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/");const raw=window.atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
@@ -775,7 +775,7 @@ export default function App() {
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install Sound Scheduling App</button>}<button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install app</button>}<button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main className="content">
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         {tab==="schedule"?<>
@@ -823,7 +823,7 @@ export default function App() {
     </nav>
     {mobileNav&&<div className="mobile-more-backdrop" onClick={()=>setMobileNav(false)}>
       <div className="mobile-more-menu" onClick={e=>e.stopPropagation()}>
-        <div className="mobile-more-heading">More options</div>{!pwaInstalled&&<button onClick={()=>{setMobileNav(false);void installGmsApp();}}><Smartphone size={18}/> Install Sound Scheduling App</button>}
+        <div className="mobile-more-heading">More options</div>{!pwaInstalled&&<button onClick={()=>{setMobileNav(false);void installGmsApp();}}><Smartphone size={18}/> Install app</button>}
         {!isAdmin&&<button onClick={()=>{setTab("profile");setMobileNav(false);}}><UserRound size={18}/> My profile</button>}
         {isAdmin&&<>
           <button onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
