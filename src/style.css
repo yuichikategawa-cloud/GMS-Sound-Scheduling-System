@@ -2584,3 +2584,271 @@
     font-size: 10px;
   }
 }
+
+/* Final availability/admin consistency pass from the 14:21 review screenshots. */
+.availability-form > .availability-self-name {
+  align-self: stretch;
+  justify-content: center;
+  min-height: 44px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8f9fc;
+  gap: 3px;
+}
+.availability-form > .availability-self-name span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.availability-form > .availability-self-name b {
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+/* Multiple-date servant identity should use one compact grid cell, not a blank full-width row. */
+.bulk-form-grid > .availability-self-name {
+  grid-column: auto !important;
+  align-self: stretch;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8f9fc;
+  gap: 3px;
+}
+
+/* Keep recurring restrictions readable: paired fields on desktop and one column on phones. */
+.recurring-rule-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end;
+  gap: 14px;
+  width: 100%;
+  max-width: 840px !important;
+  min-width: 0;
+}
+.recurring-rule-form > label,
+.recurring-rule-form > .rule-inline,
+.recurring-rule-form > button {
+  min-width: 0;
+  max-width: 100%;
+}
+.recurring-rule-form > .rule-inline {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+.recurring-rule-form > label:last-of-type,
+.recurring-rule-form > button {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+.recurring-rule-form input,
+.recurring-rule-form select,
+.rule-inline > label input,
+.rule-inline > label select {
+  box-sizing: border-box !important;
+  display: block;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.serving-preference-form {
+  width: 100%;
+  max-width: 840px !important;
+  min-width: 0;
+}
+.serving-preference-form > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* CG days: keep each checkbox directly beside its label, in a tidy two-column grid. */
+.profile-edit-grid .days-field {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: center;
+  justify-items: stretch;
+  gap: 10px 18px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 13px 14px;
+}
+.profile-edit-grid .days-field label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+.profile-edit-grid .days-field label input[type="checkbox"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+/* The church selector's group action reads as a clear action, not as a church name. */
+.bulk-church-group > summary .link-btn {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f9fc;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+.bulk-church-group > summary .link-btn:hover {
+  background: #eef0ff;
+}
+
+/* Church statistics use the same restrained metric-card treatment as the Fairness checker. */
+.location-stat-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.location-stat {
+  min-width: 0;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8f9fc;
+  overflow-wrap: anywhere;
+}
+.location-stat span {
+  min-width: 0;
+  line-height: 1.35;
+}
+.location-stat b {
+  flex: 0 0 auto;
+  font-size: 18px;
+}
+
+/* All matrix headings share one background, including the sticky Actions column. */
+.bulk-matrix th,
+.bulk-matrix th:last-child {
+  background: #f8f9fc !important;
+}
+
+/* The swap dialog's close control belongs in the header's top-right corner. */
+.swap-modal .modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+.swap-modal .modal-head > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.swap-modal .modal-head > button {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  align-self: flex-start;
+}
+
+/* Keep availability actions visually consistent: Save actions are primary; Clear is secondary. */
+.availability-form-panel form > button.btn.primary,
+.availability-form-panel form > button.btn.secondary {
+  min-height: 42px;
+  border-radius: 9px;
+  font-weight: 750;
+}
+.availability-filter .clear-btn {
+  min-height: 42px;
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #394357;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .availability-form > .availability-self-name,
+:root[data-theme="dark"] .bulk-form-grid > .availability-self-name {
+  background: #26364f !important;
+  border-color: #465873 !important;
+}
+:root[data-theme="dark"] .availability-form > .availability-self-name span,
+:root[data-theme="dark"] .bulk-form-grid > .availability-self-name span {
+  color: #b9c7dc !important;
+}
+:root[data-theme="dark"] .availability-form > .availability-self-name b,
+:root[data-theme="dark"] .bulk-form-grid > .availability-self-name b {
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field {
+  background: #202f46 !important;
+  border-color: #465873 !important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend,
+:root[data-theme="dark"] .profile-edit-grid .days-field label {
+  color: #edf3fb !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn {
+  background: #283750 !important;
+  color: #e8e5ff !important;
+  border-color: #465873 !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn:hover {
+  background: #354764 !important;
+}
+:root[data-theme="dark"] .location-stat {
+  background: #26364f !important;
+  border: 1px solid #405571 !important;
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .location-stat span {
+  color: #c1cde0 !important;
+}
+:root[data-theme="dark"] .location-stat b {
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .bulk-matrix th,
+:root[data-theme="dark"] .bulk-matrix th:last-child {
+  background: #293951 !important;
+  color: #d4deed !important;
+  border-color: #40516d !important;
+}
+:root[data-theme="dark"] .availability-filter .clear-btn {
+  background: #26354d !important;
+  border-color: #4a5d7b !important;
+  color: #e8e5ff !important;
+}
+
+@media (max-width: 760px) {
+  .recurring-rule-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-width: 100% !important;
+  }
+  .recurring-rule-form > .rule-inline,
+  .recurring-rule-form > label:last-of-type,
+  .recurring-rule-form > button {
+    grid-column: 1 !important;
+  }
+  .serving-preference-form { max-width: 100% !important; }
+  .profile-edit-grid .days-field {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .location-stat-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .swap-modal .modal-head {
+    align-items: flex-start;
+  }
+}
