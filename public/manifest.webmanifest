@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "GMS Sound Scheduling System",
+  "short_name": "GMS Sound",
+  "description": "GMS Sound Scheduling System — Serve with Excellence.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#171d35",
+  "theme_color": "#171d35",
+  "icons": [
+    { "src": "/icons/gms-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/gms-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/gms-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
