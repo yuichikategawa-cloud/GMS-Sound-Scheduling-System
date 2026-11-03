@@ -560,7 +560,7 @@ export default function App() {
       </button>
       <button className={`mobile-nav-item ${(!isAdmin&&tab==="inbox")||(isAdmin&&tab==="requests")?"active":""}`} onClick={()=>{setTab(isAdmin?"requests":"inbox");setMobileNav(false);}}>
         <InboxIcon size={20}/><span>{isAdmin?"Requests":"Inbox"}</span>
-        {((!isAdmin&&requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length)||(isAdmin&&(requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length)))>0&&<i className="mobile-nav-badge"/>}
+        {(isAdmin ? (requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length) : requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length)>0&&<i className="mobile-nav-badge"/>}
       </button>
       <button className={`mobile-nav-item ${mobileNav?"active":""}`} aria-expanded={mobileNav} onClick={()=>setMobileNav(v=>!v)}>
         <MoreHorizontal size={20}/><span>More</span>
