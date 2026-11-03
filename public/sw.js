@@ -3,13 +3,14 @@
  * Supabase/API responses and private servant/admin data are never cached.
  */
 const CACHE_PREFIX = "gms-static-";
-const CACHE_NAME = `${CACHE_PREFIX}v2`;
+const CACHE_NAME = `${CACHE_PREFIX}v3`;
 const APP_SHELL = [
   "/",
   "/offline.html",
   "/manifest.webmanifest",
   "/gms-sound-favicon.svg",
   "/icons/gms-icon-192.png",
+  "/icons/apple-touch-icon.png",
   "/icons/gms-icon-512.png"
 ];
 
