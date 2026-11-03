@@ -1850,3 +1850,154 @@
 :root[data-theme="dark"] .status-chip.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
 :root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}
+
+
+/* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
+   and readable servant dashboard labels. Child cards retain their own surfaces. */
+:root[data-theme="dark"] .schedule-workspace-panel,
+:root[data-theme="dark"] .requests-panel {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #eaf0fa !important;
+}
+
+/* The calendar workspace should not render as a full-width light/dark strip.
+   Keep the weekly/monthly selector as a compact segmented control. */
+:root[data-theme="dark"] .calendar-workspace-heading {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .calendar-switch {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  margin: 0 0 16px;
+  border: 1px solid #3c4c66 !important;
+  border-radius: 12px;
+  background: #1b263a !important;
+  color: #c7d3e6 !important;
+}
+:root[data-theme="dark"] .calendar-switch button,
+:root[data-theme="dark"] .calendar-switch button:not(.selected) {
+  border: 1px solid #465873 !important;
+  border-radius: 8px;
+  background: #26354d !important;
+  color: #e4ebf7 !important;
+}
+:root[data-theme="dark"] .calendar-switch button:hover:not(.selected) {
+  background: #354762 !important;
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .calendar-switch button.selected {
+  background: #49458a !important;
+  color: #ffffff !important;
+  border-color: #8982e9 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+:root[data-theme="dark"] .calendar-switch span {
+  color: #c7d3e6 !important;
+}
+
+/* Servant Information: improve section headings, summaries and distribution labels. */
+:root[data-theme="dark"] .servant-summary-section,
+:root[data-theme="dark"] .servant-summary-section>summary {
+  background: #1b263a !important;
+  color: #f1f5fb !important;
+}
+:root[data-theme="dark"] .servant-summary-section>summary b,
+:root[data-theme="dark"] .servant-directory-heading h3,
+:root[data-theme="dark"] .servant-two-col h4,
+:root[data-theme="dark"] .servant-record-detail h4,
+:root[data-theme="dark"] .servant-record-detail p b {
+  color: #f1f5fb !important;
+}
+:root[data-theme="dark"] .servant-summary-section>summary small,
+:root[data-theme="dark"] .servant-bar-row>div:first-child,
+:root[data-theme="dark"] .servant-bar-row b small,
+:root[data-theme="dark"] .servant-directory-heading p,
+:root[data-theme="dark"] .servant-directory-heading>b,
+:root[data-theme="dark"] .servant-mini-grid span,
+:root[data-theme="dark"] .servant-record-detail p,
+:root[data-theme="dark"] .servant-health-list>div span,
+:root[data-theme="dark"] .servant-health-list>div {
+  color: #b9c7dc !important;
+}
+:root[data-theme="dark"] .servant-bar-row b,
+:root[data-theme="dark"] .servant-mini-grid b,
+:root[data-theme="dark"] .servant-health-list b,
+:root[data-theme="dark"] .servant-kpi>b {
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .servant-summary-body {
+  color: #d7e1ef !important;
+}
+:root[data-theme="dark"] .servant-bar-track {
+  background: #2b3a52 !important;
+}
+:root[data-theme="dark"] .servant-health-list>div,
+:root[data-theme="dark"] .servant-mini-grid>div {
+  background: #202f46 !important;
+  border: 1px solid #3d4e68;
+}
+
+/* Remove residual light-mode styling from inner inbox/request wrappers. */
+:root[data-theme="dark"] .requests-content-card {
+  background: #1b263a !important;
+  border-color: #3c4c66 !important;
+  color: #eaf0fa !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .requests-content-heading {
+  border-bottom-color: #3c4c66 !important;
+}
+:root[data-theme="dark"] .requests-content-heading h2,
+:root[data-theme="dark"] .notification-history-section .list-heading h3 {
+  color: #f1f5fb !important;
+}
+:root[data-theme="dark"] .requests-content-heading span,
+:root[data-theme="dark"] .requests-empty-note {
+  color: #b8c6da !important;
+}
+:root[data-theme="dark"] .inbox-item,
+:root[data-theme="dark"] .notification-history-section .inbox-item {
+  background: #24334b !important;
+  border-color: #40536f !important;
+  color: #edf3fb !important;
+}
+:root[data-theme="dark"] .inbox-item-title b,
+:root[data-theme="dark"] .inbox-item-body>b {
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .inbox-item-body p {
+  color: #cad5e5 !important;
+}
+:root[data-theme="dark"] .inbox-item-body small {
+  color: #aebdd2 !important;
+}
+:root[data-theme="dark"] .inbox-status.approved {
+  background: #174b38 !important;
+  color: #b8f2d2 !important;
+}
+
+/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
+:root[data-theme="dark"] .calendar-workspace-heading h2,
+:root[data-theme="dark"] .assignment-workspace-heading h2,
+:root[data-theme="dark"] .calendar-workspace-heading b,
+:root[data-theme="dark"] .assignment-workspace-heading b {
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .calendar-workspace-heading .subtle,
+:root[data-theme="dark"] .assignment-workspace-heading .subtle {
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .calendar-period,
+:root[data-theme="dark"] .calendar-period>h3,
+:root[data-theme="dark"] .calendar-period .subtle {
+  color: #d2deee !important;
+}
