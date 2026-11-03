@@ -9,7 +9,17 @@ const today = () => new Date().toLocaleDateString("en-CA");
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
 const shortTime = (t: string) => t?.slice(0,5) ?? "";
 const dayNameForTemplate = (d:number) => Number(d)===6?"Saturday":"Sunday";
-const errorText = (e: unknown) => e instanceof Error ? e.message : String(e);
+const errorText = (e: unknown): string => {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const value = e as Record<string, unknown>;
+    const parts = [value.message, value.details, value.hint, value.code]
+      .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
+    if (parts.length) return parts.join(" · ");
+    try { return JSON.stringify(e); } catch { return "An unknown error occurred."; }
+  }
+  return String(e);
+};
 const displayList = (v: unknown) => {
   if (Array.isArray(v)) return v.filter(Boolean).join(", ");
   if (typeof v === "string") {
@@ -599,10 +609,17 @@ export default function App() {
     if(!supabase||!isAdmin)return false;
     setLoading(true);setMessage("");
     try{
-      const {error}=await supabase.rpc("admin_bulk_assignments_grouped",{p_assignments:rows,p_batch_label:"Bulk schedule assignment"});
-      if(error)throw error;
+      const {data,error}=await supabase.rpc("admin_bulk_assignments_grouped",{p_assignments:rows,p_batch_label:"Bulk schedule assignment"});
+      if(error){
+        const detail=errorText(error);
+        if(/admin_bulk_assignments_grouped|schema cache|function .*not found|PGRST202|42883|23505|duplicate key|unique constraint.*assignments/i.test(detail)){
+          throw new Error(`The bulk-assignment database function may be missing or outdated. Run supabase/migrations_20261115_bulk_assignment_commit_fix.sql in Supabase SQL Editor, then retry. Details: ${detail}`);
+        }
+        throw new Error(detail);
+      }
       await loadData();
-      setMessage("Bulk assignments saved. Each affected servant receives one consolidated notification.");
+      const changed=typeof data==="number"?data:Number(data??0);
+      setMessage(changed>0?`${changed} assignment change(s) saved. Affected servants receive one consolidated notification.`:"No assignment changes were needed; the saved schedule is already up to date.");
       return true;
     }catch(e){setMessage(`Bulk assignment failed: ${errorText(e)}`);return false;}
     finally{setLoading(false);}
@@ -1179,9 +1196,11 @@ function DailySummary({date,items,isAdmin=true}:{date:string;items:ScheduleView[
     <div className="daily-location-name"><b>{location.name}</b><span>{services.length} {services.length===1?"service":"services"}</span></div>
     <div className="daily-service-table">
      <div className="daily-service-table-head" style={{gridTemplateColumns:columns}}><span>Service / time</span>{roles.map(role=><span key={role}>{role}</span>)}</div>
-     {services.map(item=><div className="daily-service-row" key={item.id} style={{gridTemplateColumns:columns}}>
+     {services.map(item=><div className={`daily-service-row role-count-${roles.length}`} key={item.id} style={{gridTemplateColumns:columns}}>
       <div className="daily-service-identity"><b>{item.service_name}</b><small>{shortTime(item.start_time)}–{shortTime(item.end_time)}</small></div>
-      {roles.map(role=>{const assignment=item.assignments.find(a=>a.role===role);const missing=!assignment&&role!=="Assistant";return <div className={`daily-assignee-cell ${missing?"missing":role==="Assistant"&&!assignment?"optional":""}`} key={role}><small>{role}</small><span>{assignment?.servant_name??(role==="Assistant"?"Optional":"Unassigned")}</span></div>;})}
+      <div className={`daily-role-cells role-count-${roles.length}`}>
+       {roles.map(role=>{const assignment=item.assignments.find(a=>a.role===role);const missing=!assignment&&role!=="Assistant";return <div className={`daily-assignee-cell ${missing?"missing":role==="Assistant"&&!assignment?"optional":""}`} key={role}><small>{role}</small><span>{assignment?.servant_name??(role==="Assistant"?"Optional":"Unassigned")}</span></div>;})}
+      </div>
      </div>)}
     </div>
    </section>;

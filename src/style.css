@@ -3759,3 +3759,546 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* GMS 2026-11-03: final mobile and assignment-save presentation pass. */
+
+/* Availability: use one seamless card surface. Nested form grids must not look like
+   a second shaded card, and all fields must consume their assigned grid width. */
+.availability-form-panel .bulk-availability-form,
+.availability-form-panel .bulk-form-grid,
+.availability-form-panel .recurring-rule-form {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.availability-form-panel .bulk-form-grid {
+  padding: 0 !important;
+  border: 0 !important;
+}
+.availability-form-panel .bulk-servant-picker {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+}
+.availability-form-panel .bulk-form-grid.is-person,
+.availability-form-panel .bulk-form-grid.is-day {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 13px 14px !important;
+}
+.availability-form-panel .bulk-form-grid.is-person .bulk-person-servant,
+.availability-form-panel .bulk-form-grid.is-day .bulk-servant-picker,
+.availability-form-panel .bulk-form-grid.is-person > .wide,
+.availability-form-panel .bulk-form-grid.is-day > .wide,
+.availability-form-panel .bulk-form-grid.is-person .bulk-weekdays,
+.availability-form-panel .bulk-form-grid.is-day .bulk-weekdays {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+.availability-form-panel .bulk-form-grid > label,
+.availability-form-panel .recurring-rule-form > label,
+.availability-form-panel .rule-inline,
+.availability-form-panel .rule-inline label {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),
+.availability-form-panel .bulk-form-grid select,
+.availability-form-panel .recurring-rule-form input,
+.availability-form-panel .recurring-rule-form select {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.availability-form-panel .recurring-rule-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 13px 14px !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-servant,
+.availability-form-panel .recurring-rule-form > .rule-field-pattern {
+  grid-column: auto !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-status,
+.availability-form-panel .recurring-rule-form > .rule-field-dates,
+.availability-form-panel .recurring-rule-form > .rule-field-notes,
+.availability-form-panel .recurring-rule-form > .rule-field-occurrence,
+.availability-form-panel .recurring-rule-form > .rule-save {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-dates {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+}
+:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,
+:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,
+:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker {
+  border-color: #405571 !important;
+}
+
+/* Servant statistics: make the four small metrics genuinely readable in dark mode. */
+.app-shell[data-theme="dark"] .stats-servant-card {
+  background: #1d2a40 !important;
+  border: 1px solid #405571 !important;
+  color: #f4f7fc !important;
+  box-shadow: none !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-name {
+  color: #f4f7fc !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics > div {
+  background: #2c405b !important;
+  border: 1px solid #59718f !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics small {
+  color: #e0eaf7 !important;
+  font-weight: 800 !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics strong {
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 850 !important;
+}
+
+/* Daily overview: bright teal church bands distinguish each location from the navy card. */
+.daily-location-name {
+  background: #0e8790 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid #08717a !important;
+}
+.daily-location-name b,
+.daily-location-name span {
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .daily-location-name,
+.app-shell[data-theme="dark"] .daily-location-name {
+  background: #087985 !important;
+  color: #ffffff !important;
+  border-bottom-color: #31a9af !important;
+}
+:root[data-theme="dark"] .daily-location-name b,
+:root[data-theme="dark"] .daily-location-name span,
+.app-shell[data-theme="dark"] .daily-location-name b,
+.app-shell[data-theme="dark"] .daily-location-name span {
+  color: #ffffff !important;
+}
+
+/* Mobile: FOH, Monitor and Assistant always sit on the same row below the service name. */
+@media (max-width: 760px) {
+  .daily-service-row.role-count-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 9px !important;
+  }
+  .daily-service-row.role-count-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 9px !important;
+  }
+  .daily-service-row .daily-service-identity {
+    grid-column: 1 / -1 !important;
+    padding: 5px 3px 7px !important;
+  }
+  .daily-service-row .daily-assignee-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 60px !important;
+    padding: 7px 6px !important;
+    border: 1px solid #d5deeb !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+    overflow: hidden;
+  }
+  .daily-service-row .daily-assignee-cell > small {
+    display: block !important;
+    color: #53647d !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    font-weight: 900 !important;
+    letter-spacing: .045em;
+  }
+  .daily-service-row .daily-assignee-cell > span {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100%;
+    color: #26364f !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    font-weight: 800 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  .daily-service-row .daily-assignee-cell.missing {
+    background: #fff2df !important;
+    border-color: #e8b66f !important;
+  }
+  .daily-service-row .daily-assignee-cell.missing > small {
+    color: #8e4b08 !important;
+  }
+  .daily-service-row .daily-assignee-cell.missing > span {
+    color: #9b4c05 !important;
+  }
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell {
+    background: #263a55 !important;
+    border-color: #506887 !important;
+  }
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell > small,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell > small {
+    color: #dce9f8 !important;
+  }
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell > span,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell > span {
+    color: #ffffff !important;
+  }
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing {
+    background: #493724 !important;
+    border-color: #b27b3f !important;
+  }
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > small,
+  :root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > span,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > small,
+  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > span {
+    color: #ffe0ad !important;
+  }
+}
+
+/* Mobile church groups: keep the church name, counts and selection actions inside the card. */
+@media (max-width: 760px) {
+  .bulk-church-group > summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    align-items: center !important;
+    gap: 9px 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px !important;
+  }
+  .bulk-church-group > summary > span {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .bulk-church-group > summary > span > b {
+    display: block;
+    width: 100%;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  .bulk-church-group > summary > span > small {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap;
+  }
+  .bulk-church-group > summary .bulk-group-selection-actions {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+  .bulk-church-group > summary .bulk-group-selection-actions .link-btn {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    min-width: 90px !important;
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+  .bulk-church-group > summary > svg {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    align-self: center !important;
+    justify-self: end !important;
+    flex: 0 0 auto !important;
+  }
+  .bulk-church-group .bulk-matrix-wrap {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+@media (max-width: 380px) {
+  .bulk-church-group > summary .bulk-group-selection-actions .link-btn {
+    min-width: 0 !important;
+    flex: 1 1 calc(50% - 5px) !important;
+  }
+}
+
+
+/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
+@media (max-width: 760px) {
+  .availability-form-panel .bulk-form-grid.is-person,
+  .availability-form-panel .bulk-form-grid.is-day,
+  .availability-form-panel .recurring-rule-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .availability-form-panel .bulk-form-grid.is-person > *,
+  .availability-form-panel .bulk-form-grid.is-day > *,
+  .availability-form-panel .recurring-rule-form > * {
+    grid-column: 1 / -1 !important;
+  }
+  .availability-form-panel .recurring-rule-form > .rule-field-dates {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* FINAL MOBILE / DARK-MODE REGRESSION PASS (2026-11-03) */
+
+/* A single, guaranteed three-column role strip on phones. The identity remains
+   above it; FOH, Monitor and Assistant cannot wrap onto separate rows. */
+.daily-role-cells { display: contents; }
+@media (max-width: 760px) {
+  .daily-service-row.role-count-3,
+  .daily-service-row.role-count-2 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 7px !important;
+    min-width: 0 !important;
+  }
+  .daily-service-row .daily-service-identity {
+    grid-column: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .daily-service-row .daily-role-cells.role-count-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .daily-service-row .daily-role-cells.role-count-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .daily-service-row .daily-assignee-cell {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 62px !important;
+    padding: 7px 6px !important;
+    border: 1px solid #435872 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+  .daily-service-row .daily-assignee-cell > small {
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+  .daily-service-row .daily-assignee-cell > span {
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+/* Remove the second shaded surface that was visible behind availability fields.
+   The form grid inherits the containing card; only actual inputs are inset controls. */
+:root[data-theme="dark"] .availability-form-panel .bulk-availability-form,
+:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,
+:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,
+:root[data-theme="dark"] .availability-form-panel .serving-preference-form {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .availability-form-panel .bulk-form-grid > label,
+:root[data-theme="dark"] .availability-form-panel .recurring-rule-form > label,
+:root[data-theme="dark"] .availability-form-panel .recurring-rule-form > .rule-inline {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker {
+  background: transparent !important;
+  border: 1px solid #405571 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .availability-form-panel .availability-self-name {
+  background: transparent !important;
+  border-color: #405571 !important;
+}
+
+/* Exact field order: no half-width servant selector and no stray grid columns. */
+.availability-form-panel .bulk-form-grid.is-person {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+}
+.availability-form-panel .bulk-form-grid.is-person > .bulk-person-servant {
+  grid-column: 1 / -1 !important;
+}
+.availability-form-panel .bulk-form-grid.is-day {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+}
+.availability-form-panel .bulk-form-grid.is-day > .bulk-servant-picker {
+  grid-column: 1 / -1 !important;
+}
+.availability-form-panel .bulk-form-grid.is-person > .bulk-from-date,
+.availability-form-panel .bulk-form-grid.is-person > .bulk-to-date,
+.availability-form-panel .bulk-form-grid.is-person > .bulk-status,
+.availability-form-panel .bulk-form-grid.is-person > .bulk-apply-to,
+.availability-form-panel .bulk-form-grid.is-day > .bulk-from-date,
+.availability-form-panel .bulk-form-grid.is-day > .bulk-to-date,
+.availability-form-panel .bulk-form-grid.is-day > .bulk-status,
+.availability-form-panel .bulk-form-grid.is-day > .bulk-apply-to {
+  grid-column: auto !important;
+}
+.availability-form-panel .bulk-form-grid.is-person > .wide,
+.availability-form-panel .bulk-form-grid.is-day > .wide,
+.availability-form-panel .bulk-form-grid.is-person > .bulk-weekdays,
+.availability-form-panel .bulk-form-grid.is-day > .bulk-weekdays {
+  grid-column: 1 / -1 !important;
+}
+.availability-form-panel .recurring-rule-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: none !important;
+  gap: 13px 14px !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-servant,
+.availability-form-panel .recurring-rule-form > .rule-field-pattern {
+  grid-column: auto !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-status,
+.availability-form-panel .recurring-rule-form > .rule-field-dates,
+.availability-form-panel .recurring-rule-form > .rule-field-notes,
+.availability-form-panel .recurring-rule-form > .rule-field-occurrence,
+.availability-form-panel .recurring-rule-form > .rule-save {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+.availability-form-panel .recurring-rule-form > .rule-field-dates {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+}
+.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),
+.availability-form-panel .bulk-form-grid select,
+.availability-form-panel .recurring-rule-form input,
+.availability-form-panel .recurring-rule-form select {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+@media (max-width: 760px) {
+  .availability-form-panel .bulk-form-grid.is-person,
+  .availability-form-panel .bulk-form-grid.is-day,
+  .availability-form-panel .recurring-rule-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .availability-form-panel .bulk-form-grid.is-person > *,
+  .availability-form-panel .bulk-form-grid.is-day > *,
+  .availability-form-panel .recurring-rule-form > * {
+    grid-column: 1 / -1 !important;
+  }
+  .availability-form-panel .recurring-rule-form > .rule-field-dates {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Compact and predictable church group controls on small screens. */
+@media (max-width: 760px) {
+  .bulk-church-group > summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 22px !important;
+    grid-template-rows: auto auto !important;
+    gap: 9px 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px !important;
+  }
+  .bulk-church-group > summary > span {
+    display: grid !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+  }
+  .bulk-church-group > summary > span > b {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  .bulk-church-group > summary > span > small {
+    display: block !important;
+    white-space: nowrap !important;
+    font-size: 10px !important;
+  }
+  .bulk-church-group > summary > .bulk-group-selection-actions {
+    display: grid !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+  .bulk-church-group > summary > .bulk-group-selection-actions > .link-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 35px !important;
+    padding: 7px 6px !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+  }
+  .bulk-church-group > summary > svg {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    width: 17px !important;
+    height: 17px !important;
+  }
+}
