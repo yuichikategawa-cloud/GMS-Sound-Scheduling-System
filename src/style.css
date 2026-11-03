@@ -2001,3 +2001,174 @@
 :root[data-theme="dark"] .calendar-period .subtle {
   color: #d2deee !important;
 }
+
+
+/* Dark mode follow-up: restore legibility in guidance, fairness metrics and utility controls. */
+:root[data-theme="dark"] .availability-guidance-title {
+  color: #f1f5fb !important;
+}
+:root[data-theme="dark"] .availability-guidance-title b {
+  color: #f1f5fb !important;
+}
+:root[data-theme="dark"] .availability-guidance-title svg {
+  color: #a9a2ff !important;
+}
+:root[data-theme="dark"] .availability-guidance p {
+  color: #c4d0e2 !important;
+}
+
+:root[data-theme="dark"] .fairness-metrics > div {
+  background: #26364f !important;
+  border: 1px solid #405571 !important;
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .fairness-metrics small {
+  color: #c1cde0 !important;
+}
+:root[data-theme="dark"] .fairness-metrics b {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .availability-filter .clear-btn {
+  background: #26354d !important;
+  border: 1px solid #4a5d7b !important;
+  color: #e8e5ff !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .availability-filter .clear-btn:hover {
+  background: #354762 !important;
+  border-color: #7c75d8 !important;
+  color: #ffffff !important;
+}
+
+/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
+:root[data-theme="dark"] .center-screen,
+:root[data-theme="dark"] .auth-page,
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .auth-card .stack {
+  overflow: visible !important;
+  min-width: 0;
+}
+:root[data-theme="dark"] .auth-card .stack input {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border-radius: 9px;
+}
+:root[data-theme="dark"] .auth-card .stack input:focus,
+:root[data-theme="dark"] .auth-card .stack input:focus-visible {
+  outline: 2px solid #a9a2ff !important;
+  outline-offset: 3px !important;
+  border-color: #a9a2ff !important;
+  box-shadow: 0 0 0 1px rgba(169,162,255,.18) !important;
+}
+
+/* Text-entry confirmation dialogs: prevent labels, help text and fields spilling sideways. */
+.action-dialog {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: calc(100vw - 32px);
+  overflow-x: hidden;
+}
+.action-dialog .modal-head,
+.action-dialog .modal-head > div {
+  min-width: 0;
+  max-width: 100%;
+}
+.action-dialog .modal-head > div {
+  flex: 1 1 auto;
+}
+.action-dialog-message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.action-dialog-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.4;
+}
+.action-dialog-input input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+:root[data-theme="dark"] .action-dialog-input {
+  color: #e5edf8 !important;
+}
+:root[data-theme="dark"] .action-dialog-input input {
+  background: #111c2e !important;
+  color: #f3f6fc !important;
+  border-color: #4a5c78 !important;
+}
+@media (max-width: 600px) {
+  .action-dialog {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+  }
+  .action-dialog .modal-head {
+    gap: 10px;
+  }
+  .action-dialog .modal-actions {
+    width: 100%;
+    min-width: 0;
+  }
+  .action-dialog .modal-actions .btn {
+    min-width: 0;
+    white-space: normal;
+  }
+}
+
+/* Servant CG/record detail columns must shrink inside mobile cards rather than overflow. */
+.servant-record-detail {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.servant-record-detail > div {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.servant-record-detail h4,
+.servant-record-detail p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.servant-record-detail p b {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .servant-record-detail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .servant-record-detail {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+    padding: 13px;
+    overflow: hidden;
+  }
+  .servant-record-detail > div {
+    padding: 0;
+    width: 100%;
+  }
+  .servant-record-detail h4 {
+    margin-bottom: 7px;
+  }
+  .servant-record-detail p {
+    line-height: 1.5;
+  }
+}
