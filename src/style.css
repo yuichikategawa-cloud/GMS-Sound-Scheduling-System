@@ -667,3 +667,82 @@
   .stats-servant-metrics small{font-size:9px}
   .stats-servant-metrics strong{font-size:16px}
 }
+
+
+/* Requested desktop-only recurring generation guidance layout.
+   Mobile keeps its existing stacked presentation unchanged. */
+@media (min-width: 701px) {
+  .generate-note {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 9px;
+    align-items: start;
+  }
+  .generate-note-title {
+    grid-column: 1 / -1;
+  }
+  .generate-note p {
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+/* GMS Sound Scheduling horizontal sidebar identity — Option 4. */
+.sidebar .brand-sound-identity {
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 38px;
+  min-width: 0;
+}
+.brand-sound-icon {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  display: grid;
+  place-items: center;
+  color: #b5aaff;
+  background: #292b55;
+  border: 1px solid #3b4168;
+  border-radius: 14px;
+}
+.brand-sound-copy {
+  min-width: 0;
+}
+.sidebar .brand-sound-copy b {
+  display: block;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -.015em;
+}
+.sidebar .brand-sound-copy small {
+  display: block;
+  margin-top: 5px;
+  color: #a6adca;
+  font-size: 8px;
+  line-height: 1.35;
+  letter-spacing: .12em;
+  font-weight: 700;
+  white-space: normal;
+}
+
+/* Give the desktop login heading more separation from the system label. */
+@media (min-width: 701px) {
+  .auth-card .eyebrow:has(+ .welcome-home-script) {
+    margin-bottom: 23px;
+  }
+}
+
+/* Keep bulk-template selection actions together; reserve the far edge for Add new service. */
+.template-picker-head .clear-btn {
+  margin-left: 0;
+  white-space: nowrap;
+}
+.template-picker-head .template-add-btn {
+  margin-left: auto;
+}
