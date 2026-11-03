@@ -746,3 +746,114 @@
 .template-picker-head .template-add-btn {
   margin-left: auto;
 }
+
+
+/* 2026-11-03 visual refinement: compact sidebar identity and coordinated template actions. */
+.sidebar .brand.brand-sound-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0 0 25px;
+  padding: 2px 4px 24px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.sidebar .brand-sound-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  color: #b9afff;
+  background: rgba(112, 101, 255, .13);
+  border: 1px solid rgba(174, 165, 255, .2);
+  border-radius: 11px;
+}
+.sidebar .brand-sound-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.8;
+}
+.sidebar .brand-sound-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.sidebar .brand-sound-copy b {
+  font-size: 13px;
+  line-height: 1.18;
+  letter-spacing: -.01em;
+}
+.sidebar .brand-sound-copy small {
+  margin-top: 4px;
+  font-size: 7px;
+  line-height: 1.2;
+  letter-spacing: .085em;
+  white-space: nowrap;
+}
+
+/* Desktop: make the template heading and its actions read as one toolbar. */
+@media (min-width: 761px) {
+  .template-picker-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 9px;
+    min-height: 38px;
+    font-size: 12px;
+  }
+  .template-picker-head > b {
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+  .template-picker-head > span {
+    margin-right: 8px;
+    padding: 5px 9px;
+    border: 1px solid #e5e7f2;
+    border-radius: 999px;
+    background: #f7f8fc;
+    color: #667085;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .template-picker-head > .clear-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 11px;
+    border: 1px solid #e1e5f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #4d54c8;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .template-picker-head > .clear-btn:hover:not(:disabled) {
+    background: #f5f5ff;
+    border-color: #c9caff;
+  }
+  .template-picker-head > .clear-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .template-picker-head > .clear-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+  .template-picker-head > .template-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-left: auto;
+    padding: 0 13px;
+    border-radius: 9px;
+    white-space: nowrap;
+  }
+}
