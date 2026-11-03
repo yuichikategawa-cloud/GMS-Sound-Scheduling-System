@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
-import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal } from "lucide-react";
+import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
 
@@ -63,8 +63,8 @@ export default function App() {
   function askAction(title:string,message:string,confirmLabel="Continue",danger=false):Promise<boolean>{
     return new Promise(resolve=>{actionDialogResolver.current=resolve;setActionDialog({title,message,confirmLabel,danger});});
   }
-  function askText(title:string,message:string,inputLabel:string,requiredText?:string):Promise<string|null>{
-    return new Promise(resolve=>{actionTextResolver.current=resolve;setActionDialogInput("");setActionDialog({title,message,inputLabel,requiredText,confirmLabel:"Continue",danger:true});});
+  function askText(title:string,message:string,inputLabel:string,requiredText?:string,defaultValue=""):Promise<string|null>{
+    return new Promise(resolve=>{actionTextResolver.current=resolve;setActionDialogInput(defaultValue);setActionDialog({title,message,inputLabel,requiredText,confirmLabel:"Continue",danger:false});});
   }
   function closeActionDialog(accepted:boolean){
     setActionDialog(null);
@@ -72,6 +72,11 @@ export default function App() {
     else {actionDialogResolver.current?.(accepted);actionDialogResolver.current=null;}
     setActionDialogInput("");
   }
+
+  useEffect(()=>{
+    const overlayOpen=!!modal||!!swapDraft||!!actionDialog;
+    if(overlayOpen){const previous=document.body.style.overflow;document.body.style.overflow="hidden";return()=>{document.body.style.overflow=previous;};}
+  },[modal,swapDraft,actionDialog]);
 
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
@@ -107,7 +112,7 @@ export default function App() {
         supabase.from("serving_request_reads").select("*"),
         supabase.from("serving_notifications").select("*").order("created_at",{ascending:false}),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
-        supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(100),
+        supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(50),
         supabase.from("member_profiles").select("*")
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
@@ -367,18 +372,18 @@ export default function App() {
   }
   async function addLocation(){
     if(!supabase||!isAdmin)return;
-    const name=prompt("Enter the new church location name:");if(!name?.trim())return;
+    const name=await askText("Add church location","Enter the name of the new church location.","Church name");if(!name?.trim())return;
     const {error}=await supabase.from("locations").insert({name:name.trim()});
     if(error)setMessage(error.message);else {setMessage("Church location added.");await loadData();}
   }
   async function addRecurringTemplate(){
     if(!supabase||!isAdmin)return;
-    const locationName=prompt(`Choose a location:\n${locations.map(l=>l.name).join("\n")}`);if(!locationName)return;
+    const locationName=await askText("Add recurring service","Enter the exact church location name. Available: "+locations.map(l=>l.name).join(", "),"Church location");if(!locationName)return;
     const location=locations.find(l=>l.name.toLowerCase()===locationName.trim().toLowerCase());if(!location){setMessage("Location not found. Add the church first.");return;}
-    const day=prompt("Day of week: enter 6 for Saturday or 0 for Sunday:","0");if(day!=="0"&&day!=="6"){setMessage("Recurring templates currently support Saturday (6) and Sunday (0). Add weekday specials as individual services.");return;}
-    const service_name=prompt("Service name:");if(!service_name?.trim())return;
-    const start_time=prompt("Start time (HH:MM):","09:00");if(!start_time)return;
-    const end_time=prompt("End time (HH:MM):","11:00");if(!end_time)return;
+    const day=await askText("Choose service day","Enter 6 for Saturday or 0 for Sunday.","Day of week",undefined,"0");if(day!=="0"&&day!=="6"){setMessage("Recurring templates currently support Saturday (6) and Sunday (0). Add weekday specials as individual services.");return;}
+    const service_name=await askText("Service name","Enter the recurring service name.","Service name");if(!service_name?.trim())return;
+    const start_time=await askText("Start time","Enter the start time in HH:MM format.","Start time",undefined,"09:00");if(!start_time)return;
+    const end_time=await askText("End time","Enter the end time in HH:MM format.","End time",undefined,"11:00");if(!end_time)return;
     const {error}=await supabase.from("service_templates").upsert({location_id:location.id,day_of_week:Number(day),service_name:service_name.trim(),start_time,end_time,active:true},{onConflict:"location_id,day_of_week,service_name"});
     if(error)setMessage(error.message);else {setMessage("Recurring service template saved.");await loadData();}
   }
@@ -393,7 +398,7 @@ export default function App() {
     if(kind==="swap"){setSwapDraft(schedule);return;}
     if(!supabase||!myServant)return;
     const own=schedule.assignments.find(a=>a.servant_id===myServant.id);if(!own)return;
-    const note=prompt("Why do you need a replacement?");
+    const note=await askText("Request a replacement","Tell the administrator why you need a replacement.","Reason (optional)");
     if(note===null)return;
     const {error}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"replacement",details:note.trim(),status:"pending"});
     if(error)setMessage(error.message);else {setMessage("Your replacement request has been sent to the administrator.");await loadData();}
@@ -442,7 +447,7 @@ export default function App() {
     const assignment=schedule.assignments.find(a=>a.servant_id===myServant.id);
     if(!assignment)return;
     if(status==="declined"){
-      const reason=prompt("Please provide a reason for declining (optional):");
+      const reason=await askText("Decline assignment","Please provide a reason for declining (optional).","Reason (optional)");
       if(reason===null)return;
       const {error}=await supabase.from("assignments").update({confirmation_status:"declined"}).eq("id",assignment.id);
       if(error){setMessage(error.message);return;}
@@ -470,6 +475,15 @@ export default function App() {
     if(error){setMessage(error.message);return;}
     setMessage("Replacement assigned. Both servants have been notified.");await loadData();
   }
+  async function exportAuditHistory(){
+    if(!supabase||!isAdmin)return;
+    const {data,error}=await supabase.from("audit_logs").select("*").order("created_at",{ascending:false});
+    if(error){setMessage(error.message);return;}
+    const cols=["created_at","actor_id","action","table_name","record_id","old_data","new_data"];
+    const csv=[cols.join(","),...(data??[]).map((row:any)=>cols.map(k=>`"${String(row[k]??"").replace(/"/g,'""')}"`).join(","))].join("\\r\\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`gms-audit-history-${today()}.csv`;a.click();URL.revokeObjectURL(url);
+  }
+
   async function exportScheduleHistory(){
     if(!supabase||!isAdmin)return;
     const {data,error}=await supabase.from("schedules").select("*,locations(name),assignments(role,servants(full_name))").lt("service_date",today()).order("service_date",{ascending:false});
@@ -565,7 +579,7 @@ export default function App() {
               <div className="schedule-location-groups">{locations.filter(l=>filtered.some(s=>s.location_id===l.id)).map(location=><section className="schedule-location-group" key={location.id}><h3>{location.name}</h3><div className="schedule-grid">{filtered.filter(s=>s.location_id===location.id).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time)).map(s=><ScheduleCard key={s.id} item={s} isAdmin={isAdmin} onEdit={()=>{setScheduleError("");setEditing(s);setModal("schedule");}} onDelete={()=>deleteSchedule(s)} onPublish={()=>publishSchedule(s)} myServantId={myServant?.id??""} onConfirm={(status)=>confirmAssignment(s,status)} onRequest={(kind)=>submitServingRequest(s,kind)}/>)}</div></section>)}</div>}
           </details>
           {isAdmin&&<GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend} onAddTemplate={async(locationId,day,name,start,end)=>{if(!supabase||!isAdmin)return;const {error}=await supabase.from("service_templates").upsert({location_id:locationId,day_of_week:day,service_name:name,start_time:start,end_time:end,active:true},{onConflict:"location_id,day_of_week,service_name"});if(error)throw error;await loadData();setMessage(`${name} template saved. Select it above to generate future weekends.`);}} onDeleteTemplate={async(template)=>{if(!supabase||!isAdmin)return;const ok=await askAction("Remove service template",`Remove ${template.service_name} (${dayNameForTemplate(template.day_of_week)}) from future recurring generation? Existing schedules already generated from this template will not be deleted.`,"Remove template",true);if(!ok)return;const {error}=await supabase.from("service_templates").update({active:false}).eq("id",template.id);if(error){setMessage(error.message);return;}await loadData();setMessage(`${template.service_name} was removed from active templates. Existing schedules were preserved.`);}}/>}
-        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
+        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
     <nav className="mobile-bottom-nav" aria-label="Primary navigation">
@@ -690,27 +704,28 @@ function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDeleteTem
  const [newLocation,setNewLocation]=useState(locations[0]?.id??"");
  const [newDay,setNewDay]=useState(0); const [newName,setNewName]=useState("");
  const [newStart,setNewStart]=useState("09:00"); const [newEnd,setNewEnd]=useState("11:00");
- const [savingTemplate,setSavingTemplate]=useState(false);
+ const [savingTemplate,setSavingTemplate]=useState(false); const [formError,setFormError]=useState("");
  const [selected,setSelected]=useState<string[]>(()=>templates.filter(t=>t.active!==false).map(t=>String(t.id)));
  useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
  const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
  return <details className="generate-panel generate-panel-collapsible" open><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
   <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select active</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
-   {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){window.alert(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
+   {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);setFormError("");try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){setFormError(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
     <label>Church location<select value={newLocation} onChange={e=>setNewLocation(e.target.value)} required>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
     <label>Service day<select value={newDay} onChange={e=>setNewDay(Number(e.target.value))}><option value={6}>Saturday</option><option value={0}>Sunday</option></select></label>
     <label>Service name<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Service 4" required/></label>
     <label>Start time<input type="time" value={newStart} onChange={e=>setNewStart(e.target.value)} required/></label>
     <label>End time<input type="time" value={newEnd} onChange={e=>setNewEnd(e.target.value)} required/></label>
     <button className="btn primary" type="submit" disabled={savingTemplate||!newName.trim()||newStart>=newEnd}>{savingTemplate?"Saving…":"Save service template"}</button>
+    {formError&&<p className="schedule-error" role="alert">{formError}</p>}
     <p className="new-template-help">The new service will be added to this church’s template list and can be selected for future weekend generation.</p>
    </form>}
    {locations.map(location=>{const items=templates.filter(t=>t.location_id===location.id&&t.active!==false);return items.length?<div className="template-location" key={location.id}><b>{location.name}</b><div className="template-options">{items.map(t=><div className="template-option-row" key={t.id}><label><input type="checkbox" checked={selected.includes(String(t.id))} onChange={()=>toggle(String(t.id))}/><span>{dayName(t.day_of_week)} · {t.service_name} ({shortTime(t.start_time)}–{shortTime(t.end_time)})</span></label><button type="button" className="template-delete-btn" title="Remove template from future generation" aria-label={`Delete ${t.service_name} template`} onClick={()=>void onDeleteTemplate(t)}><Trash2 size={14}/></button></div>)}</div></div>:null;})}
    {templates.filter(t=>t.active!==false).length===0&&<p className="subtle">No active templates. Add recurring services first.</p>}
   </div>
   <div className="generate-footer"><label>Start Saturday<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Duration<select value={weeks} onChange={e=>setWeeks(Number(e.target.value))}><option value={1}>1 weekend</option><option value={2}>2 weekends</option><option value={4}>4 weekends</option><option value={8}>8 weekends</option><option value={12}>12 weekends</option></select></label><label>Existing matching slots<select value={mode} onChange={e=>setMode(e.target.value as "add"|"replace")}><option value="add">Add missing only</option><option value="replace">Replace times from template</option></select></label><button className="btn primary" disabled={!selected.length||!templates.length} onClick={()=>onGenerate(date,weeks,selected,mode)}><CalendarDays size={16}/> Generate</button></div>
-  <div className="generate-note"><p><b>Add missing only:</b> leaves existing slots unchanged.</p><p><b>Replace times from template:</b> updates matching service times while preserving existing assignments; it does not delete other services.</p></div>
+  <div className="generate-note"><div className="generate-note-title"><Info size={16}/><b>How generation handles existing services</b></div><p><b>Add missing only</b><span>Leaves existing matching slots unchanged.</span></p><p><b>Replace times from template</b><span>Updates matching service times while preserving existing assignments. Other services are not deleted.</span></p></div>
  </div></details>;
 }
 function ScheduleModal({locations,servants,availability,schedules,editing,onClose,onSave,error}:{locations:Location[];servants:Servant[];availability:any[];schedules:ScheduleView[];editing:ScheduleView|null;onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void;error:string}){
@@ -851,8 +866,10 @@ function RequestsPanel({requests,schedules,servants,onReview,onResolve,notificat
  return <section className="requests-panel">{notifications.filter(n=>!n.is_read).map(n=><article className="inbox-item unread" key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div></article>)}<div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
 }
 
-function AuditPanel({logs}:{logs:any[]}){
- return <><div className="toolbar"><div><h2>System audit trail</h2><p className="subtle">Recent schedule and assignment changes, including who made them.</p></div></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity yet</b><p>Changes to schedules and assignments will appear here.</p></div>:<div className="people-list">{logs.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div>}</>;
+function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
+ const [page,setPage]=useState(1);const pageSize=10;const pageCount=Math.max(1,Math.ceil(logs.length/pageSize));const visible=logs.slice((page-1)*pageSize,page*pageSize);
+ useEffect(()=>{setPage(1);},[logs.length]);
+ return <><div className="toolbar"><div><h2>System audit trail</h2><p className="subtle">Showing the 50 most recent events. Older history is available through CSV download.</p></div><button className="btn secondary" onClick={onDownload}><Download size={16}/> Download full history</button></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity yet</b><p>Changes to schedules and assignments will appear here.</p></div>:<><div className="people-list">{visible.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div><div className="audit-pagination"><span>Page {page} of {pageCount} · {logs.length} latest events</span><div><button className="btn secondary tiny" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button><button className="btn secondary tiny" disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button></div></div></>}</>;
 }
 
 function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants:Servant[]}){

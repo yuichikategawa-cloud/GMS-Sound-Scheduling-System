@@ -556,3 +556,45 @@
 .action-dialog .modal-actions{margin-top:22px}
 .action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}
 @media(max-width:600px){.availability-guidance{padding:13px;gap:8px}.my-days-card{grid-template-columns:1fr}.my-days-card .my-schedule-label{grid-column:auto}.my-days-card strong{grid-row:auto;font-size:30px}.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}
+
+
+/* GMS follow-up polish: generation note, modal-safe navigation, audit history */
+.generate-note{
+  display:grid;gap:9px;margin:14px 0 0;padding:14px 15px;
+  border:1px solid var(--line);border-radius:12px;background:#fbfcff;
+  color:var(--ink);font-size:12px;line-height:1.5
+}
+.generate-note-title{display:flex;align-items:center;gap:8px;font-size:13px;color:#30245b}
+.generate-note-title svg{color:var(--brand);flex:0 0 auto}
+.generate-note p{display:grid;gap:2px;margin:0}
+.generate-note p b{font-size:12px;color:var(--ink)}
+.generate-note p span{color:var(--muted)}
+.modal-backdrop{z-index:100!important}
+.action-dialog-backdrop{z-index:110!important}
+@media(max-width:760px){
+  .modal-backdrop{padding:10px;place-items:center}
+  .modal-card{width:min(100%,590px);max-height:calc(100dvh - 20px);overflow-y:auto}
+  .mobile-bottom-nav{z-index:30}
+}
+/* iOS date/time controls: align values consistently with text/select inputs */
+.form-grid input[type="date"],.form-grid input[type="time"]{
+  box-sizing:border-box;width:100%;min-width:0;max-width:100%;
+  min-height:42px;text-align:left;padding-inline:11px;
+  -webkit-appearance:none;appearance:none
+}
+.form-grid input[type="date"]::-webkit-date-and-time-value,
+.form-grid input[type="time"]::-webkit-date-and-time-value{
+  text-align:left;margin:0;width:100%
+}
+.form-grid input[type="date"]::-webkit-calendar-picker-indicator,
+.form-grid input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}
+.audit-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px;color:var(--muted);font-size:11px}
+.audit-pagination>div{display:flex;gap:7px}
+.audit-pagination .btn:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:600px){
+  .generate-note{padding:13px;gap:10px}
+  .generate-note p{gap:3px}
+  .audit-pagination{align-items:flex-start;flex-direction:column}
+  .audit-pagination>div{width:100%}
+  .audit-pagination .btn{flex:1}
+}
