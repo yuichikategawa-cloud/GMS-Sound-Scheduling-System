@@ -391,3 +391,52 @@
   .filters .search-field{grid-column:1/-1;}
   .filters>label,.filters input,.filters select{width:100%;min-width:0;max-width:100%;}
 }
+
+/* 2026-11-03: compact mobile admin actions and consistent collapsible cards */
+.filter-panel-collapsible{padding:0;overflow:hidden}
+.filter-panel-collapsible>.filter-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:15px 17px;cursor:pointer;list-style:none}
+.filter-panel-collapsible>.filter-title::-webkit-details-marker{display:none}
+.filter-panel-collapsible>.filter-title>span{display:flex;align-items:center;gap:8px}
+.filter-panel-collapsible>.filter-title>svg{transition:transform .18s ease;flex:none}
+.filter-panel-collapsible[open]>.filter-title{border-bottom:1px solid #edf0f5}
+.filter-panel-collapsible[open]>.filter-title>svg{transform:rotate(180deg)}
+.filter-panel-collapsible>.filters{padding:14px 17px 0}
+.filter-panel-collapsible>.clear-btn{margin:0 17px 14px}
+.generate-panel.generate-panel-collapsible{display:block}
+.generate-panel-summary{min-height:42px}
+.generate-chevron{flex:none;transition:transform .18s ease}
+.generate-panel-collapsible[open] .generate-chevron{transform:rotate(180deg)}
+.generate-toggle-hint{display:none}
+.template-options{grid-template-columns:1fr;gap:7px}
+.template-option-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.template-option-row>label{flex:1;min-width:0}
+.template-delete-btn{flex:0 0 auto;display:grid;place-items:center;width:30px;height:30px;border:1px solid #fee2e2;border-radius:8px;background:#fff7f7;color:#be123c;cursor:pointer}
+.template-delete-btn:hover{background:#ffe4e6}
+@media(max-width:760px){
+ .serving-toolbar-actions.admin-toolbar-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%;justify-content:stretch}
+ .serving-toolbar-actions.admin-toolbar-actions>.btn{width:100%;min-width:0;min-height:44px;white-space:normal;text-align:center;line-height:1.25;padding:9px 8px}
+ .serving-toolbar-actions.admin-toolbar-actions>.btn:first-child{grid-column:1/-1}
+ .filter-panel-collapsible>.filter-title{padding:14px}
+ .filter-panel-collapsible>.filters{padding:12px 14px 0}
+ .filter-panel-collapsible>.clear-btn{margin:0 14px 13px}
+ .generate-panel.generate-panel-collapsible{padding:14px}
+ .generate-panel-summary{align-items:center}
+ .generate-panel-summary .generate-heading p{line-height:1.5;max-width:38ch}
+ .template-options{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Brittany Signature is loaded from a properly licensed local webfont file. */
+@font-face{
+  font-family:'Brittany Signature';
+  src:url('/fonts/BrittanySignature.woff2') format('woff2');
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+}
+.auth-card h1.welcome-home-script{
+  font-family:'Brittany Signature','Allura','Brush Script MT','Segoe Script',cursive;
+  font-size:clamp(48px,8vw,66px);
+  line-height:1.08;
+  font-weight:400;
+  letter-spacing:0;
+}
