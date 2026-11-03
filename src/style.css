@@ -3459,6 +3459,8 @@
   .recurring-rule-form,
   .serving-preference-form,
   .profile-edit-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .bulk-form-grid.is-day .bulk-servant-picker { grid-column: 1 !important; }
+  .recurring-rule-form > .rule-field-dates { grid-template-columns: minmax(0, 1fr); }
   .availability-form { grid-template-columns: minmax(0, 1fr) !important; }
   .availability-form > *,
   .bulk-form-grid > *,
@@ -3513,3 +3515,247 @@
   }
 }
 .servant-status-toggle { min-width: 190px; }
+
+
+/* GMS mobile statistics: keep servant metric tiles dark and readable. */
+:root[data-theme="dark"] .stats-servant-metrics > div {
+  background: #273a55 !important;
+  border: 1px solid #465d7d !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .stats-servant-metrics small {
+  color: #c7d4e8 !important;
+}
+:root[data-theme="dark"] .stats-servant-metrics strong {
+  color: #ffffff !important;
+}
+
+/* Bulk availability forms: deliberate grid placement prevents stranded blank columns. */
+.bulk-form-grid.is-person {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: end;
+}
+.bulk-form-grid.is-day {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  align-items: end;
+}
+.bulk-form-grid.is-day .bulk-servant-picker {
+  grid-column: 1 / -1 !important;
+  grid-row: auto !important;
+  min-height: 130px;
+}
+.bulk-form-grid.is-day .bulk-servant-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+.bulk-form-grid .availability-self-name {
+  min-height: 44px;
+  justify-content: center;
+}
+.bulk-form-grid .bulk-weekdays,
+.bulk-form-grid > .wide {
+  grid-column: 1 / -1 !important;
+}
+.bulk-availability-form > .btn,
+.bulk-availability-form > button {
+  width: 100%;
+  max-width: 100%;
+}
+.bulk-form-grid input[type="date"],
+.recurring-rule-form input[type="date"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-right: 42px !important;
+}
+.bulk-servant-picker {
+  background: transparent;
+}
+:root[data-theme="dark"] .bulk-servant-picker {
+  background: #202c42 !important;
+  border-color: #465a77 !important;
+}
+:root[data-theme="dark"] .bulk-servant-picker > b,
+:root[data-theme="dark"] .bulk-servant-picker small {
+  color: #c6d3e7 !important;
+}
+
+/* Recurring restriction form: balanced two-column desktop layout with full-width actions. */
+.recurring-rule-form {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end;
+  gap: 13px 14px !important;
+}
+.recurring-rule-form > .rule-field-status,
+.recurring-rule-form > .rule-field-dates,
+.recurring-rule-form > .rule-field-notes,
+.recurring-rule-form > .rule-save {
+  grid-column: 1 / -1 !important;
+}
+.recurring-rule-form > .rule-field-dates {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.recurring-rule-form > .rule-field-occurrence {
+  grid-column: 1 / -1 !important;
+}
+.recurring-rule-form > .rule-field-occurrence label {
+  min-width: 0;
+}
+.recurring-rule-form > .rule-save {
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+}
+.recurring-rule-form label,
+.bulk-form-grid label {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.recurring-rule-form input,
+.recurring-rule-form select,
+.bulk-form-grid input:not([type="checkbox"]),
+.bulk-form-grid select {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Make availability and restriction cards use one consistent dark surface. */
+:root[data-theme="dark"] .availability-form-panel,
+:root[data-theme="dark"] .recurring-rule-panel,
+:root[data-theme="dark"] .bulk-availability-form {
+  background: #202f46 !important;
+  border-color: #405571 !important;
+}
+:root[data-theme="dark"] .bulk-form-grid .availability-self-name {
+  background: #1a2639 !important;
+  border-color: #465a77 !important;
+}
+:root[data-theme="dark"] .recurring-rule-form label,
+:root[data-theme="dark"] .bulk-form-grid > label {
+  color: #d5deed !important;
+}
+
+/* The mobile daily overview date stays on one clear line beside its coverage pill. */
+.daily-head-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.daily-date-compact {
+  display: none;
+}
+@media (max-width: 760px) {
+  .daily-card > .daily-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    min-width: 0;
+  }
+  .daily-head-copy {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .daily-date-full {
+    display: none !important;
+  }
+  .daily-date-compact {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 14px !important;
+    line-height: 1.25;
+  }
+  .daily-subtitle {
+    font-size: 10px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .daily-head-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .daily-head-right .coverage-pill {
+    padding: 4px 6px !important;
+    font-size: 8px !important;
+    line-height: 1.15;
+  }
+  .daily-head-right > svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+/* Dirty matrix rows are explicit: row publish/unpublish also commits staged role changes first. */
+.bulk-matrix-pending {
+  display: inline-block;
+  margin-top: 3px;
+  color: #b45309 !important;
+  font-size: 10px !important;
+  font-weight: 800;
+}
+:root[data-theme="dark"] .bulk-matrix-pending {
+  color: #ffd08a !important;
+}
+
+
+/* Explicit field order: no half-empty rows in person/day bulk availability. */
+.bulk-form-grid.is-person .bulk-person-servant {
+  grid-column: 1 / -1 !important;
+}
+.bulk-form-grid.is-person .bulk-from-date,
+.bulk-form-grid.is-person .bulk-to-date,
+.bulk-form-grid.is-person .bulk-status,
+.bulk-form-grid.is-person .bulk-apply-to {
+  grid-column: auto !important;
+}
+.bulk-form-grid.is-day .bulk-servant-picker {
+  grid-column: 1 / -1 !important;
+}
+.bulk-form-grid.is-day .bulk-from-date,
+.bulk-form-grid.is-day .bulk-to-date,
+.bulk-form-grid.is-day .bulk-status,
+.bulk-form-grid.is-day .bulk-apply-to {
+  grid-column: auto !important;
+}
+.bulk-form-grid.is-day .bulk-weekdays,
+.bulk-form-grid.is-person .bulk-weekdays,
+.bulk-form-grid.is-day > .wide,
+.bulk-form-grid.is-person > .wide {
+  grid-column: 1 / -1 !important;
+}
+.bulk-form-grid.is-day .bulk-servant-picker .bulk-servant-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px 14px;
+  max-height: 155px;
+  overflow-y: auto;
+}
+@media (max-width: 760px) {
+  .bulk-form-grid.is-person .bulk-person-servant,
+  .bulk-form-grid.is-day .bulk-servant-picker,
+  .bulk-form-grid.is-person .bulk-from-date,
+  .bulk-form-grid.is-person .bulk-to-date,
+  .bulk-form-grid.is-person .bulk-status,
+  .bulk-form-grid.is-person .bulk-apply-to,
+  .bulk-form-grid.is-day .bulk-from-date,
+  .bulk-form-grid.is-day .bulk-to-date,
+  .bulk-form-grid.is-day .bulk-status,
+  .bulk-form-grid.is-day .bulk-apply-to {
+    grid-column: 1 / -1 !important;
+  }
+  .bulk-form-grid.is-day .bulk-servant-picker .bulk-servant-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
