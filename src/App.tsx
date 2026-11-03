@@ -470,7 +470,7 @@ export default function App() {
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
   if(recoveryMode && session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form onSubmit={updateRecoveredPassword} className="stack"><label>New password<input name="new_password" type="password" required minLength={8} autoComplete="new-password" placeholder="At least 8 characters"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Updating password…</>:"Update password"}</button></form>{message&&<p className="message">{message}</p>}</div></div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>{authMode==="login"?"Welcome home":authMode==="signup"?"Create your account":"Reset your password"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
+  if(!session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1 className={authMode==="login"?"welcome-home-script":""}>{authMode==="login"?"Welcome home":authMode==="signup"?"Create your account":"Reset your password"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     {authMode==="reset"?<form onSubmit={sendPasswordReset} className="stack"><label>Registered email address<input name="recovery_email" type="email" required autoComplete="email" placeholder="you@example.com"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Sending reset link…</>:"Send reset link"}</button><button type="button" className="link-btn" onClick={()=>{setAuthMode("login");setMessage("");}}>Back to sign in</button></form>:<form onSubmit={submitAuth} className="stack auth-registration">
       <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
       {authMode==="signup"&&<>
@@ -683,6 +683,15 @@ function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTML
  return <div className="modal-backdrop"><form className="modal-card compact" onSubmit={onSave}><div className="modal-head"><h2>Add servant</h2><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><label>Full name<input name="full_name" required autoFocus placeholder="Servant's full name"/></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Add person</button></div></form></div>;
 }
 function GmsLoader({label="Getting the sound system ready..."}:{label?:string}){
+ const soundFacts=[
+  "A 3 dB increase represents roughly twice the sound intensity.",
+  "Sound travels faster through water than through air.",
+  "Human hearing typically spans frequencies from 20 Hz to 20 kHz.",
+  "A sound wave transfers energy through a medium.",
+  "Reverberation is the persistence of sound after its source stops."
+ ];
+ const [factIndex,setFactIndex]=useState(()=>Math.floor(Math.random()*soundFacts.length));
+ useEffect(()=>{const timer=window.setInterval(()=>setFactIndex(index=>(index+1)%soundFacts.length),5000);return()=>window.clearInterval(timer);},[]);
  return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
   <main className="gms-loader-content">
    <h1 className="gms-loader-title">GMS Sound Scheduling System</h1>
@@ -690,7 +699,7 @@ function GmsLoader({label="Getting the sound system ready..."}:{label?:string}){
     {[42,66,88,100,88,66,42].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*110}ms`} as CSSProperties}/>)}
    </div>
    <h2 className="gms-loader-message">{label}</h2>
-   <p className="gms-loader-caption">Animated equalizer loading experience</p>
+   <p className="gms-loader-caption" key={factIndex}>{soundFacts[factIndex]}</p>
   </main>
  </div>;
 }

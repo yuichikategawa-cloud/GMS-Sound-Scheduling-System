@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Allura&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
 :root{font-family:'DM Sans',system-ui,sans-serif;color:#182230;background:#f4f6fa;font-synthesis:none;text-rendering:optimizeLegibility;font-optical-sizing:auto;font-weight:400;--ink:#182230;--muted:#718096;--line:#e5e9f0;--brand:#4f46e5;--navy:#171d35;--card:#fff}
 *{box-sizing:border-box}body{margin:0;min-width:320px}button,input,select{font:inherit}button{cursor:pointer}h1,h2,h3,p{margin-top:0}h1,h2{font-family:Manrope,'DM Sans',sans-serif;letter-spacing:-.035em}
@@ -355,3 +356,38 @@
 .generate-note{display:grid;gap:5px}
 .generate-note p{margin:0;line-height:1.6}
 @media(max-width:600px){.generate-panel-summary{align-items:flex-start}.generate-toggle-hint{font-size:10px;white-space:nowrap}}
+
+
+/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
+.auth-card h1.welcome-home-script{
+  font-family:'Allura','Brush Script MT','Segoe Script',cursive;
+  font-size:clamp(48px,8vw,66px);
+  line-height:1.02;
+  font-weight:400;
+  letter-spacing:0;
+  margin:0 0 10px;
+}
+.gms-loader-caption{
+  max-width:min(680px,100%);
+  min-height:1.5em;
+  text-wrap:balance;
+  transition:opacity .2s ease;
+}
+/* FOH and Monitor use matching full-width assignment cards on phones. */
+@media(max-width:600px){
+  .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
+  .schedule-card .role-box{width:100%;min-width:0;box-sizing:border-box;padding:11px 13px!important;}
+  .schedule-card .role-box:last-child{grid-column:auto!important}
+}
+/* Keep every schedule filter inside its card on narrow mobile screens. */
+.filters{grid-template-columns:repeat(5,minmax(0,1fr));min-width:0;}
+.filters>label{min-width:0;width:100%;}
+.filters input,.filters select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+.filter-panel,.filters{box-sizing:border-box;max-width:100%;}
+@media(max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr));}.filters .search-field{grid-column:1/-1;}}
+@media(max-width:520px){
+  .filter-panel{padding:13px 12px;}
+  .filters{grid-template-columns:minmax(0,1fr);gap:11px;}
+  .filters .search-field{grid-column:1/-1;}
+  .filters>label,.filters input,.filters select{width:100%;min-width:0;max-width:100%;}
+}
