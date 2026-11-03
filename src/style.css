@@ -2174,239 +2174,413 @@
 }
 
 
-/* 2026-11-03 dark-mode refinement: compact disclosures, unified profile details,
-   stronger form contrast and assignment eligibility feedback. */
-
-/* Recurring generation explanation follows the same disclosure pattern as Fair workload. */
-.generate-note-collapsible{
-  display:block;
-  padding:0;
-  margin:14px 0 0;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:#fbfcff;
-  overflow:hidden;
+/* 2026-11-03 comprehensive dark-mode correction pass.
+   These rules intentionally target the exact components shown in the latest review screenshots. */
+:root[data-theme="dark"] .bulk-church-group > summary small {
+  color: #d0dced !important;
+  font-size: 12px !important;
+  line-height: 1.45;
+  opacity: 1 !important;
 }
-.generate-note-collapsible>summary{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  padding:12px 14px;
-  list-style:none;
-  cursor:pointer;
-  color:var(--ink);
+:root[data-theme="dark"] .bulk-church-group > summary b {
+  color: #f4f7fc !important;
 }
-.generate-note-collapsible>summary::-webkit-details-marker{display:none}
-.generate-note-collapsible>summary>svg{flex:0 0 auto;color:var(--muted);transition:transform .18s ease}
-.generate-note-collapsible[open]>summary>svg{transform:rotate(180deg)}
-.generate-note-collapsible .generate-note-title{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  color:var(--ink);
-  font-size:13px;
-  font-weight:750;
-}
-.generate-note-collapsible .generate-note-title b{color:var(--ink)}
-.generate-note-body{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:14px;
-  padding:0 14px 14px;
-  border:0;
-}
-.generate-note-body>p{display:grid;gap:4px;margin:0;min-width:0}
-.generate-note-body>p>b{font-size:12px;color:var(--ink)}
-.generate-note-body>p>span{font-size:12px;line-height:1.5;color:var(--muted)}
-:root[data-theme="dark"] .generate-note-collapsible{
-  background:#202f46!important;
-  border-color:#40516d!important;
-  color:#edf3fb!important;
-}
-:root[data-theme="dark"] .generate-note-collapsible>summary{
-  background:#202f46!important;
-  color:#f2f6fc!important;
-}
-:root[data-theme="dark"] .generate-note-collapsible .generate-note-title,
-:root[data-theme="dark"] .generate-note-collapsible .generate-note-title b,
-:root[data-theme="dark"] .generate-note-body>p>b{color:#f1f5fb!important}
-:root[data-theme="dark"] .generate-note-body>p>span{color:#c5d1e3!important}
-@media(max-width:700px){
-  .generate-note-body{grid-template-columns:1fr;gap:10px}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn {
+  color: #c4bcff !important;
 }
 
-/* The servant detail card remains one surface; its inner columns are not separate tiles. */
-.servant-record-detail>div{
-  background:transparent!important;
-  border:0!important;
-  border-radius:0!important;
-  box-shadow:none!important;
-  padding:0 16px!important;
-  min-width:0;
+/* Template selection actions must look like the rest of the dark secondary controls. */
+:root[data-theme="dark"] .template-picker-head > .clear-btn {
+  background: #283750 !important;
+  color: #e7edf7 !important;
+  border: 1px solid #465873 !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+  text-decoration: none;
 }
-.servant-record-detail>div+div{
-  border-left:1px solid #e5eaf2!important;
+:root[data-theme="dark"] .template-picker-head > .clear-btn:hover:not(:disabled) {
+  background: #354762 !important;
+  border-color: #7485a2 !important;
+  color: #ffffff !important;
 }
-:root[data-theme="dark"] .servant-record-detail{
-  background:#202f46!important;
-  border-color:#40516d!important;
+:root[data-theme="dark"] .template-picker-head > .clear-btn:disabled {
+  background: #222f45 !important;
+  color: #9eacc2 !important;
+  border-color: #3b4b63 !important;
+  opacity: .72 !important;
 }
-:root[data-theme="dark"] .servant-record-detail>div{
-  background:transparent!important;
-  border:0!important;
-  box-shadow:none!important;
+
+/* Servant's upcoming assignment heading was retaining its light-theme purple. */
+:root[data-theme="dark"] .my-next-heading,
+:root[data-theme="dark"] .my-next-heading b {
+  color: #f0f4fb !important;
 }
-:root[data-theme="dark"] .servant-record-detail>div+div{
-  border-left:1px solid #40516d!important;
+:root[data-theme="dark"] .my-next-heading svg {
+  color: #bdb5ff !important;
+  stroke: currentColor;
 }
-@media(max-width:900px){
-  .servant-record-detail>div{padding:0 12px!important}
+:root[data-theme="dark"] .my-next-card .my-next-date {
+  color: #ffffff !important;
 }
-@media(max-width:600px){
-  .servant-record-detail>div{padding:0 0 12px!important}
-  .servant-record-detail>div+div{
-    border-left:0!important;
-    border-top:1px solid #e5eaf2!important;
-    padding-top:12px!important;
+
+/* Filter schedule is one continuous card: remove the bright light-theme divider on expand. */
+:root[data-theme="dark"] .filter-panel-collapsible > .filter-title {
+  color: #edf3fb !important;
+  background: transparent !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .filter-panel-collapsible > .filter-title b,
+:root[data-theme="dark"] .filter-panel-collapsible > .filter-title svg {
+  color: #e8eef8 !important;
+}
+:root[data-theme="dark"] .filter-panel-collapsible[open] > .filter-title {
+  border-bottom: 0 !important;
+}
+
+/* Dialog input labels are text, not a dark rectangular input-like block. */
+:root[data-theme="dark"] .action-dialog-input {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 9px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: #edf3fb !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+}
+:root[data-theme="dark"] .action-dialog-input input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 44px;
+  box-sizing: border-box !important;
+  padding: 11px 12px !important;
+  background: #111c2e !important;
+  border: 1px solid #465773 !important;
+  border-radius: 9px !important;
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .action-dialog-input input:focus {
+  outline: 2px solid #9289ff !important;
+  outline-offset: 2px !important;
+  border-color: #a49cff !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .action-dialog-message {
+  color: #c5d1e2 !important;
+}
+
+/* Availability labels and the linked servant name must remain readable. */
+:root[data-theme="dark"] .availability-filter label,
+:root[data-theme="dark"] .availability-filter label span,
+:root[data-theme="dark"] .availability-filter label > span,
+:root[data-theme="dark"] .availability-self-name span,
+:root[data-theme="dark"] .bulk-form-grid > label,
+:root[data-theme="dark"] .recurring-rule-form > label,
+:root[data-theme="dark"] .rule-inline label,
+:root[data-theme="dark"] .serving-preference-form > label,
+:root[data-theme="dark"] .preference-weekday-picker > b,
+:root[data-theme="dark"] .preference-service-picker > b {
+  color: #dce5f2 !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] .availability-self-name b {
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .availability-filter {
+  min-width: 0;
+  width: 100%;
+}
+:root[data-theme="dark"] .availability-filter label {
+  min-width: 0;
+  width: 100%;
+}
+:root[data-theme="dark"] .availability-filter input,
+:root[data-theme="dark"] .bulk-form-grid input:not([type="checkbox"]),
+:root[data-theme="dark"] .bulk-form-grid select,
+:root[data-theme="dark"] .recurring-rule-form input,
+:root[data-theme="dark"] .recurring-rule-form select,
+:root[data-theme="dark"] .serving-preference-form input:not([type="checkbox"]),
+:root[data-theme="dark"] .serving-preference-form select,
+:root[data-theme="dark"] .profile-edit-grid input,
+:root[data-theme="dark"] .profile-edit-grid select,
+:root[data-theme="dark"] .profile-edit-grid textarea {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  background: #111c2e !important;
+  color: #f0f4fb !important;
+  border-color: #465773 !important;
+}
+
+/* Give the self identity its own full row in the multiple-date form; date fields then align below. */
+.bulk-form-grid > .availability-self-name {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.bulk-form-grid > .availability-self-name span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.bulk-form-grid > .availability-self-name b {
+  overflow-wrap: anywhere;
+}
+
+/* Use the whole availability card width consistently instead of ending forms mid-panel. */
+.recurring-rule-form,
+.serving-preference-form {
+  width: 100%;
+  max-width: none !important;
+  min-width: 0;
+}
+.recurring-rule-form > *,
+.serving-preference-form > *,
+.rule-inline > label {
+  min-width: 0;
+  max-width: 100%;
+}
+.recurring-rule-form input[type="date"],
+.recurring-rule-form input[type="time"],
+.bulk-form-grid input[type="date"],
+.bulk-form-grid input[type="time"] {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
+:root[data-theme="dark"] .profile-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 13px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .profile-edit-grid > label {
+  min-width: 0;
+  max-width: 100%;
+  color: #e0e8f4 !important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  background: #202f46 !important;
+  border: 1px solid #465873 !important;
+  border-radius: 10px;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend {
+  color: #f0f4fb !important;
+  background: #202f46 !important;
+  padding: 0 7px;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field label {
+  color: #dbe5f2 !important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field input {
+  accent-color: #a99fff;
+}
+
+/* Servant information detail columns should sit on one card surface, not look like inset boxes. */
+:root[data-theme="dark"] .servant-record-detail {
+  background: #202f46 !important;
+  border-color: #40516d !important;
+}
+:root[data-theme="dark"] .servant-record-detail > div {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+}
+:root[data-theme="dark"] .servant-record-detail h4,
+:root[data-theme="dark"] .servant-record-detail p b {
+  color: #f1f5fc !important;
+}
+:root[data-theme="dark"] .servant-record-detail p {
+  color: #c8d4e5 !important;
+}
+
+/* Inbox should read as distinct, neatly spaced sections with subdued separators. */
+:root[data-theme="dark"] .servant-inbox {
+  width: 100%;
+  min-width: 0;
+  gap: 18px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .inbox-intro {
+  min-width: 0;
+  width: 100%;
+  gap: 12px;
+  padding: 2px 1px;
+}
+:root[data-theme="dark"] .inbox-intro h2,
+:root[data-theme="dark"] .list-heading h3 {
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .inbox-intro p,
+:root[data-theme="dark"] .list-heading span {
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .inbox-intro > .inbox-unread-count {
+  background: #34345f !important;
+  color: #e6e2ff !important;
+  border: 1px solid #514d80 !important;
+}
+:root[data-theme="dark"] .inbox-item {
+  background: #202f46 !important;
+  border: 1px solid #3b4d68 !important;
+  border-radius: 13px !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] .inbox-item.unread {
+  background: #292744 !important;
+  border-color: #514b7b !important;
+}
+:root[data-theme="dark"] .inbox-item + .inbox-item {
+  margin-top: 0 !important;
+}
+:root[data-theme="dark"] .notification-history-list {
+  gap: 12px !important;
+}
+:root[data-theme="dark"] .requests-content-heading {
+  border-bottom: 1px solid #3b4b65 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .requests-content-heading h2 {
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .requests-content-heading span,
+:root[data-theme="dark"] .requests-empty-note {
+  color: #bdcbe0 !important;
+}
+
+@media (max-width: 760px) {
+  .bulk-form-grid > .availability-self-name {
+    grid-column: 1 / -1;
   }
-  :root[data-theme="dark"] .servant-record-detail>div+div{border-top:1px solid #40516d!important}
+  .recurring-rule-form,
+  .serving-preference-form {
+    width: 100%;
+  }
+  :root[data-theme="dark"] .profile-edit-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-theme="dark"] .profile-edit-grid .days-field,
+  :root[data-theme="dark"] .profile-edit-grid > button {
+    grid-column: auto;
+  }
+  :root[data-theme="dark"] .inbox-intro {
+    align-items: center;
+  }
+  :root[data-theme="dark"] .inbox-intro > .inbox-unread-count {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
 }
 
-/* Servant preference identity and CG-day legend need the same contrast as form labels. */
-:root[data-theme="dark"] .serving-preferences-panel .availability-self-name{
-  background:#26354d!important;
-  border-color:#465873!important;
-  color:#f1f5fb!important;
-}
-:root[data-theme="dark"] .serving-preferences-panel .availability-self-name span{
-  color:#c2cde0!important;
-}
-:root[data-theme="dark"] .serving-preferences-panel .availability-self-name b{
-  color:#ffffff!important;
-}
-:root[data-theme="dark"] .serving-preference-form>label,
-:root[data-theme="dark"] .serving-preference-form>label:first-child{
-  color:#e6edf8!important;
-}
-:root[data-theme="dark"] .days-field{
-  background:#202f46!important;
-  border:1px solid #465873!important;
-  border-radius:11px;
-  color:#edf3fb!important;
-}
-:root[data-theme="dark"] .days-field legend{
-  color:#f1f5fb!important;
-  background:#202f46!important;
-}
-:root[data-theme="dark"] .days-field label{
-  color:#e3ebf7!important;
-}
 
-/* Church location counts match the balanced metric tiles used by the Fairness checker. */
-.location-stat-list{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
+/* Immediate servant feedback beside each assignment selector. */
+.bulk-assignment-cell {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
-.location-stat{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  min-width:0;
-  padding:13px 14px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#f7f8fc;
+.bulk-assignment-cell > select {
+  width: 100%;
+  min-width: 160px;
 }
-.location-stat>span{min-width:0;overflow-wrap:anywhere}
-.location-stat>b{flex:0 0 auto}
-:root[data-theme="dark"] .location-stat-list{gap:10px}
-:root[data-theme="dark"] .location-stat{
-  background:#26364f!important;
-  border:1px solid #405571!important;
-  color:#f3f6fc!important;
+.assignment-field-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
-:root[data-theme="dark"] .location-stat>span{
-  color:#d6e0ee!important;
+.assignment-field-feedback svg {
+  flex: 0 0 12px;
+  margin-top: 1px;
 }
-:root[data-theme="dark"] .location-stat>b{
-  color:#ffffff!important;
+.assignment-field-feedback.blocked {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #9f1239;
 }
-@media(max-width:700px){
-  .location-stat-list{grid-template-columns:1fr}
+.assignment-field-feedback.warning {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
 }
-
-/* Keep custom text-entry dialogs inside their cards on every viewport and theme. */
-.action-dialog{
-  box-sizing:border-box;
-  min-width:0;
-  max-width:calc(100vw - 32px);
+.assignment-field-feedback.clear {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
 }
-.action-dialog-input{
-  display:flex;
-  flex-direction:column;
-  gap:7px;
-  width:100%;
-  min-width:0;
-  box-sizing:border-box;
-  line-height:1.4;
+.role-assignment-field > .assignment-field-feedback {
+  margin-top: 2px;
 }
-.action-dialog-input input{
-  display:block;
-  box-sizing:border-box!important;
-  width:100%!important;
-  max-width:100%!important;
-  min-width:0!important;
-  min-height:43px;
-  margin:0;
+:root[data-theme="dark"] .assignment-field-feedback.blocked {
+  background: #492b36 !important;
+  border-color: #784452 !important;
+  color: #ffc6cf !important;
 }
-:root[data-theme="dark"] .action-dialog-input{
-  color:#edf3fb!important;
+:root[data-theme="dark"] .assignment-field-feedback.warning {
+  background: #493a25 !important;
+  border-color: #755c37 !important;
+  color: #ffe0a8 !important;
 }
-:root[data-theme="dark"] .action-dialog-input input{
-  background:#111c2e!important;
-  color:#f3f6fc!important;
-  border-color:#52627d!important;
+:root[data-theme="dark"] .assignment-field-feedback.clear {
+  background: #193d34 !important;
+  border-color: #326a58 !important;
+  color: #a9ebcc !important;
 }
-@media(max-width:600px){
-  .action-dialog{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding:18px}
-  .action-dialog-input input{font-size:16px!important}
+:root[data-theme="dark"] .role-assignment-field {
+  color: #e4ebf5 !important;
 }
-
-/* Immediate assignment feedback in schedule editor and bulk matrix. */
-.assignment-role-field{min-width:0}
-.assignment-field-feedback,
-.bulk-role-feedback{
-  display:block;
-  margin-top:6px;
-  font-size:11px;
-  font-weight:650;
-  line-height:1.45;
-  overflow-wrap:anywhere;
+:root[data-theme="dark"] .bulk-assignment-cell > select {
+  background: #111c2e !important;
+  border-color: #465873 !important;
+  color: #f0f4fb !important;
 }
-.assignment-field-feedback.error,
-.bulk-role-feedback.error{color:#c2414a}
-.assignment-field-feedback.warning,
-.bulk-role-feedback.warning{color:#a66a12}
-.bulk-assignment-role-cell{min-width:0;vertical-align:top!important}
-.bulk-assignment-role-cell select{display:block;width:100%;min-width:128px}
-.bulk-role-feedback{max-width:190px}
-:root[data-theme="dark"] .assignment-field-feedback.error,
-:root[data-theme="dark"] .bulk-role-feedback.error{color:#ffaaaF!important}
-:root[data-theme="dark"] .assignment-field-feedback.warning,
-:root[data-theme="dark"] .bulk-role-feedback.warning{color:#ffd28b!important}
-:root[data-theme="dark"] .bulk-assignment-role-cell select{
-  background:#111c2e!important;
-  color:#f1f5fb!important;
-  border-color:#52627d!important;
-}
-@media(max-width:700px){
-  .bulk-role-feedback{max-width:160px;font-size:10px}
-}
-
-/* Clear, high-contrast servant selector labels in the availability preference form. */
-:root[data-theme="dark"] .serving-preferences-panel .serving-preference-form>label{
-  color:#eaf0fa!important;
+@media (max-width: 760px) {
+  .bulk-assignment-cell > select {
+    min-width: 155px;
+  }
+  .assignment-field-feedback {
+    min-width: 150px;
+    font-size: 10px;
+  }
 }
