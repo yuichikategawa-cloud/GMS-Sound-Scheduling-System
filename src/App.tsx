@@ -295,8 +295,44 @@ export default function App() {
     catch(e){setMessage(errorText(e));}finally{setAuthLoading(false);}
   }
   async function signOut(){
-    if(supabase&&session?.user?.id&&"serviceWorker" in navigator){try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription){await supabase.from("serving_push_subscriptions").delete().eq("user_id",session.user.id).eq("endpoint",subscription.endpoint);await subscription.unsubscribe();}}catch(e){console.warn("Could not remove this device push subscription during sign out",e);}}
-    setPushEnabled(false);setTab("schedule");setMobileNav(false);await supabase?.auth.signOut();setProfile(null);setSession(null);
+    const userId=session?.user?.id;
+    setPushEnabled(false);setTab("schedule");setMobileNav(false);
+
+    // Push cleanup is best-effort and must never block authentication sign-out.
+    // Do not await navigator.serviceWorker.ready: if /sw.js is missing or fails
+    // to install, that promise can remain pending forever and trap the user.
+    if(supabase&&userId&&"serviceWorker" in navigator){
+      try{
+        const registration=await Promise.race([
+          navigator.serviceWorker.getRegistration("/"),
+          new Promise<undefined>(resolve=>window.setTimeout(()=>resolve(undefined),500))
+        ]);
+        const subscription=await registration?.pushManager?.getSubscription();
+        if(subscription){
+          const cleanup=(async()=>{
+            const {error}=await supabase.from("serving_push_subscriptions").delete().eq("user_id",userId).eq("endpoint",subscription.endpoint);
+            if(error)console.warn("Could not remove this device push subscription during sign out",error);
+            await subscription.unsubscribe();
+          })();
+          await Promise.race([cleanup,new Promise<void>(resolve=>window.setTimeout(resolve,700))]);
+        }
+      }catch(e){console.warn("Could not remove this device push subscription during sign out",e);}
+    }
+
+    try{
+      if(supabase){
+        const {error}=await supabase.auth.signOut();
+        if(error){
+          console.warn("Remote sign-out failed; clearing this device session locally.",error);
+          await supabase.auth.signOut({scope:"local"});
+        }
+      }
+    }catch(e){
+      console.error("Sign-out failed; attempting to clear the local session.",e);
+      try{await supabase?.auth.signOut({scope:"local"});}catch{}
+    }finally{
+      setProfile(null);setSession(null);setMemberProfile(null);setMemberDirectory([]);setNotifications([]);setRequests([]);setRequestReads([]);setAvailability([]);setAvailabilityRules([]);setServingPreferences([]);
+    }
   }
   const isAdmin=profile?.role==="admin";
 
@@ -1070,7 +1106,7 @@ function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificat
 function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
- return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} recent</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
+ return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} recent</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading requests-section-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
 }
 
 function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){

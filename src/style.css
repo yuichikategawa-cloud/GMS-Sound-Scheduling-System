@@ -919,3 +919,16 @@
   input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
   input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 }
+
+
+/* Inbox readability: status badges remain compact and request sections have clear separation. */
+.inbox-status{align-self:flex-start;flex:none;line-height:1.2;min-height:0;height:auto;white-space:nowrap}
+.inbox-item-title>.inbox-status{align-self:flex-start;margin-top:1px}
+.requests-panel>.inbox-item{align-items:flex-start}
+.requests-panel>.inbox-item>.inbox-status{align-self:flex-start;margin-top:2px}
+.requests-panel>.requests-section-heading{margin-top:28px!important;padding-top:20px;border-top:1px solid #e8ebf2}
+.inbox-item.unread:after{content:none;display:none}
+@media(max-width:640px){
+  .requests-panel>.requests-section-heading{margin-top:22px!important;padding-top:16px}
+  .inbox-status{font-size:10px;padding:4px 8px}
+}
