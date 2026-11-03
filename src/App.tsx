@@ -104,9 +104,46 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
-    supabase.auth.getSession().then(({data})=>{setSession(data.session);setAuthLoading(false);});
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{setSession(next); if(event==="PASSWORD_RECOVERY") setRecoveryMode(true);});
-    return ()=>subscription.unsubscribe();
+    let active = true;
+    // Subscribe before reading the stored session so a token refresh or sign-out
+    // event cannot be overwritten by a late initial getSession() response.
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{
+      if (!active) return;
+      setSession(next);
+      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
+    });
+    void (async()=>{
+      try {
+        const {data,error} = await supabase.auth.getSession();
+        if (!active) return;
+        if (error) {
+          const authError = error as any;
+          const status = Number(authError.status ?? 0);
+          const messageText = String(authError.message ?? errorText(error));
+          const invalidStoredSession = status === 400 || status === 401 || /invalid.*refresh|refresh.*(invalid|expired|not found|already used)/i.test(messageText);
+          if (invalidStoredSession) {
+            // A stale/revoked refresh token should not keep the app retrying it.
+            // Local scope clears this device only and does not call /auth/v1/logout.
+            await supabase.auth.signOut({scope:"local"}).catch(()=>undefined);
+            if (active) {
+              setSession(null);
+              setMessage("Your saved sign-in session has expired. Please sign in again.");
+            }
+          } else {
+            console.warn("Unable to restore the saved GMS session.", error);
+            if (active) setSession(data.session ?? null);
+          }
+        } else if (active) {
+          setSession(data.session);
+        }
+      } catch (error) {
+        console.warn("Session restoration failed.", error);
+        if (active) setSession(null);
+      } finally {
+        if (active) setAuthLoading(false);
+      }
+    })();
+    return ()=>{active=false;subscription.unsubscribe();};
   },[]);
 
   useEffect(() => {
@@ -350,15 +387,26 @@ export default function App() {
 
     try{
       if(supabase){
-        const {error}=await supabase.auth.signOut();
+        // Use local sign-out deliberately. The global logout endpoint can return
+        // 403 for sessions whose refresh token is stale/revoked; calling it is
+        // unnecessary to remove this device's credentials and can make logout fail.
+        const {error}=await supabase.auth.signOut({scope:"local"});
         if(error){
-          console.warn("Remote sign-out failed; clearing this device session locally.",error);
-          await supabase.auth.signOut({scope:"local"});
+          console.warn("Supabase local sign-out returned an error; clearing local auth storage.",error);
+          try {
+            const projectUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+            const projectRef = projectUrl ? new URL(projectUrl).hostname.split(".")[0] : "";
+            if(projectRef) window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
+          } catch (storageError) { console.warn("Could not clear the cached GMS session.",storageError); }
         }
       }
     }catch(e){
-      console.error("Sign-out failed; attempting to clear the local session.",e);
-      try{await supabase?.auth.signOut({scope:"local"});}catch{}
+      console.error("Sign-out failed; clearing this device session locally.",e);
+      try{
+        const projectUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+        const projectRef = projectUrl ? new URL(projectUrl).hostname.split(".")[0] : "";
+        if(projectRef) window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
+      }catch{}
     }finally{
       setProfile(null);setSession(null);setMemberProfile(null);setMemberDirectory([]);setNotifications([]);setRequests([]);setRequestReads([]);setAvailability([]);setAvailabilityRules([]);setServingPreferences([]);
     }
@@ -815,7 +863,7 @@ export default function App() {
   if(recoveryMode && session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form onSubmit={updateRecoveredPassword} className="stack"><label>New password<input name="new_password" type="password" required minLength={8} autoComplete="new-password" placeholder="At least 8 characters"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Updating password…</>:"Update password"}</button></form>{message&&<p className="message">{message}</p>}</div></div>;
   if(!session)return <div className="auth-page"><div className="auth-card">{authMode!=="login"&&<div className="brand-mark"><Church size={24}/></div>}<p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1 className={authMode==="login"?"welcome-home-script":""}>{authMode==="login"?"Welcome Home":authMode==="signup"?"Create your account":"Reset your password"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
     {authMode==="reset"?<form onSubmit={sendPasswordReset} className="stack"><label>Registered email address<input name="recovery_email" type="email" required autoComplete="email" placeholder="you@example.com"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Sending reset link…</>:"Send reset link"}</button><button type="button" className="link-btn" onClick={()=>{setAuthMode("login");setMessage("");}}>Back to sign in</button></form>:<form onSubmit={submitAuth} className="stack auth-registration">
-      <label>Username<input name="username" required minLength={3} maxLength={40} pattern="[A-Za-z0-9._-]+" autoComplete="username" placeholder="Choose a username"/></label>
+      <label>Username<input name="username" required minLength={3} maxLength={40} pattern={"[A-Za-z0-9._\\-]+"} autoComplete="username" placeholder="Choose a username"/></label>
       {authMode==="signup"&&<>
         <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
         <label>Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com"/></label>
@@ -851,8 +899,8 @@ export default function App() {
       <div className="nav-label">WORKSPACE</div>
       <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
       <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
-      {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><ClipboardCheck size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length}</span>}</button>}
-      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><ClipboardCheck size={18}/> Servant Requests{(requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length)>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length}</span>}</button>}
+      {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><InboxIcon size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length}</span>}</button>}
+      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><InboxIcon size={18}/> Servant Requests{(requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length)>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length}</span>}</button>}
       {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
       {isAdmin&&<>
         <button className={`nav-item ${tab==="servantInfo"?"active":""}`} onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
