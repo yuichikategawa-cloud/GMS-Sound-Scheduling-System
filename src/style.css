@@ -2172,3 +2172,241 @@
     line-height: 1.5;
   }
 }
+
+
+/* 2026-11-03 dark-mode refinement: compact disclosures, unified profile details,
+   stronger form contrast and assignment eligibility feedback. */
+
+/* Recurring generation explanation follows the same disclosure pattern as Fair workload. */
+.generate-note-collapsible{
+  display:block;
+  padding:0;
+  margin:14px 0 0;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fbfcff;
+  overflow:hidden;
+}
+.generate-note-collapsible>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 14px;
+  list-style:none;
+  cursor:pointer;
+  color:var(--ink);
+}
+.generate-note-collapsible>summary::-webkit-details-marker{display:none}
+.generate-note-collapsible>summary>svg{flex:0 0 auto;color:var(--muted);transition:transform .18s ease}
+.generate-note-collapsible[open]>summary>svg{transform:rotate(180deg)}
+.generate-note-collapsible .generate-note-title{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:var(--ink);
+  font-size:13px;
+  font-weight:750;
+}
+.generate-note-collapsible .generate-note-title b{color:var(--ink)}
+.generate-note-body{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px;
+  padding:0 14px 14px;
+  border:0;
+}
+.generate-note-body>p{display:grid;gap:4px;margin:0;min-width:0}
+.generate-note-body>p>b{font-size:12px;color:var(--ink)}
+.generate-note-body>p>span{font-size:12px;line-height:1.5;color:var(--muted)}
+:root[data-theme="dark"] .generate-note-collapsible{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#edf3fb!important;
+}
+:root[data-theme="dark"] .generate-note-collapsible>summary{
+  background:#202f46!important;
+  color:#f2f6fc!important;
+}
+:root[data-theme="dark"] .generate-note-collapsible .generate-note-title,
+:root[data-theme="dark"] .generate-note-collapsible .generate-note-title b,
+:root[data-theme="dark"] .generate-note-body>p>b{color:#f1f5fb!important}
+:root[data-theme="dark"] .generate-note-body>p>span{color:#c5d1e3!important}
+@media(max-width:700px){
+  .generate-note-body{grid-template-columns:1fr;gap:10px}
+}
+
+/* The servant detail card remains one surface; its inner columns are not separate tiles. */
+.servant-record-detail>div{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:0 16px!important;
+  min-width:0;
+}
+.servant-record-detail>div+div{
+  border-left:1px solid #e5eaf2!important;
+}
+:root[data-theme="dark"] .servant-record-detail{
+  background:#202f46!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .servant-record-detail>div{
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .servant-record-detail>div+div{
+  border-left:1px solid #40516d!important;
+}
+@media(max-width:900px){
+  .servant-record-detail>div{padding:0 12px!important}
+}
+@media(max-width:600px){
+  .servant-record-detail>div{padding:0 0 12px!important}
+  .servant-record-detail>div+div{
+    border-left:0!important;
+    border-top:1px solid #e5eaf2!important;
+    padding-top:12px!important;
+  }
+  :root[data-theme="dark"] .servant-record-detail>div+div{border-top:1px solid #40516d!important}
+}
+
+/* Servant preference identity and CG-day legend need the same contrast as form labels. */
+:root[data-theme="dark"] .serving-preferences-panel .availability-self-name{
+  background:#26354d!important;
+  border-color:#465873!important;
+  color:#f1f5fb!important;
+}
+:root[data-theme="dark"] .serving-preferences-panel .availability-self-name span{
+  color:#c2cde0!important;
+}
+:root[data-theme="dark"] .serving-preferences-panel .availability-self-name b{
+  color:#ffffff!important;
+}
+:root[data-theme="dark"] .serving-preference-form>label,
+:root[data-theme="dark"] .serving-preference-form>label:first-child{
+  color:#e6edf8!important;
+}
+:root[data-theme="dark"] .days-field{
+  background:#202f46!important;
+  border:1px solid #465873!important;
+  border-radius:11px;
+  color:#edf3fb!important;
+}
+:root[data-theme="dark"] .days-field legend{
+  color:#f1f5fb!important;
+  background:#202f46!important;
+}
+:root[data-theme="dark"] .days-field label{
+  color:#e3ebf7!important;
+}
+
+/* Church location counts match the balanced metric tiles used by the Fairness checker. */
+.location-stat-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.location-stat{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-width:0;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#f7f8fc;
+}
+.location-stat>span{min-width:0;overflow-wrap:anywhere}
+.location-stat>b{flex:0 0 auto}
+:root[data-theme="dark"] .location-stat-list{gap:10px}
+:root[data-theme="dark"] .location-stat{
+  background:#26364f!important;
+  border:1px solid #405571!important;
+  color:#f3f6fc!important;
+}
+:root[data-theme="dark"] .location-stat>span{
+  color:#d6e0ee!important;
+}
+:root[data-theme="dark"] .location-stat>b{
+  color:#ffffff!important;
+}
+@media(max-width:700px){
+  .location-stat-list{grid-template-columns:1fr}
+}
+
+/* Keep custom text-entry dialogs inside their cards on every viewport and theme. */
+.action-dialog{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:calc(100vw - 32px);
+}
+.action-dialog-input{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  line-height:1.4;
+}
+.action-dialog-input input{
+  display:block;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:43px;
+  margin:0;
+}
+:root[data-theme="dark"] .action-dialog-input{
+  color:#edf3fb!important;
+}
+:root[data-theme="dark"] .action-dialog-input input{
+  background:#111c2e!important;
+  color:#f3f6fc!important;
+  border-color:#52627d!important;
+}
+@media(max-width:600px){
+  .action-dialog{width:calc(100vw - 24px);max-width:calc(100vw - 24px);padding:18px}
+  .action-dialog-input input{font-size:16px!important}
+}
+
+/* Immediate assignment feedback in schedule editor and bulk matrix. */
+.assignment-role-field{min-width:0}
+.assignment-field-feedback,
+.bulk-role-feedback{
+  display:block;
+  margin-top:6px;
+  font-size:11px;
+  font-weight:650;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.assignment-field-feedback.error,
+.bulk-role-feedback.error{color:#c2414a}
+.assignment-field-feedback.warning,
+.bulk-role-feedback.warning{color:#a66a12}
+.bulk-assignment-role-cell{min-width:0;vertical-align:top!important}
+.bulk-assignment-role-cell select{display:block;width:100%;min-width:128px}
+.bulk-role-feedback{max-width:190px}
+:root[data-theme="dark"] .assignment-field-feedback.error,
+:root[data-theme="dark"] .bulk-role-feedback.error{color:#ffaaaF!important}
+:root[data-theme="dark"] .assignment-field-feedback.warning,
+:root[data-theme="dark"] .bulk-role-feedback.warning{color:#ffd28b!important}
+:root[data-theme="dark"] .bulk-assignment-role-cell select{
+  background:#111c2e!important;
+  color:#f1f5fb!important;
+  border-color:#52627d!important;
+}
+@media(max-width:700px){
+  .bulk-role-feedback{max-width:160px;font-size:10px}
+}
+
+/* Clear, high-contrast servant selector labels in the availability preference form. */
+:root[data-theme="dark"] .serving-preferences-panel .serving-preference-form>label{
+  color:#eaf0fa!important;
+}
