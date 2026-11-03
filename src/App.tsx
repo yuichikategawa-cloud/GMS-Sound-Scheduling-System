@@ -103,7 +103,7 @@ export default function App() {
     const standalone = window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true;
     setPwaInstalled(!!standalone);
     const onBeforeInstall = (event:Event) => { event.preventDefault(); setInstallPrompt(event as any); };
-    const onInstalled = () => { setPwaInstalled(true); setInstallPrompt(null); setMessage("GMS Sound Scheduling is installed on this device."); };
+    const onInstalled = () => { setPwaInstalled(true); setInstallPrompt(null); setMessage("Sound Scheduling is installed on this device."); };
     window.addEventListener("beforeinstallprompt",onBeforeInstall);
     window.addEventListener("appinstalled",onInstalled);
     return () => { window.removeEventListener("beforeinstallprompt",onBeforeInstall); window.removeEventListener("appinstalled",onInstalled); };
@@ -157,6 +157,8 @@ export default function App() {
     if (!supabase) return;
     setLoading(true); setMessage("");
     try {
+      const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
       const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
@@ -168,9 +170,9 @@ export default function App() {
         supabase.from("servant_serving_preferences").select("*").eq("active",true).order("created_at",{ascending:false}),
         supabase.from("serving_requests").select("*").order("created_at",{ascending:false}),
         supabase.from("serving_request_reads").select("*"),
-        supabase.from("serving_notifications").select("*").order("created_at",{ascending:false}).limit(100),
+        supabase.from("serving_notifications").select("*").gte("created_at",notificationCutoff).order("created_at",{ascending:false}).limit(100),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
-        supabase.from("audit_logs").select("*").order("created_at",{ascending:false}).limit(50),
+        supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
         supabase.from("member_profiles").select("*")
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
@@ -210,8 +212,8 @@ export default function App() {
     if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch(e){console.warn("PWA install prompt was not completed",e);}finally{setInstallPrompt(null);}return;}
     const ua=navigator.userAgent.toLowerCase();
     const ios=/iphone|ipad|ipod/.test(ua);
-    const message=ios?"To install GMS on your iPhone: open this page in Safari, tap the Share button, choose Add to Home Screen, then tap Add. The installed icon will open GMS in its own app window.":"To install GMS: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";
-    await askAction("Install GMS Sound Scheduling",message,"Got it",false);
+    const message=ios?"To install Sound Scheduling on your iPhone: open this page in Safari, tap the Share button, choose Add to Home Screen, then tap Add. The installed icon will open Sound Scheduling in its own app window.":"To install Sound Scheduling: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";
+    await askAction("Install Sound Scheduling App",message,"Got it",false);
   }
 
   function decodeVapidKey(value:string){const padding="=".repeat((4-value.length%4)%4);const base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/");const raw=window.atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
@@ -686,11 +688,24 @@ export default function App() {
   }
   async function exportAuditHistory(){
     if(!supabase||!isAdmin)return;
-    const {data,error}=await supabase.from("audit_logs").select("*").order("created_at",{ascending:false});
-    if(error){setMessage(error.message);return;}
+    const now=Date.now();
+    const newerThan=new Date(now-14*24*60*60*1000).toISOString();
+    const data:any[]=[];
+    const pageSize=1000;
+    for(let offset=0;;offset+=pageSize){
+      const {data:page,error}=await supabase.from("audit_logs").select("*")
+        .lt("created_at",newerThan)
+        .order("created_at",{ascending:false}).range(offset,offset+pageSize-1);
+      if(error){setMessage(error.message);return;}
+      data.push(...(page??[]));
+      if(!page||page.length<pageSize)break;
+    }
+    if(data.length===0){setMessage("No audit records older than 14 days are available to export.");return;}
     const cols=["created_at","actor_id","action","table_name","record_id","old_data","new_data"];
-    const csv=[cols.join(","),...(data??[]).map((row:any)=>cols.map(k=>`"${String(row[k]??"").replace(/"/g,'""')}"`).join(","))].join("\\r\\n");
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`gms-audit-history-${today()}.csv`;a.click();URL.revokeObjectURL(url);
+    const cell=(value:any)=>`"${String(value===null||value===undefined?"":typeof value==="object"?JSON.stringify(value):value).replace(/"/g,'""')}"`;
+    const csv=[cols.join(","),...data.map((row:any)=>cols.map(k=>cell(row[k])).join(","))].join("\r\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`gms-audit-older-than-14-days-${today()}.csv`;a.click();URL.revokeObjectURL(url);
+    setMessage(`Downloaded ${data.length} audit record(s) older than 14 days.`);
   }
 
   async function exportScheduleHistory(){
@@ -760,7 +775,7 @@ export default function App() {
       <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
     </aside>
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install app</button>}<button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install Sound Scheduling App</button>}<button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main className="content">
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         {tab==="schedule"?<>
@@ -808,7 +823,7 @@ export default function App() {
     </nav>
     {mobileNav&&<div className="mobile-more-backdrop" onClick={()=>setMobileNav(false)}>
       <div className="mobile-more-menu" onClick={e=>e.stopPropagation()}>
-        <div className="mobile-more-heading">More options</div>{!pwaInstalled&&<button onClick={()=>{setMobileNav(false);void installGmsApp();}}><Smartphone size={18}/> Install GMS app</button>}
+        <div className="mobile-more-heading">More options</div>{!pwaInstalled&&<button onClick={()=>{setMobileNav(false);void installGmsApp();}}><Smartphone size={18}/> Install Sound Scheduling App</button>}
         {!isAdmin&&<button onClick={()=>{setTab("profile");setMobileNav(false);}}><UserRound size={18}/> My profile</button>}
         {isAdmin&&<>
           <button onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
@@ -1106,13 +1121,13 @@ function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificat
 function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
- return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} recent</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading requests-section-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
+ return <section className="requests-panel"><PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush}/><div className="list-heading"><h2>Notification history</h2><span>{notifications.length} in the last 30 days</span></div>{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}<div className="list-heading requests-section-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>{requests.length===0?<p className="subtle">No replacement or swap requests yet.</p>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}</section>;
 }
 
 function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
  const [page,setPage]=useState(1);const pageSize=10;const pageCount=Math.max(1,Math.ceil(logs.length/pageSize));const visible=logs.slice((page-1)*pageSize,page*pageSize);
  useEffect(()=>{setPage(1);},[logs.length]);
- return <><div className="toolbar"><div><h2>System audit trail</h2><p className="subtle">Showing the 50 most recent events. Older history is available through CSV download.</p></div><button className="btn secondary" onClick={onDownload}><Download size={16}/> Download full history</button></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity yet</b><p>Changes to schedules and assignments will appear here.</p></div>:<><div className="people-list">{visible.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div><div className="audit-pagination"><span>Page {page} of {pageCount} · {logs.length} latest events</span><div><button className="btn secondary tiny" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button><button className="btn secondary tiny" disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button></div></div></>}</>;
+ return <><div className="toolbar audit-toolbar"><div><h2>System audit trail</h2><p className="subtle">Showing up to 50 events from the last 14 days. Records older than 14 days can be downloaded; all audit data is automatically deleted after 30 days.</p></div><button className="btn secondary" onClick={onDownload}><Download size={16}/> Download older records (15+ days)</button></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity in the last 14 days</b><p>Older records, if available, can be downloaded using the button above.</p></div>:<><div className="people-list">{visible.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div><div className="audit-pagination"><span>Page {page} of {pageCount} · {logs.length} events from the last 14 days</span><div><button className="btn secondary tiny" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button><button className="btn secondary tiny" disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button></div></div></>}</>;
 }
 
 function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants:Servant[]}){
