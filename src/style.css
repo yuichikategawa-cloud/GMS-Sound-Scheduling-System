@@ -4302,3 +4302,63 @@
     height: 17px !important;
   }
 }
+
+/* Daily Overview color system: church identity is separate from service/team tints. */
+.daily-location-name {
+  background: var(--church-band, #405a78) !important;
+  color: #f8fbff !important;
+  border-bottom: 1px solid rgba(255,255,255,.13) !important;
+}
+.daily-location-name b,
+.daily-location-name span { color: #f8fbff !important; }
+:root[data-theme="dark"] .daily-location-name,
+.app-shell[data-theme="dark"] .daily-location-name {
+  background: var(--church-band, #405a78) !important;
+  color: #f8fbff !important;
+}
+
+/* Service category tints are shared across all churches; regular-team tints
+   are derived independently from the assigned FOH and Monitor servants. */
+.daily-service-row .daily-service-identity {
+  background: var(--service-category-tint, var(--foh-team-tint, transparent)) !important;
+}
+.daily-service-row.category-regular .daily-service-identity {
+  background: var(--foh-team-tint, transparent) !important;
+}
+.daily-service-row.category-vss .daily-service-identity,
+.daily-service-row.category-aog .daily-service-identity {
+  background: var(--service-category-tint) !important;
+}
+.daily-service-row .daily-assignee-cell:not(.missing) {
+  background: var(--role-team-tint, transparent) !important;
+}
+:root[data-theme="dark"] .daily-service-row .daily-assignee-cell:not(.missing),
+.app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell:not(.missing) {
+  background: var(--role-team-tint, transparent) !important;
+}
+:root[data-theme="dark"] .daily-service-row .daily-service-identity,
+.app-shell[data-theme="dark"] .daily-service-row .daily-service-identity {
+  background: var(--service-category-tint, var(--foh-team-tint, transparent)) !important;
+}
+:root[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity,
+.app-shell[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity {
+  background: var(--foh-team-tint, transparent) !important;
+}
+
+/* Availability mode switch: preserve one card width and horizontal geometry
+   while the form height naturally follows the selected mode's fields. */
+.availability-form-panel .availability-mode-switch,
+.availability-form-panel .bulk-availability-form,
+.availability-form-panel .bulk-form-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.availability-form-panel .bulk-form-grid > *,
+.availability-form-panel .bulk-form-grid input,
+.availability-form-panel .bulk-form-grid select {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
