@@ -1163,3 +1163,329 @@
   .church-bulk-controls{grid-template-columns:1fr}
   .church-bulk-controls .church-location-picker,.church-bulk-controls .btn.danger{grid-column:auto}
 }
+
+
+/* Dark mode — a persistent, selectable GMS appearance. */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#e8edf7;
+  --muted:#a3aec3;
+  --line:#354059;
+  --brand:#8980ff;
+  --navy:#10172b;
+  --card:#1b2437;
+  background:#101727;
+  color:#e8edf7;
+}
+:root[data-theme="dark"] body{background:#101727;color:#e8edf7}
+:root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
+:root[data-theme="dark"] .main-area{background:#101727}
+:root[data-theme="dark"] .content{color:#e8edf7}
+:root[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .filter-panel,
+:root[data-theme="dark"] .daily-card,
+:root[data-theme="dark"] .schedule-card,
+:root[data-theme="dark"] .people-list,
+:root[data-theme="dark"] .modal-card,
+:root[data-theme="dark"] .auth-card,
+:root[data-theme="dark"] .availability-form-panel,
+:root[data-theme="dark"] .stats-table-wrap,
+:root[data-theme="dark"] .church-bulk-actions,
+:root[data-theme="dark"] .my-upcoming-panel,
+:root[data-theme="dark"] .my-next-card,
+:root[data-theme="dark"] .my-days-card,
+:root[data-theme="dark"] .servant-directory-block,
+:root[data-theme="dark"] .servant-record,
+:root[data-theme="dark"] .servant-summary-section,
+:root[data-theme="dark"] .admin-control-center,
+:root[data-theme="dark"] .assignment-overview,
+:root[data-theme="dark"] .schedule-workspace-panel,
+:root[data-theme="dark"] .bulk-assignment-center,
+:root[data-theme="dark"] .mobile-more-menu,
+:root[data-theme="dark"] .inbox-item,
+:root[data-theme="dark"] .requests-panel,
+:root[data-theme="dark"] .audit-row,
+:root[data-theme="dark"] .servant-record-summary,
+:root[data-theme="dark"] .servant-record-detail,
+:root[data-theme="dark"] .profile-card,
+:root[data-theme="dark"] .person-row,
+:root[data-theme="dark"] .people-toolbar,
+:root[data-theme="dark"] .servant-kpi,
+:root[data-theme="dark"] .availability-row,
+:root[data-theme="dark"] .my-upcoming-item,
+:root[data-theme="dark"] .my-schedule-summary>div,
+:root[data-theme="dark"] .inbox-settings-card,
+:root[data-theme="dark"] .push-settings-card,
+:root[data-theme="dark"] .servant-profile-card{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+:root[data-theme="dark"] .collapsible-panel>summary,
+:root[data-theme="dark"] .schedule-workspace-tabs,
+:root[data-theme="dark"] .bulk-copy-panel,
+:root[data-theme="dark"] .bulk-preview-panel,
+:root[data-theme="dark"] .bulk-church-group,
+:root[data-theme="dark"] .workload-preview,
+:root[data-theme="dark"] .assignment-workload-detail,
+:root[data-theme="dark"] .church-schedule-group,
+:root[data-theme="dark"] .template-picker,
+:root[data-theme="dark"] .new-template-form,
+:root[data-theme="dark"] .servant-mini-grid>div,
+:root[data-theme="dark"] .servant-health-list>div,
+:root[data-theme="dark"] .availability-self-name,
+:root[data-theme="dark"] .servant-bar-track,
+:root[data-theme="dark"] .my-upcoming-item,
+:root[data-theme="dark"] .stats-table th,
+:root[data-theme="dark"] .bulk-matrix th{
+  background:#202c42!important;
+  border-color:#394660!important;
+  color:#e8edf7;
+}
+:root[data-theme="dark"] .collapsible-panel>summary b,
+:root[data-theme="dark"] .toolbar h2,
+:root[data-theme="dark"] .list-heading h2,
+:root[data-theme="dark"] .daily-date,
+:root[data-theme="dark"] .daily-service-top b,
+:root[data-theme="dark"] .daily-role-row b,
+:root[data-theme="dark"] .daily-role-row span,
+:root[data-theme="dark"] .role-box b,
+:root[data-theme="dark"] .role-box small,
+:root[data-theme="dark"] .my-upcoming-info b,
+:root[data-theme="dark"] .my-upcoming-location h4,
+:root[data-theme="dark"] .servant-record-name b,
+:root[data-theme="dark"] .servant-record-detail p b,
+:root[data-theme="dark"] .servant-two-col h4,
+:root[data-theme="dark"] .servant-record-detail h4,
+:root[data-theme="dark"] .servant-kpi>b,
+:root[data-theme="dark"] .servant-mini-grid b,
+:root[data-theme="dark"] .servant-health-list b,
+:root[data-theme="dark"] .assignment-workload-detail b,
+:root[data-theme="dark"] .church-schedule-heading h3,
+:root[data-theme="dark"] .bulk-assignment-heading h2,
+:root[data-theme="dark"] .bulk-preview-heading h3,
+:root[data-theme="dark"] .bulk-copy-panel b,
+:root[data-theme="dark"] .bulk-matrix td b,
+:root[data-theme="dark"] .inbox-item-title b,
+:root[data-theme="dark"] .empty-state b,
+:root[data-theme="dark"] .modal-head h2,
+:root[data-theme="dark"] .availability-form-panel h3,
+:root[data-theme="dark"] .daily-service-top b,
+:root[data-theme="dark"] .topbar h1{
+  color:#edf2fb!important;
+}
+:root[data-theme="dark"] .subtle,
+:root[data-theme="dark"] .collapsible-panel>summary small,
+:root[data-theme="dark"] .daily-subtitle,
+:root[data-theme="dark"] .location-text,
+:root[data-theme="dark"] .time-text,
+:root[data-theme="dark"] .my-next-empty,
+:root[data-theme="dark"] .my-next-detail,
+:root[data-theme="dark"] .my-days-card small,
+:root[data-theme="dark"] .inbox-item-body p,
+:root[data-theme="dark"] .inbox-item-body small,
+:root[data-theme="dark"] .servant-record-name small,
+:root[data-theme="dark"] .servant-record-detail p,
+:root[data-theme="dark"] .servant-kpi>span,
+:root[data-theme="dark"] .servant-kpi>small,
+:root[data-theme="dark"] .servant-mini-grid span,
+:root[data-theme="dark"] .servant-health-list,
+:root[data-theme="dark"] .bulk-copy-panel small,
+:root[data-theme="dark"] .bulk-matrix td small,
+:root[data-theme="dark"] .workload-copy span,
+:root[data-theme="dark"] .workload-status,
+:root[data-theme="dark"] .audit-row small,
+:root[data-theme="dark"] .audit-pagination,
+:root[data-theme="dark"] .availability-note,
+:root[data-theme="dark"] .availability-person small{
+  color:#a3aec3!important;
+}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .filters input,
+:root[data-theme="dark"] .filters select,
+:root[data-theme="dark"] .form-grid input,
+:root[data-theme="dark"] .form-grid select,
+:root[data-theme="dark"] .modal-card input,
+:root[data-theme="dark"] .modal-card select,
+:root[data-theme="dark"] .modal-card textarea,
+:root[data-theme="dark"] .availability-form input,
+:root[data-theme="dark"] .availability-form select,
+:root[data-theme="dark"] .availability-filter input,
+:root[data-theme="dark"] .bulk-copy-controls input,
+:root[data-theme="dark"] .bulk-matrix select,
+:root[data-theme="dark"] .servant-filters input,
+:root[data-theme="dark"] .servant-filters select,
+:root[data-theme="dark"] .new-template-form input,
+:root[data-theme="dark"] .new-template-form select,
+:root[data-theme="dark"] .generate-footer input,
+:root[data-theme="dark"] .generate-footer select{
+  background:#111a2b!important;
+  color:#e8edf7!important;
+  border-color:#3b4862!important;
+}
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{color:#7f8ba4!important}
+:root[data-theme="dark"] .btn.secondary,
+:root[data-theme="dark"] .icon-btn,
+:root[data-theme="dark"] .generate-toggle-hint{
+  background:#26324a;
+  color:#e0e7f6;
+  border-color:#3b4862;
+}
+:root[data-theme="dark"] .btn.secondary:hover,
+:root[data-theme="dark"] .icon-btn:hover{background:#33415d;color:#fff}
+:root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
+:root[data-theme="dark"] .nav-item{color:#c0cbe0}
+:root[data-theme="dark"] .nav-item.active,:root[data-theme="dark"] .nav-item:hover{background:#2c3855;color:#fff}
+:root[data-theme="dark"] .role-tag{background:#292c55;color:#c9c4ff}
+:root[data-theme="dark"] .schedule-workspace-tabs{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .schedule-workspace-tabs button{color:#b7c1d5}
+:root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#393b72;color:#fff}
+:root[data-theme="dark"] .daily-location-name{background:#2c3156;color:#d2ceff}
+:root[data-theme="dark"] .daily-service,
+:root[data-theme="dark"] .daily-role-row,
+:root[data-theme="dark"] .role-box,
+:root[data-theme="dark"] .role-box.optional,
+:root[data-theme="dark"] .servant-record-detail,
+:root[data-theme="dark"] .stats-servant-card,
+:root[data-theme="dark"] .location-stat,
+:root[data-theme="dark"] .availability-self-name,
+:root[data-theme="dark"] .schedule-location-group,
+:root[data-theme="dark"] .my-upcoming-item{
+  background:#202c42!important;
+  border-color:#394660!important;
+}
+:root[data-theme="dark"] .daily-role-row.role-missing,
+:root[data-theme="dark"] .role-missing,
+:root[data-theme="dark"] .control-center-alert,
+:root[data-theme="dark"] .workload-warning,
+:root[data-theme="dark"] .schedule-error,
+:root[data-theme="dark"] .message-banner,
+:root[data-theme="dark"] .offline-status-banner{
+  background:#3a2d2c!important;
+  border-color:#704744!important;
+  color:#ffd2c7!important;
+}
+:root[data-theme="dark"] .coverage-pill.complete{background:#173d32;color:#8fe0b7}
+:root[data-theme="dark"] .coverage-pill.pending{background:#49351f;color:#ffd28e}
+:root[data-theme="dark"] .inbox-item.unread{background:#26233d!important;border-color:#514875!important}
+:root[data-theme="dark"] .inbox-item.read{opacity:.9}
+:root[data-theme="dark"] .inbox-item-icon{background:#302b50;color:#c5baff}
+:root[data-theme="dark"] .inbox-intro>span{background:#302b50;color:#d0c7ff}
+:root[data-theme="dark"] .inbox-status.approved{background:#173d32;color:#91e0b7}
+:root[data-theme="dark"] .inbox-status.rejected{background:#492727;color:#ffb8b2}
+:root[data-theme="dark"] .inbox-status.pending{background:#49371e;color:#ffd28e}
+:root[data-theme="dark"] .people-list,.stats-table-wrap,.bulk-matrix-wrap{border-color:#354059}
+:root[data-theme="dark"] .person-row,.audit-row,.stats-table td,.bulk-matrix td,.servant-record-detail{border-color:#354059!important}
+:root[data-theme="dark"] .stats-table th,.bulk-matrix th{background:#26324a!important;color:#bac5da}
+:root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
+:root[data-theme="dark"] .bulk-church-group>summary{background:#202c42;color:#edf2fb}
+:root[data-theme="dark"] .bulk-row-action{background:#26324a;border-color:#3c4963;color:#dbe4f5}
+:root[data-theme="dark"] .bulk-row-action.danger{background:#43282e;border-color:#684049;color:#ffb6c1}
+:root[data-theme="dark"] .calendar-switch{background:#202c42;border-color:#354059}
+:root[data-theme="dark"] .calendar-switch button{color:#b9c4d8}
+:root[data-theme="dark"] .calendar-switch button.selected{background:#393b72;color:#fff}
+:root[data-theme="dark"] .generate-panel{background:#202644;border-color:#39416c}
+:root[data-theme="dark"] .generate-note{background:#202c42;border-color:#394660;color:#d9e2f2}
+:root[data-theme="dark"] .empty-state{background:#1b2437;border-color:#43516d;color:#a3aec3}
+:root[data-theme="dark"] .mobile-bottom-nav{background:rgba(24,34,56,.97);border-color:#354059;box-shadow:0 -5px 22px rgba(0,0,0,.3)}
+:root[data-theme="dark"] .mobile-nav-item{color:#9caac2}
+:root[data-theme="dark"] .mobile-nav-item.active{background:#34315f;color:#c9c4ff}
+:root[data-theme="dark"] .mobile-more-menu{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .mobile-more-menu button{background:#1b2437;color:#e8edf7}
+:root[data-theme="dark"] .mobile-more-menu button:hover{background:#293650}
+:root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{border-color:#354059;color:#ff9ea9}
+:root[data-theme="dark"] .auth-page,:root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
+:root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
+:root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.72)}
+:root[data-theme="dark"] .action-dialog{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .action-dialog-input{color:#e8edf7}
+:root[data-theme="dark"] .audit-row{background:#202c42}
+:root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}
+:root[data-theme="dark"] .servant-account-chip.linked{background:#173d32;color:#91e0b7}
+:root[data-theme="dark"] .servant-account-chip.unlinked{background:#49371e;color:#ffd28e}
+:root[data-theme="dark"] .servant-avatar{background:#2d3d5b;color:#d7e3fb}
+:root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
+:root[data-theme="dark"] .mobile-more-backdrop{background:rgba(0,0,0,.56)}
+
+/* Per-service actions moved into the church-grouped assignment matrix. */
+.bulk-row-actions{display:flex;align-items:center;gap:5px;min-width:108px}
+.bulk-row-action{width:30px;height:30px;display:grid;place-items:center;border:1px solid #dfe5ef;border-radius:8px;background:#fff;color:#536078;cursor:pointer;flex:0 0 auto}
+.bulk-row-action:hover{background:#f2f3ff;color:#5145e8;border-color:#c9c7ff}
+.bulk-row-action.danger{background:#fff7f7;border-color:#fee2e2;color:#be123c}
+.bulk-row-action.danger:hover{background:#ffe7e7}
+.bulk-matrix-status{font-size:10px!important;font-weight:750;letter-spacing:.02em}
+.bulk-matrix-status.is-published{color:#168252!important}
+.bulk-matrix-status.is-draft{color:#9b6b13!important}
+.bulk-matrix{min-width:1010px}
+.theme-toggle{width:36px;height:36px;flex:0 0 auto}
+@media(max-width:760px){.bulk-row-actions{min-width:108px}.theme-toggle{width:34px;height:34px}}
+
+.bulk-matrix-heading-copy{display:grid;gap:3px;min-width:0}
+.bulk-matrix-heading-copy small{font-size:11px;color:var(--muted);line-height:1.4}
+.bulk-row-actions{position:sticky;right:0}
+.bulk-matrix th:last-child,.bulk-matrix td:last-child{position:sticky;right:0;background:#fff;z-index:1;box-shadow:-5px 0 8px rgba(20,32,58,.04)}
+.bulk-matrix th:last-child{background:#f8f9fc;z-index:2}
+:root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
+:root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}
+@media(max-width:760px){.bulk-matrix-toolbar{gap:10px}.bulk-matrix-heading-copy small{max-width:55ch}}
+
+/* Additional form, overview and admin surfaces included in the dark palette. */
+:root[data-theme="dark"] .assignment-overview-card,
+:root[data-theme="dark"] .bulk-church-group,
+:root[data-theme="dark"] .bulk-preview-list,
+:root[data-theme="dark"] .push-settings-card,
+:root[data-theme="dark"] .availability-guidance,
+:root[data-theme="dark"] .swap-source,
+:root[data-theme="dark"] .servant-profile-card,
+:root[data-theme="dark"] .servant-record-detail,
+:root[data-theme="dark"] .profile-edit-grid,
+:root[data-theme="dark"] .servant-filter-card{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7!important;
+}
+:root[data-theme="dark"] .assignment-overview-locations>div,
+:root[data-theme="dark"] .bulk-form-grid,
+:root[data-theme="dark"] .recurring-rule-form,
+:root[data-theme="dark"] .availability-mode-switch,
+:root[data-theme="dark"] .bulk-preview-list>div,
+:root[data-theme="dark"] .servant-record-detail>div,
+:root[data-theme="dark"] .servant-preference-form,
+:root[data-theme="dark"] .servant-info-filters{
+  background:#202c42!important;
+  border-color:#394660!important;
+  color:#e8edf7!important;
+}
+:root[data-theme="dark"] .content input,
+:root[data-theme="dark"] .content select,
+:root[data-theme="dark"] .content textarea{
+  background:#111a2b!important;
+  color:#e8edf7!important;
+  border-color:#3b4862!important;
+}
+:root[data-theme="dark"] .content input[type="checkbox"],
+:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}
+:root[data-theme="dark"] .availability-mode-switch button{color:#b9c4d8}
+:root[data-theme="dark"] .availability-mode-switch button.active{background:#393b72!important;color:#fff!important}
+:root[data-theme="dark"] .servant-profile-card .member-verification-warning{background:#3d3322!important;border-color:#6a5831!important;color:#f7d995!important}
+:root[data-theme="dark"] .bulk-conflict-warning,
+:root[data-theme="dark"] .schedule-error{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
+:root[data-theme="dark"] .template-delete-btn{background:#43282e;border-color:#684049;color:#ffb6c1}
+:root[data-theme="dark"] .generate-note p span,
+:root[data-theme="dark"] .new-template-help{color:#a3aec3}
+:root[data-theme="dark"] .servant-record-detail p b,
+:root[data-theme="dark"] .servant-directory-heading h3{color:#edf2fb}
+:root[data-theme="dark"] .servant-record-detail{border-top-color:#354059}
+:root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}
+:root[data-theme="dark"] .action-dialog .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
+:root[data-theme="dark"] .schedule-overview-shortcuts .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
+:root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}
+:root[data-theme="dark"] .availability-status.available{background:#173d32;color:#91e0b7}
+:root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
+:root[data-theme="dark"] .availability-status.prefer_not{background:#49371e;color:#ffd28e}
