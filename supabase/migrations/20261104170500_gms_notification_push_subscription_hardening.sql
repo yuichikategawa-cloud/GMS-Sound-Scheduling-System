@@ -149,6 +149,7 @@ BEGIN
   IF p_endpoint IS NULL
      OR pg_catalog.char_length(p_endpoint) < 40
      OR pg_catalog.char_length(p_endpoint) > 2048
+     OR p_endpoint ~ '[[:cntrl:]]'
      OR p_endpoint !~* '^https://(fcm\.googleapis\.com|android\.googleapis\.com|updates\.push\.services\.mozilla\.com|push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9]([a-z0-9-]*[a-z0-9])?\.notify\.windows\.com)(:443)?/[^[:space:]#]+$'
   THEN
     RAISE EXCEPTION 'Push endpoint URL is not supported';
