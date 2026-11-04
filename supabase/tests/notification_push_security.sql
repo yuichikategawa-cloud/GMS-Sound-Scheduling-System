@@ -174,8 +174,7 @@ BEGIN
   v_endpoint :=
     'https://fcm.googleapis.com/fcm/send/gms-hardening-' || v_suffix;
 
-  v_cap_user := v_push_user_2;
-  PERFORM set_config('request.jwt.claim.sub', v_cap_user::text, true);
+  PERFORM set_config('request.jwt.claim.sub', v_push_user_1::text, true);
   v_endpoint_id := public.register_serving_push_subscription(
     v_endpoint, repeat('A', 87), repeat('B', 22), 'GMS security test'
   );
@@ -291,7 +290,8 @@ BEGIN
   END IF;
 
   -- F. Ten endpoints are allowed; an eleventh is rejected.
-  PERFORM set_config('request.jwt.claim.sub', v_push_user_1::text, true);
+  v_cap_user := v_push_user_2;
+  PERFORM set_config('request.jwt.claim.sub', v_cap_user::text, true);
 
   FOR v_i IN 1..10 LOOP
     PERFORM public.register_serving_push_subscription(
