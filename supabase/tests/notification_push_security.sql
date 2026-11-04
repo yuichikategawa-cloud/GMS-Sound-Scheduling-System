@@ -32,6 +32,7 @@ DECLARE
   v_user_2_count integer;
   v_endpoint_owner uuid;
   v_cap_user uuid;
+  v_unregistered_user uuid;
   v_message text;
   v_suffix text := left(md5(txid_current()::text || clock_timestamp()::text), 16);
   v_i integer;
@@ -165,6 +166,22 @@ BEGIN
     RAISE EXCEPTION
       'Two profile accounts without existing push subscriptions are required for the staging registration tests';
   END IF;
+
+  -- A non-null UID without a GMS profile must not register endpoints.
+  v_unregistered_user := gen_random_uuid();
+  PERFORM set_config('request.jwt.claim.sub', v_unregistered_user::text, true);
+  BEGIN
+    PERFORM public.register_serving_push_subscription(
+      'https://fcm.googleapis.com/fcm/send/gms-unregistered-' || v_suffix,
+      repeat('A', 87), repeat('B', 22), 'GMS security test'
+    );
+    RAISE EXCEPTION USING ERRCODE = 'ZX708', MESSAGE = 'UID without a GMS profile was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    IF v_message <> 'A GMS member account is required' THEN
+      RAISE EXCEPTION 'Unexpected unregistered-user result: %', v_message;
+    END IF;
+  END;
 
   -- B. First registration and same-account registration are idempotent.
   v_endpoint :=
