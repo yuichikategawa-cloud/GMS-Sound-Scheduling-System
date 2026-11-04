@@ -1,0 +1,38 @@
+name: Edge Functions
+
+on:
+  push:
+    branches:
+      - develop
+      - "feature/**"
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dispatch-push:
+    name: dispatch-push Deno validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+          cache: true
+
+      - name: Type-check the Edge Function
+        run: deno check --config supabase/functions/dispatch-push/deno.json supabase/functions/dispatch-push/index.ts
+
+      - name: Run Edge Function helper tests
+        run: deno test --config supabase/functions/dispatch-push/deno.json supabase/functions/_shared/leaseKeeper_test.ts supabase/functions/_shared/retryBackoff_test.ts

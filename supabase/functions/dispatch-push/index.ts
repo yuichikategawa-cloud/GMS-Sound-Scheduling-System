@@ -4,6 +4,7 @@
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
 import { retryDelaySeconds } from "../_shared/retryBackoff.ts";
+import { startLeaseKeeper } from "../_shared/leaseKeeper.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,7 @@ const corsHeaders = {
 
 const BATCH_SIZE = 5;
 const LEASE_SECONDS = 180;
+const LEASE_RENEW_INTERVAL_MS = 45_000;
 const MAX_ATTEMPTS = 8;
 
 type ClaimedQueueItem = {
@@ -29,6 +31,13 @@ type PushSubscriptionRow = {
   p256dh: string;
   auth: string;
 };
+
+type QueueDb = ReturnType<typeof createClient<any>>;
+type LeaseKeeper = ReturnType<typeof startLeaseKeeper>;
+type ProcessOutcome =
+  | "processed"
+  | "lost_claim"
+  | { status: "processed" | "retry"; delivered: number };
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -48,6 +57,7 @@ Deno.serve(async (req: Request) => {
       serviceRoleKey = "";
     }
   }
+
   const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
   const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
   const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "";
@@ -57,7 +67,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-    const db = createClient(supabaseUrl, serviceRoleKey, {
+    const db = createClient<any>(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
@@ -73,8 +83,13 @@ Deno.serve(async (req: Request) => {
     let lostClaims = 0;
 
     for (const item of (queue ?? []) as ClaimedQueueItem[]) {
+      const lease = startLeaseKeeper(
+        () => renewClaim(db, item),
+        LEASE_RENEW_INTERVAL_MS,
+      );
+
       try {
-        const outcome = await processQueueItem(db, item);
+        const outcome = await processQueueItem(db, item, lease);
         if (outcome === "processed") processed++;
         else if (outcome === "lost_claim") lostClaims++;
         else if (outcome.status === "processed") {
@@ -85,9 +100,18 @@ Deno.serve(async (req: Request) => {
           delivered += outcome.delivered;
         }
       } catch (error) {
-        const release = await releaseForRetry(db, item, error);
-        if (release === "released") retried++;
-        else lostClaims++;
+        try {
+          const release = await releaseForRetry(db, item, error);
+          if (release === "released") retried++;
+          else lostClaims++;
+        } catch (releaseError) {
+          // The lease will expire and make the row reclaimable. Do not overwrite
+          // checkpoint data with the stale snapshot returned by the claim RPC.
+          console.error("Could not safely release push queue claim", releaseError);
+          lostClaims++;
+        }
+      } finally {
+        await lease.stop();
       }
     }
 
@@ -106,9 +130,12 @@ Deno.serve(async (req: Request) => {
 });
 
 async function processQueueItem(
-  db: ReturnType<typeof createClient>,
+  db: QueueDb,
   item: ClaimedQueueItem,
-): Promise<"processed" | "lost_claim" | { status: "processed" | "retry"; delivered: number }> {
+  lease: LeaseKeeper,
+): Promise<ProcessOutcome> {
+  if (!await lease.renewNow()) return "lost_claim";
+
   const { data: notification, error: notificationError } = await db
     .from("serving_notifications")
     .select("id,recipient_user_id,title,body,notification_type,event_key")
@@ -117,7 +144,9 @@ async function processQueueItem(
   if (notificationError) throw notificationError;
 
   if (!notification) {
-    return await completeClaim(db, item, "Notification no longer exists.") ? "processed" : "lost_claim";
+    return await completeClaim(db, item, "Notification no longer exists.")
+      ? "processed"
+      : "lost_claim";
   }
 
   const { data: preferences, error: preferencesError } = await db
@@ -127,7 +156,7 @@ async function processQueueItem(
     .maybeSingle();
   if (preferencesError) throw preferencesError;
 
-  const prefs = preferences ?? {};
+  const prefs = (preferences ?? {}) as Record<string, boolean | undefined>;
   const notificationType = String(notification.notification_type ?? "");
   const preferenceKey =
     notificationType === "new_assignment" || notificationType === "replacement_assigned" ? "new_assignments" :
@@ -155,7 +184,7 @@ async function processQueueItem(
     .filter((sub) => !sentEndpoints.has(sub.endpoint));
 
   if (pending.length === 0) {
-    return await completeClaim(db, item, null, [...sentEndpoints]) ? "processed" : "lost_claim";
+    return await completeClaim(db, item, null) ? "processed" : "lost_claim";
   }
 
   const payload = JSON.stringify({
@@ -170,6 +199,11 @@ async function processQueueItem(
   let deliveredCount = 0;
 
   for (const sub of pending) {
+    // Renew immediately before each external side effect. The heartbeat also
+    // renews during slow provider calls, preventing a healthy worker's lease
+    // from expiring merely because one endpoint is slow.
+    if (!await lease.renewNow()) return "lost_claim";
+
     let sendError: unknown = null;
     try {
       await webpush.sendNotification(
@@ -181,10 +215,13 @@ async function processQueueItem(
       sendError = error;
     }
 
+    if (!lease.ownsLease()) return "lost_claim";
+
     if (!sendError) {
-      // Checkpoint each successful endpoint immediately while this worker owns the lease.
-      if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) return "lost_claim";
+      if (!await checkpointEndpoint(db, item, sub.endpoint)) return "lost_claim";
+      sentEndpoints.add(sub.endpoint);
       deliveredCount++;
+
       const { error: lastUsedError } = await db
         .from("serving_push_subscriptions")
         .update({ last_used_at: new Date().toISOString() })
@@ -195,6 +232,8 @@ async function processQueueItem(
 
     const statusCode = Number((sendError as any)?.statusCode ?? 0);
     if (statusCode === 404 || statusCode === 410) {
+      if (!await lease.renewNow()) return "lost_claim";
+
       const { error: deleteError } = await db
         .from("serving_push_subscriptions")
         .delete()
@@ -204,7 +243,9 @@ async function processQueueItem(
         lastError = deleteError.message;
         continue;
       }
-      if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) return "lost_claim";
+
+      if (!await checkpointEndpoint(db, item, sub.endpoint)) return "lost_claim";
+      sentEndpoints.add(sub.endpoint);
     } else {
       hadTransientFailure = true;
       lastError = String((sendError as any)?.body ?? (sendError as any)?.message ?? sendError).slice(0, 1000);
@@ -213,127 +254,123 @@ async function processQueueItem(
 
   const allDone = pending.every((sub) => sentEndpoints.has(sub.endpoint));
   if (allDone) {
-    return await completeClaim(db, item, null, [...sentEndpoints])
+    return await completeClaim(db, item, null)
       ? { status: "processed", delivered: deliveredCount }
       : "lost_claim";
   }
 
   const attempts = Number(item.attempts ?? 0) + (hadTransientFailure ? 1 : 0);
   if (attempts >= MAX_ATTEMPTS) {
-    return await completeClaim(
+    return await releaseClaim(
       db,
       item,
+      attempts,
+      null,
       `Stopped after ${MAX_ATTEMPTS} attempts: ${lastError || "Push delivery incomplete"}`,
-      [...sentEndpoints],
-      attempts,
+      true,
     ) ? { status: "processed", delivered: deliveredCount } : "lost_claim";
-  }
-
-  const released = await scheduleRetry(db, item, attempts, lastError || "Push delivery will retry.", sentEndpoints);
-  return released ? { status: "retry", delivered: deliveredCount } : "lost_claim";
-}
-
-async function checkpointEndpoint(
-  db: ReturnType<typeof createClient>,
-  item: ClaimedQueueItem,
-  sentEndpoints: Set<string>,
-  endpoint: string,
-): Promise<boolean> {
-  sentEndpoints.add(endpoint);
-  const { data, error } = await db
-    .from("serving_push_queue")
-    .update({ delivered_endpoints: [...sentEndpoints] })
-    .eq("notification_id", item.notification_id)
-    .eq("claim_token", item.claim_token)
-    .is("processed_at", null)
-    .select("notification_id")
-    .maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
-}
-
-async function completeClaim(
-  db: ReturnType<typeof createClient>,
-  item: ClaimedQueueItem,
-  lastError: string | null,
-  deliveredEndpoints?: string[],
-  attempts?: number,
-): Promise<boolean> {
-  let query = db
-    .from("serving_push_queue")
-    .update({
-      ...(deliveredEndpoints ? { delivered_endpoints: deliveredEndpoints } : {}),
-      ...(attempts !== undefined ? { attempts } : {}),
-      processed_at: new Date().toISOString(),
-      last_error: lastError,
-      claim_token: null,
-      claimed_at: null,
-      lease_expires_at: null,
-    })
-    .eq("notification_id", item.notification_id)
-    .eq("claim_token", item.claim_token)
-    .is("processed_at", null)
-    .select("notification_id");
-  const { data, error } = await query.maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
-}
-
-async function scheduleRetry(
-  db: ReturnType<typeof createClient>,
-  item: ClaimedQueueItem,
-  attempts: number,
-  lastError: string,
-  sentEndpoints: Set<string>,
-): Promise<boolean> {
-  const delaySeconds = retryDelaySeconds(attempts);
-  const now = Date.now();
-  const nextAttemptAt = new Date(now + delaySeconds * 1000).toISOString();
-
-  const { data, error } = await db
-    .from("serving_push_queue")
-    .update({
-      delivered_endpoints: [...sentEndpoints],
-      attempts,
-      next_attempt_at: nextAttemptAt,
-      last_error: lastError,
-      claim_token: null,
-      claimed_at: null,
-      lease_expires_at: null,
-    })
-    .eq("notification_id", item.notification_id)
-    .eq("claim_token", item.claim_token)
-    .is("processed_at", null)
-    .select("notification_id")
-    .maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
-}
-
-async function releaseForRetry(
-  db: ReturnType<typeof createClient>,
-  item: ClaimedQueueItem,
-  error: unknown,
-): Promise<"released" | "lost_claim"> {
-  const attempts = Number(item.attempts ?? 0) + 1;
-  const message = String((error as any)?.message ?? error).slice(0, 1000);
-  if (attempts >= MAX_ATTEMPTS) {
-    const completed = await completeClaim(
-      db,
-      item,
-      `Stopped after ${MAX_ATTEMPTS} attempts: ${message}`,
-      item.delivered_endpoints,
-      attempts,
-    );
-    return completed ? "released" : "lost_claim";
   }
 
   const released = await scheduleRetry(
     db,
     item,
     attempts,
+    lastError || "Push delivery will retry.",
+  );
+  return released ? { status: "retry", delivered: deliveredCount } : "lost_claim";
+}
+
+async function renewClaim(db: QueueDb, item: ClaimedQueueItem): Promise<boolean> {
+  const { data, error } = await db.rpc("gms_renew_serving_push_queue_claim", {
+    p_notification_id: item.notification_id,
+    p_claim_token: item.claim_token,
+    p_lease_seconds: LEASE_SECONDS,
+  });
+  if (error) {
+    console.error("Push queue lease renewal failed", error);
+    throw error;
+  }
+  return data === true;
+}
+
+async function checkpointEndpoint(
+  db: QueueDb,
+  item: ClaimedQueueItem,
+  endpoint: string,
+): Promise<boolean> {
+  const { data, error } = await db.rpc("gms_checkpoint_serving_push_queue_endpoint", {
+    p_notification_id: item.notification_id,
+    p_claim_token: item.claim_token,
+    p_endpoint: endpoint,
+  });
+  if (error) throw error;
+  return data === true;
+}
+
+async function completeClaim(
+  db: QueueDb,
+  item: ClaimedQueueItem,
+  lastError: string | null,
+): Promise<boolean> {
+  return await releaseClaim(db, item, Number(item.attempts ?? 0), null, lastError, true);
+}
+
+async function scheduleRetry(
+  db: QueueDb,
+  item: ClaimedQueueItem,
+  attempts: number,
+  lastError: string,
+): Promise<boolean> {
+  return await releaseClaim(
+    db,
+    item,
+    attempts,
+    retryDelaySeconds(attempts),
+    lastError,
+    false,
+  );
+}
+
+async function releaseClaim(
+  db: QueueDb,
+  item: ClaimedQueueItem,
+  attempts: number,
+  retryDelay: number | null,
+  lastError: string | null,
+  processed: boolean,
+): Promise<boolean> {
+  const { data, error } = await db.rpc("gms_release_serving_push_queue_claim", {
+    p_notification_id: item.notification_id,
+    p_claim_token: item.claim_token,
+    p_attempts: attempts,
+    p_retry_delay_seconds: retryDelay,
+    p_last_error: lastError,
+    p_processed: processed,
+  });
+  if (error) throw error;
+  return data === true;
+}
+
+async function releaseForRetry(
+  db: QueueDb,
+  item: ClaimedQueueItem,
+  error: unknown,
+): Promise<"released" | "lost_claim"> {
+  const attempts = Number(item.attempts ?? 0) + 1;
+  const message = String((error as any)?.message ?? error).slice(0, 1000);
+
+  if (attempts >= MAX_ATTEMPTS) {
+    const completed = await releaseClaim(db, item, attempts, null, `Stopped after ${MAX_ATTEMPTS} attempts: ${message}`, true);
+    return completed ? "released" : "lost_claim";
+  }
+
+  const released = await releaseClaim(
+    db,
+    item,
+    attempts,
+    retryDelaySeconds(attempts),
     message,
-    new Set(item.delivered_endpoints ?? []),
+    false,
   );
   return released ? "released" : "lost_claim";
 }
