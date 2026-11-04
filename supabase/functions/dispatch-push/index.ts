@@ -170,43 +170,44 @@ async function processQueueItem(
   let deliveredCount = 0;
 
   for (const sub of pending) {
+    let sendError: unknown = null;
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         payload,
         { TTL: 86400, urgency: "normal" },
       );
+    } catch (error) {
+      sendError = error;
+    }
 
+    if (!sendError) {
       // Checkpoint each successful endpoint immediately while this worker owns the lease.
-      if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) {
-        return "lost_claim";
-      }
+      if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) return "lost_claim";
       deliveredCount++;
-
       const { error: lastUsedError } = await db
         .from("serving_push_subscriptions")
         .update({ last_used_at: new Date().toISOString() })
         .eq("id", sub.id);
       if (lastUsedError) console.error("Could not update push subscription last_used_at", lastUsedError);
-    } catch (error) {
-      const statusCode = Number((error as any)?.statusCode ?? 0);
-      if (statusCode === 404 || statusCode === 410) {
-        const { error: deleteError } = await db
-          .from("serving_push_subscriptions")
-          .delete()
-          .eq("id", sub.id);
-        if (deleteError) {
-          hadTransientFailure = true;
-          lastError = deleteError.message;
-          continue;
-        }
-        if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) {
-          return "lost_claim";
-        }
-      } else {
+      continue;
+    }
+
+    const statusCode = Number((sendError as any)?.statusCode ?? 0);
+    if (statusCode === 404 || statusCode === 410) {
+      const { error: deleteError } = await db
+        .from("serving_push_subscriptions")
+        .delete()
+        .eq("id", sub.id);
+      if (deleteError) {
         hadTransientFailure = true;
-        lastError = String((error as any)?.body ?? (error as any)?.message ?? error).slice(0, 1000);
+        lastError = deleteError.message;
+        continue;
       }
+      if (!await checkpointEndpoint(db, item, sentEndpoints, sub.endpoint)) return "lost_claim";
+    } else {
+      hadTransientFailure = true;
+      lastError = String((sendError as any)?.body ?? (sendError as any)?.message ?? sendError).slice(0, 1000);
     }
   }
 
