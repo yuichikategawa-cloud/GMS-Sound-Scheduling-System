@@ -3,6 +3,7 @@ import { isAllowedPushEndpoint } from "./security.ts";
 Deno.test("accepts supported browser push-service endpoints", () => {
   const valid = [
     "https://fcm.googleapis.com/fcm/send/test-endpoint-token",
+    "https://fcm.googleapis.com:443/fcm/send/test-endpoint-token",
     "https://android.googleapis.com/gcm/send/test-endpoint-token",
     "https://updates.push.services.mozilla.com/wpush/v2/test-endpoint-token",
     "https://push.services.mozilla.com/wpush/v2/test-endpoint-token",
