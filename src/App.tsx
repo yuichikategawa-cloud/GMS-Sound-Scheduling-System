@@ -312,7 +312,7 @@ export default function App() {
   async function disablePushNotifications(){
     if(!supabase||!session?.user?.id||!("serviceWorker" in navigator))return;
     setPushBusy(true);
-    try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription){await supabase.from("serving_push_subscriptions").delete().eq("endpoint",subscription.endpoint);await subscription.unsubscribe();}setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
+    try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription){const {error:deleteError}=await supabase.from("serving_push_subscriptions").delete().eq("user_id",session.user.id).eq("endpoint",subscription.endpoint);if(deleteError)throw deleteError;await subscription.unsubscribe();}setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
     catch(e){setMessage(errorText(e));}finally{setPushBusy(false);}
   }
 
