@@ -19,7 +19,7 @@ BEGIN
     RAISE EXCEPTION 'Availability timestamp trigger function is missing';
   END IF;
 
-  IF NOT (coalesce(v_config, ARRAY[]::text[]) @> ARRAY['search_path=pg_catalog, public']) THEN
+  IF NOT (coalesce(v_config, ARRAY[]::text[]) @> ARRAY['search_path=pg_catalog']) THEN
     RAISE EXCEPTION 'Availability timestamp trigger function search_path is not pinned';
   END IF;
 
