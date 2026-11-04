@@ -1,28 +1,64 @@
-# GMS Sound Scheduling System — Workflow Enhancements
+# GMS Sound Scheduling System
 
-Based on the latest uploaded project ZIP.
+**Version:** 4.1.0 — Reengineering Part 1 (Foundation and Transition Boundary)
 
-## Included frontend changes
-1. Servant Inbox shows pending and reviewed swap/replacement requests. Approved/rejected decisions have read/unread styling and a navigation badge.
-2. Admin has a separate "Servant Requests" menu with a pending-request badge. Request review is removed from the schedule page.
-3. Direct cross-date swap request: choose another published service on a different date and select an assigned servant. The app checks that each participant has no assignment at another church on the date they would receive.
-4. Admin Scheduling Control Center summarizes incomplete FOH/Monitor coverage, pending requests, unconfirmed assignments and upcoming services. The existing schedule generator remains available.
-5. Personal schedule keeps the logged-in servant's next assignment and upcoming assignments, now using the direct swap workflow.
+A multi-location church sound-team scheduling application. Part 1 establishes an incremental modular-monolith architecture while keeping the existing application workflows behind a compatibility shell.
 
-## REQUIRED database migration
-Run `supabase/migrations_20261105_workflow_enhancements.sql` in Supabase SQL Editor before deploying the frontend. It:
-- Adds target schedule/assignment/servant columns to `serving_requests`.
-- Creates `serving_request_reads` with row-level security for servant-owned request receipts.
-- Adds `admin_execute_servant_swap(uuid)`, an admin-only atomic database function. It revalidates both published assignments and cross-church same-day conflicts at approval time, swaps the two servants, resets confirmation to pending, and marks the request approved in one transaction.
+## Architecture direction
 
-## Apply
-1. Back up the Supabase database.
-2. Run the migration SQL.
-3. Replace `src/App.tsx` and `src/style.css`.
-4. Run `npm install` if dependencies are not installed.
-5. Run `npm run build`; deploy only if it succeeds.
+See [`docs/architecture/GMS_V2_ARCHITECTURE_BLUEPRINT.md`](docs/architecture/GMS_V2_ARCHITECTURE_BLUEPRINT.md) for the complete V2 design, module boundaries, dependency rules, role model, transaction strategy, migration plan and phased roadmap.
 
-## Validation
-- ZIP integrity check passed.
-- Global TypeScript parser reported no syntax diagnostics.
-- A full project build could not be completed because dependency installation timed out in this environment; remaining `tsc` diagnostics are unresolved imports/types from missing React, lucide-react and project modules. Therefore this patch is not represented as a successful production build.
+See [`docs/engineering/PART_1_IMPLEMENTATION_NOTES.md`](docs/engineering/PART_1_IMPLEMENTATION_NOTES.md) for exactly what this ZIP changes and what remains intentionally deferred.
+
+## Prerequisites
+
+- Node.js 20 or newer
+- npm 10 or newer recommended
+
+A dependency lockfile has not yet been generated for this Part 1 archive because package registry access was unavailable during packaging. Run `npm install` and commit the resulting `package-lock.json` before using `npm ci` in CI or deployment.
+- A Supabase project for authentication and database functionality
+
+## Local setup
+
+```bash
+cp .env.example .env
+# Edit .env and provide your own Supabase URL and publishable/anon key.
+npm install
+npm run typecheck
+npm run build
+npm run dev
+```
+
+Only a Supabase publishable/anon key belongs in browser variables. Never put a service-role key, VAPID private key, or push-dispatch secret in a `VITE_*` variable or frontend source file.
+
+## Database and deployment safety
+
+**Do not run all SQL files blindly against production.** The supplied SQL history uses manually named `supabase/migrations_*.sql` files and the ZIP does not prove which scripts have already been applied in the live project. Reconcile the live database schema and migration history first, then apply only the verified missing changes in order in a disposable test environment before production.
+
+The old `supabase/schema.sql` is a partial core schema, not a complete schema snapshot. The full feature set is built by subsequent migration scripts. Follow the migration ledger and operational plan in the V2 blueprint.
+
+### Push secret rotation
+
+The earlier project archive included a shared dispatcher secret in `supabase/setup_push_dispatch.sql`. Treat that value as compromised. Before the next push deployment:
+
+1. Generate a new secret (example: `openssl rand -hex 32`).
+2. Set it as `PUSH_DISPATCH_SECRET` for the `dispatch-push` Edge Function.
+3. Update the matching Vault secret used by the scheduled `pg_net` request.
+4. Retire the old secret from the Edge Function and Vault.
+5. Do not commit the new secret or include it in a ZIP.
+
+`supabase/setup_push_dispatch.sql` now contains placeholders. Replace them only in a local/private execution copy after preparing the new credentials. Do not commit filled-in credentials.
+
+## Current architecture transition
+
+`src/main.tsx` loads the new `src/app/App.tsx` shell. During Part 1 the shell delegates to `src/legacy/LegacyApp.tsx`. Shared types, Supabase client configuration, generic error formatting, display-list formatting and Jakarta business-date logic have been moved behind shared/infrastructure boundaries. Feature folders are documented scaffolds; feature extraction follows in later parts after regression tests are established.
+
+## Operating principles
+
+- One central administrator manages all church locations.
+- Coordinators manually prepare assignments within their authorized locations.
+- Servant assignment is always manual; the system validates and assists but does not auto-allocate people.
+- Only administrators publish or unpublish final schedules.
+- Servants manage their own availability, profile information, confirmations and requests.
+
+The current code's database/frontend role model only has `admin` and `servant`; the coordinator role and location scope are part of the V2 target and are not enabled in Part 1.
