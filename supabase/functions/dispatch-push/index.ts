@@ -3,6 +3,7 @@
 // because verify_jwt is disabled for this server-to-server function.
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { isAllowedPushEndpoint } from "./security.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -95,8 +96,24 @@ Deno.serve(async (req: Request) => {
         .eq("user_id", notification.recipient_user_id);
       if (subscriptionsError) throw subscriptionsError;
 
+      const storedSubscriptions = subscriptions ?? [];
+      const rejectedSubscriptions = storedSubscriptions.filter((sub: any) => !isAllowedPushEndpoint(sub.endpoint));
+      if (rejectedSubscriptions.length > 0) {
+        // Defend against legacy or manually inserted rows as well as the RPC
+        // validation. Never make an outbound request to an unapproved host.
+        const rejectedIds = rejectedSubscriptions.map((sub: any) => sub.id);
+        const { error: cleanupError } = await db
+          .from("serving_push_subscriptions")
+          .delete()
+          .in("id", rejectedIds);
+        if (cleanupError) throw cleanupError;
+        console.warn("Removed unsupported push subscription endpoints:", rejectedIds.length);
+      }
+
       const sentEndpoints = new Set<string>((item.delivered_endpoints ?? []) as string[]);
-      const pending = (subscriptions ?? []).filter((sub: any) => !sentEndpoints.has(sub.endpoint));
+      const pending = storedSubscriptions
+        .filter((sub: any) => isAllowedPushEndpoint(sub.endpoint))
+        .filter((sub: any) => !sentEndpoints.has(sub.endpoint));
       if (pending.length === 0) {
         await db.from("serving_push_queue").update({ processed_at: new Date().toISOString(), last_error: null }).eq("notification_id", item.notification_id);
         processed++;
