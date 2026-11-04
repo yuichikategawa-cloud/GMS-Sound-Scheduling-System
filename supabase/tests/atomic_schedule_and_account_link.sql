@@ -125,7 +125,34 @@ BEGIN
     RAISE EXCEPTION 'Changed assignment was not recreated as pending';
   END IF;
 
-  -- 2. Failed update must leave schedule and assignment state unchanged.
+  -- 2. A service metadata edit must retain the unchanged assignment IDs
+  -- but reset confirmations so servants reconfirm the changed service.
+  PERFORM public.admin_save_schedule_with_assignments(
+    v_schedule,
+    jsonb_build_object(
+      'service_date','2099-12-26',
+      'location_id',v_location,
+      'service_name',v_service_name,
+      'start_time','08:15',
+      'end_time','10:00'
+    ),
+    jsonb_build_array(
+      jsonb_build_object('role','FOH','servant_id',v_servant_1),
+      jsonb_build_object('role','Monitor','servant_id',v_servant_3)
+    )
+  );
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.assignments
+    WHERE id=v_foh_before AND schedule_id=v_schedule AND confirmation_status='pending'
+  ) OR NOT EXISTS (
+    SELECT 1 FROM public.assignments
+    WHERE id=v_monitor_after AND schedule_id=v_schedule AND confirmation_status='pending'
+  ) THEN
+    RAISE EXCEPTION 'Service metadata edit did not reset confirmations while preserving assignment rows';
+  END IF;
+
+  -- 3. Failed update must leave schedule and assignment state unchanged.
   UPDATE public.servants SET active=false WHERE id=v_servant_2;
 
   BEGIN
@@ -170,7 +197,7 @@ BEGIN
     RAISE EXCEPTION 'Failed edit changed existing assignment state';
   END IF;
 
-  -- 3. Authenticated servant accounts can call the RPC endpoint but
+  -- 4. Authenticated servant accounts can call the RPC endpoint but
   -- cannot pass the database-side administrator check.
   DECLARE
     v_non_admin uuid;
@@ -210,7 +237,7 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
   END;
 
-  -- 3. Account linking: choose a servant account with a complete profile and
+  -- 5. Account linking: choose a servant account with a complete profile and
   -- no assignment/request history, then use a synthetic NIJ within this
   -- transaction so no real NIJ value is read or exposed by the test.
   SELECT s.id,s.auth_user_id
