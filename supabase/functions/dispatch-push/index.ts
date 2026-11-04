@@ -32,7 +32,7 @@ type PushSubscriptionRow = {
   auth: string;
 };
 
-type QueueDb = ReturnType<typeof createClient>;
+type QueueDb = ReturnType<typeof createClient<any>>;
 type LeaseKeeper = ReturnType<typeof startLeaseKeeper>;
 type ProcessOutcome =
   | "processed"
@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-    const db = createClient(supabaseUrl, serviceRoleKey, {
+    const db = createClient<any>(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
