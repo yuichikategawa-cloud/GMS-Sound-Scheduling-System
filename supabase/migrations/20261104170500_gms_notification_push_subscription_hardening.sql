@@ -79,7 +79,7 @@ BEGIN
       v_confirmation_event_at AT TIME ZONE 'UTC',
       'YYYYMMDDHH24MISSUS'
     )
-    || ':' || pg_catalog.greatest(v_confirmation_transition_count, 1)::text;
+    || ':' || GREATEST(v_confirmation_transition_count, 1)::text;
 
   INSERT INTO public.serving_notifications (
     recipient_user_id,
