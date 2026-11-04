@@ -12,10 +12,13 @@ See [`docs/engineering/PART_1_IMPLEMENTATION_NOTES.md`](docs/engineering/PART_1_
 
 ## Prerequisites
 
-- Node.js 20 or newer
+- Node.js 24 LTS (Node.js 22.12 or newer is also supported)
 - npm 10 or newer recommended
 
-A dependency lockfile has not yet been generated for this Part 1 archive because package registry access was unavailable during packaging. Run `npm install` and commit the resulting `package-lock.json` before using `npm ci` in CI or deployment.
+The repository includes a committed `package-lock.json`.
+Use `npm ci` for clean, reproducible installations.
+When dependencies change, commit both `package.json` and `package-lock.json`.
+
 - A Supabase project for authentication and database functionality
 
 ## Local setup
