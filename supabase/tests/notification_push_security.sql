@@ -290,7 +290,7 @@ BEGIN
   END IF;
 
   -- F. Ten endpoints are allowed; an eleventh is rejected.
-  v_cap_user := v_push_user_2;
+  v_cap_user := v_push_user_1;
   PERFORM set_config('request.jwt.claim.sub', v_cap_user::text, true);
 
   FOR v_i IN 1..10 LOOP
