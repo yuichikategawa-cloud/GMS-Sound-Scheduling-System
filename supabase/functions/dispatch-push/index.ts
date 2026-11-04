@@ -156,7 +156,7 @@ async function processQueueItem(
     .maybeSingle();
   if (preferencesError) throw preferencesError;
 
-  const prefs = preferences ?? {};
+  const prefs = (preferences ?? {}) as Record<string, boolean | undefined>;
   const notificationType = String(notification.notification_type ?? "");
   const preferenceKey =
     notificationType === "new_assignment" || notificationType === "replacement_assigned" ? "new_assignments" :
