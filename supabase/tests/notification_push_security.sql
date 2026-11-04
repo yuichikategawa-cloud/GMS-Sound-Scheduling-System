@@ -66,11 +66,7 @@ BEGIN
       'Create synthetic admin and linked active-servant accounts plus a location before running these staging tests';
   END IF;
 
-  SELECT id INTO v_other_user
-  FROM public.profiles
-  WHERE id NOT IN (v_admin_user, v_servant_user)
-  ORDER BY created_at
-  LIMIT 1;
+  v_other_user := v_admin_user;
 
   -- A. The same confirmation transition must notify each admin exactly once.
   INSERT INTO public.schedules (
