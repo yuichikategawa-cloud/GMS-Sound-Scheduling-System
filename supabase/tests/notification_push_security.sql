@@ -234,6 +234,18 @@ BEGIN
     END IF;
   END;
 
+  BEGIN
+    PERFORM public.register_serving_push_subscription(
+      v_endpoint || chr(10), repeat('A', 87), repeat('B', 22), 'GMS security test'
+    );
+    RAISE EXCEPTION USING ERRCODE = 'ZX709', MESSAGE = 'Control character in endpoint was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    IF v_message <> 'Push endpoint URL is not supported' THEN
+      RAISE EXCEPTION 'Unexpected control-character endpoint result: %', v_message;
+    END IF;
+  END;
+
   -- D. Key encodings and user-agent size are bounded.
   BEGIN
     PERFORM public.register_serving_push_subscription(
