@@ -188,7 +188,7 @@ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM public.assignments
     WHERE id=v_foh_before AND schedule_id=v_schedule
-      AND confirmation_status='confirmed'
+      AND confirmation_status='pending'
   ) OR NOT EXISTS (
     SELECT 1 FROM public.assignments
     WHERE id=v_monitor_after AND schedule_id=v_schedule
