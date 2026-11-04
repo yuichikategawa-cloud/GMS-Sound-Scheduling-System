@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - develop
-      - "feature/**/"
+      - "feature/**"
 
   pull_request: 
     branches:
@@ -35,7 +35,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Install locked depedencies
+      - name: Install locked dependencies
         run: npm ci
 
       - name: Typecheck and production build
