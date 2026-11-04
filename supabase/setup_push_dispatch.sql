@@ -1,17 +1,17 @@
 -- GMS Web Push dispatcher schedule.
--- 1) Replace every placeholder below with values from YOUR Supabase project.
+-- 1) Replace every placeholder below in a private execution copy; never commit real credentials.
 -- 2) Deploy supabase/functions/dispatch-push and set its function secrets first.
 -- 3) Run this file in Supabase SQL Editor.
--- The shared dispatch secret must be identical in the Edge Function secret and Vault.
+-- Generate a NEW random dispatch secret; set the same value in the Edge Function and Vault.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 -- Supabase Vault is used so the cron job does not contain credentials in plain text.
 -- If these names already exist, update/remove the existing Vault secrets before rerunning.
-select vault.create_secret('https://zqpmzvhudxprzdfijrtu.supabase.co', 'gms_push_project_url');
-select vault.create_secret('sb_publishable_7nURmIs2t0CUGA7PUzGI7Q_NJWDS8RQ', 'gms_push_anon_key');
-select vault.create_secret('b46e500c34270d7eaad6078dcf2b03a4e7d9a36e436a19efed77e6ed5cec20b1', 'gms_push_dispatch_secret');
+select vault.create_secret('<YOUR_SUPABASE_URL>', 'gms_push_project_url');
+select vault.create_secret('<YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY>', 'gms_push_anon_key');
+select vault.create_secret('<GENERATE_AND_SET_A_NEW_RANDOM_SECRET>', 'gms_push_dispatch_secret');
 
 do $setup$
 declare
