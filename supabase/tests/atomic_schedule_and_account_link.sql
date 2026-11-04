@@ -35,6 +35,8 @@ DECLARE
   v_test_nij text;
   v_source_availability integer;
   v_target_availability integer;
+  v_source_rules integer;
+  v_target_rules integer;
 BEGIN
   SELECT id INTO v_admin
   FROM public.profiles
@@ -284,6 +286,8 @@ BEGIN
 
   SELECT count(*) INTO v_source_availability
   FROM public.servant_availability WHERE servant_id=v_link_source;
+  SELECT count(*) INTO v_source_rules
+  FROM public.servant_availability_rules WHERE servant_id=v_link_source;
 
   PERFORM public.admin_link_servant_account(
     v_link_target,v_link_user,v_test_nij
@@ -314,6 +318,15 @@ BEGIN
     SELECT 1 FROM public.servant_availability WHERE servant_id=v_link_source
   ) THEN
     RAISE EXCEPTION 'Temporary account row still owns availability';
+  END IF;
+
+  SELECT count(*) INTO v_target_rules
+  FROM public.servant_availability_rules WHERE servant_id=v_link_target;
+
+  IF v_target_rules<>v_source_rules OR EXISTS (
+    SELECT 1 FROM public.servant_availability_rules WHERE servant_id=v_link_source
+  ) THEN
+    RAISE EXCEPTION 'Recurring availability rules were not transferred to the canonical roster record';
   END IF;
 
   IF NOT EXISTS (
