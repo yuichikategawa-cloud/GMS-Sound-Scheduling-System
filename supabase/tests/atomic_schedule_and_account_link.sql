@@ -168,6 +168,46 @@ BEGIN
     RAISE EXCEPTION 'Failed edit changed existing assignment state';
   END IF;
 
+  -- 3. Authenticated servant accounts can call the RPC endpoint but
+  -- cannot pass the database-side administrator check.
+  DECLARE
+    v_non_admin uuid;
+  BEGIN
+    SELECT id INTO v_non_admin
+    FROM public.profiles
+    WHERE role='servant'
+    ORDER BY created_at
+    LIMIT 1;
+
+    IF v_non_admin IS NULL THEN
+      RAISE EXCEPTION 'A servant profile is required for the authorization test';
+    END IF;
+
+    PERFORM set_config('request.jwt.claim.sub',v_non_admin::text,true);
+
+    BEGIN
+      PERFORM public.admin_save_schedule_with_assignments(NULL,NULL,NULL);
+      RAISE EXCEPTION USING ERRCODE='ZX602',MESSAGE='Non-admin called schedule save';
+    EXCEPTION WHEN OTHERS THEN
+      GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+      IF v_message NOT LIKE 'Only administrators can save schedules%' THEN
+        RAISE EXCEPTION 'Unexpected schedule-save authorization result: %',v_message;
+      END IF;
+    END;
+
+    BEGIN
+      PERFORM public.admin_link_servant_account(NULL,NULL,NULL);
+      RAISE EXCEPTION USING ERRCODE='ZX603',MESSAGE='Non-admin called account link';
+    EXCEPTION WHEN OTHERS THEN
+      GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+      IF v_message NOT LIKE 'Only administrators can link servant accounts%' THEN
+        RAISE EXCEPTION 'Unexpected account-link authorization result: %',v_message;
+      END IF;
+    END;
+
+    PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
+  END;
+
   -- 3. Account linking: choose a servant account with a complete profile and
   -- no assignment/request history, then use a synthetic NIJ within this
   -- transaction so no real NIJ value is read or exposed by the test.
