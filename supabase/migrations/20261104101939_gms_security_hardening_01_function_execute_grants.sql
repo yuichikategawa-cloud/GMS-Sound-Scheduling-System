@@ -1,6 +1,6 @@
 -- Reconstructed from the live production SECURITY DEFINER function ACLs.
--- Revoke implicit/default client execution first; restore only the RPC allowlists.
--- Later migrations explicitly grant access to functions created after this point.
+-- Preserve ordinary SECURITY INVOKER helper-function access; restrict only
+-- SECURITY DEFINER routines, then restore the observed RPC allowlists.
 DO $$
 DECLARE
   f record;
@@ -11,6 +11,7 @@ BEGIN
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public'
       AND p.prokind = 'f'
+      AND p.prosecdef
   LOOP
     EXECUTE format(
       'REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated, service_role',
@@ -57,7 +58,3 @@ BEGIN
   END LOOP;
 END
 $$;
-
--- Keep future functions created by the migration owner from inheriting PUBLIC EXECUTE.
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
