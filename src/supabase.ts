@@ -1,9 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-
-export const isSupabaseConfigured = Boolean(url && key && !url.includes("YOUR_PROJECT"));
-export const supabase = isSupabaseConfigured
-  ? createClient(url!, key!, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
-  : null;
+/** Backward-compatible facade. New code should import from infrastructure/supabase. */
+export { supabase, isSupabaseConfigured } from "./infrastructure/supabase/client";
+export type { SupabaseClientInstance } from "./infrastructure/supabase/client";
