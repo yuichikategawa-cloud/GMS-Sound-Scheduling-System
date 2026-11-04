@@ -5,7 +5,7 @@
 CREATE OR REPLACE FUNCTION public.touch_availability_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
-SET search_path TO 'pg_catalog', 'public'
+SET search_path TO 'pg_catalog'
 AS $function$
 BEGIN
   NEW.updated_at = pg_catalog.now();
