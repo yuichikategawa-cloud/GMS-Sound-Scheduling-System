@@ -17,11 +17,11 @@ The notification / push subscription migration below has already been applied to
 
 - `supabase/migrations/20261104170500_gms_notification_push_subscription_hardening.sql`
 
-A separate follow-up migration has been prepared to pin the availability timestamp trigger's search path. It is source-only and has not been applied to staging or production:
+A separate follow-up migration has also been applied to the dedicated staging project and verified there. It has not been applied to production:
 
 - `supabase/migrations/20261105100000_gms_availability_touch_search_path.sql`
 
-The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog` only, and qualifies `pg_catalog.now()`. The read-only post-migration assertion is in `supabase/tests/availability_touch_search_path.sql`.
+The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog` only, and qualifies `pg_catalog.now()`. The read-only post-migration assertion in `supabase/tests/availability_touch_search_path.sql` passed against staging.
 
 The notification event key includes the assignment ID, the latest audited transition timestamp, the number of non-confirmed -> confirmed transitions still present in `audit_logs`, and the administrator recipient ID. Repeated RPC calls for the same state transition therefore collide with the existing unique `serving_notifications_event_key_uidx` index and are ignored. A later decline/pending -> confirmed transition receives a different key.
 
@@ -83,7 +83,7 @@ Do not run this test against production. The rollback-only suite has been execut
 Current state:
 
 - The notification / push subscription hardening migration is applied to the dedicated staging project only.
-- The availability timestamp search-path migration is prepared in this branch but has not been applied anywhere.
+- The availability timestamp search-path migration is applied to the dedicated staging project only.
 - The combined Edge Function source is prepared in this branch but has not been deployed to staging or production.
 - No Vercel environment variables were changed.
 - No VAPID or dispatch secrets were set or rotated.
