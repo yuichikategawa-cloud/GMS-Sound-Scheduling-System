@@ -18,6 +18,7 @@ DECLARE
   v_servant_id uuid;
   v_other_user uuid;
   v_location_id uuid;
+  v_service_date date;
   v_schedule_id uuid;
   v_assignment_id uuid;
   v_assignment_notifications integer;
@@ -37,6 +38,8 @@ DECLARE
   v_suffix text := left(md5(txid_current()::text || clock_timestamp()::text), 16);
   v_i integer;
 BEGIN
+  v_service_date := DATE '2099-01-01' + (txid_current() % 20000)::integer;
+
   SELECT id INTO v_admin_user
   FROM public.profiles
   WHERE role = 'admin'
@@ -47,7 +50,33 @@ BEGIN
     INTO v_servant_id, v_servant_user
   FROM public.servants s
   JOIN public.profiles p ON p.id = s.auth_user_id AND p.role = 'servant'
-  WHERE s.active = true AND s.auth_user_id IS NOT NULL
+  WHERE s.active = true
+    AND s.auth_user_id IS NOT NULL
+    AND NOT EXISTS (
+      SELECT 1 FROM public.servant_serving_preferences pref
+      WHERE pref.servant_id = s.id AND pref.active = true
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM public.servant_availability av
+      WHERE av.servant_id = s.id
+        AND av.service_date = v_service_date
+        AND av.status = 'unavailable'
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.servant_availability_rules r
+      WHERE r.servant_id = s.id
+        AND r.status = 'unavailable'
+        AND r.effective_from <= v_service_date
+        AND (r.effective_until IS NULL OR r.effective_until >= v_service_date)
+        AND public.gms_availability_rule_matches(r.pattern, v_service_date, r.weekday, r.ordinal)
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM public.assignments a
+      JOIN public.schedules sc ON sc.id = a.schedule_id
+      WHERE a.servant_id = s.id AND sc.service_date = v_service_date
+    )
   ORDER BY s.full_name
   LIMIT 1;
 
@@ -74,7 +103,7 @@ BEGIN
     service_date, location_id, service_name, start_time, end_time, status
   )
   VALUES (
-    DATE '2099-12-26',
+    v_service_date,
     v_location_id,
     'GMS_TEST_PUSH_' || v_suffix,
     TIME '23:00',
