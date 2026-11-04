@@ -242,6 +242,33 @@ BEGIN
   VALUES ('GMS Account Link Test Target',true)
   RETURNING id INTO v_link_target;
 
+  -- Conflicting recurring statuses over overlapping effective ranges must
+  -- block the merge, even when the recurrence patterns are different.
+  INSERT INTO public.servant_availability_rules(
+    servant_id,pattern,status,effective_from,effective_until,weekday,ordinal,notes
+  ) VALUES (
+    v_link_source,'saturday','unavailable',DATE '2099-01-01',DATE '2099-12-31',6,1,'GMS rollback recurring conflict'
+  );
+
+  INSERT INTO public.servant_availability_rules(
+    servant_id,pattern,status,effective_from,effective_until,weekday,ordinal,notes
+  ) VALUES (
+    v_link_target,'weekday','prefer_not',DATE '2099-01-01',DATE '2099-12-31',1,1,'GMS rollback recurring conflict'
+  );
+
+  BEGIN
+    PERFORM public.admin_link_servant_account(v_link_target,v_link_user,v_test_nij);
+    RAISE EXCEPTION USING ERRCODE='ZX604',MESSAGE='Conflicting recurring rules were merged';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+    IF v_message NOT LIKE 'The account and roster have recurring availability rules with conflicting statuses%' THEN
+      RAISE EXCEPTION 'Unexpected recurring-rule merge result: %',v_message;
+    END IF;
+  END;
+
+  DELETE FROM public.servant_availability_rules
+  WHERE servant_id=v_link_target AND notes='GMS rollback recurring conflict';
+
   -- Wrong NIJ must be rejected.
   BEGIN
     PERFORM public.admin_link_servant_account(
