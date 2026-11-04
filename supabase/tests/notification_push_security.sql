@@ -30,6 +30,8 @@ DECLARE
   v_transfer_id uuid;
   v_user_1_count integer;
   v_user_2_count integer;
+  v_endpoint_owner uuid;
+  v_cap_user uuid;
   v_message text;
   v_suffix text := left(md5(txid_current()::text || clock_timestamp()::text), 16);
   v_i integer;
@@ -172,7 +174,8 @@ BEGIN
   v_endpoint :=
     'https://fcm.googleapis.com/fcm/send/gms-hardening-' || v_suffix;
 
-  PERFORM set_config('request.jwt.claim.sub', v_push_user_1::text, true);
+  v_cap_user := v_push_user_2;
+  PERFORM set_config('request.jwt.claim.sub', v_cap_user::text, true);
   v_endpoint_id := public.register_serving_push_subscription(
     v_endpoint, repeat('A', 87), repeat('B', 22), 'GMS security test'
   );
@@ -262,11 +265,11 @@ BEGIN
     END IF;
   END;
 
-  SELECT user_id INTO v_push_user_1
+  SELECT user_id INTO v_endpoint_owner
   FROM public.serving_push_subscriptions
   WHERE id = v_endpoint_id;
 
-  IF v_push_user_1 IS NULL THEN
+  IF v_endpoint_owner IS DISTINCT FROM v_push_user_1 THEN
     RAISE EXCEPTION 'The rejected endpoint claim removed its original owner';
   END IF;
 
@@ -279,11 +282,11 @@ BEGIN
     RAISE EXCEPTION 'Shared-device transfer changed the subscription identity';
   END IF;
 
-  SELECT user_id INTO v_push_user_1
+  SELECT user_id INTO v_endpoint_owner
   FROM public.serving_push_subscriptions
   WHERE id = v_endpoint_id;
 
-  IF v_push_user_1 IS DISTINCT FROM v_push_user_2 THEN
+  IF v_endpoint_owner IS DISTINCT FROM v_push_user_2 THEN
     RAISE EXCEPTION 'Proven shared-device endpoint transfer did not update ownership';
   END IF;
 
@@ -301,7 +304,7 @@ BEGIN
 
   SELECT count(*)::integer INTO v_user_2_count
   FROM public.serving_push_subscriptions
-  WHERE user_id = v_push_user_1;
+  WHERE user_id = v_cap_user;
 
   IF v_user_2_count <> 10 THEN
     RAISE EXCEPTION 'Expected ten registered devices, found %', v_user_2_count;
