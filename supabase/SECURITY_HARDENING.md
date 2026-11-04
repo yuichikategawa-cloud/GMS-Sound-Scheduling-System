@@ -21,7 +21,7 @@ A separate follow-up migration has been prepared to pin the availability timesta
 
 - `supabase/migrations/20261105100000_gms_availability_touch_search_path.sql`
 
-The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog, public`, and qualifies `pg_catalog.now()`. The read-only post-migration assertion is in `supabase/tests/availability_touch_search_path.sql`.
+The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog` only, and qualifies `pg_catalog.now()`. The read-only post-migration assertion is in `supabase/tests/availability_touch_search_path.sql`.
 
 The notification event key includes the assignment ID, the latest audited transition timestamp, the number of non-confirmed -> confirmed transitions still present in `audit_logs`, and the administrator recipient ID. Repeated RPC calls for the same state transition therefore collide with the existing unique `serving_notifications_event_key_uidx` index and are ignored. A later decline/pending -> confirmed transition receives a different key.
 
