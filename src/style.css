@@ -4362,3 +4362,79 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+
+/* Administrator account-linking controls inside servant records. */
+.servant-link-panel {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 12px;
+  padding: 14px;
+  min-width: 0;
+  border: 1px solid var(--border, #d8dee8);
+  border-radius: 12px;
+  background: var(--surface-soft, #f7f8fb);
+}
+.servant-link-panel h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.servant-link-panel > p,
+.servant-link-panel > small {
+  margin: 0;
+  line-height: 1.45;
+}
+.servant-link-panel label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.servant-link-panel input,
+.servant-link-panel select {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--border-strong, #c7cfdb);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--text, #1c2636);
+  font: inherit;
+}
+.servant-link-panel input:focus,
+.servant-link-panel select:focus {
+  outline: 2px solid var(--accent, #8c263d);
+  outline-offset: 2px;
+}
+.servant-link-panel button {
+  justify-self: start;
+}
+.servant-link-panel .form-error {
+  color: #b42335;
+  font-weight: 600;
+}
+:root[data-theme="dark"] .servant-link-panel {
+  background: #202f46;
+  border-color: #405472;
+}
+:root[data-theme="dark"] .servant-link-panel input,
+:root[data-theme="dark"] .servant-link-panel select {
+  color: #f1f5fc;
+  background: #16243a;
+  border-color: #4b607f;
+}
+:root[data-theme="dark"] .servant-link-panel .form-error {
+  color: #ff9aa8;
+}
+@media (max-width: 760px) {
+  .servant-link-panel {
+    padding: 12px;
+    gap: 9px;
+  }
+  .servant-link-panel button {
+    width: 100%;
+    justify-content: center;
+  }
+}

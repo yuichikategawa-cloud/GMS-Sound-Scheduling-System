@@ -75,6 +75,7 @@ export default function App() {
   const [username,setUsername] = useState("");
   const [memberProfile,setMemberProfile] = useState<any>(null);
   const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
+  const [accountProfiles,setAccountProfiles] = useState<any[]>([]);
   const [password,setPassword] = useState("");
   const [recoveryMode,setRecoveryMode] = useState(false);
   const [fullName,setFullName] = useState("");
@@ -221,7 +222,7 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,notificationPrefsRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,profileRes,notificationPrefsRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -236,12 +237,13 @@ export default function App() {
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
         supabase.from("member_profiles").select("*"),
+        supabase.from("profiles").select("id,role,display_name,username"),
         supabase.from("serving_notification_preferences").select("*").eq("user_id",session?.user?.id??"").maybeSingle()
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,notificationPrefsRes]
+      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,profileRes,notificationPrefsRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -265,6 +267,7 @@ export default function App() {
       setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
+      setAccountProfiles(profileRes.error?[]:(profileRes.data??[]));
       setNotificationPrefs(notificationPrefsRes.error||!notificationPrefsRes.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationPrefsRes.data);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }
@@ -461,7 +464,7 @@ export default function App() {
     e.preventDefault();if(!supabase||!isAdmin)return;
     setScheduleError("");
     const fd=new FormData(e.currentTarget);
-    const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time")),status:editing?.status==="published"?"draft":editing?.status??"draft"};
+    const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time"))};
     const selected:Record<Role,string>={FOH:String(fd.get("FOH")||""),Monitor:String(fd.get("Monitor")||""),Assistant:String(fd.get("Assistant")||"")};
     const chosen=Object.entries(selected).filter(([,id])=>id).map(([role,id])=>({role,id}));
     const duplicateInService=chosen.find((entry,index)=>chosen.some((other,j)=>j!==index&&other.id===entry.id));
@@ -490,15 +493,12 @@ export default function App() {
     if(highWorkload.length&&!await askAction("High workload warning",`${highWorkload.map(x=>`${servants.find(p=>p.id===x.id)?.full_name??"Servant"} (${x.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
     setLoading(true);setMessage("");
     try {
-      let scheduleId=editing?.id;
-      if(scheduleId){
-        const {error}=await supabase.from("schedules").update(payload).eq("id",scheduleId);if(error)throw error;
-      }else{
-        const {data,error}=await supabase.from("schedules").insert(payload).select("id").single();if(error)throw error;scheduleId=data.id;
-      }
-      const {error:delError}=await supabase.from("assignments").delete().eq("schedule_id",scheduleId);if(delError)throw delError;
-      const rows=ROLES.filter(r=>selected[r]).map(r=>({schedule_id:scheduleId,servant_id:selected[r],role:r,confirmation_status:"pending"}));
-      if(rows.length){const {error}=await supabase.from("assignments").insert(rows);if(error)throw error;}
+      const {error}=await supabase.rpc("admin_save_schedule_with_assignments",{
+        p_schedule_id:editing?.id??null,
+        p_service:payload,
+        p_assignments:ROLES.filter(role=>selected[role]).map(role=>({role,servant_id:selected[role]}))
+      });
+      if(error)throw error;
       setScheduleError("");setModal(null);setEditing(null);await loadData();
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
@@ -589,6 +589,19 @@ export default function App() {
     if(!supabase||!isAdmin)return;
     const {error}=await supabase.from("servant_availability").delete().eq("id",id);
     if(error)setMessage(error.message);else await loadData();
+  }
+
+  async function linkServantAccount(servant:Servant,userId:string,verifiedNij:string):Promise<boolean>{
+    if(!supabase||!isAdmin)return false;
+    const {error}=await supabase.rpc("admin_link_servant_account",{
+      p_servant_id:servant.id,
+      p_user_id:userId,
+      p_verified_nij:verifiedNij.trim()
+    });
+    if(error){setMessage(error.message);return false;}
+    await loadData();
+    setMessage(`Account successfully linked to ${servant.full_name}. Identity verification was recorded in the audit trail.`);
+    return true;
   }
 
   async function savePerson(e:FormEvent<HTMLFormElement>) {
@@ -967,7 +980,7 @@ export default function App() {
             </details>
 
           </>}
-        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
+        </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} accountCandidates={memberDirectory.filter((m:any)=>accountProfiles.some((p:any)=>p.id===m.user_id&&p.role==="servant")).map((m:any)=>({user_id:m.user_id,full_name:m.full_name,email:m.email,username:accountProfiles.find((p:any)=>p.id===m.user_id)?.username??"",linked_servant:servants.find(s=>s.auth_user_id===m.user_id)??null}))} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
       </main>
     </div>
     <nav className="mobile-bottom-nav" aria-label="Primary navigation">
@@ -1370,45 +1383,70 @@ function GmsLoader({label="Getting the sound system ready..."}:{label?:string}){
   </main>
  </div>;
 }
-function ServantInformationPanel({servants,memberDirectory,locations,schedules,requests,onAdd,onToggle}:{servants:Servant[];memberDirectory:any[];locations:Location[];schedules:ScheduleView[];requests:any[];onAdd:()=>void;onToggle:(p:Servant)=>void}){
- const [query,setQuery]=useState(""); const [locationFilter,setLocationFilter]=useState(""); const [cgFilter,setCgFilter]=useState(""); const [statusFilter,setStatusFilter]=useState("");
- const [openSummary,setOpenSummary]=useState({overview:true,church:true,cg:true,leadership:false,health:false});
- const [expanded,setExpanded]=useState<string[]>([]);
- const profiles=new Map(memberDirectory.map((m:any)=>[m.user_id,m]));
- const rows=servants.map(s=>({servant:s,profile:profiles.get(s.auth_user_id) as any}));
- const value=(r:any,k:string)=>r.profile?.[k]??r.servant?.[k]??"";
- const linked=rows.filter(r=>!!r.servant.auth_user_id).length;
- const verified=rows.filter(r=>r.profile?.last_verified_at && Date.now()-new Date(r.profile.last_verified_at).getTime()<=90*86400000).length;
- const overdue=rows.filter(r=>!r.profile?.last_verified_at || Date.now()-new Date(r.profile.last_verified_at).getTime()>90*86400000).length;
- const missingPhone=rows.filter(r=>!value(r,"phone_number")).length;
- const missingCg=rows.filter(r=>!value(r,"cg_category")||!value(r,"cg_number")||!value(r,"cg_status")).length;
- const countBy=(fn:(r:any)=>string)=>{const m=new Map<string,number>();rows.forEach(r=>{const k=fn(r)||"Not recorded";m.set(k,(m.get(k)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1]);};
- const servantLocationNames=(servantId:string)=>[...new Set(schedules.filter(sc=>sc.assignments.some(a=>a.servant_id===servantId)).map(sc=>sc.location_name).filter(Boolean))];
- const churchCounts=locations.map(l=>[l.name,rows.filter(r=>servantLocationNames(r.servant.id).includes(l.name)).length] as [string,number]).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
- const unassignedLocationCount=rows.filter(r=>servantLocationNames(r.servant.id).length===0).length;
- if(unassignedLocationCount)churchCounts.push(["No serving assignment",unassignedLocationCount]);
- const cgCounts=countBy(r=>value(r,"cg_category")); const roleCounts=countBy(r=>value(r,"cg_status")); const domicileCounts=countBy(r=>value(r,"domicile_area"));
- const filtered=rows.filter(r=>{const hay=[r.servant.full_name,r.profile?.email,r.profile?.username,value(r,"cg_number"),value(r,"cg_category"),value(r,"phone_number")].join(" ").toLowerCase();return (!query||hay.includes(query.toLowerCase()))&&(!locationFilter||servantLocationNames(r.servant.id).some(name=>locations.find(l=>l.id===locationFilter)?.name===name))&&(!cgFilter||value(r,"cg_category")===cgFilter)&&(!statusFilter||(statusFilter==="linked"?!!r.servant.auth_user_id:statusFilter==="unlinked"?!r.servant.auth_user_id:r.servant.active));});
- const toggle=(id:string)=>setExpanded(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
- const section=(key:keyof typeof openSummary,title:string,sub:string,body:ReactNode)=><details className="servant-summary-section" open={openSummary[key]} onToggle={e=>{const isOpen=(e.currentTarget as HTMLDetailsElement).open;setOpenSummary(v=>({...v,[key]:isOpen}));}}><summary><span><b>{title}</b><small>{sub}</small></span><ChevronDown size={18}/></summary><div className="servant-summary-body">{body}</div></details>;
- const bars=(items:[string,number][])=> <div className="servant-bars">{items.map(([name,n])=><div className="servant-bar-row" key={name}><div><span>{name}</span><b>{n} <small>({rows.length?Math.round(n/rows.length*100):0}%)</small></b></div><div className="servant-bar-track"><i style={{width:`${rows.length?n/rows.length*100:0}%`}}/></div></div>)}</div>;
- return <div className="servant-info-page">
-  <div className="toolbar"><div><h2>Servant Information</h2><p className="subtle">A complete overview of the serving community, CG structure and profile readiness.</p></div><button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button></div>
-  <div className="servant-kpi-grid"><div className="servant-kpi"><span>TOTAL SERVANTS</span><b>{rows.length}</b><small>All registered servant records</small></div><div className="servant-kpi"><span>ACTIVE SERVANTS</span><b>{rows.filter(r=>r.servant.active).length}</b><small>Currently eligible for scheduling</small></div><div className="servant-kpi"><span>LINKED ACCOUNTS</span><b>{linked} <small>/ {rows.length}</small></b><small>{rows.length?Math.round(linked/rows.length*100):0}% connected to login</small></div><div className="servant-kpi"><span>PROFILE FOLLOW-UP</span><b>{overdue}</b><small>{verified} verified within 90 days</small></div></div>
-  {section("overview","1. Servant overview","Account access, active status and profile verification",<div className="servant-mini-grid"><div><b>{rows.length-linked}</b><span>Not linked to login</span></div><div><b>{rows.filter(r=>!r.servant.active).length}</b><span>Inactive servants</span></div><div><b>{missingPhone}</b><span>Missing phone number</span></div><div><b>{missingCg}</b><span>Incomplete CG information</span></div><div><b>{requests.filter((x:any)=>x.status==="pending").length}</b><span>Pending serving requests</span></div><div><b>{schedules.filter(s=>s.status==="published").length}</b><span>Published services</span></div></div>)}
-  {section("church","2. Church distribution","Servants by assigned serving location",bars(churchCounts))}
-  {section("cg","3. CG distribution","Servants by community group and domicile",<div className="servant-two-col"><div><h4>CG category</h4>{bars(cgCounts)}</div><div><h4>Domicile area</h4>{bars(domicileCounts)}</div></div>)}
-  {section("leadership","4. CG leadership structure","Team Leader, Coach, CG Leader, Sponsor and Member roles",bars(roleCounts))}
-  {section("health","5. Profile health","Records requiring follow-up or verification",<div className="servant-health-list"><div><span>Verified within 90 days</span><b>{verified}</b></div><div><span>Verification overdue / not recorded</span><b>{overdue}</b></div><div><span>Missing phone number</span><b>{missingPhone}</b></div><div><span>Missing CG information</span><b>{missingCg}</b></div></div>)}
-  <div className="servant-directory-block"><div className="servant-directory-heading"><div><h3>Detailed servant information</h3><p className="subtle">Expand an individual record to view personal, CG, leadership and account details.</p></div><b>{filtered.length} records</b></div>
-   <div className="servant-filters"><input aria-label="Search servant" placeholder="Search name, username, email, phone or CG" value={query} onChange={e=>setQuery(e.target.value)}/><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select><select value={cgFilter} onChange={e=>setCgFilter(e.target.value)}><option value="">All CG categories</option>{["AOG Teen","AOG Youth","Young Adult","Family","Senior"].map(x=><option key={x}>{x}</option>)}</select><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">All accounts/status</option><option value="linked">Linked account</option><option value="unlinked">Not linked</option><option value="active">Active only</option></select></div>
-   <div className="servant-record-list">{filtered.length===0?<div className="servant-empty-state"><b>No servant records to display</b><p>{servants.length===0?"No servant rows were returned. Check the Supabase servants table and its SELECT policy for the admin role.":"No servants match the current search or filters."}</p><button className="btn secondary" onClick={()=>{setQuery("");setLocationFilter("");setCgFilter("");setStatusFilter("");}}>Clear filters</button></div>:filtered.map(({servant:s,profile:m})=><article className="servant-record" key={s.id}><button className="servant-record-summary" onClick={()=>toggle(s.id)}><span className="servant-avatar">{s.full_name.slice(0,1).toUpperCase()}</span><span className="servant-record-name"><b>{s.full_name}</b><small>{value({servant:s,profile:m},"cg_category")||"CG not recorded"} · {servantLocationNames(s.id).join(", ")||"No serving assignment"}</small></span><span className={`servant-account-chip ${s.auth_user_id?"linked":"unlinked"}`}>{s.auth_user_id?"Linked":"Not linked"}</span><ChevronDown size={18}/></button>
-    {expanded.includes(s.id)&&<div className="servant-record-detail"><div><h4>Personal information</h4><p><b>Email:</b> {m?.email||"—"}</p><p><b>Gender:</b> {value({servant:s,profile:m},"gender")||"—"}</p><p><b>Date of birth:</b> {value({servant:s,profile:m},"date_of_birth")||"—"}</p><p><b>NIJ:</b> {value({servant:s,profile:m},"nij")||"—"}</p><p><b>Phone:</b> {value({servant:s,profile:m},"phone_number")||"—"}</p><p><b>Domicile:</b> {[value({servant:s,profile:m},"domicile_area"),value({servant:s,profile:m},"domicile_other")].filter(Boolean).join(" · ")||"—"}</p></div><div><h4>CG information</h4><p><b>Category:</b> {value({servant:s,profile:m},"cg_category")||"—"}</p><p><b>Status:</b> {value({servant:s,profile:m},"cg_status")||"—"}</p><p><b>CG number:</b> {value({servant:s,profile:m},"cg_number")||"—"}</p><p><b>Days:</b> {displayList(value({servant:s,profile:m},"cg_days"))||"—"}</p><p><b>Time:</b> {value({servant:s,profile:m},"cg_time")||"—"}</p></div><div><h4>Leadership & account</h4><p><b>Team Leader:</b> {value({servant:s,profile:m},"team_leader_name")||"—"}</p><p><b>Coach:</b> {value({servant:s,profile:m},"coach_name")||"—"}</p><p><b>CG Leader:</b> {value({servant:s,profile:m},"cg_leader_name")||"—"}</p><p><b>Leader phone(s):</b> {displayList(value({servant:s,profile:m},"leader_phone_numbers"))||"—"}</p><p><b>Account:</b> {m?.username||"No username linked"}</p><p><b>Profile verified:</b> {m?.last_verified_at?new Date(m.last_verified_at).toLocaleDateString():"Not yet verified"}</p><p><b>Serving status:</b> {s.active?"Active":"Inactive"}</p>{<button className={`btn tiny servant-status-toggle ${s.active?"danger":"primary"}`} onClick={()=>onToggle(s)}>{s.active?"Deactivate servant":"Activate servant"}</button>}</div></div>}
-   </article>)}</div>
-  </div>
- </div>;
+function ServantInformationPanel({servants,memberDirectory,accountCandidates,locations,schedules,requests,onAdd,onToggle,onLink}:{servants:Servant[];memberDirectory:any[];accountCandidates:any[];locations:Location[];schedules:ScheduleView[];requests:any[];onAdd:()=>void;onToggle:(p:Servant)=>void;onLink:(servant:Servant,userId:string,verifiedNij:string)=>Promise<boolean>}){
+  const [query,setQuery]=useState(""); const [locationFilter,setLocationFilter]=useState(""); const [cgFilter,setCgFilter]=useState(""); const [statusFilter,setStatusFilter]=useState("");
+  const [openSummary,setOpenSummary]=useState({overview:true,church:true,cg:true,leadership:false,health:false});
+  const [expanded,setExpanded]=useState<string[]>([]);
+  const [linkChoices,setLinkChoices]=useState<Record<string,string>>({});
+  const [linkNijs,setLinkNijs]=useState<Record<string,string>>({});
+  const [linkBusy,setLinkBusy]=useState<Record<string,boolean>>({});
+  const [linkErrors,setLinkErrors]=useState<Record<string,string>>({});
+  const profiles=new Map(memberDirectory.map((m:any)=>[m.user_id,m]));
+  const rows=servants.map(s=>({servant:s,profile:profiles.get(s.auth_user_id) as any}));
+  const value=(r:any,k:string)=>r.profile?.[k]??r.servant?.[k]??"";
+  const linked=rows.filter(r=>!!r.servant.auth_user_id).length;
+  const verified=rows.filter(r=>r.profile?.last_verified_at && Date.now()-new Date(r.profile.last_verified_at).getTime()<=90*86400000).length;
+  const overdue=rows.filter(r=>!r.profile?.last_verified_at || Date.now()-new Date(r.profile.last_verified_at).getTime()>90*86400000).length;
+  const missingPhone=rows.filter(r=>!value(r,"phone_number")).length;
+  const missingCg=rows.filter(r=>!value(r,"cg_category")||!value(r,"cg_number")||!value(r,"cg_status")).length;
+  const countBy=(fn:(r:any)=>string)=>{const m=new Map<string,number>();rows.forEach(r=>{const k=fn(r)||"Not recorded";m.set(k,(m.get(k)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1]);};
+  const servantLocationNames=(servantId:string)=>[...new Set(schedules.filter(sc=>sc.assignments.some(a=>a.servant_id===servantId)).map(sc=>sc.location_name).filter(Boolean))];
+  const churchCounts=locations.map(l=>[l.name,rows.filter(r=>servantLocationNames(r.servant.id).includes(l.name)).length] as [string,number]).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+  const unassignedLocationCount=rows.filter(r=>servantLocationNames(r.servant.id).length===0).length;
+  if(unassignedLocationCount)churchCounts.push(["No serving assignment",unassignedLocationCount]);
+  const cgCounts=countBy(r=>value(r,"cg_category")); const roleCounts=countBy(r=>value(r,"cg_status")); const domicileCounts=countBy(r=>value(r,"domicile_area"));
+  const filtered=rows.filter(r=>{const hay=[r.servant.full_name,r.profile?.email,r.profile?.username,value(r,"cg_number"),value(r,"cg_category"),value(r,"phone_number")].join(" ").toLowerCase();return (!query||hay.includes(query.toLowerCase()))&&(!locationFilter||servantLocationNames(r.servant.id).some(name=>locations.find(l=>l.id===locationFilter)?.name===name))&&(!cgFilter||value(r,"cg_category")===cgFilter)&&(!statusFilter||(statusFilter==="linked"?!!r.servant.auth_user_id:statusFilter==="unlinked"?!r.servant.auth_user_id:r.servant.active));});
+  const toggle=(id:string)=>setExpanded(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
+  const submitLink=async(servant:Servant)=>{
+    const userId=linkChoices[servant.id]??"";
+    const nij=linkNijs[servant.id]??"";
+    if(!userId||!nij.trim()){setLinkErrors(v=>({...v,[servant.id]:"Select an account and enter the verified NIJ."}));return;}
+    setLinkBusy(v=>({...v,[servant.id]:true}));
+    setLinkErrors(v=>({...v,[servant.id]:""}));
+    try{
+      const success=await onLink(servant,userId,nij);
+      if(success){
+        setLinkChoices(v=>({...v,[servant.id]:""}));
+        setLinkNijs(v=>({...v,[servant.id]:""}));
+      }else{
+        setLinkErrors(v=>({...v,[servant.id]:"Linking was not completed. Review the error message above and resolve the issue before retrying."}));
+      }
+    }catch(error){
+      setLinkErrors(v=>({...v,[servant.id]:errorText(error)}));
+    }finally{
+      setLinkBusy(v=>({...v,[servant.id]:false}));
+    }
+  };
+  const section=(key:keyof typeof openSummary,title:string,sub:string,body:ReactNode)=><details className="servant-summary-section" open={openSummary[key]} onToggle={e=>{const isOpen=(e.currentTarget as HTMLDetailsElement).open;setOpenSummary(v=>({...v,[key]:isOpen}));}}><summary><span><b>{title}</b><small>{sub}</small></span><ChevronDown size={18}/></summary><div className="servant-summary-body">{body}</div></details>;
+  const bars=(items:[string,number][])=> <div className="servant-bars">{items.map(([name,n])=><div className="servant-bar-row" key={name}><div><span>{name}</span><b>{n} <small>({rows.length?Math.round(n/rows.length*100):0}%)</small></b></div><div className="servant-bar-track"><i style={{width:`${rows.length?n/rows.length*100:0}%`}}/></div></div>)}</div>;
+  return <div className="servant-info-page">
+   <div className="toolbar"><div><h2>Servant Information</h2><p className="subtle">A complete overview of the serving community, CG structure and profile readiness.</p></div><button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button></div>
+   <div className="servant-kpi-grid"><div className="servant-kpi"><span>TOTAL SERVANTS</span><b>{rows.length}</b><small>All registered servant records</small></div><div className="servant-kpi"><span>ACTIVE SERVANTS</span><b>{rows.filter(r=>r.servant.active).length}</b><small>Currently eligible for scheduling</small></div><div className="servant-kpi"><span>LINKED ACCOUNTS</span><b>{linked} <small>/ {rows.length}</small></b><small>{rows.length?Math.round(linked/rows.length*100):0}% connected to login</small></div><div className="servant-kpi"><span>PROFILE FOLLOW-UP</span><b>{overdue}</b><small>{verified} verified within 90 days</small></div></div>
+   {section("overview","1. Servant overview","Account access, active status and profile verification",<div className="servant-mini-grid"><div><b>{rows.length-linked}</b><span>Not linked to login</span></div><div><b>{rows.filter(r=>!r.servant.active).length}</b><span>Inactive servants</span></div><div><b>{missingPhone}</b><span>Missing phone number</span></div><div><b>{missingCg}</b><span>Incomplete CG information</span></div><div><b>{requests.filter((x:any)=>x.status==="pending").length}</b><span>Pending serving requests</span></div><div><b>{schedules.filter(s=>s.status==="published").length}</b><span>Published services</span></div></div>)}
+   {section("church","2. Church distribution","Servants by assigned serving location",bars(churchCounts))}
+   {section("cg","3. CG distribution","Servants by community group and domicile",<div className="servant-two-col"><div><h4>CG category</h4>{bars(cgCounts)}</div><div><h4>Domicile area</h4>{bars(domicileCounts)}</div></div>)}
+   {section("leadership","4. CG leadership structure","Team Leader, Coach, CG Leader, Sponsor and Member roles",bars(roleCounts))}
+   {section("health","5. Profile health","Records requiring follow-up or verification",<div className="servant-health-list"><div><span>Verified within 90 days</span><b>{verified}</b></div><div><span>Verification overdue / not recorded</span><b>{overdue}</b></div><div><span>Missing phone number</span><b>{missingPhone}</b></div><div><span>Missing CG information</span><b>{missingCg}</b></div></div>)}
+   <div className="servant-directory-block"><div className="servant-directory-heading"><div><h3>Detailed servant information</h3><p className="subtle">Expand an individual record to view personal, CG, leadership and account details.</p></div><b>{filtered.length} records</b></div>
+    <div className="servant-filters"><input aria-label="Search servant" placeholder="Search name, username, email, phone or CG" value={query} onChange={e=>setQuery(e.target.value)}/><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select><select value={cgFilter} onChange={e=>setCgFilter(e.target.value)}><option value="">All CG categories</option>{["AOG Teen","AOG Youth","Young Adult","Family","Senior"].map(x=><option key={x}>{x}</option>)}</select><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option value="">All accounts/status</option><option value="linked">Linked account</option><option value="unlinked">Not linked</option><option value="active">Active only</option></select></div>
+    <div className="servant-record-list">{filtered.length===0?<div className="servant-empty-state"><b>No servant records to display</b><p>{servants.length===0?"No servant rows were returned. Check the Supabase servants table and its SELECT policy for the admin role.":"No servants match the current search or filters."}</p><button className="btn secondary" onClick={()=>{setQuery("");setLocationFilter("");setCgFilter("");setStatusFilter("");}}>Clear filters</button></div>:filtered.map(({servant:s,profile:m})=><article className="servant-record" key={s.id}><button className="servant-record-summary" onClick={()=>toggle(s.id)}><span className="servant-avatar">{s.full_name.slice(0,1).toUpperCase()}</span><span className="servant-record-name"><b>{s.full_name}</b><small>{value({servant:s,profile:m},"cg_category")||"CG not recorded"} · {servantLocationNames(s.id).join(", ")||"No serving assignment"}</small></span><span className={`servant-account-chip ${s.auth_user_id?"linked":"unlinked"}`}>{s.auth_user_id?"Linked":"Not linked"}</span><ChevronDown size={18}/></button>
+     {expanded.includes(s.id)&&<div className="servant-record-detail"><div><h4>Personal information</h4><p><b>Email:</b> {m?.email||"—"}</p><p><b>Gender:</b> {value({servant:s,profile:m},"gender")||"—"}</p><p><b>Date of birth:</b> {value({servant:s,profile:m},"date_of_birth")||"—"}</p><p><b>NIJ:</b> {value({servant:s,profile:m},"nij")||"—"}</p><p><b>Phone:</b> {value({servant:s,profile:m},"phone_number")||"—"}</p><p><b>Domicile:</b> {[value({servant:s,profile:m},"domicile_area"),value({servant:s,profile:m},"domicile_other")].filter(Boolean).join(" · ")||"—"}</p></div><div><h4>CG information</h4><p><b>Category:</b> {value({servant:s,profile:m},"cg_category")||"—"}</p><p><b>Status:</b> {value({servant:s,profile:m},"cg_status")||"—"}</p><p><b>CG number:</b> {value({servant:s,profile:m},"cg_number")||"—"}</p><p><b>Days:</b> {displayList(value({servant:s,profile:m},"cg_days"))||"—"}</p><p><b>Time:</b> {value({servant:s,profile:m},"cg_time")||"—"}</p></div><div><h4>Leadership & account</h4><p><b>Team Leader:</b> {value({servant:s,profile:m},"team_leader_name")||"—"}</p><p><b>Coach:</b> {value({servant:s,profile:m},"coach_name")||"—"}</p><p><b>CG Leader:</b> {value({servant:s,profile:m},"cg_leader_name")||"—"}</p><p><b>Leader phone(s):</b> {displayList(value({servant:s,profile:m},"leader_phone_numbers"))||"—"}</p><p><b>Account:</b> {m?.username||"No username linked"}</p><p><b>Profile verified:</b> {m?.last_verified_at?new Date(m.last_verified_at).toLocaleDateString():"Not yet verified"}</p><p><b>Serving status:</b> {s.active?"Active":"Inactive"}</p>
+      {!s.auth_user_id&&s.active&&<div className="servant-link-panel"><h5>Link existing account</h5><p className="subtle">Select the member's existing login and verify the NIJ against their identity record before linking.</p><label>Member account<select value={linkChoices[s.id]??""} onChange={e=>setLinkChoices(v=>({...v,[s.id]:e.target.value}))}><option value="">Choose a member account</option>{accountCandidates.map((account:any)=><option key={account.user_id} value={account.user_id}>{account.full_name} · {account.username||account.email||"No username"}{account.linked_servant? ` (currently linked to ${account.linked_servant.full_name})`:""}</option>)}</select></label><label>Verify NIJ<input type="password" autoComplete="off" value={linkNijs[s.id]??""} onChange={e=>setLinkNijs(v=>({...v,[s.id]:e.target.value}))} placeholder="Enter NIJ for identity verification"/></label>{accountCandidates.length===0&&<small>No completed servant member profiles are available for linking. Ask the member to complete their profile first.</small>}{linkErrors[s.id]&&<small className="form-error">{linkErrors[s.id]}</small>}<button type="button" className="btn tiny primary" disabled={!!linkBusy[s.id]||!linkChoices[s.id]||!(linkNijs[s.id]??"").trim()} onClick={()=>void submitLink(s)}>{linkBusy[s.id]?"Linking account…":"Link verified account"}</button><small>Linking may consolidate an automatically created duplicate servant row. Historical assignment or request conflicts are blocked for manual review.</small></div>}
+      <button className={`btn tiny servant-status-toggle ${s.active?"danger":"primary"}`} onClick={()=>onToggle(s)}>{s.active?"Deactivate servant":"Activate servant"}</button></div></div>}
+    </article>)}</div>
+   </div>
+  </div>;
 }
-
 function PeoplePanel({servants,isAdmin,onAdd,onToggle}:{servants:Servant[];isAdmin:boolean;onAdd:()=>void;onToggle:(p:Servant)=>void}){
  const [q,setQ]=useState("");
  const rows=servants.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase()));
