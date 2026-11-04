@@ -1,8 +1,10 @@
 -- Rollback-only regression tests for the atomic schedule editor and
 -- administrator-led servant account linking.
 --
--- Run in Supabase SQL Editor after applying the migration:
---   20261104144743_gms_atomic_schedule_save_and_servant_account_link.sql
+-- Run in Supabase SQL Editor after the production migrations have been
+-- reconciled/applied through 20261104151712_gms_schedule_edit_confirmation_reset.sql.
+-- Covers atomic schedule saves, confirmation preservation/reset, admin RPC
+-- authorization, NIJ verification, safe account consolidation and rule conflicts.
 --
 -- This script creates temporary servants/schedules and temporarily replaces
 -- one eligible member profile's NIJ with a synthetic test value. The final
