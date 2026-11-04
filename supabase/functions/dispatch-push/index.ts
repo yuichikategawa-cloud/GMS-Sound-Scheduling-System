@@ -3,6 +3,7 @@
 // because verify_jwt is disabled for this server-to-server function.
 import { createClient } from "@supabase/supabase-js";
 import webpush from "web-push";
+import { retryDelaySeconds } from "../_shared/retryBackoff.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,8 +15,6 @@ const corsHeaders = {
 const BATCH_SIZE = 5;
 const LEASE_SECONDS = 180;
 const MAX_ATTEMPTS = 8;
-const BASE_RETRY_SECONDS = 30;
-const MAX_RETRY_SECONDS = 15 * 60;
 
 type ClaimedQueueItem = {
   notification_id: string;
@@ -286,10 +285,7 @@ async function scheduleRetry(
   lastError: string,
   sentEndpoints: Set<string>,
 ): Promise<boolean> {
-  const delaySeconds = Math.min(
-    BASE_RETRY_SECONDS * (2 ** Math.max(attempts - 1, 0)),
-    MAX_RETRY_SECONDS,
-  );
+  const delaySeconds = retryDelaySeconds(attempts);
   const now = Date.now();
   const nextAttemptAt = new Date(now + delaySeconds * 1000).toISOString();
 
