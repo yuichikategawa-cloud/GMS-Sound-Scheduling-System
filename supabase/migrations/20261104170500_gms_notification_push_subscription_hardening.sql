@@ -134,6 +134,15 @@ BEGIN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.profiles p
+    WHERE p.id = v_user_id
+      AND p.role IN ('admin', 'servant')
+  ) THEN
+    RAISE EXCEPTION 'A GMS member account is required';
+  END IF;
+
   -- Keep this allowlist aligned with dispatch-push/security.ts. Endpoint URLs
   -- are later used for outbound requests by the web-push worker, so arbitrary
   -- hosts, IP literals, local addresses and non-HTTPS schemes are rejected.
