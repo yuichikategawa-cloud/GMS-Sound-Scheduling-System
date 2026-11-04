@@ -78,11 +78,13 @@ Deno.serve(async (req: Request) => {
         const outcome = await processQueueItem(db, item);
         if (outcome === "processed") processed++;
         else if (outcome === "lost_claim") lostClaims++;
-        else {
+        else if (outcome.status === "processed") {
+          processed++;
+          delivered += outcome.delivered;
+        } else {
           retried++;
-          if (outcome.delivered > 0) delivered += outcome.delivered;
+          delivered += outcome.delivered;
         }
-        if (outcome === "processed" && outcome.delivered > 0) delivered += outcome.delivered;
       } catch (error) {
         const release = await releaseForRetry(db, item, error);
         if (release === "released") retried++;
@@ -107,7 +109,7 @@ Deno.serve(async (req: Request) => {
 async function processQueueItem(
   db: ReturnType<typeof createClient>,
   item: ClaimedQueueItem,
-): Promise<"processed" | "lost_claim" | { status: "retry"; delivered: number }> {
+): Promise<"processed" | "lost_claim" | { status: "processed" | "retry"; delivered: number }> {
   const { data: notification, error: notificationError } = await db
     .from("serving_notifications")
     .select("id,recipient_user_id,title,body,notification_type,event_key")
@@ -212,7 +214,7 @@ async function processQueueItem(
   const allDone = pending.every((sub) => sentEndpoints.has(sub.endpoint));
   if (allDone) {
     return await completeClaim(db, item, null, [...sentEndpoints])
-      ? { status: "retry", delivered: deliveredCount }
+      ? { status: "processed", delivered: deliveredCount }
       : "lost_claim";
   }
 
@@ -224,7 +226,7 @@ async function processQueueItem(
       `Stopped after ${MAX_ATTEMPTS} attempts: ${lastError || "Push delivery incomplete"}`,
       [...sentEndpoints],
       attempts,
-    ) ? { status: "retry", delivered: deliveredCount } : "lost_claim";
+    ) ? { status: "processed", delivered: deliveredCount } : "lost_claim";
   }
 
   const released = await scheduleRetry(db, item, attempts, lastError || "Push delivery will retry.", sentEndpoints);
