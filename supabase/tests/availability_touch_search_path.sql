@@ -20,8 +20,35 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1
-    FROM unnest(coalesce(v_config, ARRAY[]::text[])) AS setting
-    WHERE setting ~ '^search_path=pg_catalog,\s*public$'
+    FROM unnest(coalesce(v_config, ARRAY[]::text[])) AS settings(setting)
+    WHERE settings.setting ~ '^search_path=pg_catalog,\s*public
+  ) THEN
+    RAISE EXCEPTION 'Availability timestamp trigger function search_path is not pinned';
+  END IF;
+
+  IF position('pg_catalog.now()' IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'Availability timestamp trigger must call pg_catalog.now() explicitly';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger t
+    WHERE t.tgfoid = (
+      SELECT p.oid
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public'
+        AND p.proname = 'touch_availability_updated_at'
+        AND pg_get_function_identity_arguments(p.oid) = ''
+    )
+      AND NOT t.tgisinternal
+      AND t.tgrelid = 'public.servant_availability'::regclass
+  ) THEN
+    RAISE EXCEPTION 'Availability timestamp trigger is not attached to public.servant_availability';
+  END IF;
+END;
+$gms_availability_touch_search_path_test$;
+
   ) THEN
     RAISE EXCEPTION 'Availability timestamp trigger function search_path is not pinned';
   END IF;
