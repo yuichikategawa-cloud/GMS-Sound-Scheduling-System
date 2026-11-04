@@ -11,11 +11,17 @@ This change follows the staging-only authorization review. It hardens two authen
 
 This does not change administrator authorization, servant assignment rules, schedule publication, notification preferences, or the manual assignment workflow.
 
-## Database migration
+## Database migrations
 
-Apply only after separate approval:
+The notification / push subscription migration below has already been applied to the dedicated staging project and verified there. It has not been applied to production:
 
 - `supabase/migrations/20261104170500_gms_notification_push_subscription_hardening.sql`
+
+A separate follow-up migration has been prepared to pin the availability timestamp trigger's search path. It is source-only and has not been applied to staging or production:
+
+- `supabase/migrations/20261105100000_gms_availability_touch_search_path.sql`
+
+The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog, public`, and qualifies `pg_catalog.now()`. The read-only post-migration assertion is in `supabase/tests/availability_touch_search_path.sql`.
 
 The notification event key includes the assignment ID, the latest audited transition timestamp, the number of non-confirmed -> confirmed transitions still present in `audit_logs`, and the administrator recipient ID. Repeated RPC calls for the same state transition therefore collide with the existing unique `serving_notifications_event_key_uidx` index and are ignored. A later decline/pending -> confirmed transition receives a different key.
 
@@ -36,14 +42,25 @@ Registration limits each account to ten devices. A same-endpoint re-registration
 
 The RPC no longer grants execution to `service_role`; it is an authenticated-browser operation. The push worker does not call this RPC.
 
+## Dispatch worker concurrency
+
+The hardened worker is based on the same queue-claim implementation as production Edge Function version 3 and the `develop` branch at the time of reconciliation. It retains:
+
+- Atomic queue claiming through `gms_claim_serving_push_queue`.
+- Per-row claim tokens and lease renewal.
+- Endpoint delivery checkpoints and claim-safe retry/release.
+- Bounded exponential retry delays.
+
+The endpoint allowlist runs before any outbound push call. Unsupported legacy subscription rows are deleted with their errors checked; if cleanup fails, the claimed queue item follows the existing claim-safe retry path. The worker continues to use the queue RPCs rather than reverting to a direct unclaimed queue-table scan.
+
 ## Tests
 
-### Edge endpoint allowlist
+### Edge endpoint allowlist and queue helpers
 
 Run from the repository root with Deno installed:
 
 ```sh
-deno test supabase/functions/dispatch-push/security_test.ts
+deno test supabase/functions/dispatch-push/security_test.ts supabase/functions/_shared/leaseKeeper_test.ts supabase/functions/_shared/retryBackoff_test.ts
 ```
 
 Coverage includes supported Google, Mozilla, Apple and Microsoft hosts; rejecting HTTP, localhost/private IPs, hostile suffix domains, userinfo, non-default ports, fragments, missing paths, whitespace and oversized URLs.
@@ -59,17 +76,18 @@ Coverage includes supported Google, Mozilla, Apple and Microsoft hosts; rejectin
 
 It tests repeat-call idempotency, a later confirmation cycle, cross-user notification rejection, endpoint host validation, malformed key rejection, user-agent bounds, cross-account endpoint takeover rejection, possession-based shared-device transfer, and the ten-device limit. Every inserted row and status change is rolled back.
 
-Do not run this test against production. It has not been run by this branch preparation, because applying SQL or mutating even rollback-only test transactions in Supabase staging was outside the approved scope.
+Do not run this test against production. The rollback-only suite has been executed against the dedicated staging project using the synthetic admin and servant profiles. All assertions passed, and the temporary servant roster row, future schedule, assignment, notification rows and test push-subscription rows were rolled back. Post-test verification confirmed that no operational test rows remained.
 
 ## Deployment boundaries
 
-Preparing this branch does not:
+Current state:
 
-- apply the migration to staging or production;
-- deploy or update an Edge Function;
-- configure Vercel environment variables;
-- set or rotate VAPID / dispatch secrets;
-- enable `pg_cron`, `pg_net`, or scheduled jobs;
-- create a pull request, merge, or push to `main`.
+- The notification / push subscription hardening migration is applied to the dedicated staging project only.
+- The availability timestamp search-path migration is prepared in this branch but has not been applied anywhere.
+- The combined Edge Function source is prepared in this branch but has not been deployed to staging or production.
+- No Vercel environment variables were changed.
+- No VAPID or dispatch secrets were set or rotated.
+- No cron jobs or additional extensions were installed.
+- No pull request was opened, no branch was merged, and `main` was not changed.
 
-Those actions require separate review and explicit approval.
+Applying the follow-up migration, deploying the Edge Function, changing Vercel configuration, rotating secrets, or integrating branches requires separate review and explicit approval.
