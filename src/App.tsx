@@ -13,7 +13,7 @@ import AppLayout from "./app/components/AppLayout";
 import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
-import { buildSignupMetadata } from "./features/auth/services/registration";
+import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccountPassword } from "./features/auth/services/authentication";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -307,20 +307,14 @@ export default function App() {
 
   async function submitAuth(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); if(!supabase)return; setMessage(""); setAuthLoading(true);
-    const fd=new FormData(e.currentTarget);
+    const formData=new FormData(e.currentTarget);
     try {
       if(authMode==="signup") {
-        const meta=buildSignupMetadata(fd);
-        const {error}=await supabase.auth.signUp({email:meta.email,password:String(fd.get("password")),options:{data:meta}});
-        if(error)throw error;
+        await registerAccount(supabase,formData);
         setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
         setAuthMode("login");
       } else {
-        const {data,error}=await supabase.functions.invoke("username-login",{body:{username:String(fd.get("username")).trim(),password:String(fd.get("password"))}});
-        if(error)throw new Error("Username login is not configured yet. Deploy the username-login Edge Function and try again.");
-        if(!data?.access_token||!data?.refresh_token)throw new Error(data?.error||"Invalid username or password.");
-        const {error:sessionError}=await supabase.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
-        if(sessionError)throw sessionError;
+        await signInWithUsername(supabase,String(formData.get("username")),String(formData.get("password")));
       }
     } catch(e){setMessage(errorText(e));}
     finally{setAuthLoading(false);}
@@ -328,16 +322,28 @@ export default function App() {
 
   async function sendPasswordReset(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); if(!supabase)return; setAuthLoading(true); setMessage("");
-    const fd=new FormData(e.currentTarget); const recoveryEmail=String(fd.get("recovery_email")||"").trim();
-    try { const {error}=await supabase.auth.resetPasswordForEmail(recoveryEmail,{redirectTo:`${window.location.origin}/`}); if(error)throw error; setMessage("If an account exists for that email, a password reset link has been sent. Please check your inbox."); }
-    catch(e){setMessage(errorText(e));} finally{setAuthLoading(false);}
+    const formData=new FormData(e.currentTarget);
+    const recoveryEmail=String(formData.get("recovery_email")||"").trim();
+    try {
+      await sendPasswordResetLink(supabase,recoveryEmail,`${window.location.origin}/`);
+      setMessage("If an account exists for that email, a password reset link has been sent. Please check your inbox.");
+    } catch(e){setMessage(errorText(e));}
+    finally{setAuthLoading(false);}
   }
+
   async function updateRecoveredPassword(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if(!supabase)return; const fd=new FormData(e.currentTarget); const next=String(fd.get("new_password")||"");
-    if(next.length<8){setMessage("Password must be at least 8 characters.");return;} setAuthLoading(true);setMessage("");
-    try {const {error}=await supabase.auth.updateUser({password:next});if(error)throw error;setRecoveryMode(false);setMessage("Password updated. You can now continue using your new password.");}
-    catch(e){setMessage(errorText(e));}finally{setAuthLoading(false);}
+    e.preventDefault(); if(!supabase)return;
+    const formData=new FormData(e.currentTarget);
+    const next=String(formData.get("new_password")||"");
+    setAuthLoading(true); setMessage("");
+    try {
+      await updateAccountPassword(supabase,next);
+      setRecoveryMode(false);
+      setMessage("Password updated. You can now continue using your new password.");
+    } catch(e){setMessage(errorText(e));}
+    finally{setAuthLoading(false);}
   }
+
   async function signOut(){
     const userId=session?.user?.id;
     setPushEnabled(false);setTab("schedule");setMobileNav(false);
