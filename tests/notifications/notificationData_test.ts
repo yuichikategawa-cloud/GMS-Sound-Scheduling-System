@@ -140,4 +140,4 @@ Deno.test("notification data preserves empty successful history and missing pref
   assertSame(result.preferences.data, null, "A missing preference row must remain null for App's existing defaults.");
   assertSame(result.notifications.error, null, "Empty notification history must retain a null error.");
   assertSame(result.preferences.error, null, "Missing preferences must retain a null error.");
-}
+});
