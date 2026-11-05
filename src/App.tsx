@@ -23,6 +23,7 @@ import { validateScheduleAssignment } from "./features/schedule/services/assignm
 import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGeneration";
 import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedules } from "./features/schedule/services/schedulePersistence";
 import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
+import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -483,7 +484,7 @@ export default function App() {
     if(recurringConflict){setMessage(`This date conflicts with a recurring ${recurringConflict.status.replace("_"," ")} restriction. Review the recurring rule before saving.`);return;}
     setLoading(true);setMessage("");
     try {
-      const {error}=await supabase.from("servant_availability").upsert(row,{onConflict:"servant_id,service_date"});
+      const {error}=await upsertAvailabilityRecord(supabase,row);
       if(error)throw error;
       await loadData();form.reset();setMessage("Availability saved.");
     } catch(e){setMessage(errorText(e));}
@@ -494,7 +495,7 @@ export default function App() {
     const conflicts=rows.filter(row=>availability.some(a=>a.servant_id===row.servant_id&&a.service_date===row.service_date&&a.status!==row.status));
     if(conflicts.length){setMessage(`Cannot save: ${conflicts.length} date/person combination(s) already have a different availability status. Resolve the conflicts first.`);return false;}
     setLoading(true);setMessage("");
-    try { const {error}=await supabase.from("servant_availability").upsert(rows,{onConflict:"servant_id,service_date"}); if(error)throw error; await loadData();setMessage(`${rows.length} availability record(s) saved.`);return true; }
+    try { const {error}=await upsertAvailabilityRecords(supabase,rows); if(error)throw error; await loadData();setMessage(`${rows.length} availability record(s) saved.`);return true; }
     catch(e){setMessage(errorText(e));return false;} finally{setLoading(false);}
   }
   async function saveAvailabilityRule(rule:any) {
@@ -508,10 +509,10 @@ export default function App() {
       setMessage(`This rule conflicts with an existing availability entry on ${validation.conflictDate}. Resolve that date before saving the recurring rule.`);
       return false;
     }
-    const {error}=await supabase.from("servant_availability_rules").insert({...rule,created_by:session?.user?.id});
-    if(error){setMessage(error.message);return false;} await loadData();setMessage("Recurring availability restriction saved.");return true;
+    const {error}=await insertAvailabilityRule(supabase,rule,session?.user?.id);
+    if(error){setMessage(errorText(error));return false;} await loadData();setMessage("Recurring availability restriction saved.");return true;
   }
-  async function deleteAvailabilityRule(id:string){if(!supabase)return;const {error}=await supabase.from("servant_availability_rules").delete().eq("id",id);if(error)setMessage(error.message);else await loadData();}
+  async function deleteAvailabilityRule(id:string){if(!supabase)return;const {error}=await deleteAvailabilityRuleById(supabase,id);if(error)setMessage(errorText(error));else await loadData();}
 
   async function saveServingPreference(preference:any){
     if(!supabase)return false;
@@ -526,20 +527,20 @@ export default function App() {
       return !timeAllowed||!serviceAllowed;
     });
     if(conflicts.length){setMessage(`This restriction would conflict with ${conflicts.length} existing upcoming assignment(s): ${conflicts.slice(0,4).map(s=>`${s.service_name} · ${fmtDate(s.service_date)}`).join("; ")}. Review or change those assignments before saving the restriction.`);return false;}
-    const {error}=await supabase.from("servant_serving_preferences").insert({...preference,created_by:session?.user?.id});
-    if(error){setMessage(error.message);return false;}
+    const {error}=await insertServingPreference(supabase,preference,session?.user?.id);
+    if(error){setMessage(errorText(error));return false;}
     await loadData();setMessage("Serving eligibility rule saved and will be checked during manual assignment.");return true;
   }
   async function deleteServingPreference(id:string){
     if(!supabase)return;
-    const {error}=await supabase.from("servant_serving_preferences").delete().eq("id",id);
-    if(error)setMessage(error.message);else{await loadData();setMessage("Serving eligibility rule removed.");}
+    const {error}=await deleteServingPreferenceById(supabase,id);
+    if(error)setMessage(errorText(error));else{await loadData();setMessage("Serving eligibility rule removed.");}
   }
 
   async function deleteAvailability(id:string){
     if(!supabase||!isAdmin)return;
-    const {error}=await supabase.from("servant_availability").delete().eq("id",id);
-    if(error)setMessage(error.message);else await loadData();
+    const {error}=await deleteAvailabilityRecordById(supabase,id);
+    if(error)setMessage(errorText(error));else await loadData();
   }
 
   async function linkServantAccount(servant:Servant,userId:string,verifiedNij:string):Promise<boolean>{
@@ -694,8 +695,8 @@ export default function App() {
     e.preventDefault();if(!supabase||!isAdmin)return;
     setScheduleError("");
     const fd=new FormData(e.currentTarget);const value=String(fd.get("deadline")||"");
-    const {error}=await supabase.from("system_settings").upsert({key:"availability_deadline",value,updated_by:session.user.id},{onConflict:"key"});
-    if(error)setMessage(error.message);else {setAvailabilityDeadline(value);setMessage("Availability deadline updated.");}
+    const {error}=await upsertAvailabilityDeadline(supabase,value,session.user.id);
+    if(error)setMessage(errorText(error));else {setAvailabilityDeadline(value);setMessage("Availability deadline updated.");}
   }
   async function submitServingRequest(schedule:ScheduleView,kind:"replacement"|"swap"){
     if(kind==="swap"){setSwapDraft(schedule);return;}
