@@ -26,6 +26,7 @@ import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./f
 import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
 import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
+import { loadServingRequestData } from "./features/requests/services/requestData";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -192,7 +193,7 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,servantDirectoryRes,notificationPrefsRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestDataRes,notificationRes,settingRes,auditRes,servantDirectoryRes,notificationPrefsRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         loadServantRecords(supabase),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -201,8 +202,7 @@ export default function App() {
         supabase.from("servant_availability").select("*").order("service_date",{ascending:true}),
         supabase.from("servant_availability_rules").select("*").order("created_at",{ascending:false}),
         supabase.from("servant_serving_preferences").select("*").eq("active",true).order("created_at",{ascending:false}),
-        supabase.from("serving_requests").select("*").order("created_at",{ascending:false}),
-        supabase.from("serving_request_reads").select("*"),
+        loadServingRequestData(supabase),
         supabase.from("serving_notifications").select("*").gte("created_at",notificationCutoff).order("created_at",{ascending:false}).limit(100),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
@@ -212,7 +212,7 @@ export default function App() {
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles,notificationPrefsRes]
+      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestDataRes.requests,requestDataRes.reads,notificationRes,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles,notificationPrefsRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -225,7 +225,7 @@ export default function App() {
       const explicitAvailability=availRes.error?[]:(availRes.data??[]);
       const ruleEndLimit=new Date();ruleEndLimit.setFullYear(ruleEndLimit.getFullYear()+2);
       const virtualAvailability=buildVirtualAvailability(loadedRules,ruleEndLimit);
-      setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
+      setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
       setAccountProfiles(servantDirectoryRes.accountProfiles.error?[]:(servantDirectoryRes.accountProfiles.data??[]));
