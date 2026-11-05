@@ -3,7 +3,7 @@ import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView, Servant } from "../../../types";
 import PushNotificationSettings from "../../notifications/components/PushNotificationSettings";
 
-function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
+export default function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
  return <section className="requests-panel">

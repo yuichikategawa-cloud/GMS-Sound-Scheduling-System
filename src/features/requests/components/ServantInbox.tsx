@@ -3,7 +3,7 @@ import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView } from "../../../types";
 import PushNotificationSettings from "../../notifications/components/PushNotificationSettings";
 
-function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
+export default function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
  const decisions=requests.filter(r=>["approved","declined","rejected"].includes(String(r.status??"").toLowerCase())).sort((a,b)=>String(b.reviewed_at??b.created_at).localeCompare(String(a.reviewed_at??a.created_at)));
  const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
  const unread=notifications.filter(n=>!n.is_read).length;
