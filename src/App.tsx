@@ -9,6 +9,8 @@ import ActionDialog, { type ActionDialogState } from "./shared/components/Action
 import Sidebar from "./app/components/Sidebar";
 import MobileNavigation from "./app/components/MobileNavigation";
 import AppHeader from "./app/components/AppHeader";
+import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
+import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -54,7 +56,7 @@ export default function App() {
   const [toDate,setToDate] = useState("");
   const [modal,setModal] = useState<"schedule"|"person"|null>(null);
   const [editing,setEditing] = useState<ScheduleView|null>(null);
-  const [authMode,setAuthMode] = useState<"login"|"signup"|"reset">("login");
+  const [authMode,setAuthMode] = useState<AuthMode>("login");
   const [email,setEmail] = useState("");
   const [username,setUsername] = useState("");
   const [memberProfile,setMemberProfile] = useState<any>(null);
@@ -857,37 +859,8 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
-  if(recoveryMode && session)return <div className="auth-page"><div className="auth-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Set a new password</h1><p className="subtle">Choose a new password for your account.</p><form onSubmit={updateRecoveredPassword} className="stack"><label>New password<input name="new_password" type="password" required minLength={8} autoComplete="new-password" placeholder="At least 8 characters"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Updating password…</>:"Update password"}</button></form>{message&&<p className="message">{message}</p>}</div></div>;
-  if(!session)return <div className="auth-page"><div className="auth-card"><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1 className={authMode==="login"?"welcome-home-script":""}>{authMode==="login"?"Welcome Home":authMode==="signup"?"Create your account":"Reset your password"}</h1><p className="subtle">Serving schedule management for Alam Sutera, BSD and Karawaci.</p>
-    {authMode==="reset"?<form onSubmit={sendPasswordReset} className="stack"><label>Registered email address<input name="recovery_email" type="email" required autoComplete="email" placeholder="you@example.com"/></label><button className="btn primary full" disabled={authLoading}>{authLoading?<><span className="button-spinner"/> Sending reset link…</>:"Send reset link"}</button><button type="button" className="link-btn" onClick={()=>{setAuthMode("login");setMessage("");}}>Back to sign in</button></form>:<form onSubmit={submitAuth} className="stack auth-registration">
-      <label>Username<input name="username" required minLength={3} maxLength={40} pattern={"[A-Za-z0-9._\\-]+"} autoComplete="username" placeholder="Choose a username"/></label>
-      {authMode==="signup"&&<>
-        <label>Full name<input name="full_name" required placeholder="Full name as registered"/></label>
-        <label>Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com"/></label>
-        <label>Gender<select name="gender" required defaultValue=""><option value="" disabled>Select gender</option><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
-        <label>Date of birth<input name="date_of_birth" type="date" required/></label>
-        <label>NIJ – Nomor Induk Jemaat<input name="nij" required placeholder="Your NIJ"/></label>
-        <label>Phone number<input name="phone_number" type="tel" required placeholder="e.g. +62812..."/></label>
-        <label>Domicile area<select name="domicile_area" required defaultValue="Alam Sutera"><option>Alam Sutera</option><option>BSD</option><option>Karawaci</option><option>Others</option></select></label>
-        <label>Other domicile area (if Others)<input name="domicile_other" placeholder="Specify area"/></label>
-        <label>CG category<select name="cg_category" required defaultValue=""><option value="" disabled>Select CG</option>{["AOG Teen","AOG Youth","Young Adult","Family","Senior"].map(x=><option key={x}>{x}</option>)}</select></label>
-        <label>CG status<select name="cg_status" required value={signupCgStatus} onChange={e=>setSignupCgStatus(e.target.value)}><option value="" disabled>Select status</option>{["Team Leader","Coach","CG Leader","Sponsor","Member"].map(x=><option key={x}>{x}</option>)}</select></label>
-        <label>CG number<input name="cg_number" required/></label>
-        <fieldset className="days-field"><legend>CG day (select multiple)</legend>{["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(x=><label key={x}><input type="checkbox" name="cg_days" value={x}/>{x}</label>)}</fieldset>
-        <label>CG time<input name="cg_time" required placeholder="e.g. 19:00"/></label>
-        <label className={signupCgStatus==="Team Leader"?"field-disabled":""}>Team Leader name<input name="team_leader_name" disabled={signupCgStatus==="Team Leader"} placeholder="Not required if you are Team Leader"/></label>
-        <label className={signupCgStatus==="Coach"?"field-disabled":""}>Coach name<input name="coach_name" disabled={signupCgStatus==="Coach"} placeholder="Not required if you are Coach"/></label>
-        <label className={signupCgStatus==="CG Leader"?"field-disabled":""}>CG Leader name<input name="cg_leader_name" disabled={signupCgStatus==="CG Leader"} placeholder="Not required if you are CG Leader"/></label>
-        <label>Leader phone number(s)<textarea name="leader_phone_numbers" required placeholder="At least one number; separate multiple numbers with commas" rows={2}/></label>
-      </>}
-      <label>Password<input name="password" type="password" required minLength={8} autoComplete={authMode==="login"?"current-password":"new-password"} placeholder="At least 8 characters"/></label>
-      <button className="btn primary full" disabled={authLoading}>{authMode==="login"?"Sign in":"Create account"}</button>
-    </form>}
-    {authMode==="login"&&<button type="button" className="link-btn" onClick={()=>{setAuthMode("reset");setMessage("");}}>Forgot password?</button>}
-    {authMode!=="reset"&&<button type="button" className="link-btn" onClick={()=>{setAuthMode(authMode==="login"?"signup":"login");setSignupCgStatus("");setMessage("");}}>{authMode==="login"?"Need an account? Sign up":"Already registered? Sign in"}</button>}
-    {message&&<p className="message">{message}</p>}
-  </div></div>;
-
+  if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={updateRecoveredPassword}/>;
+  if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={submitAuth} onSendPasswordReset={sendPasswordReset}/>;
   if(!profile)return <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
 
   return <div className="app-shell" data-theme={theme}>
