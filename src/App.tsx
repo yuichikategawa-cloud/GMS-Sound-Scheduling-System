@@ -13,6 +13,7 @@ import AppLayout from "./app/components/AppLayout";
 import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
+import MemberProfilePanel from "./features/auth/components/MemberProfilePanel";
 import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccountPassword } from "./features/auth/services/authentication";
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 
@@ -1475,24 +1476,3 @@ function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants
   <div className="stats-table-wrap stats-desktop-table"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div><div className="stats-servant-cards">{rows.map(r=><article className="stats-servant-card" key={r.id}><b className="stats-servant-name">{r.name}</b><div className="stats-servant-metrics"><div><small>Total</small><strong>{r.total}</strong></div><div><small>FOH</small><strong>{r.FOH}</strong></div><div><small>Monitor</small><strong>{r.Monitor}</strong></div><div><small>Assistant</small><strong>{r.Assistant}</strong></div></div></article>)}</div>
  </>;
 }
-
-function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
- const [saving,setSaving]=useState(false);
- const current=profile??{full_name:"",email:"",gender:"Prefer not to say",date_of_birth:"",nij:"",phone_number:"",domicile_area:"Alam Sutera",domicile_other:"",cg_category:"AOG Youth",cg_status:"Member",cg_number:"",cg_days:[],cg_time:"",team_leader_name:"",coach_name:"",cg_leader_name:"",leader_phone_numbers:[],last_verified_at:new Date().toISOString()};
- const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
- return <><section className="availability-form-panel"><div className="toolbar"><div><h2>{profile?"My information":"Complete your member profile"}</h2><p className="subtle">{profile?"You can update these details at any time. Please verify them every three months.":"Complete your member information to finish setting up your account."}</p></div></div>
- <div className="message-banner">Last verified: <b>{profile?new Date(current.last_verified_at).toLocaleDateString():"Not yet verified"}</b>{!profile?" · Complete the form below.":(Date.now()-new Date(current.last_verified_at).getTime())>90*86400000?" · Please review your information now.":" · Next review is due in 3 months."}</div>
- <form className="profile-edit-grid" onSubmit={async e=>{e.preventDefault();setSaving(true);const fd=new FormData(e.currentTarget);const phones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);await onSave({full_name:String(fd.get("full_name")),email:String(fd.get("email")),gender:String(fd.get("gender")),date_of_birth:String(fd.get("date_of_birth")),nij:String(fd.get("nij")),phone_number:String(fd.get("phone_number")),domicile_area:String(fd.get("domicile_area")),domicile_other:String(fd.get("domicile_other")||""),cg_category:String(fd.get("cg_category")),cg_status:String(fd.get("cg_status")),cg_number:String(fd.get("cg_number")),cg_days:fd.getAll("cg_days").map(String),cg_time:String(fd.get("cg_time")),team_leader_name:String(fd.get("team_leader_name")||""),coach_name:String(fd.get("coach_name")||""),cg_leader_name:String(fd.get("cg_leader_name")||""),leader_phone_numbers:phones});setSaving(false);}}>
- {([['Full name','full_name'],['Email address','email'],['NIJ – Nomor Induk Jemaat','nij'],['Phone number','phone_number'],['Date of birth','date_of_birth'],['CG number','cg_number'],['CG time','cg_time'],['Team Leader name','team_leader_name'],['Coach name','coach_name'],['CG Leader name','cg_leader_name'],['Leader phone number(s)','leader_phone_numbers']] as const).map(([label,key])=><label key={key}>{label}{key==='leader_phone_numbers'?<textarea name={key} rows={2} defaultValue={(current[key]??[]).join(', ')}/>:<input name={key} type={key==='date_of_birth'?'date':'text'} defaultValue={key==='date_of_birth'?String(current[key]??'').slice(0,10):current[key]??''} required={!['team_leader_name','coach_name','cg_leader_name'].includes(key)}/>}</label>)}
- <label>Gender<select name="gender" defaultValue={current.gender}><option>Male</option><option>Female</option><option>Prefer not to say</option></select></label>
- <label>Domicile area<select name="domicile_area" defaultValue={current.domicile_area}>{['Alam Sutera','BSD','Karawaci','Others'].map(x=><option key={x}>{x}</option>)}</select></label>
- <label>Other domicile area<input name="domicile_other" defaultValue={current.domicile_other??''}/></label>
- <label>CG category<select name="cg_category" defaultValue={current.cg_category}>{['AOG Teen','AOG Youth','Young Adult','Family','Senior'].map(x=><option key={x}>{x}</option>)}</select></label>
- <label>CG status<select name="cg_status" defaultValue={current.cg_status}>{['Team Leader','Coach','CG Leader','Sponsor','Member'].map(x=><option key={x}>{x}</option>)}</select></label>
- <fieldset className="days-field"><legend>CG days</legend>{days.map(d=><label key={d}><input type="checkbox" name="cg_days" value={d} defaultChecked={(current.cg_days??[]).includes(d)}/>{d}</label>)}</fieldset>
- <button className="btn primary" disabled={saving}>{saving?'Saving…':'Save and verify profile'}</button>
- </form></section>
- {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
-}
-
-
