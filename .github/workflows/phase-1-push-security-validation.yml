@@ -59,6 +59,8 @@ jobs:
         run: deno test --no-lock tests/availability/availabilityPersistence_test.ts
       - name: Test servant management persistence operations
         run: deno test --no-lock tests/servants/servantManagement_test.ts
+      - name: Test servant account candidate mapping
+        run: deno test --no-lock tests/servants/servantDirectory_test.ts
       - name: Type-check push dispatcher
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json
