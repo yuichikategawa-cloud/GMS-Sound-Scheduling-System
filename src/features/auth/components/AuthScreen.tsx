@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import "./AuthScreens.css";
 
 export type AuthMode = "login" | "signup" | "reset";
 
