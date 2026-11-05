@@ -73,6 +73,13 @@ deno test supabase/functions/dispatch-push/security_test.ts supabase/functions/_
 
 Coverage includes supported Google, Mozilla, Apple and Microsoft hosts; rejecting HTTP, localhost/private IPs, hostile suffix domains, userinfo, non-default ports, fragments, missing paths, whitespace and oversized URLs.
 
+
+### Android browser coverage
+
+The GMS client uses the standard browser Push API (`PushManager.subscribe`) and sends the resulting `PushSubscription` endpoint and encryption keys to the server. On Chrome for Android, Chrome routes Web Push through Google Firebase Cloud Messaging (FCM). The test suite therefore includes an explicit Chrome-on-Android FCM endpoint case (`fcm.googleapis.com`) and a separate legacy Google Android endpoint case (`android.googleapis.com`).
+
+This validates endpoint allowlist acceptance only. It does not simulate an Android handset, notification permission prompt, Android service-worker lifecycle, Doze/background delivery, or actual FCM delivery. Those require a real Chrome-on-Android device (or an Android test device) with the staging PWA and staging VAPID key configured. Native Android applications using Firebase Android SDK registration tokens are a different delivery path and are not implemented by this browser Web Push worker.
+
 ### Database regression script
 
 `supabase/tests/notification_push_security.sql` is a rollback-only script for a dedicated staging project. It requires:

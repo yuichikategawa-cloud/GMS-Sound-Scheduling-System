@@ -20,6 +20,28 @@ Deno.test("accepts supported browser push-service endpoints", () => {
   }
 });
 
+
+Deno.test("accepts Chrome on Android Web Push endpoints routed through Google FCM", () => {
+  // Chrome on Android uses the browser Web Push API. Its PushSubscription
+  // endpoint is supplied by Chrome's push service (Google FCM), not a native
+  // Android SDK registration token.
+  const endpoint =
+    "https://fcm.googleapis.com/fcm/send/chrome-android-webpush-test-endpoint";
+
+  if (!isAllowedPushEndpoint(endpoint)) {
+    throw new Error("Chrome on Android FCM Web Push endpoint was rejected");
+  }
+});
+
+Deno.test("retains compatibility with the legacy Google Android GCM endpoint", () => {
+  const endpoint =
+    "https://android.googleapis.com/gcm/send/legacy-android-webpush-test-endpoint";
+
+  if (!isAllowedPushEndpoint(endpoint)) {
+    throw new Error("Legacy Google Android endpoint was rejected");
+  }
+});
+
 Deno.test("rejects arbitrary hosts, private addresses and insecure endpoints", () => {
   const invalid = [
     "http://fcm.googleapis.com/fcm/send/test-endpoint-token",
