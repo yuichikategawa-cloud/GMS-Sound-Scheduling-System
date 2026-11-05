@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ClipboardCheck, Download } from "lucide-react";
+import "./AuditPanel.css";
 
 export default function AuditPanel({
   logs,
