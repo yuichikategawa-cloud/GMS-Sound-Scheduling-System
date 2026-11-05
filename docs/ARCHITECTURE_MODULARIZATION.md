@@ -8,7 +8,7 @@ This is an incremental refactor, not a rewrite and not a microservices conversio
 
 ## Current baseline (2026-11-05)
 
-- `src/App.tsx` is 1,340 lines and still owns application-level state, authorization gates, data-loading orchestration, refresh flows, and several feature workflows.
+- `src/App.tsx` is 1325 lines and still owns application-level state, authorization gates, data-loading orchestration, refresh flows, and several feature workflows.
 - `src/style.css` remains a single large stylesheet (approximately 204.8 KB) containing base styles, feature styles, responsive overrides, and accumulated theme-specific fixes.
 - Feature boundaries now exist under `src/features`, alongside `src/app` and `src/shared`; App remains the composition/orchestration root.
 - The application is still a monolith in transition. Extracting services and screens has reduced coupling, but further boundary and dependency verification is required.
@@ -190,6 +190,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M6.5 push-subscription lifecycle: browser capability and iOS standalone checks, VAPID decoding, current-user subscription status, enable/register, disable/unsubscribe, and bounded best-effort sign-out cleanup moved to `src/features/notifications/services/pushSubscription.ts`. App retains UI state and user-facing messages. Existing RPC arguments, database filters, service worker, dispatcher, and SQL contracts remain unchanged; 11 Deno regression tests cover capability guards, decoding, ownership, reuse/creation, permission outcomes, incomplete payloads, RPC errors, disable behavior, and sign-out cleanup. GitHub Actions run #42047486473 passed Deno, SQL staging, and frontend validation. No schema, migration, RLS, or authorization changes.
 - [ ] M7 statistics/audit/CSS.
 - [x] M7.1 statistics extraction: pure serving-statistics calculations and the Statistics panel are moved into feature-owned modules with eight Deno regression tests; workflow integration is added. GitHub Actions run [#42055970811](https://github.com/yuichikategawa-cloud/GMS-Sound-Scheduling-System/actions/runs/42055970811) passed the full Deno regression suite, SQL staging checks, and frontend TypeScript/Vite build. The extraction does not change database schema, migrations, RLS, or authorization behavior.
+- [ ] M7.2 audit extraction: recent audit loading, historical 1,000-row pagination, and CSV serialization moved into `src/features/audit/services/auditData.ts`; the existing audit panel moved into `src/features/audit/components/AuditPanel.tsx`. Six Deno tests cover query filters/order/limit, pagination boundaries, empty results, error pass-through, CSV escaping, and stable headers. CI workflow integration is added; validation is pending. App retains administrator authorization, date cutoffs, browser download behavior, and user-facing messaging. Existing audit RLS, triggers, and 30-day cleanup policy are unchanged; no schema or migration changes.
 - [ ] M8 architecture verification.
 
 Status: **still a monolith in transition**. Do not describe the app as modular until M2–M8 have established and verified feature boundaries.

@@ -34,6 +34,8 @@ import { createServingRequest, executeServingRequestSwap, markServingRequestRead
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
 import RequestsPanel from "./features/requests/components/RequestsPanel";
+import AuditPanel from "./features/audit/components/AuditPanel";
+import { buildAuditCsv, loadHistoricalAuditLogs, loadRecentAuditLogs } from "./features/audit/services/auditData";
 import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -207,7 +209,7 @@ export default function App() {
         loadServingRequestData(supabase),
         loadServingNotificationData(supabase, notificationCutoff, session?.user?.id??""),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
-        supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
+        loadRecentAuditLogs(supabase, auditCutoff),
         loadServantDirectoryData(supabase),
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
@@ -791,26 +793,14 @@ export default function App() {
   }
   async function exportAuditHistory(){
     if(!supabase||!isAdmin)return;
-    const now=Date.now();
-    const newerThan=new Date(now-14*24*60*60*1000).toISOString();
-    const data:any[]=[];
-    const pageSize=1000;
-    for(let offset=0;;offset+=pageSize){
-      const {data:page,error}=await supabase.from("audit_logs").select("*")
-        .lt("created_at",newerThan)
-        .order("created_at",{ascending:false}).range(offset,offset+pageSize-1);
-      if(error){setMessage(error.message);return;}
-      data.push(...(page??[]));
-      if(!page||page.length<pageSize)break;
-    }
-    if(data.length===0){setMessage("No audit records older than 14 days are available to export.");return;}
-    const cols=["created_at","actor_id","action","table_name","record_id","old_data","new_data"];
-    const cell=(value:any)=>`"${String(value===null||value===undefined?"":typeof value==="object"?JSON.stringify(value):value).replace(/"/g,'""')}"`;
-    const csv=[cols.join(","),...data.map((row:any)=>cols.map(k=>cell(row[k])).join(","))].join("\r\n");
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`gms-audit-older-than-14-days-${today()}.csv`;a.click();URL.revokeObjectURL(url);
-    setMessage(`Downloaded ${data.length} audit record(s) older than 14 days.`);
+    const newerThan=new Date(Date.now()-14*24*60*60*1000).toISOString();
+    const {data,error}=await loadHistoricalAuditLogs(supabase,newerThan);
+    if(error){setMessage(error.message);return;}
+    if(!data||data.length===0){setMessage("No audit records older than 14 days are available to export.");return;}
+    const csv=buildAuditCsv(data);
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-audit-older-than-14-days-"+today()+".csv";a.click();URL.revokeObjectURL(url);
+    setMessage("Downloaded "+data.length+" audit record(s) older than 14 days.");
   }
-
   async function exportScheduleHistory(){
     if(!supabase||!isAdmin)return;
     const {data,error}=await supabase.from("schedules").select("*,locations(name),assignments(role,servants(full_name))").lt("service_date",today()).order("service_date",{ascending:false});
@@ -1332,8 +1322,3 @@ function AvailabilityPanel({servants,availability,rules,preferences,locations,sc
 
 
 
-function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
- const [page,setPage]=useState(1);const pageSize=10;const pageCount=Math.max(1,Math.ceil(logs.length/pageSize));const visible=logs.slice((page-1)*pageSize,page*pageSize);
- useEffect(()=>{setPage(1);},[logs.length]);
- return <><div className="toolbar audit-toolbar"><div><h2>System audit trail</h2><p className="subtle">Showing up to 50 events from the last 14 days. Records older than 14 days can be downloaded; all audit data is automatically deleted after 30 days.</p></div><button className="btn secondary" onClick={onDownload}><Download size={16}/> Download older records (15+ days)</button></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity in the last 14 days</b><p>Older records, if available, can be downloaded using the button above.</p></div>:<><div className="people-list">{visible.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div><div className="audit-pagination"><span>Page {page} of {pageCount} · {logs.length} events from the last 14 days</span><div><button className="btn secondary tiny" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button><button className="btn secondary tiny" disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button></div></div></>}</>;
-}
