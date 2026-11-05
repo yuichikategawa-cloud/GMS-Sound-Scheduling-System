@@ -158,6 +158,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M2 second shared UI extraction: the action-confirmation dialog is now `src/shared/components/ActionDialog.tsx`; the app retains the confirmation resolver/state and passes controlled props into the component.
 - [x] M2 app-shell extraction: sidebar/navigation moved to `src/app/components/Sidebar.tsx`; App retains navigation state and computes the two role-specific badge counts.
 - [x] M2 mobile navigation extraction: bottom navigation and More menu moved to `src/app/components/MobileNavigation.tsx`; role-specific visibility, badge state, theme/install/sign-out actions remain controlled through App callbacks.
+- [x] M2 header extraction: the title, role badge, install, theme, refresh, and mobile-menu controls moved to `src/app/components/AppHeader.tsx`; App retains all underlying state and handlers.
 - [ ] M3 authentication/profile.
 - [ ] M4 schedule.
 - [ ] M5 availability/servants.

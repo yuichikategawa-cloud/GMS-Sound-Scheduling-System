@@ -8,6 +8,7 @@ import GmsLoader from "./shared/components/GmsLoader";
 import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
 import Sidebar from "./app/components/Sidebar";
 import MobileNavigation from "./app/components/MobileNavigation";
+import AppHeader from "./app/components/AppHeader";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -908,7 +909,16 @@ export default function App() {
       onSignOut={signOut}
     />
     <div className="main-area">
-      <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install app</button>}<button className="icon-btn theme-toggle" onClick={toggleTheme} aria-pressed={theme==="dark"} title={theme==="dark"?"Switch to light mode":"Switch to dark mode"} aria-label={theme==="dark"?"Switch to light mode":"Switch to dark mode"}>{theme==="dark"?<Sun size={18}/>:<Moon size={18}/>}</button><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
+          <AppHeader
+      activeTab={tab}
+      isAdmin={isAdmin}
+      pwaInstalled={pwaInstalled}
+      theme={theme}
+      onToggleMobileMenu={() => setMobileNav(value => !value)}
+      onInstallApp={installGmsApp}
+      onToggleTheme={toggleTheme}
+      onRefresh={loadData}
+    />
       <main className="content">
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         {tab==="schedule"? <>
