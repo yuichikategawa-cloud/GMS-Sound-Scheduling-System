@@ -25,7 +25,7 @@ import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedul
 import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
 import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
 import { createServantRecord, linkServantAccountRecord, setServantActive } from "./features/servants/services/servantManagement";
-import { buildServantAccountCandidates } from "./features/servants/services/servantDirectory";
+import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -192,7 +192,7 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,profileRes,notificationPrefsRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,servantDirectoryRes,notificationPrefsRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         supabase.from("servants").select("*").order("full_name"),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -206,21 +206,20 @@ export default function App() {
         supabase.from("serving_notifications").select("*").gte("created_at",notificationCutoff).order("created_at",{ascending:false}).limit(100),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
-        supabase.from("member_profiles").select("*"),
-        supabase.from("profiles").select("id,role,display_name,username"),
+        loadServantDirectoryData(supabase),
         supabase.from("serving_notification_preferences").select("*").eq("user_id",session?.user?.id??"").maybeSingle()
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,memberRes,profileRes,notificationPrefsRes]
+      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles,notificationPrefsRes]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
       const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
       const assignments=(assignRes.data??[]) as Assignment[];
       const mapped=mapSchedules((schedRes.data??[]) as Schedule[],assignments,locs,people);
-      const safeMemberRows = memberRes.error ? [] : (memberRes.data ?? []);
+      const safeMemberRows = servantDirectoryRes.memberProfiles.error ? [] : (servantDirectoryRes.memberProfiles.data ?? []);
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
       const loadedRules=ruleRes.error?[]:(ruleRes.data??[]);setAvailabilityRules(loadedRules);setServingPreferences(preferenceRes.error?[]:(preferenceRes.data??[]));
       const explicitAvailability=availRes.error?[]:(availRes.data??[]);
@@ -229,7 +228,7 @@ export default function App() {
       setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
-      setAccountProfiles(profileRes.error?[]:(profileRes.data??[]));
+      setAccountProfiles(servantDirectoryRes.accountProfiles.error?[]:(servantDirectoryRes.accountProfiles.data??[]));
       setNotificationPrefs(notificationPrefsRes.error||!notificationPrefsRes.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationPrefsRes.data);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }

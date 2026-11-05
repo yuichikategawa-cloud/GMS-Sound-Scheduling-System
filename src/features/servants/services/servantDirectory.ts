@@ -20,6 +20,25 @@ export interface ServantAccountCandidate {
   linked_servant: Servant | null;
 }
 
+export interface ServantDirectoryQueryResponse {
+  data: any[] | null;
+  error: { message: string } | null;
+}
+
+interface ServantDirectorySelectBuilder {
+  select(columns: "*" | "id,role,display_name,username"): PromiseLike<ServantDirectoryQueryResponse>;
+}
+
+export interface ServantDirectoryDataClient {
+  from(tableName: "member_profiles"): ServantDirectorySelectBuilder;
+  from(tableName: "profiles"): ServantDirectorySelectBuilder;
+}
+
+export interface ServantDirectoryData {
+  memberProfiles: ServantDirectoryQueryResponse;
+  accountProfiles: ServantDirectoryQueryResponse;
+}
+
 /**
  * Builds the same eligible account list used by the servant information panel.
  * Only member profiles with a matching servant-role account are included.
@@ -41,4 +60,20 @@ export function buildServantAccountCandidates(
       username: accountProfiles.find(profile => profile.id === member.user_id)?.username ?? "",
       linked_servant: servants.find(servant => servant.auth_user_id === member.user_id) ?? null,
     }));
+}
+
+/**
+ * Loads the servant directory's two optional data sources in parallel.
+ * Query errors are returned unchanged so App can retain its existing optional-data
+ * fallback, warning, and member-profile selection behavior.
+ */
+export async function loadServantDirectoryData(
+  client: ServantDirectoryDataClient,
+): Promise<ServantDirectoryData> {
+  const [memberProfiles, accountProfiles] = await Promise.all([
+    client.from("member_profiles").select("*"),
+    client.from("profiles").select("id,role,display_name,username"),
+  ]);
+
+  return { memberProfiles, accountProfiles };
 }
