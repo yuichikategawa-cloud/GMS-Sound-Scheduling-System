@@ -166,7 +166,7 @@ Deno.test("fairness alert appears at a workload difference of three or more", ()
     fairnessDifference: 4,
     showFairnessAlert: true,
   });
-  assertEqual(result.averageAssignments, 2, "Average workload must use active servant rows, including zero-assignment servants.");
+  assertEqual(result.averageAssignments, 5 / 3, "Average workload must use active servant rows, including zero-assignment servants.");
 });
 
 Deno.test("fairness alert is hidden below the threshold and with only one active servant", () => {
