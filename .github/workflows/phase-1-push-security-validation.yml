@@ -1,0 +1,31 @@
+name: Phase 1 push security validation
+
+on:
+  push:
+    branches:
+      - security/push-endpoint-hardening
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/phase-1-push-security-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run push endpoint and queue helper tests
+        run: |
+          deno test --no-lock --config supabase/functions/dispatch-push/deno.json             supabase/functions/dispatch-push/security_test.ts             supabase/functions/_shared/leaseKeeper_test.ts             supabase/functions/_shared/retryBackoff_test.ts
+      - name: Type-check push dispatcher
+        run: |
+          deno check --no-lock --config supabase/functions/dispatch-push/deno.json             supabase/functions/dispatch-push/index.ts
