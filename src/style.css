@@ -119,19 +119,19 @@
 /* v5 usability: service details use one full-width row instead of two columns */
 .schedule-grid{grid-template-columns:minmax(0,1fr)!important}
 
-/* GMS equalizer loading experience — refined, original branded treatment */
-.center-screen:has(.gms-loader-screen){display:block!important;min-height:100vh!important;padding:0!important;background:#090b12!important;color:#fff!important}
-.gms-loader-screen{position:fixed;inset:0;z-index:9999;width:100%;min-height:100vh;min-height:100dvh;box-sizing:border-box;display:grid;place-items:center;padding:24px;background:#000;color:#fff}
-.gms-loader-content{width:min(100%,1000px);margin:0 auto;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.gms-loader-title{margin:0 0 42px;color:#fff;font-size:clamp(27px,5vw,58px);line-height:1.12;font-weight:700;letter-spacing:-.035em}
-.gms-equalizer{height:180px;width:100%;display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 42px}
-.gms-equalizer span{display:block;width:18px;height:var(--bar-height);max-height:100%;border-radius:999px;background:#625ff0;transform-origin:center;animation:gms-eq-pulse 820ms ease-in-out var(--bar-delay) infinite alternate}
-.gms-loader-message{margin:0 0 22px;color:#fff;font-size:clamp(23px,4vw,44px);line-height:1.2;font-weight:700;letter-spacing:-.025em}
-.gms-loader-caption{margin:0;color:#a6a6a6;font-size:clamp(16px,2.7vw,29px);line-height:1.4;font-weight:400}
-@keyframes gms-eq-pulse{0%{transform:scaleY(.58);opacity:.78}100%{transform:scaleY(1);opacity:1}}
-@media(max-width:600px){.gms-loader-screen{padding:22px}.gms-loader-title{margin-bottom:36px}.gms-equalizer{height:142px;gap:8px;margin-bottom:36px}.gms-equalizer span{width:13px}.gms-loader-message{margin-bottom:16px}}
-@media(prefers-reduced-motion:reduce){.gms-equalizer span{animation:none;transform:scaleY(.82)}}
-.gms-equalizer span{transform:scaleY(.78)}
+
+
+
+
+
+
+
+
+
+
+
+
+
 .gms-loader-progress span{width:100%}
 
 /* Explicit empty state for the Servant Information directory */
@@ -367,12 +367,7 @@
   letter-spacing:0;
   margin:0 0 10px;
 }
-.gms-loader-caption{
-  max-width:min(680px,100%);
-  min-height:1.5em;
-  text-wrap:balance;
-  transition:opacity .2s ease;
-}
+
 /* FOH and Monitor use matching full-width assignment cards on phones. */
 @media(max-width:600px){
   .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}

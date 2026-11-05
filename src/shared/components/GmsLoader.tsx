@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import "./GmsLoader.css";
 
 type GmsLoaderProps = {
   label?: string;
