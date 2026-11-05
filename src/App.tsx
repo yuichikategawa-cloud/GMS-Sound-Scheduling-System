@@ -19,6 +19,7 @@ import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifec
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
 import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
+import { validateScheduleEligibility } from "./features/schedule/services/eligibility";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -414,18 +415,16 @@ export default function App() {
     const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time"))};
     const selected:Record<Role,string>={FOH:String(fd.get("FOH")||""),Monitor:String(fd.get("Monitor")||""),Assistant:String(fd.get("Assistant")||"")};
     const chosen=Object.entries(selected).filter(([,id])=>id).map(([role,id])=>({role,id}));
-    const duplicateInService=chosen.find((entry,index)=>chosen.some((other,j)=>j!==index&&other.id===entry.id));
-    if(duplicateInService){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
-    const serviceWeekday=new Date(`${payload.service_date}T12:00:00`).getDay();
-    const preferenceBlocks=chosen.filter(entry=>{
-      const prefs=servingPreferences.filter(rule=>rule.servant_id===entry.id&&rule.active!==false&&(!rule.effective_from||rule.effective_from<=payload.service_date)&&(!rule.effective_until||rule.effective_until>=payload.service_date));
-      const timeRules=prefs.filter(rule=>rule.rule_type==="allowed_time_window");
-      const serviceRules=prefs.filter(rule=>rule.rule_type==="allowed_service_scope");
-      const timeAllowed=!timeRules.length||timeRules.some(rule=>(!rule.days_of_week?.length||rule.days_of_week.includes(serviceWeekday))&&payload.start_time>=String(rule.start_time).slice(0,5)&&payload.end_time<=String(rule.end_time).slice(0,5));
-      const serviceAllowed=!serviceRules.length||serviceRules.some(rule=>rule.location_id===payload.location_id&&(!rule.service_names?.length||rule.service_names.includes(payload.service_name)));
-      return !timeAllowed||!serviceAllowed;
+    const eligibility=validateScheduleEligibility({
+      selected:chosen,serviceDate:payload.service_date,locationId:payload.location_id,serviceName:payload.service_name,
+      startTime:payload.start_time,endTime:payload.end_time,preferences:servingPreferences
     });
-    if(preferenceBlocks.length){setScheduleError(`Serving eligibility restriction: ${preferenceBlocks.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} cannot serve in this time window, location or service based on their saved preferences. Review Availability → Serving preferences.`);return;}
+    if(eligibility.duplicateServantId){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
+    if(eligibility.blockedServantIds.length){
+      const names=eligibility.blockedServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant");
+      setScheduleError(`Serving eligibility restriction: ${names.join(", ")} cannot serve in this time window, location or service based on their saved preferences. Review Availability → Serving preferences.`);
+      return;
+    }
     const conflicts=chosen.map(entry=>({ ...entry, other:schedules.find(s=>s.service_date===payload.service_date&&s.location_id!==payload.location_id&&s.id!==editing?.id&&s.assignments.some(a=>a.servant_id===entry.id)) })).filter(x=>x.other);
     if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.id)?.full_name??"A servant"} (${c.other?.location_name} · ${c.other?.service_name})`);setScheduleError(`Cannot save this schedule. ${names.join(", ")} ${conflicts.length===1?"is":"are"} already assigned at another church location on ${fmtDate(payload.service_date)}. A servant can only serve at one church location per day.`);return;}
     const toMinutes=(t:string)=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
