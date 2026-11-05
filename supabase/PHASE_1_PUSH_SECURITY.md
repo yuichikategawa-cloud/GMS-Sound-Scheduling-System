@@ -52,7 +52,7 @@
 
 ## Dispatcher latency improvement (staging)
 - Evidence from the foreground test showed notification creation at 13:56:04 Jakarta time, Inbox fetch at 13:56:26, and queue processing at 13:57:01. The one-minute Cron interval explained the delayed banner.
-- A staging migration, `20261105070744_gms_push_dispatch_subminute`, now schedules `gms-dispatch-web-push` every 5 seconds and gates HTTP invocation on an eligible queue row. The dispatcher's atomic claim/lease/retry implementation is unchanged.
+- The staging migration file is `20261105071138_gms_push_dispatch_subminute.sql` (aligned with the recorded staging migration version) and schedules `gms-dispatch-web-push` every 5 seconds and gates HTTP invocation on an eligible queue row. The dispatcher's atomic claim/lease/retry implementation is unchanged.
 - Verified live staging Cron schedule is `5 seconds`, active. Consecutive runs completed successfully every five seconds; when no queue item was eligible they returned `0 rows` and made no HTTP request. Pending eligible queue count was zero after the tests.
 - A daily cleanup job removes Cron run-history rows older than seven days to bound the increased run-history volume.
 - The setup script now documents the five-second schedule and the required PostgreSQL 15.1.1.61+ version.
