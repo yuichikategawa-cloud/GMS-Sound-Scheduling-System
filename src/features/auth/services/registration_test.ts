@@ -1,3 +1,5 @@
+/// <reference lib="deno.ns" />
+
 import { buildSignupMetadata } from "./registration.ts";
 
 function createValidFormData(): FormData {
