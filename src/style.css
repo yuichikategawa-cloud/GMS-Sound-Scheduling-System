@@ -873,12 +873,6 @@
 /* GMS PWA and scheduling intelligence surfaces */
 .offline-status-banner{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 13px;border:1px solid #f2d7a2;border-radius:11px;background:#fff9eb;color:#80530b;font-size:12px;font-weight:650;line-height:1.45}
 .offline-status-banner svg{flex:0 0 auto}
-.push-settings-card{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px 15px;margin:0 0 16px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 3px 13px #17243a06}
-.push-settings-icon{width:40px;height:40px;border-radius:11px;background:#efedff;color:#5145e8;display:grid;place-items:center}
-.push-settings-copy{min-width:0;display:grid;gap:4px}
-.push-settings-copy b{font-size:13px;color:var(--ink)}
-.push-settings-copy p{font-size:12px;line-height:1.5;color:var(--muted);margin:0}
-.push-settings-copy small{font-size:11px;line-height:1.4;color:#93610b}
 .serving-preference-form{display:grid;gap:13px;max-width:760px}
 .serving-preference-form>label,.preference-weekday-picker,.preference-service-picker{display:flex;flex-direction:column;gap:7px;font-size:11px;font-weight:750;color:#596579;min-width:0}
 .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{width:100%;min-width:0;min-height:44px;border:1px solid #dfe4ec;border-radius:9px;padding:10px 12px;background:#fff;color:#293448;font-size:13px}
@@ -891,9 +885,6 @@
 .serving-preference-form input[type=time]::-webkit-date-and-time-value,.serving-preference-form input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 .pwa-install-button{min-height:38px}
 @media(max-width:760px){
-  .push-settings-card{grid-template-columns:38px minmax(0,1fr);align-items:start;padding:12px;gap:10px}
-  .push-settings-card>button{grid-column:1/-1;width:100%;min-height:42px}
-  .push-settings-icon{width:36px;height:36px}
   .preference-service-picker{grid-template-columns:1fr}
   .preference-service-picker>b{grid-column:auto}
   .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{font-size:16px;min-height:46px}
@@ -987,13 +978,9 @@
  .bulk-apply-footer .btn{width:100%}
 }
 
-.notification-preference-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-top:12px}
-.notification-preference-grid label{display:flex;align-items:center;gap:8px;font-size:12px;color:#46536d;font-weight:600}
-.notification-preference-grid input{width:16px;height:16px;accent-color:#5145e8;flex:0 0 auto}
 .workload-warning{background:#fff9e9;border:1px solid #f2dfaa;border-radius:10px;padding:12px;color:#775b17;font-size:12px}
 .workload-warning p{margin:5px 0 10px;line-height:1.5}
 .workload-warning label{display:flex;align-items:center;gap:8px;font-weight:600}
-@media(max-width:700px){.notification-preference-grid{grid-template-columns:1fr}}
 
 
 /* Assignment overview and grouped bulk-assignment workspace */
@@ -1198,7 +1185,6 @@
 :root[data-theme="dark"] .my-upcoming-item,
 :root[data-theme="dark"] .my-schedule-summary>div,
 :root[data-theme="dark"] .inbox-settings-card,
-:root[data-theme="dark"] .push-settings-card,
 :root[data-theme="dark"] .servant-profile-card{
   background:#1b2437!important;
   border-color:#354059!important;
@@ -1418,7 +1404,6 @@
 :root[data-theme="dark"] .assignment-overview-card,
 :root[data-theme="dark"] .bulk-church-group,
 :root[data-theme="dark"] .bulk-preview-list,
-:root[data-theme="dark"] .push-settings-card,
 :root[data-theme="dark"] .availability-guidance,
 :root[data-theme="dark"] .swap-source,
 :root[data-theme="dark"] .servant-profile-card,
@@ -1491,7 +1476,6 @@
 :root[data-theme="dark"] .church-bulk-actions,
 :root[data-theme="dark"] .admin-control-center,
 :root[data-theme="dark"] .bulk-assignment-center,
-:root[data-theme="dark"] .push-settings-card,
 :root[data-theme="dark"] .profile-card,
 :root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
@@ -1584,8 +1568,6 @@
 :root[data-theme="dark"] .role-box small,
 :root[data-theme="dark"] .inbox-item-body p,
 :root[data-theme="dark"] .inbox-item-body small,
-:root[data-theme="dark"] .push-settings-copy p,
-:root[data-theme="dark"] .push-settings-copy small,
 :root[data-theme="dark"] .bulk-copy-panel small,
 :root[data-theme="dark"] .bulk-matrix td small,
 :root[data-theme="dark"] .bulk-copy-controls label,
@@ -1599,16 +1581,10 @@
 :root[data-theme="dark"] .servant-health-list{
   color:#b9c6da!important;
 }
-:root[data-theme="dark"] .notification-preference-grid label{
-  color:#e0e7f2!important;
-  font-weight:650;
-}
-:root[data-theme="dark"] .notification-preference-grid input,
 :root[data-theme="dark"] .preference-weekday-picker input,
 :root[data-theme="dark"] .preference-service-picker input{
   accent-color:#a99fff;
 }
-:root[data-theme="dark"] .push-settings-copy b,
 :root[data-theme="dark"] .requests-content-heading h2,
 :root[data-theme="dark"] .inbox-intro h2,
 :root[data-theme="dark"] .list-heading h3,

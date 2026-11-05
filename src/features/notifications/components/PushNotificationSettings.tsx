@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import "./PushNotificationSettings.css";
 
 export default function PushNotificationSettings({enabled,busy,onEnable,onDisable,preferences,onSavePreferences}:{enabled:boolean;busy:boolean;onEnable:()=>void;onDisable:()=>void;preferences:any;onSavePreferences:(next:any)=>void}){
  const configured=!!(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
