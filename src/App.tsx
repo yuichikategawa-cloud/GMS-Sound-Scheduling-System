@@ -27,6 +27,8 @@ import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServing
 import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import { loadServingRequestData } from "./features/requests/services/requestData";
+import { loadServingNotificationData } from "./features/notifications/services/notificationData";
+import { markServingNotificationRead, saveServingNotificationPreferences } from "./features/notifications/services/notificationPersistence";
 import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
@@ -196,7 +198,7 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestDataRes,notificationRes,settingRes,auditRes,servantDirectoryRes,notificationPrefsRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestDataRes,notificationDataRes,settingRes,auditRes,servantDirectoryRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         loadServantRecords(supabase),
         supabase.from("service_templates").select("*").eq("active",true),
@@ -206,16 +208,15 @@ export default function App() {
         supabase.from("servant_availability_rules").select("*").order("created_at",{ascending:false}),
         supabase.from("servant_serving_preferences").select("*").eq("active",true).order("created_at",{ascending:false}),
         loadServingRequestData(supabase),
-        supabase.from("serving_notifications").select("*").gte("created_at",notificationCutoff).order("created_at",{ascending:false}).limit(100),
+        loadServingNotificationData(supabase, notificationCutoff, session?.user?.id??""),
         supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         supabase.from("audit_logs").select("*").gte("created_at",auditCutoff).order("created_at",{ascending:false}).limit(50),
         loadServantDirectoryData(supabase),
-        supabase.from("serving_notification_preferences").select("*").eq("user_id",session?.user?.id??"").maybeSingle()
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestDataRes.requests,requestDataRes.reads,notificationRes,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles,notificationPrefsRes]
+      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message);
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
@@ -228,11 +229,11 @@ export default function App() {
       const explicitAvailability=availRes.error?[]:(availRes.data??[]);
       const ruleEndLimit=new Date();ruleEndLimit.setFullYear(ruleEndLimit.getFullYear()+2);
       const virtualAvailability=buildVirtualAvailability(loadedRules,ruleEndLimit);
-      setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
+      setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationDataRes.notifications.error?[]:(notificationDataRes.notifications.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
       setAccountProfiles(servantDirectoryRes.accountProfiles.error?[]:(servantDirectoryRes.accountProfiles.data??[]));
-      setNotificationPrefs(notificationPrefsRes.error||!notificationPrefsRes.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationPrefsRes.data);
+      setNotificationPrefs(notificationDataRes.preferences.error||!notificationDataRes.preferences.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationDataRes.preferences.data);
     } catch(e) { setMessage(errorText(e)); }
     finally { setLoading(false); }
   }
@@ -779,14 +780,13 @@ export default function App() {
   }
   async function onSaveNotificationPreferences(next:any){
     if(!supabase||!session?.user?.id)return;
-    const payload={user_id:session.user.id,new_assignments:!!next.new_assignments,schedule_changes:!!next.schedule_changes,confirmation_reminders:!!next.confirmation_reminders,availability_deadlines:!!next.availability_deadlines,request_updates:!!next.request_updates,updated_at:new Date().toISOString()};
-    const {error}=await supabase.from("serving_notification_preferences").upsert(payload,{onConflict:"user_id"});
+    const {payload,error}=await saveServingNotificationPreferences(supabase,session.user.id,next);
     if(error){setMessage(error.message);return;}
     setNotificationPrefs(payload);setMessage("Notification preferences saved. In-app Inbox history remains enabled.");
   }
   async function markNotificationRead(id:string){
     if(!supabase)return;
-    const {error}=await supabase.from("serving_notifications").update({is_read:true}).eq("id",id);
+    const {error}=await markServingNotificationRead(supabase,id);
     if(!error)setNotifications(v=>v.map(n=>n.id===id?{...n,is_read:true}:n));
   }
   async function resolveReplacement(request:any,replacementServantId:string){

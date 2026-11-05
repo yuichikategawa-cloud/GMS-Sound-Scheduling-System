@@ -67,6 +67,10 @@ jobs:
         run: deno test --no-lock tests/requests/requestData_test.ts
       - name: Test serving request persistence operations
         run: deno test --no-lock tests/requests/requestPersistence_test.ts
+      - name: Test notification data loading
+        run: deno test --no-lock tests/notifications/notificationData_test.ts
+      - name: Test notification persistence operations
+        run: deno test --no-lock tests/notifications/notificationPersistence_test.ts
       - name: Type-check push dispatcher
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json
