@@ -1,4 +1,5 @@
 name: Phase 1 push security validation
+run-name: Phase 1 validation with full test set
 
 on:
   push:
@@ -7,6 +8,7 @@ on:
     paths:
       - "supabase/functions/**"
       - "supabase/migrations/**"
+      - "supabase/tests/**"
       - ".github/workflows/phase-1-push-security-validation.yml"
   workflow_dispatch:
 
