@@ -27,6 +27,7 @@ import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServing
 import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import { loadServingRequestData } from "./features/requests/services/requestData";
+import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -710,7 +711,7 @@ export default function App() {
     const own=schedule.assignments.find(a=>a.servant_id===myServant.id);if(!own)return;
     const note=await askText("Request a replacement","Tell the administrator why you need a replacement.","Reason (optional)");
     if(note===null)return;
-    const {error}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"replacement",details:note.trim(),status:"pending"});
+    const {error}=await createServingRequest(supabase,{schedule_id:schedule.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"replacement",details:note.trim(),status:"pending"});
     if(error)setMessage(error.message);else {setMessage("Your replacement request has been sent to the administrator.");await loadData();}
   }
   async function submitDirectSwap(targetScheduleId:string,targetAssignmentId:string,details:string){
@@ -726,12 +727,12 @@ export default function App() {
     const targetConflict=schedules.some(s=>s.service_date===source.service_date&&s.location_id!==source.location_id&&s.assignments.some(a=>a.servant_id===target.servant_id));
     const requesterConflict=schedules.some(s=>s.service_date===targetSchedule.service_date&&s.location_id!==targetSchedule.location_id&&s.assignments.some(a=>a.servant_id===myServant.id));
     if(targetConflict||requesterConflict){setMessage(targetConflict?`${target.servant_name} already has an assignment at another church on ${fmtDate(source.service_date)}.`:`You already have an assignment at another church on ${fmtDate(targetSchedule.service_date)}.`);return;}
-    const {error}=await supabase.from("serving_requests").insert({schedule_id:source.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"swap",details:details.trim(),status:"pending",target_schedule_id:targetSchedule.id,target_assignment_id:target.id,target_servant_id:target.servant_id});
+    const {error}=await createServingRequest(supabase,{schedule_id:source.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"swap",details:details.trim(),status:"pending",target_schedule_id:targetSchedule.id,target_assignment_id:target.id,target_servant_id:target.servant_id});
     if(error)setMessage(error.message);else {setSwapDraft(null);setMessage("Your cross-date swap request has been sent for admin approval.");await loadData();}
   }
   async function markRequestRead(requestId:string){
     if(!supabase||!session)return;
-    const {error}=await supabase.from("serving_request_reads").upsert({request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()},{onConflict:"request_id,user_id"});
+    const {error}=await markServingRequestRead(supabase,{request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()});
     if(error)console.warn("Could not mark request notification as read:",error.message);
     else setRequestReads(v=>[...v.filter(x=>x.request_id!==requestId),{request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()}]);
   }
@@ -745,11 +746,11 @@ export default function App() {
       if(!source||!targetSchedule||!sourceAssignment||!targetAssignment){setMessage("Swap cannot be approved because one of the assignments no longer exists.");return;}
       const conflict=(personId:string,date:string,destinationLocationId:string,excludeScheduleIds:string[])=>schedules.some(s=>s.service_date===date&&s.location_id!==destinationLocationId&&!excludeScheduleIds.includes(s.id)&&s.assignments.some(a=>a.servant_id===personId));
       if(conflict(targetAssignment.servant_id,source.service_date,source.location_id,[source.id,targetSchedule.id])||conflict(sourceAssignment.servant_id,targetSchedule.service_date,targetSchedule.location_id,[source.id,targetSchedule.id])){setMessage("Swap approval blocked: one servant now has another assignment on the destination date. Review the schedule first.");return;}
-      const {error:swapError}=await supabase.rpc("admin_execute_servant_swap",{p_request_id:request.id});
+      const {error:swapError}=await executeServingRequestSwap(supabase,request.id);
       if(swapError){setMessage(swapError.message);return;}
       setMessage("Swap approved and assignments exchanged.");await loadData();return;
     }
-    const {error}=await supabase.from("serving_requests").update({status:approve?"approved":"declined",reviewed_by:session.user.id,reviewed_at:new Date().toISOString()}).eq("id",request.id);
+    const {error}=await updateServingRequestReview(supabase,request.id,{status:approve?"approved":"declined",reviewed_by:session.user.id,reviewed_at:new Date().toISOString()});
     if(error)setMessage(error.message);else {setMessage(approve?(request.request_type==="swap"?"Swap approved and assignments exchanged.":"Request approved. Please update the assignment if a replacement is needed."):"Request declined.");await loadData();}
   }
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
@@ -763,7 +764,7 @@ export default function App() {
       if(error){setMessage(error.message);return;}
       const existing=requests.find(r=>r.assignment_id===assignment.id&&r.request_type==="replacement"&&r.status==="pending");
       if(!existing){
-        const {error:requestError}=await supabase.from("serving_requests").insert({schedule_id:schedule.id,assignment_id:assignment.id,requester_servant_id:myServant.id,request_type:"replacement",details:reason.trim()||"Servant declined the assignment and requests a replacement.",status:"pending"});
+        const {error:requestError}=await createServingRequest(supabase,{schedule_id:schedule.id,assignment_id:assignment.id,requester_servant_id:myServant.id,request_type:"replacement",details:reason.trim()||"Servant declined the assignment and requests a replacement.",status:"pending"});
         if(requestError){setMessage("Decline saved, but replacement request could not be created: "+requestError.message);await loadData();return;}
       }
       setMessage("Assignment declined. A replacement request has been sent to the administrator.");await loadData();return;
@@ -788,7 +789,7 @@ export default function App() {
   }
   async function resolveReplacement(request:any,replacementServantId:string){
     if(!supabase||!isAdmin)return;
-    const {error}=await supabase.rpc("admin_resolve_replacement",{p_request_id:request.id,p_replacement_servant_id:replacementServantId});
+    const {error}=await resolveServingRequestReplacement(supabase,request.id,replacementServantId);
     if(error){setMessage(error.message);return;}
     setMessage("Replacement assigned. Both servants have been notified.");await loadData();
   }
