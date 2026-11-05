@@ -10,6 +10,7 @@ on:
       - "supabase/migrations/**"
       - "supabase/tests/**"
       - "src/**"
+      - "tests/**"
       - "index.html"
       - "package.json"
       - "vite.config.ts"
@@ -50,6 +51,8 @@ jobs:
         run: deno test --no-lock tests/schedule/assignmentValidation_test.ts
       - name: Test weekend schedule generation
         run: deno test --no-lock tests/schedule/weekendGeneration_test.ts
+      - name: Test schedule persistence operations
+        run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
       - name: Type-check push dispatcher
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json
