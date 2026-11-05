@@ -161,7 +161,8 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M2 mobile navigation extraction: bottom navigation and More menu moved to `src/app/components/MobileNavigation.tsx`; role-specific visibility, badge state, theme/install/sign-out actions remain controlled through App callbacks.
 - [x] M2 header extraction: the title, role badge, install, theme, refresh, and mobile-menu controls moved to `src/app/components/AppHeader.tsx`; App retains all underlying state and handlers.
 - [ ] M3 authentication/profile.
-- [x] M3 first UI extraction: login, registration, reset-link, and recovered-password screens moved to `src/features/auth/components`; Supabase calls, form submission handlers, auth/session state, and signup validation remain in App pending service-level extraction.
+- [x] M3 first UI extraction: login, registration, reset-link, and recovered-password screens moved to `src/features/auth/components`.
+- [x] M3 member-profile form UI extraction: the member profile editor and admin-only directory presentation moved into `MemberProfilePanel.tsx`; persistence orchestration remains in App and is the next auth/profile service boundary.
 - [x] M3 setup-screen extraction: the unconfigured-Supabase setup instructions moved into `SupabaseSetupScreen.tsx` under the auth feature; configuration detection remains in App.
 - [x] M3 registration-validation extraction: metadata normalization and CG/domicile/leader-phone validation moved to `src/features/auth/services/registration.ts` with five Deno regression tests.
 - [x] M3 authentication service extraction: sign-up, username login/session establishment, password-reset requests, and password updates moved to `src/features/auth/services/authentication.ts`; App retains UI state, messaging, and form orchestration.
