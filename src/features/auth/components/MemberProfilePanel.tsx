@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./MemberProfilePanel.css";
 
 export default function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
  const [saving,setSaving]=useState(false);

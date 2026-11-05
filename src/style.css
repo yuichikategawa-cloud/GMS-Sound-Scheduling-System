@@ -17,8 +17,6 @@
 @media(max-width:1100px){.daily-locations{grid-template-columns:1fr 1fr}.filters{grid-template-columns:repeat(3,minmax(0,1fr))}.filters .search-field{grid-column:span 2}.schedule-grid{grid-template-columns:1fr}}
 @media(max-width:760px){.daily-locations{grid-template-columns:1fr}.daily-head{align-items:flex-start;flex-direction:column}.sidebar{transform:translateX(-100%);transition:transform .2s ease;box-shadow:10px 0 40px #11182722}.sidebar.open{transform:translateX(0)}.main-area{margin-left:0}.topbar{height:82px;padding:0 17px;gap:10px}.mobile-menu{display:grid}.topbar h1{font-size:19px}.topbar .eyebrow{font-size:8px}.role-tag{display:none}.content{padding:22px 15px 45px}.toolbar{align-items:flex-start}.toolbar-actions{flex-wrap:wrap;justify-content:flex-end}.toolbar h2{font-size:17px}.filters{grid-template-columns:1fr 1fr}.filters .search-field{grid-column:span 2}.generate-panel{align-items:flex-start;flex-direction:column}.generate-controls{width:100%;flex-wrap:wrap}.generate-controls input{flex:1}.role-grid{gap:6px}.role-box{padding:8px}.role-box b{font-size:11px}}
 @media(max-width:430px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.toolbar{flex-direction:column}.toolbar-actions{justify-content:flex-start}.filters{grid-template-columns:1fr 1fr}.role-grid{grid-template-columns:1fr 1fr}.role-box:last-child{grid-column:1/-1}.schedule-card{padding:13px}}/* Accessibility and expandable dashboard panels */
-
-
 .collapsible-panel{background:transparent;margin:0 0 20px}
 .collapsible-panel>summary,.daily-card>summary,.schedule-card>summary{list-style:none;cursor:pointer}
 .collapsible-panel>summary::-webkit-details-marker,.daily-card>summary::-webkit-details-marker,.schedule-card>summary::-webkit-details-marker{display:none}
@@ -74,9 +72,6 @@
 @media(max-width:760px){.daily-role-row{grid-template-columns:90px minmax(0,1fr);font-size:14px}.daily-role-row span{font-size:14px}.daily-role-row b{font-size:13px}.role-box b{font-size:14px}.role-box small{font-size:10px}.availability-form{grid-template-columns:1fr}.availability-form button{grid-column:auto}.availability-row{flex-wrap:wrap;gap:8px}.availability-date{min-width:100%;font-size:12px}.availability-person{min-width:50%}.availability-status{font-size:11px}.collapsible-panel>summary b{font-size:16px}}
 .day-conflict-warning{display:flex;align-items:flex-start;gap:8px;margin:12px 16px 0;padding:10px 12px;border-radius:9px;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;font-size:13px;line-height:1.45}
 .day-conflict-warning svg{flex:none;margin-top:1px}/* GMS Sound Scheduling System - calendar, publishing and servant tools */
-
-
-
 .calendar-switch{display:flex;align-items:center;gap:7px;margin:-6px 0 17px;color:#64748b;font-size:12px}.calendar-switch button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;color:#475569;font-weight:700}.calendar-switch button.selected{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
 .status-chip{display:inline-flex;vertical-align:middle;margin-left:5px;border-radius:20px;padding:3px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;background:#f1f5f9;color:#475569}.status-chip.published,.status-chip.approved,.status-chip.confirmed{background:#dcfce7;color:#166534}.status-chip.draft,.status-chip.pending{background:#fef3c7;color:#92400e}.status-chip.declined{background:#fee2e2;color:#991b1b}
 .servant-card-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 16px 15px}.confirmation-line{font-size:11px;color:#64748b;margin-right:auto}.request-row{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 16px;border-bottom:1px solid #edf0f5}.request-row:last-child{border-bottom:0}.request-main{display:flex;flex-direction:column;gap:4px;min-width:0}.request-main b{font-size:13px}.request-main small{font-size:11px;color:#64748b;overflow-wrap:anywhere}.request-actions{display:flex;gap:6px;flex:none}.requests-panel{margin-top:20px}.requests-panel .list-heading{margin-top:0}.calendar-switch span{font-weight:750;margin-right:3px}
@@ -85,25 +80,16 @@
 .calendar-period{margin:0 0 16px}.calendar-period>h3{font-size:13px;color:#596579;margin:4px 2px 9px;font-weight:800}.calendar-period .daily-overview{margin-bottom:10px}
 @media(max-width:760px){.calendar-period>h3{font-size:12px}}/* v4 registration, member profile and mobile touch targets */
 
-.profile-edit-grid input,.profile-edit-grid select,.profile-edit-grid textarea{width:100%;min-width:0;border:1px solid #d8dee9;border-radius:9px;padding:12px 13px;background:#fff;color:#1f2937;font:inherit;font-size:14px}
-.profile-edit-grid input:focus,.profile-edit-grid select:focus,.profile-edit-grid textarea:focus{outline:3px solid #e0e7ff;border-color:#6366f1}
 .days-field{border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .days-field legend{font-size:13px;font-weight:800;padding:0 5px;color:#475569}
 .days-field label{display:flex;align-items:center;gap:8px;font-size:13px}
 .days-field input{width:18px;height:18px;flex:none}
-.profile-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:end}
-.profile-edit-grid>label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700;color:#475569}
-.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:1/-1}
 .availability-filter{display:grid;grid-template-columns:minmax(0,240px) auto;align-items:end;justify-content:start;gap:12px}
 .availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:#f8fafc;font-size:13px;white-space:nowrap}
-@media(max-width:600px){.availability-filter{grid-template-columns:1fr;align-items:stretch}.availability-filter label{max-width:none;width:100%}.availability-filter .clear-btn{width:100%;margin:0;padding:12px}.profile-edit-grid{grid-template-columns:1fr}.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:auto}}
+@media(max-width:600px){.availability-filter{grid-template-columns:1fr;align-items:stretch}.availability-filter label{max-width:none;width:100%}.availability-filter .clear-btn{width:100%;margin:0;padding:12px}}
 .field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}/* v5: branded loading state */
-
-
 .gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}
 @media(max-width:600px){.servant-account-chip{font-size:9px}}/* v5 usability: service details use one full-width row instead of two columns */
-
-
 .schedule-grid{grid-template-columns:minmax(0,1fr)!important}
 
 
@@ -120,8 +106,6 @@
 
 
 .gms-loader-progress span{width:100%}/* Simple servant-facing personal schedule summary */
-
-
 .my-schedule-summary{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(0,2fr);gap:13px;margin:0 0 18px}
 .my-days-card,.my-next-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:0 4px 16px #17243a06;min-width:0}
 .my-schedule-label{display:block;color:#7a8497;font-size:10px;font-weight:800;letter-spacing:.08em}
@@ -135,8 +119,6 @@
 @media(max-width:600px){.my-schedule-summary{grid-template-columns:1fr}.my-days-card{display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}.my-days-card .my-schedule-label{grid-column:1/-1}.my-days-card strong{grid-row:2/4;font-size:30px}.my-next-detail{flex-direction:column;gap:4px}}
 
 .schedule-error{display:flex;align-items:flex-start;gap:9px;margin-top:16px;padding:12px 14px;border:1px solid #fca5a5;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:12px;font-weight:650;line-height:1.5}.schedule-error svg{flex:0 0 auto;margin-top:1px}/* Service detail hierarchy: church first, then its dated service cards. */
-
-
 .church-schedule-groups{display:flex;flex-direction:column;gap:18px;padding-top:14px}
 .church-schedule-group{background:#f8f9fc;border:1px solid var(--line);border-radius:15px;padding:15px}
 .church-schedule-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:2px 2px 12px;border-bottom:1px solid #e5e9f0}
@@ -145,8 +127,6 @@
 .church-group-count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:20px;background:#e9eaff;color:#4544b8;font-size:12px;font-weight:850}
 .church-schedule-group .schedule-grid{padding-top:0}
 @media(max-width:760px){.church-schedule-group{padding:11px}.church-schedule-heading h3{font-size:18px}}/* Personal assignment cards and church-wide admin actions */
-
-
 .church-bulk-actions,.my-upcoming-panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px 18px;margin:14px 0;box-shadow:var(--shadow)}
 .church-bulk-actions>div:first-child p,.my-upcoming-panel-head p{margin:4px 0 0}
 .church-bulk-controls{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap;margin-top:12px}
@@ -165,8 +145,6 @@
 .my-upcoming-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .my-upcoming-empty{font-size:13px;color:var(--muted);margin:12px 0 2px}
 @media(max-width:720px){.church-bulk-controls{align-items:stretch}.church-bulk-controls label{min-width:100%;flex-basis:100%}.my-upcoming-item{align-items:flex-start;flex-direction:column}.my-upcoming-actions{justify-content:flex-start}}/* Refined service cards and servant request inbox */
-
-
 .daily-location-name{font-size:17px!important;font-weight:800!important;letter-spacing:.01em;padding:10px 12px!important;border-radius:10px;background:#f1efff;color:#34265f;margin:4px 0 10px}
 .daily-service{border:1px solid #e3e7f0!important;border-radius:12px!important;padding:12px!important;margin-bottom:10px;background:#fff;box-shadow:0 2px 8px rgba(26,36,64,.045)}
 .daily-service-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
@@ -202,8 +180,6 @@
 .inbox-status.rejected{background:#fff0ef;color:#b93832}
 .inbox-status.pending{background:#fff6e8;color:#98620b}
 @media(max-width:640px){.daily-role-row{grid-template-columns:92px 1fr}.inbox-intro{align-items:flex-start}.inbox-item{padding:12px}}/* Phase 1-4 workflow enhancements */
-
-
 .admin-control-center{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;margin:16px 0;box-shadow:var(--shadow)}
 .control-center-head h2{margin:0;font-size:18px}.control-center-head p{margin:4px 0 0}
 .control-center-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
@@ -222,9 +198,6 @@
 .inbox-item.unread:after{content:"NEW";align-self:flex-start;font-size:9px;font-weight:900;color:#6d4bb1;background:#eee8fb;border-radius:99px;padding:4px 6px}
 @media(max-width:850px){.control-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.control-center-grid{grid-template-columns:1fr 1fr}.swap-modal .modal-actions button{flex:1}}/* Admin schedule layout: local-church grouping and recurring template controls */
-
-
-
 .schedule-location-groups{display:flex;flex-direction:column;gap:18px}
 .schedule-location-group{border:1px solid var(--line);border-radius:13px;padding:13px;background:#fafbfe}
 .schedule-location-group>h3{font-size:14px;margin:0 0 11px;color:var(--ink);padding:2px 2px 9px;border-bottom:1px solid var(--line)}
@@ -246,8 +219,6 @@
 .generate-footer input,.generate-footer select{min-height:39px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;color:var(--ink);font:inherit;text-transform:none}
 .generate-note{font-size:10px;color:var(--muted);margin:11px 0 0;line-height:1.5}
 @media(max-width:700px){.template-options{grid-template-columns:1fr}.generate-footer{align-items:stretch;flex-direction:column}.generate-footer label,.generate-footer input,.generate-footer select,.generate-footer button{width:100%}.schedule-location-group{padding:10px}}/* Readability refinements: workload, recurring generator, and schedule filters */
-
-
 .workload-preview{display:grid;gap:9px;margin-top:16px;padding:14px 15px;border:1px solid var(--line);border-radius:11px;background:#fbfcff}
 .workload-copy{display:grid;gap:5px;line-height:1.45}
 .workload-copy b{font-size:13px;color:var(--ink)}
@@ -277,8 +248,6 @@
 .filters select:focus{border-color:#818cf8;outline:none;box-shadow:0 0 0 3px #eef2ff}
 @media(max-width:800px){.new-template-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.new-template-form{grid-template-columns:1fr}.new-template-form button{width:100%}.template-picker-head{align-items:flex-start}.template-add-btn{width:100%}.generate-note{font-size:11px}}/* Match the church-wide location selector to the stacked filter controls. */
-
-
 .church-bulk-controls .church-location-picker{
   display:flex;
   flex-direction:column;
@@ -322,10 +291,6 @@
     min-width:100%;
   }
 }/* Collapsible recurring weekend generator and two-line helper text */
-
-
-
-
 .generate-panel.generate-panel-collapsible{display:block;padding:16px}
 .generate-panel-summary{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;list-style:none}
 .generate-panel-summary::-webkit-details-marker{display:none}
@@ -340,14 +305,11 @@
 .generate-note p{margin:0;line-height:1.6}
 @media(max-width:600px){.generate-panel-summary{align-items:flex-start}.generate-toggle-hint{font-size:10px;white-space:nowrap}}/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
 /* FOH and Monitor use matching full-width assignment cards on phones. */
-
-
 @media(max-width:600px){
   .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
   .schedule-card .role-box{width:100%;min-width:0;box-sizing:border-box;padding:11px 13px!important;}
   .schedule-card .role-box:last-child{grid-column:auto!important}
 }/* Keep every schedule filter inside its card on narrow mobile screens. */
-
 .filters{grid-template-columns:repeat(5,minmax(0,1fr));min-width:0;}
 .filters>label{min-width:0;width:100%;}
 .filters input,.filters select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
@@ -359,8 +321,6 @@
   .filters .search-field{grid-column:1/-1;}
   .filters>label,.filters input,.filters select{width:100%;min-width:0;max-width:100%;}
 }/* 2026-11-03: compact mobile admin actions and consistent collapsible cards */
-
-
 .filter-panel-collapsible{padding:0;overflow:hidden}
 .filter-panel-collapsible>.filter-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0;padding:15px 17px;cursor:pointer;list-style:none}
 .filter-panel-collapsible>.filter-title::-webkit-details-marker{display:none}
@@ -393,7 +353,6 @@
  .template-options{grid-template-columns:minmax(0,1fr)}
 }/* Brittany Signature is loaded from a properly licensed local webfont file. */
 /* 2026-11-03 servant-facing clarity and responsive refinements */
-
 .availability-self-name{
   display:flex;
   flex-direction:column;
@@ -435,8 +394,6 @@
     margin-left:auto;
   }
 }/* Mobile Option B: fixed bottom navigation with a More sheet */
-
-
 .mobile-bottom-nav,.mobile-more-backdrop{display:none}
 @media(max-width:760px){
   .mobile-menu{display:none!important}
@@ -469,8 +426,6 @@
   .mobile-more-menu button:active,.mobile-more-menu button:hover{background:#f2f3fa}
   .mobile-more-menu .mobile-more-signout{color:#be123c;border-top:1px solid #edf0f5;border-radius:0;margin-top:5px}
 }/* Clear, card-style guidance inside the service assignment modal. */
-
-
 .availability-guidance{display:grid;gap:7px;margin-top:16px;padding:14px 15px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;color:var(--ink);font-size:12px;line-height:1.5}
 .availability-guidance-title{display:flex;align-items:center;gap:8px;color:#30245b;font-size:13px}
 .availability-guidance-title svg{color:var(--brand);flex:0 0 auto}
@@ -485,9 +440,6 @@
 .action-dialog .modal-actions{margin-top:22px}
 .action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}
 @media(max-width:600px){.availability-guidance{padding:13px;gap:8px}.my-days-card{grid-template-columns:1fr}.my-days-card .my-schedule-label{grid-column:auto}.my-days-card strong{grid-row:auto;font-size:30px}.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}/* GMS follow-up polish: generation note and modal-safe navigation */
-
-
-
 .generate-note{
   display:grid;gap:9px;margin:14px 0 0;padding:14px 15px;
   border:1px solid var(--line);border-radius:12px;background:#fbfcff;
@@ -505,7 +457,6 @@
   .modal-card{width:min(100%,590px);max-height:calc(100dvh - 20px);overflow-y:auto}
   .mobile-bottom-nav{z-index:30}
 }/* iOS date/time controls: align values consistently with text/select inputs */
-
 .form-grid input[type="date"],.form-grid input[type="time"]{
   box-sizing:border-box;width:100%;min-width:0;max-width:100%;
   min-height:42px;text-align:left;padding-inline:11px;
@@ -519,9 +470,6 @@
   .generate-note{padding:13px;gap:10px}
   .generate-note p{gap:3px}
 }/* 2026-11-03 responsive refinement: tablet actions, iOS fields, statistics cards */
-
-
-
 .brand{
   position:relative;
   padding:13px 12px 16px;
@@ -563,9 +511,6 @@
   input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}
 }/* Requested desktop-only recurring generation guidance layout.
    Mobile keeps its existing stacked presentation unchanged. */
-
-
-
 @media (min-width: 701px){
   .generate-note{
     display: grid;
@@ -585,8 +530,6 @@
     margin: 0;
   }
 }/* GMS Sound Scheduling horizontal sidebar identity — Option 4. */
-
-
 .sidebar .brand-sound-identity{
   align-items: center;
   gap: 12px;
@@ -626,8 +569,6 @@
   white-space: normal;
 }/* Give the desktop login heading more separation from the system label. */
 /* Keep bulk-template selection actions together; reserve the far edge for Add new service. */
-
-
 .template-picker-head .clear-btn{
   margin-left: 0;
   white-space: nowrap;
@@ -635,9 +576,6 @@
 .template-picker-head .template-add-btn{
   margin-left: auto;
 }/* 2026-11-03 visual refinement: compact sidebar identity and coordinated template actions. */
-
-
-
 .sidebar .brand.brand-sound-identity{
   display: flex;
   align-items: center;
@@ -682,8 +620,6 @@
   letter-spacing: .085em;
   white-space: nowrap;
 }/* Desktop: make the template heading and its actions read as one toolbar. */
-
-
 @media (min-width: 761px){
   .template-picker-head{
     display: flex;
@@ -746,8 +682,6 @@
     white-space: nowrap;
   }
 }/* Bulk availability and recurring restriction cards */
-
-
 .availability-mode-switch{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;padding:5px;background:#f4f5fb;border:1px solid var(--line);border-radius:11px;width:fit-content;max-width:100%}
 .availability-mode-switch button{border:0;background:transparent;color:#596579;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
 .availability-mode-switch button.active{background:#fff;color:var(--brand);box-shadow:0 1px 5px #18223014}
@@ -771,8 +705,6 @@
 .bulk-form-grid input[type=date],.recurring-rule-form input[type=date],.availability-form input[type=date],.availability-filter input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
 .bulk-form-grid input[type=date]::-webkit-date-and-time-value,.recurring-rule-form input[type=date]::-webkit-date-and-time-value,.availability-form input[type=date]::-webkit-date-and-time-value,.availability-filter input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 @media(max-width:760px){.availability-mode-switch{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.availability-mode-switch button{min-height:42px;padding:9px 7px}.bulk-form-grid{grid-template-columns:minmax(0,1fr)}.bulk-form-grid .wide,.bulk-weekdays{grid-column:auto}.bulk-servant-list{grid-template-columns:1fr}.rule-inline{grid-template-columns:minmax(0,1fr)}.bulk-preview-list>div{align-items:flex-start;flex-direction:column;gap:3px}.bulk-preview-list span{text-align:left}.recurring-rule-form{width:100%}}/* GMS PWA and scheduling intelligence surfaces */
-
-
 .offline-status-banner{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 13px;border:1px solid #f2d7a2;border-radius:11px;background:#fff9eb;color:#80530b;font-size:12px;font-weight:650;line-height:1.45}
 .offline-status-banner svg{flex:0 0 auto}
 .serving-preference-form{display:grid;gap:13px;max-width:760px}
@@ -792,16 +724,11 @@
   .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{font-size:16px;min-height:46px}
   .offline-status-banner{align-items:flex-start;font-size:11px}
 }/* Consistent iPhone form control sizing for scheduling and availability fields. */
-
-
 @media(max-width:760px){
   input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
   input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
   input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 }/* Inbox readability: status badges remain compact and request sections have clear separation. */
-
-
-
 .inbox-status{align-self:flex-start;flex:none;line-height:1.2;min-height:0;height:auto;white-space:nowrap}
 .inbox-item-title>.inbox-status{align-self:flex-start;margin-top:1px}
 .requests-panel>.inbox-item{align-items:flex-start}
@@ -812,9 +739,6 @@
   .requests-panel>.requests-section-heading{margin-top:22px!important;padding-top:16px}
   .inbox-status{font-size:10px;padding:4px 8px}
 }/* Clear separation for a servant's linked profile in Serving preferences & eligibility. */
-
-
-
 .serving-preferences-panel .availability-self-name{
   margin:6px 0 8px;
   padding:12px 14px;
@@ -835,10 +759,6 @@
   font-weight:800;
   color:#202b40;
 }/* Bulk Assignment Center */
-
-
-
-
 .bulk-assignment-center{background:#fff;border:1px solid #dfe5f2;border-radius:18px;padding:22px;margin:22px 0;box-shadow:0 4px 18px rgba(24,35,70,.035);min-width:0}
 .bulk-assignment-heading,.bulk-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .bulk-assignment-heading h2,.bulk-preview-heading h3{margin:0 0 5px;font-size:18px}
@@ -883,9 +803,6 @@
 .workload-warning{background:#fff9e9;border:1px solid #f2dfaa;border-radius:10px;padding:12px;color:#775b17;font-size:12px}
 .workload-warning p{margin:5px 0 10px;line-height:1.5}
 .workload-warning label{display:flex;align-items:center;gap:8px;font-weight:600}/* Assignment overview and grouped bulk-assignment workspace */
-
-
-
 .assignment-overview-card{background:#fff;border:1px solid #dfe5f2;border-radius:16px;padding:18px 20px;margin:18px 0;box-shadow:0 4px 18px rgba(24,35,70,.03)}
 .assignment-overview-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
 .assignment-overview-heading h2{font-size:17px;margin:0 0 4px}
@@ -927,8 +844,6 @@
  .bulk-assignment-content{padding:0 12px 14px}
  .bulk-church-group>summary{padding:12px}
 }/* Admin Schedule workspace: separate overview, assignment operations and calendar browsing. */
-
-
 .schedule-workspace-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:5px;margin:4px 0 17px;background:#eef1f8;border:1px solid #e1e6f0;border-radius:13px}
 .schedule-workspace-tabs button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:9px 14px;border:1px solid transparent;border-radius:9px;background:transparent;color:#65718b;font-size:13px;font-weight:750;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,color .15s}
 .schedule-workspace-tabs button.selected{background:#fff;color:#4f46e5;border-color:#e1e5f2;box-shadow:0 2px 7px rgba(24,35,70,.07)}
@@ -955,7 +870,6 @@
 .assignment-workload-detail[open]>summary{border-bottom:1px solid #e7ebf3}
 .assignment-workload-detail[open]>summary>svg{transform:rotate(180deg)}
 .assignment-workload-detail .workload-status,.assignment-workload-detail .workload-list{margin:0;padding:12px 14px}/* Availability sections: remove internal explanations and give form fields breathing room below headings. */
-
 .recurring-rule-panel h3,.serving-preferences-panel h3{margin-bottom:24px}
 .recurring-rule-panel .recurring-rule-form,.serving-preferences-panel .serving-preference-form{margin-top:0}
 @media(max-width:760px){
@@ -972,9 +886,6 @@
 }
 .bulk-church-group>summary>svg{transition:transform .18s ease}
 .bulk-church-group[open]>summary>svg{transform:rotate(180deg)}/* Mobile polish: compact assignment controls and keep the fair-workload disclosure readable. */
-
-
-
 .church-bulk-safety-note{display:block;margin-top:8px;color:#7a8497;font-size:11px;line-height:1.45}
 @media(max-width:760px){
   .assignment-management-actions{
@@ -1035,9 +946,6 @@
   .church-bulk-controls{grid-template-columns:1fr}
   .church-bulk-controls .church-location-picker,.church-bulk-controls .btn.danger{grid-column:auto}
 }/* Dark mode — a persistent, selectable GMS appearance. */
-
-
-
 :root[data-theme="dark"]{
   color-scheme:dark;
   --ink:#e8edf7;
@@ -1139,8 +1047,6 @@
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#49371e;color:#ffd28e}
 :root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
 :root[data-theme="dark"] .mobile-more-backdrop{background:rgba(0,0,0,.56)}/* Per-service actions moved into the church-grouped assignment matrix. */
-
-
 .bulk-row-actions{display:flex;align-items:center;gap:5px;min-width:108px}
 .bulk-row-action{width:30px;height:30px;display:grid;place-items:center;border:1px solid #dfe5ef;border-radius:8px;background:#fff;color:#536078;cursor:pointer;flex:0 0 auto}
 .bulk-row-action:hover{background:#f2f3ff;color:#5145e8;border-color:#c9c7ff}
@@ -1161,8 +1067,7 @@
 :root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
 :root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}
 @media(max-width:760px){.bulk-matrix-toolbar{gap:10px}.bulk-matrix-heading-copy small{max-width:55ch}}/* Additional form, overview and admin surfaces included in the dark palette. */
-
-:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .availability-guidance,:root[data-theme="dark"] .swap-source,:root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .profile-edit-grid,:root[data-theme="dark"] .servant-filter-card{
+:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .availability-guidance,:root[data-theme="dark"] .swap-source,:root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .servant-filter-card{
   background:#1b2437!important;
   border-color:#354059!important;
   color:#e8edf7!important;
@@ -1191,8 +1096,6 @@
 :root[data-theme="dark"] .availability-status.available{background:#173d32;color:#91e0b7}
 :root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
 :root[data-theme="dark"] .availability-status.prefer_not{background:#49371e;color:#ffd28e}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
-
-
 :root[data-theme="dark"]{
   --ink:#f2f5fb;
   --muted:#b5c1d5;
@@ -1227,7 +1130,6 @@
 :root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
 :root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}
 :root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
-
 :root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .availability-form label,:root[data-theme="dark"] .availability-form-panel label,:root[data-theme="dark"] .serving-preference-form>label,:root[data-theme="dark"] .preference-weekday-picker,:root[data-theme="dark"] .preference-service-picker,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-switch span,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label,:root[data-theme="dark"] .availability-person small,:root[data-theme="dark"] .saved-rule-row small{
   color:#b9c6da!important;
 }
@@ -1237,8 +1139,6 @@
 :root[data-theme="dark"] .requests-content-heading h2,:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2,:root[data-theme="dark"] .servant-requests-section h2{
   color:#f2f5fc!important;
 }/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
-
-
 .requests-panel{display:grid;gap:16px;margin-top:20px}
 .requests-content-card{background:#fff;border:1px solid #e3e8f1;border-radius:14px;padding:16px;min-width:0}
 .requests-content-heading{margin:0 0 12px;padding-bottom:11px;border-bottom:1px solid #edf0f5}
@@ -1264,7 +1164,6 @@
 :root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
 :root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}/* Calendar view, filters, forms and nested cards use the same dark palette. */
-
 :root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .calendar-switch,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .saved-rule-row,:root[data-theme="dark"] .availability-row,:root[data-theme="dark"] .stats-table-wrap,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
   background:#202f46!important;
   border-color:#40516d!important;
@@ -1341,9 +1240,6 @@
 :root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
 :root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}/* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
    and readable servant dashboard labels. Child cards retain their own surfaces. */
-
-
-
 :root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .requests-panel{
   background: transparent !important;
   border: 0 !important;
@@ -1351,8 +1247,6 @@
   color: #eaf0fa !important;
 }/* The calendar workspace should not render as a full-width light/dark strip.
    Keep the weekly/monthly selector as a compact segmented control. */
-
-
 :root[data-theme="dark"] .calendar-workspace-heading{
   background: transparent !important;
   border: 0 !important;
@@ -1391,8 +1285,6 @@
 :root[data-theme="dark"] .calendar-switch span{
   color: #c7d3e6 !important;
 }/* Remove residual light-mode styling from inner inbox/request wrappers. */
-
-
 :root[data-theme="dark"] .requests-content-card{
   background: #1b263a !important;
   border-color: #3c4c66 !important;
@@ -1426,8 +1318,6 @@
   background: #174b38 !important;
   color: #b8f2d2 !important;
 }/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
-
-
 :root[data-theme="dark"] .calendar-workspace-heading h2,:root[data-theme="dark"] .assignment-workspace-heading h2,:root[data-theme="dark"] .calendar-workspace-heading b,:root[data-theme="dark"] .assignment-workspace-heading b{
   color: #f3f6fc !important;
 }
@@ -1437,9 +1327,6 @@
 :root[data-theme="dark"] .calendar-period,:root[data-theme="dark"] .calendar-period>h3,:root[data-theme="dark"] .calendar-period .subtle{
   color: #d2deee !important;
 }/* Dark mode follow-up: restore legibility in guidance, fairness metrics and utility controls. */
-
-
-
 :root[data-theme="dark"] .availability-guidance-title{
   color: #f1f5fb !important;
 }
@@ -1464,14 +1351,10 @@
   border-color: #7c75d8 !important;
   color: #ffffff !important;
 }/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
-
-
 :root[data-theme="dark"] .center-screen{
   overflow: visible !important;
   min-width: 0;
 }/* Text-entry confirmation dialogs: prevent labels, help text and fields spilling sideways. */
-
-
 .action-dialog{
   box-sizing: border-box;
   min-width: 0;
@@ -1533,9 +1416,6 @@
   }
 }/* 2026-11-03 comprehensive dark-mode correction pass.
    These rules intentionally target the exact components shown in the latest review screenshots. */
-
-
-
 :root[data-theme="dark"] .bulk-church-group > summary small{
   color: #d0dced !important;
   font-size: 12px !important;
@@ -1548,8 +1428,6 @@
 :root[data-theme="dark"] .bulk-church-group > summary .link-btn{
   color: #c4bcff !important;
 }/* Template selection actions must look like the rest of the dark secondary controls. */
-
-
 :root[data-theme="dark"] .template-picker-head > .clear-btn{
   background: #283750 !important;
   color: #e7edf7 !important;
@@ -1569,8 +1447,6 @@
   border-color: #3b4b63 !important;
   opacity: .72 !important;
 }/* Servant's upcoming assignment heading was retaining its light-theme purple. */
-
-
 :root[data-theme="dark"] .my-next-heading,:root[data-theme="dark"] .my-next-heading b{
   color: #f0f4fb !important;
 }
@@ -1581,8 +1457,6 @@
 :root[data-theme="dark"] .my-next-card .my-next-date{
   color: #ffffff !important;
 }/* Filter schedule is one continuous card: remove the bright light-theme divider on expand. */
-
-
 :root[data-theme="dark"] .filter-panel-collapsible > .filter-title{
   color: #edf3fb !important;
   background: transparent !important;
@@ -1595,8 +1469,6 @@
 :root[data-theme="dark"] .filter-panel-collapsible[open] > .filter-title{
   border-bottom: 0 !important;
 }/* Dialog input labels are text, not a dark rectangular input-like block. */
-
-
 :root[data-theme="dark"] .action-dialog-input{
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) !important;
@@ -1636,8 +1508,6 @@
 :root[data-theme="dark"] .action-dialog-message{
   color: #c5d1e2 !important;
 }/* Availability labels and the linked servant name must remain readable. */
-
-
 :root[data-theme="dark"] .availability-filter label,:root[data-theme="dark"] .availability-filter label span,:root[data-theme="dark"] .availability-filter label > span,:root[data-theme="dark"] .availability-self-name span,:root[data-theme="dark"] .bulk-form-grid > label,:root[data-theme="dark"] .recurring-rule-form > label,:root[data-theme="dark"] .rule-inline label,:root[data-theme="dark"] .serving-preference-form > label,:root[data-theme="dark"] .preference-weekday-picker > b,:root[data-theme="dark"] .preference-service-picker > b{
   color: #dce5f2 !important;
   opacity: 1 !important;
@@ -1653,7 +1523,7 @@
   min-width: 0;
   width: 100%;
 }
-:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-form-grid input:not([type="checkbox"]),:root[data-theme="dark"] .bulk-form-grid select,:root[data-theme="dark"] .recurring-rule-form input,:root[data-theme="dark"] .recurring-rule-form select,:root[data-theme="dark"] .serving-preference-form input:not([type="checkbox"]),:root[data-theme="dark"] .serving-preference-form select,:root[data-theme="dark"] .profile-edit-grid input,:root[data-theme="dark"] .profile-edit-grid select,:root[data-theme="dark"] .profile-edit-grid textarea{
+:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-form-grid input:not([type="checkbox"]),:root[data-theme="dark"] .bulk-form-grid select,:root[data-theme="dark"] .recurring-rule-form input,:root[data-theme="dark"] .recurring-rule-form select,:root[data-theme="dark"] .serving-preference-form input:not([type="checkbox"]),:root[data-theme="dark"] .serving-preference-form select{
   box-sizing: border-box !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -1662,8 +1532,6 @@
   color: #f0f4fb !important;
   border-color: #465773 !important;
 }/* Give the self identity its own full row in the multiple-date form; date fields then align below. */
-
-
 .bulk-form-grid > .availability-self-name{
   grid-column: 1 / -1;
   width: 100%;
@@ -1679,8 +1547,6 @@
 .bulk-form-grid > .availability-self-name b{
   overflow-wrap: anywhere;
 }/* Use the whole availability card width consistently instead of ending forms mid-panel. */
-
-
 .recurring-rule-form,.serving-preference-form{
   width: 100%;
   max-width: none !important;
@@ -1696,47 +1562,7 @@
   min-width: 0 !important;
   max-width: 100% !important;
 }/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
-
-
-:root[data-theme="dark"] .profile-edit-grid{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: end;
-  gap: 13px;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .profile-edit-grid > label{
-  min-width: 0;
-  max-width: 100%;
-  color: #e0e8f4 !important;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field{
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-  box-sizing: border-box;
-  background: #202f46 !important;
-  border: 1px solid #465873 !important;
-  border-radius: 10px;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field legend{
-  color: #f0f4fb !important;
-  background: #202f46 !important;
-  padding: 0 7px;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field label{
-  color: #dbe5f2 !important;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field input{
-  accent-color: #a99fff;
-}/* Inbox should read as distinct, neatly spaced sections with subdued separators. */
-
-
+/* Inbox should read as distinct, neatly spaced sections with subdued separators. */
 :root[data-theme="dark"] .servant-inbox{
   width: 100%;
   min-width: 0;
@@ -1797,12 +1623,6 @@
   .recurring-rule-form,.serving-preference-form{
     width: 100%;
   }
-  :root[data-theme="dark"] .profile-edit-grid{
-    grid-template-columns: minmax(0, 1fr);
-  }
-  :root[data-theme="dark"] .profile-edit-grid .days-field,:root[data-theme="dark"] .profile-edit-grid > button{
-    grid-column: auto;
-  }
   :root[data-theme="dark"] .inbox-intro{
     align-items: center;
   }
@@ -1811,9 +1631,6 @@
     white-space: nowrap;
   }
 }/* Immediate servant feedback beside each assignment selector. */
-
-
-
 .bulk-assignment-cell{
   display: grid;
   gap: 6px;
@@ -1892,8 +1709,6 @@
     font-size: 10px;
   }
 }/* Final availability/admin consistency pass from the 14:21 review screenshots. */
-
-
 .availability-form > .availability-self-name{
   align-self: stretch;
   justify-content: center;
@@ -1914,8 +1729,6 @@
   font-size: 13px;
   line-height: 1.3;
 }/* Multiple-date servant identity should use one compact grid cell, not a blank full-width row. */
-
-
 .bulk-form-grid > .availability-self-name{
   grid-column: auto !important;
   align-self: stretch;
@@ -1929,8 +1742,6 @@
   background: #f8f9fc;
   gap: 3px;
 }/* Keep recurring restrictions readable: paired fields on desktop and one column on phones. */
-
-
 .recurring-rule-form{
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1968,38 +1779,7 @@
   min-width: 0;
   max-width: 100%;
 }/* CG days: keep each checkbox directly beside its label, in a tidy two-column grid. */
-
-
-.profile-edit-grid .days-field{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: center;
-  justify-items: stretch;
-  gap: 10px 18px;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  padding: 13px 14px;
-}
-.profile-edit-grid .days-field label{
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 9px !important;
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  white-space: nowrap;
-}
-.profile-edit-grid .days-field label input[type="checkbox"]{
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}/* The church selector's group action reads as a clear action, not as a church name. */
-
-
+/* The church selector's group action reads as a clear action, not as a church name. */
 .bulk-church-group > summary .link-btn{
   flex: 0 0 auto;
   margin: 0;
@@ -2013,13 +1793,9 @@
 .bulk-church-group > summary .link-btn:hover{
   background: #eef0ff;
 }/* All matrix headings share one background, including the sticky Actions column. */
-
-
 .bulk-matrix th,.bulk-matrix th:last-child{
   background: #f8f9fc !important;
 }/* The swap dialog's close control belongs in the header's top-right corner. */
-
-
 .swap-modal .modal-head{
   display: flex;
   align-items: flex-start;
@@ -2038,8 +1814,6 @@
   margin: 0;
   align-self: flex-start;
 }/* Keep availability actions visually consistent: Save actions are primary; Clear is secondary. */
-
-
 .availability-form-panel form > button.btn.primary,.availability-form-panel form > button.btn.secondary{
   min-height: 42px;
   border-radius: 9px;
@@ -2066,13 +1840,6 @@
 }
 :root[data-theme="dark"] .availability-form > .availability-self-name b,:root[data-theme="dark"] .bulk-form-grid > .availability-self-name b{
   color: #f3f6fc !important;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field{
-  background: #202f46 !important;
-  border-color: #465873 !important;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field legend,:root[data-theme="dark"] .profile-edit-grid .days-field label{
-  color: #edf3fb !important;
 }
 :root[data-theme="dark"] .bulk-church-group > summary .link-btn{
   background: #283750 !important;
@@ -2102,9 +1869,6 @@
     grid-column: 1 !important;
   }
   .serving-preference-form{ max-width: 100% !important; }
-  .profile-edit-grid .days-field{
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
   .swap-modal .modal-head{
     align-items: flex-start;
   }
@@ -2112,8 +1876,6 @@
    GMS 2026-11-03 final review: matrix selection, calendar, availability forms
    -------------------------------------------------------------------------- */
 /* Per-church selection buttons: show a clear action once any rows are selected. */
-
-
 .bulk-church-group > summary .link-btn{
   min-width: 112px;
   justify-content: center;
@@ -2133,8 +1895,6 @@
   background: #405371 !important;
   color: #ffffff !important;
 }/* Matrix column headings use stronger contrast, especially the sticky Actions column. */
-
-
 .bulk-matrix th,.bulk-matrix th:last-child{
   background: #e8edf5 !important;
   color: #34435d !important;
@@ -2149,13 +1909,9 @@
   border-color: #5b6d88 !important;
   font-weight: 850 !important;
 }/* Same-church, same-day non-overlapping assignments are normal and need no amber note. */
-
-
 .assignment-field-feedback.warning{
   margin-top: 5px;
 }/* Daily overview rebuilt as a compact church-grouped matrix, matching Assignments. */
-
-
 .daily-card{
   padding: 0 !important;
   overflow: hidden;
@@ -2349,8 +2105,6 @@
 :root[data-theme="dark"] .daily-assignee-cell.optional > span{
   color: #aab7cb !important;
 }/* Availability forms: make every grid item and native date control stay inside its card. */
-
-
 .availability-form-panel,.availability-form-panel form,.bulk-availability-form,.bulk-form-grid,.recurring-rule-form,.serving-preference-form,.rule-inline,.bulk-servant-picker{
   box-sizing: border-box;
   width: 100%;
@@ -2427,8 +2181,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }/* Servant weekly/monthly calendar selector shares the same segmented treatment as admin. */
-
-
 .servant-calendar-switch{
   margin: 0 0 14px;
   width: fit-content;
@@ -2444,8 +2196,6 @@
     grid-column: 1 / -1;
   }
 }/* Destructive servant state action is deliberately red and easy to hit. */
-
-
 .servant-status-toggle{
   min-width: 176px;
   min-height: 36px;
@@ -2470,8 +2220,6 @@
   background: #60313c !important;
 }/* Fix the clipped/faint left edge of the login password input and focus ring. */
 /* More obvious calendar headings and compact matrix-like service rows on phones. */
-
-
 @media (max-width: 760px){
   .daily-card > .daily-head{
     align-items: center !important;
@@ -2529,37 +2277,33 @@
 @media (max-width: 760px){
   .bulk-servant-picker{ grid-row: auto !important; }
 }/* Final pass: field controls stay inside their card at every breakpoint. */
-
-
-.availability-form,.bulk-availability-form,.bulk-form-grid,.recurring-rule-form,.serving-preference-form,.rule-inline,.profile-edit-grid,.days-field{
+.availability-form,.bulk-availability-form,.bulk-form-grid,.recurring-rule-form,.serving-preference-form,.rule-inline,.days-field{
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   min-width: 0;
 }
-.availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > *,.profile-edit-grid > *{
+.availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > *{
   box-sizing: border-box;
   min-width: 0 !important;
   max-width: 100%;
 }
-.availability-form input:not([type="checkbox"]),.availability-form select,.bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select,.serving-preference-form input:not([type="checkbox"]),.serving-preference-form select,.profile-edit-grid input:not([type="checkbox"]),.profile-edit-grid select{
+.availability-form input:not([type="checkbox"]),.availability-form select,.bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select,.serving-preference-form input:not([type="checkbox"]),.serving-preference-form select{
   box-sizing: border-box !important;
   display: block;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
 }
-.availability-form input[type="date"],.bulk-form-grid input[type="date"],.recurring-rule-form input[type="date"],.serving-preference-form input[type="date"],.profile-edit-grid input[type="date"]{
+.availability-form input[type="date"],.bulk-form-grid input[type="date"],.recurring-rule-form input[type="date"],.serving-preference-form input[type="date"]{
   padding-inline: 11px 34px !important;
   overflow: hidden;
 }
-.availability-form input[type="date"]::-webkit-calendar-picker-indicator,.bulk-form-grid input[type="date"]::-webkit-calendar-picker-indicator,.recurring-rule-form input[type="date"]::-webkit-calendar-picker-indicator,.serving-preference-form input[type="date"]::-webkit-calendar-picker-indicator,.profile-edit-grid input[type="date"]::-webkit-calendar-picker-indicator{
+.availability-form input[type="date"]::-webkit-calendar-picker-indicator,.bulk-form-grid input[type="date"]::-webkit-calendar-picker-indicator,.recurring-rule-form input[type="date"]::-webkit-calendar-picker-indicator,.serving-preference-form input[type="date"]::-webkit-calendar-picker-indicator{
   margin: 0;
   padding: 0;
   cursor: pointer;
 }/* Stronger assignment matrix column headings in both light and dark themes. */
-
-
 .bulk-matrix th{
   background: #edf2f8 !important;
   color: #35445b !important;
@@ -2574,8 +2318,6 @@
   font-weight: 850 !important;
 }/* Login focus uses an inset ring so its left edge is never clipped by the card. */
 /* Profile CG days: checkbox, label and weekday stay together and wrap naturally. */
-
-
 .days-field{
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2598,14 +2340,12 @@
 }
 @media (max-width: 760px){
   .days-field{ grid-template-columns: minmax(0, 1fr) !important; }
-  .bulk-form-grid,.recurring-rule-form,.serving-preference-form,.profile-edit-grid{ grid-template-columns: minmax(0, 1fr) !important; }
+  .bulk-form-grid,.recurring-rule-form,.serving-preference-form{ grid-template-columns: minmax(0, 1fr) !important; }
   .bulk-form-grid.is-day .bulk-servant-picker{ grid-column: 1 !important; }
   .recurring-rule-form > .rule-field-dates{ grid-template-columns: minmax(0, 1fr); }
   .availability-form{ grid-template-columns: minmax(0, 1fr) !important; }
-  .availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.profile-edit-grid > *{ grid-column: 1 !important; }
+  .availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *{ grid-column: 1 !important; }
 }/* Per-church group actions expose both selection operations at the same time. */
-
-
 .bulk-group-selection-actions{
   display: inline-flex;
   align-items: center;
@@ -2651,8 +2391,6 @@
   }
 }
 .servant-status-toggle{ min-width: 190px; }/* Bulk availability forms: deliberate grid placement prevents stranded blank columns. */
-
-
 .bulk-form-grid.is-person{
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2700,8 +2438,6 @@
 :root[data-theme="dark"] .bulk-servant-picker > b,:root[data-theme="dark"] .bulk-servant-picker small{
   color: #c6d3e7 !important;
 }/* Recurring restriction form: balanced two-column desktop layout with full-width actions. */
-
-
 .recurring-rule-form{
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -2735,8 +2471,6 @@
   min-width: 0 !important;
   max-width: 100% !important;
 }/* Make availability and restriction cards use one consistent dark surface. */
-
-
 :root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .recurring-rule-panel,:root[data-theme="dark"] .bulk-availability-form{
   background: #202f46 !important;
   border-color: #405571 !important;
@@ -2748,8 +2482,6 @@
 :root[data-theme="dark"] .recurring-rule-form label,:root[data-theme="dark"] .bulk-form-grid > label{
   color: #d5deed !important;
 }/* The mobile daily overview date stays on one clear line beside its coverage pill. */
-
-
 .daily-head-copy{
   flex: 1 1 auto;
   min-width: 0;
@@ -2804,8 +2536,6 @@
     height: 15px;
   }
 }/* Dirty matrix rows are explicit: row publish/unpublish also commits staged role changes first. */
-
-
 .bulk-matrix-pending{
   display: inline-block;
   margin-top: 3px;
@@ -2816,9 +2546,6 @@
 :root[data-theme="dark"] .bulk-matrix-pending{
   color: #ffd08a !important;
 }/* Explicit field order: no half-empty rows in person/day bulk availability. */
-
-
-
 .bulk-form-grid.is-person .bulk-person-servant{
   grid-column: 1 / -1 !important;
 }
@@ -2851,8 +2578,6 @@
 }/* GMS 2026-11-03: final mobile and assignment-save presentation pass. */
 /* Availability: use one seamless card surface. Nested form grids must not look like
    a second shaded card, and all fields must consume their assigned grid width. */
-
-
 .availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid,.availability-form-panel .recurring-rule-form{
   width: 100% !important;
   max-width: 100% !important;
@@ -2919,8 +2644,6 @@
 :root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
   border-color: #405571 !important;
 }/* Daily overview: bright teal church bands distinguish each location from the navy card. */
-
-
 .daily-location-name{
   background: #0e8790 !important;
   color: #ffffff !important;
@@ -2937,8 +2660,6 @@
 :root[data-theme="dark"] .daily-location-name b,:root[data-theme="dark"] .daily-location-name span,.app-shell[data-theme="dark"] .daily-location-name b,.app-shell[data-theme="dark"] .daily-location-name span{
   color: #ffffff !important;
 }/* Mobile: FOH, Monitor and Assistant always sit on the same row below the service name. */
-
-
 @media (max-width: 760px){
   .daily-service-row.role-count-3{
     display: grid !important;
@@ -3018,8 +2739,6 @@
     color: #ffe0ad !important;
   }
 }/* Mobile church groups: keep the church name, counts and selection actions inside the card. */
-
-
 @media (max-width: 760px){
   .bulk-church-group > summary{
     display: grid !important;
@@ -3092,9 +2811,6 @@
     flex: 1 1 calc(50% - 5px) !important;
   }
 }/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
-
-
-
 @media (max-width: 760px){
   .availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
     grid-template-columns: minmax(0, 1fr) !important;
@@ -3108,8 +2824,6 @@
 }/* FINAL MOBILE / DARK-MODE REGRESSION PASS (2026-11-03) */
 /* A single, guaranteed three-column role strip on phones. The identity remains
    above it; FOH, Monitor and Assistant cannot wrap onto separate rows. */
-
-
 .daily-role-cells{ display: contents; }
 @media (max-width: 760px){
   .daily-service-row.role-count-3,.daily-service-row.role-count-2{
@@ -3158,8 +2872,6 @@
   }
 }/* Remove the second shaded surface that was visible behind availability fields.
    The form grid inherits the containing card; only actual inputs are inset controls. */
-
-
 :root[data-theme="dark"] .availability-form-panel .bulk-availability-form,:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,:root[data-theme="dark"] .availability-form-panel .serving-preference-form{
   background: transparent !important;
   border: 0 !important;
@@ -3179,8 +2891,6 @@
   background: transparent !important;
   border-color: #405571 !important;
 }/* Exact field order: no half-width servant selector and no stray grid columns. */
-
-
 .availability-form-panel .bulk-form-grid.is-person{
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -3239,8 +2949,6 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }/* Compact and predictable church group controls on small screens. */
-
-
 @media (max-width: 760px){
   .bulk-church-group > summary{
     display: grid !important;
@@ -3299,8 +3007,6 @@
     height: 17px !important;
   }
 }/* Daily Overview color system: church identity is separate from service/team tints. */
-
-
 .daily-location-name{
   background: var(--church-band, #405a78) !important;
   color: #f8fbff !important;
@@ -3312,8 +3018,6 @@
   color: #f8fbff !important;
 }/* Service category tints are shared across all churches; regular-team tints
    are derived independently from the assigned FOH and Monitor servants. */
-
-
 .daily-service-row .daily-service-identity{
   background: var(--service-category-tint, var(--foh-team-tint, transparent)) !important;
 }
@@ -3336,8 +3040,6 @@
   background: var(--foh-team-tint, transparent) !important;
 }/* Availability mode switch: preserve one card width and horizontal geometry
    while the form height naturally follows the selected mode's fields. */
-
-
 .availability-form-panel .availability-mode-switch,.availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid{
   width: 100%;
   max-width: 100%;
@@ -3349,7 +3051,6 @@
   max-width: 100%;
   box-sizing: border-box;
 }/* Registration CG day group: keep the legend on its own row and let options wrap naturally. */
-
 .app-shell[data-theme="dark"] .generate-note-title{
   color: #f1f3ff !important;
 }
