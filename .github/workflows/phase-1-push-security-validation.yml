@@ -38,32 +38,16 @@ jobs:
 
   sql-staging:
     runs-on: ubuntu-latest
-    # Configure STAGING_DATABASE_URL as a GitHub Actions secret.
-    # This must point only to the disposable/staging database, never production.
     env:
       STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+      - name: Require staging database secret
+        run: test -n "$STAGING_DATABASE_URL" || (echo "STAGING_DATABASE_URL is required and must point only to staging" && exit 1)
       - name: Install PostgreSQL client
-        if: env.STAGING_DATABASE_URL != ''
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes postgresql-client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
       - name: Run rollback-only push registration SQL regression
-        if: env.STAGING_DATABASE_URL != ''
-        run: >-
-          psql "$STAGING_DATABASE_URL"
-          --no-psqlrc
-          --set ON_ERROR_STOP=1
-          --file supabase/tests/push_registration_security.sql
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/push_registration_security.sql
       - name: Run rollback-only admin RPC authorization regression
-        if: env.STAGING_DATABASE_URL != ''
-        run: >-
-          psql "$STAGING_DATABASE_URL"
-          --no-psqlrc
-          --set ON_ERROR_STOP=1
-          --file supabase/tests/admin_rpc_authorization.sql
-      - name: Report skipped staging SQL tests
-        if: env.STAGING_DATABASE_URL == ''
-        run: echo "Skipped - configure STAGING_DATABASE_URL to run rollback-only staging SQL regressions. It must reference staging only."
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
