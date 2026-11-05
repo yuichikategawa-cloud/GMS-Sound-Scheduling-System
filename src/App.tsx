@@ -19,7 +19,7 @@ import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifec
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
 import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
-import { validateScheduleEligibility } from "./features/schedule/services/eligibility";
+import { validateScheduleAssignment } from "./features/schedule/services/assignmentValidation";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -415,28 +415,30 @@ export default function App() {
     const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time"))};
     const selected:Record<Role,string>={FOH:String(fd.get("FOH")||""),Monitor:String(fd.get("Monitor")||""),Assistant:String(fd.get("Assistant")||"")};
     const chosen=Object.entries(selected).filter(([,id])=>id).map(([role,id])=>({role,id}));
-    const eligibility=validateScheduleEligibility({
-      selected:chosen,serviceDate:payload.service_date,locationId:payload.location_id,serviceName:payload.service_name,
-      startTime:payload.start_time,endTime:payload.end_time,preferences:servingPreferences
+    const validation=validateScheduleAssignment({
+      selected:chosen,
+      serviceDate:payload.service_date,
+      locationId:payload.location_id,
+      serviceName:payload.service_name,
+      startTime:payload.start_time,
+      endTime:payload.end_time,
+      schedules,
+      availability,
+      preferences:servingPreferences,
+      editingScheduleId:editing?.id
     });
-    if(eligibility.duplicateServantId){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
-    if(eligibility.blockedServantIds.length){
-      const names=eligibility.blockedServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant");
+    if(validation.duplicateServantId){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
+    if(validation.blockedServantIds.length){
+      const names=validation.blockedServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant");
       setScheduleError(`Serving eligibility restriction: ${names.join(", ")} cannot serve in this time window, location or service based on their saved preferences. Review Availability → Serving preferences.`);
       return;
     }
-    const conflicts=chosen.map(entry=>({ ...entry, other:schedules.find(s=>s.service_date===payload.service_date&&s.location_id!==payload.location_id&&s.id!==editing?.id&&s.assignments.some(a=>a.servant_id===entry.id)) })).filter(x=>x.other);
-    if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.id)?.full_name??"A servant"} (${c.other?.location_name} · ${c.other?.service_name})`);setScheduleError(`Cannot save this schedule. ${names.join(", ")} ${conflicts.length===1?"is":"are"} already assigned at another church location on ${fmtDate(payload.service_date)}. A servant can only serve at one church location per day.`);return;}
-    const toMinutes=(t:string)=>Number(t.slice(0,2))*60+Number(t.slice(3,5));
-    const overlaps=chosen.map(entry=>({ ...entry, other:schedules.find(s=>s.service_date===payload.service_date&&s.location_id===payload.location_id&&s.id!==editing?.id&&s.assignments.some(a=>a.servant_id===entry.id)&&toMinutes(payload.start_time)<toMinutes(s.end_time)&&toMinutes(payload.end_time)>toMinutes(s.start_time)) })).filter(x=>x.other);
-    if(overlaps.length){setScheduleError(`Cannot save this schedule. ${overlaps.map(c=>servants.find(p=>p.id===c.id)?.full_name??"A servant").join(", ")} ${overlaps.length===1?"has":"have"} an overlapping service at this location.`);return;}
-    const unavailable=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="unavailable"));
-    if(unavailable.length){setScheduleError(`Cannot assign this schedule. ${unavailable.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked unavailable on ${fmtDate(payload.service_date)}.`);return;}
-    const preferNot=chosen.filter(entry=>availability.some(a=>a.servant_id===entry.id&&a.service_date===payload.service_date&&a.status==="prefer_not"));
-    if(preferNot.length&&!await askAction("Availability preference",`${preferNot.map(x=>servants.find(p=>p.id===x.id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Do you want to continue with this manual assignment?`,"Assign anyway",true))return;
-    const thirtyDaysAgo=new Date(new Date(`${payload.service_date}T12:00:00`).getTime()-30*86400000).toLocaleDateString("en-CA");
-    const highWorkload=chosen.map(entry=>({...entry,days:new Set(schedules.filter(s=>s.service_date<payload.service_date&&s.service_date>=thirtyDaysAgo&&s.assignments.some(a=>a.servant_id===entry.id)).map(s=>s.service_date)).size})).filter(x=>x.days>=5);
-    if(highWorkload.length&&!await askAction("High workload warning",`${highWorkload.map(x=>`${servants.find(p=>p.id===x.id)?.full_name??"Servant"} (${x.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
+    const conflicts=validation.crossChurchConflicts;
+    if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.servantId)?.full_name??"A servant"} (${c.schedule.location_name} · ${c.schedule.service_name})`);setScheduleError(`Cannot save this schedule. ${names.join(", ")} ${conflicts.length===1?"is":"are"} already assigned at another church location on ${fmtDate(payload.service_date)}. A servant can only serve at one church location per day.`);return;}
+    if(validation.overlappingConflicts.length){setScheduleError(`Cannot save this schedule. ${validation.overlappingConflicts.map(c=>servants.find(p=>p.id===c.servantId)?.full_name??"A servant").join(", ")} ${validation.overlappingConflicts.length===1?"has":"have"} an overlapping service at this location.`);return;}
+    if(validation.unavailableServantIds.length){setScheduleError(`Cannot assign this schedule. ${validation.unavailableServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant").join(", ")} marked unavailable on ${fmtDate(payload.service_date)}.`);return;}
+    if(validation.preferNotServantIds.length&&!await askAction("Availability preference",`${validation.preferNotServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Do you want to continue with this manual assignment?`,"Assign anyway",true))return;
+    if(validation.highWorkload.length&&!await askAction("High workload warning",`${validation.highWorkload.map(item=>`${servants.find(p=>p.id===item.servantId)?.full_name??"Servant"} (${item.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
     setLoading(true);setMessage("");
     try {
       const {error}=await supabase.rpc("admin_save_schedule_with_assignments",{
