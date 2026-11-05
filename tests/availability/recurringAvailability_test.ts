@@ -16,7 +16,7 @@ function assertEqual(actual: unknown, expected: unknown, message: string): void 
   }
 }
 
-const horizon = new Date("2026-11-10T12:00:00");
+const horizon = new Date("2026-12-31T12:00:00");
 
 function rule(overrides: Partial<RecurringAvailabilityRule> = {}): RecurringAvailabilityRule {
   return {
