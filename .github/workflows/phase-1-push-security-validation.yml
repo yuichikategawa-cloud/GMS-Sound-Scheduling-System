@@ -9,6 +9,11 @@ on:
       - "supabase/functions/**"
       - "supabase/migrations/**"
       - "supabase/tests/**"
+      - "src/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
       - ".github/workflows/phase-1-push-security-validation.yml"
   workflow_dispatch:
 
@@ -51,3 +56,17 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/push_registration_security.sql
       - name: Run rollback-only admin RPC authorization regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build frontend (TypeScript + Vite)
+        run: npm run build
