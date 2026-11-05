@@ -104,11 +104,9 @@
 .field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}
 
 /* v5: branded loading state */
-.gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-/* v5: servant information dashboard */
-.servant-info-page{display:flex;flex-direction:column;gap:16px}.servant-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.servant-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}.servant-kpi>span{font-size:10px;letter-spacing:.08em;font-weight:800;color:#667085}.servant-kpi>b{font-size:29px;line-height:1.1;color:#1d2939}.servant-kpi>b small{font-size:13px;color:#667085}.servant-kpi>small{font-size:11px;color:#667085}.servant-summary-section{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden}.servant-summary-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;cursor:pointer}.servant-summary-section>summary::-webkit-details-marker{display:none}.servant-summary-section>summary span{display:flex;flex-direction:column;gap:4px}.servant-summary-section>summary b{font-size:14px;color:#1d2939}.servant-summary-section>summary small{font-size:11px;color:#667085}.servant-summary-section[open]>summary>svg{transform:rotate(180deg)}.servant-summary-body{padding:0 17px 17px}.servant-mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.servant-mini-grid>div{padding:12px;border-radius:10px;background:#f7f8fb;display:flex;flex-direction:column;gap:4px}.servant-mini-grid b{font-size:22px;color:#1d2939}.servant-mini-grid span{font-size:11px;color:#667085}.servant-bars{display:flex;flex-direction:column;gap:12px}.servant-bar-row>div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#475467;margin-bottom:6px}.servant-bar-row b{color:#1d2939}.servant-bar-row b small{font-weight:500;color:#667085}.servant-bar-track{height:8px;border-radius:10px;background:#edf0f5;overflow:hidden}.servant-bar-track i{height:100%;display:block;border-radius:10px;background:linear-gradient(90deg,#345b91,#7397c4)}.servant-two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}.servant-two-col h4,.servant-record-detail h4{font-size:12px;margin:0 0 12px;color:#344054}.servant-health-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.servant-health-list>div{display:flex;justify-content:space-between;gap:10px;padding:12px;background:#f7f8fb;border-radius:9px;font-size:12px}.servant-health-list b{font-size:16px}.servant-directory-block{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px}.servant-directory-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.servant-directory-heading h3{margin:0 0 5px;font-size:16px}.servant-directory-heading p{margin:0;font-size:12px}.servant-directory-heading>b{font-size:12px;color:#667085;white-space:nowrap}.servant-filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:9px;margin-bottom:13px}.servant-filters input,.servant-filters select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;color:#344054;font-size:12px}.servant-record-list{display:flex;flex-direction:column;gap:8px}.servant-record{border:1px solid var(--line);border-radius:11px;overflow:hidden}.servant-record-summary{width:100%;display:flex;align-items:center;gap:11px;padding:12px;background:#fff;border:0;text-align:left;cursor:pointer}.servant-avatar{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:50%;background:#eaf0f8;color:#294c7a;font-weight:800}.servant-record-name{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}.servant-record-name b{font-size:13px;color:#1d2939}.servant-record-name small{font-size:11px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}.servant-record-detail{padding:15px;background:#fafbfc;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.servant-record-detail p{font-size:11px;color:#475467;margin:7px 0;overflow-wrap:anywhere}.servant-record-detail p b{color:#344054}.servant-record-detail .btn{margin-top:8px}
-@media(max-width:900px){.servant-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.servant-filters{grid-template-columns:1fr 1fr}.servant-record-detail{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.servant-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.servant-two-col{grid-template-columns:1fr}.servant-health-list{grid-template-columns:1fr}.servant-directory-block{padding:12px}.servant-directory-heading{flex-direction:column}.servant-filters{grid-template-columns:1fr}.servant-record-summary{gap:8px;padding:10px}.servant-account-chip{font-size:9px}.servant-record-detail{grid-template-columns:1fr}.servant-kpi{padding:12px}.servant-kpi>b{font-size:25px}}
+.gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}
+@media(max-width:900px){}
+@media(max-width:600px){.servant-account-chip{font-size:9px}}
 
 /* v5 usability: service details use one full-width row instead of two columns */
 .schedule-grid{grid-template-columns:minmax(0,1fr)!important}
@@ -127,10 +125,6 @@
 
 
 .gms-loader-progress span{width:100%}
-
-/* Explicit empty state for the Servant Information directory */
-.servant-empty-state{padding:28px 18px;text-align:center;border:1px dashed var(--border,#3a3a3a);border-radius:14px;color:var(--text,#fff)}
-.servant-empty-state p{max-width:560px;margin:8px auto 16px;color:var(--muted,#999);line-height:1.5}
 
 /* Simple servant-facing personal schedule summary */
 .my-schedule-summary{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(0,2fr);gap:13px;margin:0 0 18px}
@@ -1141,9 +1135,6 @@
 :root[data-theme="dark"] .my-upcoming-panel,
 :root[data-theme="dark"] .my-next-card,
 :root[data-theme="dark"] .my-days-card,
-:root[data-theme="dark"] .servant-directory-block,
-:root[data-theme="dark"] .servant-record,
-:root[data-theme="dark"] .servant-summary-section,
 :root[data-theme="dark"] .admin-control-center,
 :root[data-theme="dark"] .assignment-overview,
 :root[data-theme="dark"] .schedule-workspace-panel,
@@ -1151,12 +1142,9 @@
 :root[data-theme="dark"] .mobile-more-menu,
 :root[data-theme="dark"] .inbox-item,
 :root[data-theme="dark"] .requests-panel,
-:root[data-theme="dark"] .servant-record-summary,
-:root[data-theme="dark"] .servant-record-detail,
 :root[data-theme="dark"] .profile-card,
 :root[data-theme="dark"] .person-row,
 :root[data-theme="dark"] .people-toolbar,
-:root[data-theme="dark"] .servant-kpi,
 :root[data-theme="dark"] .availability-row,
 :root[data-theme="dark"] .my-upcoming-item,
 :root[data-theme="dark"] .my-schedule-summary>div,
@@ -1177,10 +1165,7 @@
 :root[data-theme="dark"] .church-schedule-group,
 :root[data-theme="dark"] .template-picker,
 :root[data-theme="dark"] .new-template-form,
-:root[data-theme="dark"] .servant-mini-grid>div,
-:root[data-theme="dark"] .servant-health-list>div,
 :root[data-theme="dark"] .availability-self-name,
-:root[data-theme="dark"] .servant-bar-track,
 :root[data-theme="dark"] .my-upcoming-item,
 :root[data-theme="dark"] .stats-table th,
 :root[data-theme="dark"] .bulk-matrix th{
@@ -1199,13 +1184,6 @@
 :root[data-theme="dark"] .role-box small,
 :root[data-theme="dark"] .my-upcoming-info b,
 :root[data-theme="dark"] .my-upcoming-location h4,
-:root[data-theme="dark"] .servant-record-name b,
-:root[data-theme="dark"] .servant-record-detail p b,
-:root[data-theme="dark"] .servant-two-col h4,
-:root[data-theme="dark"] .servant-record-detail h4,
-:root[data-theme="dark"] .servant-kpi>b,
-:root[data-theme="dark"] .servant-mini-grid b,
-:root[data-theme="dark"] .servant-health-list b,
 :root[data-theme="dark"] .assignment-workload-detail b,
 :root[data-theme="dark"] .church-schedule-heading h3,
 :root[data-theme="dark"] .bulk-assignment-heading h2,
@@ -1230,12 +1208,6 @@
 :root[data-theme="dark"] .my-days-card small,
 :root[data-theme="dark"] .inbox-item-body p,
 :root[data-theme="dark"] .inbox-item-body small,
-:root[data-theme="dark"] .servant-record-name small,
-:root[data-theme="dark"] .servant-record-detail p,
-:root[data-theme="dark"] .servant-kpi>span,
-:root[data-theme="dark"] .servant-kpi>small,
-:root[data-theme="dark"] .servant-mini-grid span,
-:root[data-theme="dark"] .servant-health-list,
 :root[data-theme="dark"] .bulk-copy-panel small,
 :root[data-theme="dark"] .bulk-matrix td small,
 :root[data-theme="dark"] .workload-copy span,
@@ -1259,8 +1231,6 @@
 :root[data-theme="dark"] .availability-filter input,
 :root[data-theme="dark"] .bulk-copy-controls input,
 :root[data-theme="dark"] .bulk-matrix select,
-:root[data-theme="dark"] .servant-filters input,
-:root[data-theme="dark"] .servant-filters select,
 :root[data-theme="dark"] .new-template-form input,
 :root[data-theme="dark"] .new-template-form select,
 :root[data-theme="dark"] .generate-footer input,
@@ -1292,7 +1262,6 @@
 :root[data-theme="dark"] .daily-role-row,
 :root[data-theme="dark"] .role-box,
 :root[data-theme="dark"] .role-box.optional,
-:root[data-theme="dark"] .servant-record-detail,
 :root[data-theme="dark"] .availability-self-name,
 :root[data-theme="dark"] .schedule-location-group,
 :root[data-theme="dark"] .my-upcoming-item{
@@ -1320,7 +1289,9 @@
 :root[data-theme="dark"] .inbox-status.rejected{background:#492727;color:#ffb8b2}
 :root[data-theme="dark"] .inbox-status.pending{background:#49371e;color:#ffd28e}
 :root[data-theme="dark"] .people-list,.stats-table-wrap,.bulk-matrix-wrap{border-color:#354059}
-:root[data-theme="dark"] .person-row,.stats-table td,.bulk-matrix td,.servant-record-detail{border-color:#354059!important}
+:root[data-theme="dark"] .person-row,
+.stats-table td,
+.bulk-matrix td{border-color:#354059!important}
 :root[data-theme="dark"] .stats-table th,.bulk-matrix th{background:#26324a!important;color:#bac5da}
 :root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
@@ -1348,7 +1319,6 @@
 :root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}
 :root[data-theme="dark"] .servant-account-chip.linked{background:#173d32;color:#91e0b7}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#49371e;color:#ffd28e}
-:root[data-theme="dark"] .servant-avatar{background:#2d3d5b;color:#d7e3fb}
 :root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
 :root[data-theme="dark"] .mobile-more-backdrop{background:rgba(0,0,0,.56)}
 
@@ -1373,7 +1343,6 @@
 :root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
 :root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}
 @media(max-width:760px){.bulk-matrix-toolbar{gap:10px}.bulk-matrix-heading-copy small{max-width:55ch}}
-
 /* Additional form, overview and admin surfaces included in the dark palette. */
 :root[data-theme="dark"] .assignment-overview-card,
 :root[data-theme="dark"] .bulk-church-group,
@@ -1381,7 +1350,6 @@
 :root[data-theme="dark"] .availability-guidance,
 :root[data-theme="dark"] .swap-source,
 :root[data-theme="dark"] .servant-profile-card,
-:root[data-theme="dark"] .servant-record-detail,
 :root[data-theme="dark"] .profile-edit-grid,
 :root[data-theme="dark"] .servant-filter-card{
   background:#1b2437!important;
@@ -1393,7 +1361,6 @@
 :root[data-theme="dark"] .recurring-rule-form,
 :root[data-theme="dark"] .availability-mode-switch,
 :root[data-theme="dark"] .bulk-preview-list>div,
-:root[data-theme="dark"] .servant-record-detail>div,
 :root[data-theme="dark"] .servant-preference-form,
 :root[data-theme="dark"] .servant-info-filters{
   background:#202c42!important;
@@ -1417,9 +1384,6 @@
 :root[data-theme="dark"] .template-delete-btn{background:#43282e;border-color:#684049;color:#ffb6c1}
 :root[data-theme="dark"] .generate-note p span,
 :root[data-theme="dark"] .new-template-help{color:#a3aec3}
-:root[data-theme="dark"] .servant-record-detail p b,
-:root[data-theme="dark"] .servant-directory-heading h3{color:#edf2fb}
-:root[data-theme="dark"] .servant-record-detail{border-top-color:#354059}
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}
 :root[data-theme="dark"] .action-dialog .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
 :root[data-theme="dark"] .schedule-overview-shortcuts .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
@@ -1461,9 +1425,6 @@
 :root[data-theme="dark"] .assignment-overview-ops>div,
 :root[data-theme="dark"] .assignment-overview-locations>div,
 :root[data-theme="dark"] .control-center-grid>div,
-:root[data-theme="dark"] .servant-kpi,
-:root[data-theme="dark"] .servant-mini-grid>div,
-:root[data-theme="dark"] .servant-health-list>div,
 :root[data-theme="dark"] .location-stat-card,
 :root[data-theme="dark"] .servant-summary-metric,
 :root[data-theme="dark"] .servant-metric-card{
@@ -1509,7 +1470,6 @@
 :root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
 :root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}
 :root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}
-
 /* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
 :root[data-theme="dark"] .subtle,
 :root[data-theme="dark"] .eyebrow,
@@ -1543,13 +1503,7 @@
 :root[data-theme="dark"] .bulk-matrix td small,
 :root[data-theme="dark"] .bulk-copy-controls label,
 :root[data-theme="dark"] .availability-person small,
-:root[data-theme="dark"] .saved-rule-row small,
-:root[data-theme="dark"] .servant-record-name small,
-:root[data-theme="dark"] .servant-record-detail p,
-:root[data-theme="dark"] .servant-kpi>span,
-:root[data-theme="dark"] .servant-kpi>small,
-:root[data-theme="dark"] .servant-mini-grid span,
-:root[data-theme="dark"] .servant-health-list{
+:root[data-theme="dark"] .saved-rule-row small{
   color:#b9c6da!important;
 }
 :root[data-theme="dark"] .preference-weekday-picker input,
@@ -1592,7 +1546,6 @@
 :root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
 :root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}
-
 /* Calendar view, filters, forms and nested cards use the same dark palette. */
 :root[data-theme="dark"] .calendar-workspace-heading,
 :root[data-theme="dark"] .calendar-switch,
@@ -1610,8 +1563,6 @@
 :root[data-theme="dark"] .stats-table-wrap,
 :root[data-theme="dark"] .bulk-matrix-wrap,
 :root[data-theme="dark"] .profile-card,
-:root[data-theme="dark"] .servant-record-summary,
-:root[data-theme="dark"] .servant-record-detail,
 :root[data-theme="dark"] .schedule-location-group,
 :root[data-theme="dark"] .church-schedule-group,
 :root[data-theme="dark"] .daily-service,
@@ -1628,9 +1579,7 @@
 :root[data-theme="dark"] .bulk-preview-panel,
 :root[data-theme="dark"] .bulk-copy-panel,
 :root[data-theme="dark"] .bulk-church-group,
-:root[data-theme="dark"] .bulk-church-group>summary,
-:root[data-theme="dark"] .servant-mini-grid>div,
-:root[data-theme="dark"] .servant-health-list>div{
+:root[data-theme="dark"] .bulk-church-group>summary{
   background:#202f46!important;
   border-color:#40516d!important;
   color:#ecf1fa!important;
@@ -1653,12 +1602,8 @@
 :root[data-theme="dark"] .role-box small,
 :root[data-theme="dark"] .date-text,
 :root[data-theme="dark"] .service-title,
-:root[data-theme="dark"] .servant-record-name b,
-:root[data-theme="dark"] .servant-record-detail h4,
-:root[data-theme="dark"] .servant-record-detail p b,
 :root[data-theme="dark"] .my-upcoming-info b,
-:root[data-theme="dark"] .my-upcoming-location h4,
-:root[data-theme="dark"] .servant-two-col h4{
+:root[data-theme="dark"] .my-upcoming-location h4{
   color:#f0f4fb!important;
 }
 :root[data-theme="dark"] .filters label,
@@ -1687,8 +1632,6 @@
 :root[data-theme="dark"] .availability-filter input,
 :root[data-theme="dark"] .bulk-copy-controls input,
 :root[data-theme="dark"] .bulk-matrix select,
-:root[data-theme="dark"] .servant-filters input,
-:root[data-theme="dark"] .servant-filters select,
 :root[data-theme="dark"] .new-template-form input,
 :root[data-theme="dark"] .new-template-form select,
 :root[data-theme="dark"] .generate-footer input,
@@ -1747,8 +1690,7 @@
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .person-row,
 :root[data-theme="dark"] .request-row,
-:root[data-theme="dark"] .saved-rule-row,
-:root[data-theme="dark"] .servant-record-detail{border-color:#3b4b65!important}
+:root[data-theme="dark"] .saved-rule-row{border-color:#3b4b65!important}
 :root[data-theme="dark"] .action-dialog{background:#1b263a!important;border-color:#40516d!important;color:#eef3fb!important}
 :root[data-theme="dark"] .action-dialog-input{background:#111c2e!important;border-color:#465773!important;color:#eef3fb!important}
 :root[data-theme="dark"] .mobile-bottom-nav{background:rgba(24,35,55,.98)!important;border-color:#394963!important}
@@ -1825,48 +1767,6 @@
 }
 :root[data-theme="dark"] .calendar-switch span {
   color: #c7d3e6 !important;
-}
-
-/* Servant Information: improve section headings, summaries and distribution labels. */
-:root[data-theme="dark"] .servant-summary-section,
-:root[data-theme="dark"] .servant-summary-section>summary {
-  background: #1b263a !important;
-  color: #f1f5fb !important;
-}
-:root[data-theme="dark"] .servant-summary-section>summary b,
-:root[data-theme="dark"] .servant-directory-heading h3,
-:root[data-theme="dark"] .servant-two-col h4,
-:root[data-theme="dark"] .servant-record-detail h4,
-:root[data-theme="dark"] .servant-record-detail p b {
-  color: #f1f5fb !important;
-}
-:root[data-theme="dark"] .servant-summary-section>summary small,
-:root[data-theme="dark"] .servant-bar-row>div:first-child,
-:root[data-theme="dark"] .servant-bar-row b small,
-:root[data-theme="dark"] .servant-directory-heading p,
-:root[data-theme="dark"] .servant-directory-heading>b,
-:root[data-theme="dark"] .servant-mini-grid span,
-:root[data-theme="dark"] .servant-record-detail p,
-:root[data-theme="dark"] .servant-health-list>div span,
-:root[data-theme="dark"] .servant-health-list>div {
-  color: #b9c7dc !important;
-}
-:root[data-theme="dark"] .servant-bar-row b,
-:root[data-theme="dark"] .servant-mini-grid b,
-:root[data-theme="dark"] .servant-health-list b,
-:root[data-theme="dark"] .servant-kpi>b {
-  color: #f4f7fc !important;
-}
-:root[data-theme="dark"] .servant-summary-body {
-  color: #d7e1ef !important;
-}
-:root[data-theme="dark"] .servant-bar-track {
-  background: #2b3a52 !important;
-}
-:root[data-theme="dark"] .servant-health-list>div,
-:root[data-theme="dark"] .servant-mini-grid>div {
-  background: #202f46 !important;
-  border: 1px solid #3d4e68;
 }
 
 /* Remove residual light-mode styling from inner inbox/request wrappers. */
@@ -2038,50 +1938,9 @@
     white-space: normal;
   }
 }
-
-/* Servant CG/record detail columns must shrink inside mobile cards rather than overflow. */
-.servant-record-detail {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-width: 0;
-  width: 100%;
-  overflow: hidden;
-}
-.servant-record-detail > div {
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-.servant-record-detail h4,
-.servant-record-detail p {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-.servant-record-detail p b {
-  overflow-wrap: anywhere;
-}
 @media (max-width: 900px) {
-  .servant-record-detail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 @media (max-width: 600px) {
-  .servant-record-detail {
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 14px;
-    padding: 13px;
-    overflow: hidden;
-  }
-  .servant-record-detail > div {
-    padding: 0;
-    width: 100%;
-  }
-  .servant-record-detail h4 {
-    margin-bottom: 7px;
-  }
-  .servant-record-detail p {
-    line-height: 1.5;
-  }
 }
 
 
@@ -2311,27 +2170,6 @@
 }
 :root[data-theme="dark"] .profile-edit-grid .days-field input {
   accent-color: #a99fff;
-}
-
-/* Servant information detail columns should sit on one card surface, not look like inset boxes. */
-:root[data-theme="dark"] .servant-record-detail {
-  background: #202f46 !important;
-  border-color: #40516d !important;
-}
-:root[data-theme="dark"] .servant-record-detail > div {
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  min-width: 0 !important;
-}
-:root[data-theme="dark"] .servant-record-detail h4,
-:root[data-theme="dark"] .servant-record-detail p b {
-  color: #f1f5fc !important;
-}
-:root[data-theme="dark"] .servant-record-detail p {
-  color: #c8d4e5 !important;
 }
 
 /* Inbox should read as distinct, neatly spaced sections with subdued separators. */
@@ -4197,81 +4035,7 @@
   max-width: 100%;
   box-sizing: border-box;
 }
-
-/* Administrator account-linking controls inside servant records. */
-.servant-link-panel {
-  display: grid;
-  gap: 10px;
-  margin: 16px 0 12px;
-  padding: 14px;
-  min-width: 0;
-  border: 1px solid var(--border, #d8dee8);
-  border-radius: 12px;
-  background: var(--surface-soft, #f7f8fb);
-}
-.servant-link-panel h5 {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-.servant-link-panel > p,
-.servant-link-panel > small {
-  margin: 0;
-  line-height: 1.45;
-}
-.servant-link-panel label {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-.servant-link-panel input,
-.servant-link-panel select {
-  width: 100%;
-  min-width: 0;
-  min-height: 42px;
-  padding: 9px 11px;
-  border: 1px solid var(--border-strong, #c7cfdb);
-  border-radius: 8px;
-  background: var(--surface, #fff);
-  color: var(--text, #1c2636);
-  font: inherit;
-}
-.servant-link-panel input:focus,
-.servant-link-panel select:focus {
-  outline: 2px solid var(--accent, #8c263d);
-  outline-offset: 2px;
-}
-.servant-link-panel button {
-  justify-self: start;
-}
-.servant-link-panel .form-error {
-  color: #b42335;
-  font-weight: 600;
-}
-:root[data-theme="dark"] .servant-link-panel {
-  background: #202f46;
-  border-color: #405472;
-}
-:root[data-theme="dark"] .servant-link-panel input,
-:root[data-theme="dark"] .servant-link-panel select {
-  color: #f1f5fc;
-  background: #16243a;
-  border-color: #4b607f;
-}
-:root[data-theme="dark"] .servant-link-panel .form-error {
-  color: #ff9aa8;
-}
 @media (max-width: 760px) {
-  .servant-link-panel {
-    padding: 12px;
-    gap: 9px;
-  }
-  .servant-link-panel button {
-    width: 100%;
-    justify-content: center;
-  }
 }
 
 
@@ -4334,39 +4098,5 @@
     max-width: 100%;
   }
 }
-
-
-/* Keep the admin account-link action visible even while servant details are collapsed. */
-.servant-record-heading {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  padding-right: 10px;
-  min-width: 0;
-  background: var(--surface, #fff);
-}
-.servant-record-heading .servant-record-summary {
-  flex: 1 1 auto;
-  width: auto;
-  min-width: 0;
-}
-.servant-record-heading .servant-link-trigger {
-  flex: 0 0 auto;
-  align-self: center;
-  margin: 0;
-  white-space: nowrap;
-}
 @media (max-width: 600px) {
-  .servant-record-heading {
-    gap: 2px 8px;
-    flex-wrap: wrap;
-    padding: 0 10px 10px;
-  }
-  .servant-record-heading .servant-record-summary {
-    flex: 1 1 100%;
-    padding: 10px 0 8px;
-  }
-  .servant-record-heading .servant-link-trigger {
-    margin: 0 0 0 44px;
-  }
 }

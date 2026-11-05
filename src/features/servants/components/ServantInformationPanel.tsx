@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./ServantInformationPanel.css";
 import type { ReactNode } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import type { Location, ScheduleView, Servant } from "../../../types";
