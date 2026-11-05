@@ -9,6 +9,7 @@ import ActionDialog, { type ActionDialogState } from "./shared/components/Action
 import Sidebar from "./app/components/Sidebar";
 import MobileNavigation from "./app/components/MobileNavigation";
 import AppHeader from "./app/components/AppHeader";
+import AppLayout from "./app/components/AppLayout";
 import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
@@ -851,8 +852,10 @@ export default function App() {
   if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={submitAuth} onSendPasswordReset={sendPasswordReset}/>;
   if(!profile)return <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
 
-  return <div className="app-shell" data-theme={theme}>
-    <Sidebar
+  return (
+    <AppLayout
+      theme={theme}
+      sidebar={<Sidebar
       activeTab={tab}
       isAdmin={isAdmin}
       displayName={profile.display_name || session.user.email || "G"}
@@ -868,9 +871,8 @@ export default function App() {
       onSelectTab={setTab}
       onCloseMobileNav={() => setMobileNav(false)}
       onSignOut={signOut}
-    />
-    <div className="main-area">
-          <AppHeader
+    />}
+      header={<AppHeader
       activeTab={tab}
       isAdmin={isAdmin}
       pwaInstalled={pwaInstalled}
@@ -879,8 +881,31 @@ export default function App() {
       onInstallApp={installGmsApp}
       onToggleTheme={toggleTheme}
       onRefresh={loadData}
-    />
-      <main className="content">
+    />}
+      mobileNavigation={<MobileNavigation
+      activeTab={tab}
+      isAdmin={isAdmin}
+      open={mobileNav}
+      pwaInstalled={pwaInstalled}
+      theme={theme}
+      showInboxBadge={(isAdmin ? (requests.filter(r => r.status === "pending").length + notifications.filter(n => n.recipient_user_id === session?.user?.id && !n.is_read).length) : requests.filter(r => r.requester_servant_id === myServant?.id && ["approved", "declined", "rejected"].includes(String(r.status).toLowerCase()) && !requestReads.some(x => x.request_id === r.id && x.user_id === session?.user?.id)).length) > 0}
+      onSelectTab={setTab}
+      onToggleMenu={() => setMobileNav(value => !value)}
+      onCloseMenu={() => setMobileNav(false)}
+      onToggleTheme={toggleTheme}
+      onInstallApp={() => { void installGmsApp(); }}
+      onSignOut={signOut}
+    />}
+      overlays={
+        <>
+          {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
+    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
+    {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
+    {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
+        </>
+      }
+    >
+
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         {tab==="schedule"? <>
           {!isAdmin&&<MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id??""}/>}
@@ -937,28 +962,9 @@ export default function App() {
 
           </>}
         </>:tab==="servantInfo"?<ServantInformationPanel servants={servants} memberDirectory={memberDirectory} accountCandidates={memberDirectory.filter((m:any)=>accountProfiles.some((p:any)=>p.id===m.user_id&&p.role==="servant")).map((m:any)=>({user_id:m.user_id,full_name:m.full_name,email:m.email,username:accountProfiles.find((p:any)=>p.id===m.user_id)?.username??"",linked_servant:servants.find(s=>s.auth_user_id===m.user_id)??null}))} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;const {error}=await supabase.from("member_profiles").upsert({user_id:session.user.id,...payload,last_verified_at:new Date().toISOString(),updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error){setMessage(error.message);return;}await supabase.from("profiles").update({display_name:payload.full_name}).eq("id",session.user.id);await supabase.from("servants").update({full_name:payload.full_name}).eq("auth_user_id",session.user.id);if(payload.email!==memberProfile.email){const {error:emailError}=await supabase.auth.updateUser({email:payload.email});if(emailError)setMessage("Profile saved, but email change needs attention: "+emailError.message);}setMessage("Profile updated and verification date refreshed.");await loadData();}}/>:null}
-      </main>
-    </div>
-        <MobileNavigation
-      activeTab={tab}
-      isAdmin={isAdmin}
-      open={mobileNav}
-      pwaInstalled={pwaInstalled}
-      theme={theme}
-      showInboxBadge={(isAdmin ? (requests.filter(r => r.status === "pending").length + notifications.filter(n => n.recipient_user_id === session?.user?.id && !n.is_read).length) : requests.filter(r => r.requester_servant_id === myServant?.id && ["approved", "declined", "rejected"].includes(String(r.status).toLowerCase()) && !requestReads.some(x => x.request_id === r.id && x.user_id === session?.user?.id)).length) > 0}
-      onSelectTab={setTab}
-      onToggleMenu={() => setMobileNav(value => !value)}
-      onCloseMenu={() => setMobileNav(false)}
-      onToggleTheme={toggleTheme}
-      onInstallApp={() => { void installGmsApp(); }}
-      onSignOut={signOut}
-    />
-    
-    {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
-    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
-    {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
-    {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
-  </div>;
+
+    </AppLayout>
+  );
 }
 
 
