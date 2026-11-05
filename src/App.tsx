@@ -3,31 +3,10 @@ import type { CSSProperties, FormEvent, ReactNode } from "react";
 import { CalendarDays, Church, AudioLines, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
+import { today, fmtDate, shortTime, dayNameForTemplate, errorText, displayList } from "./shared/formatters";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
-const today = () => new Date().toLocaleDateString("en-CA");
-const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
-const shortTime = (t: string) => t?.slice(0,5) ?? "";
-const dayNameForTemplate = (d:number) => Number(d)===6?"Saturday":"Sunday";
-const errorText = (e: unknown): string => {
-  if (e instanceof Error) return e.message;
-  if (e && typeof e === "object") {
-    const value = e as Record<string, unknown>;
-    const parts = [value.message, value.details, value.hint, value.code]
-      .filter((part): part is string => typeof part === "string" && part.trim().length > 0);
-    if (parts.length) return parts.join(" · ");
-    try { return JSON.stringify(e); } catch { return "An unknown error occurred."; }
-  }
-  return String(e);
-};
-const displayList = (v: unknown) => {
-  if (Array.isArray(v)) return v.filter(Boolean).join(", ");
-  if (typeof v === "string") {
-    try { const parsed = JSON.parse(v); if (Array.isArray(parsed)) return parsed.filter(Boolean).join(", "); } catch {}
-    return v;
-  }
-  return "";
-};
+
 
 export default function App() {
   const [session,setSession] = useState<any>(null);
