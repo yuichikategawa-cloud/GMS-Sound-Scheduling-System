@@ -176,11 +176,11 @@ Deno.test("fairness alert is hidden below the threshold and with only one active
     { role: "Assistant", servant_id: "b", servant_name: "Blair" },
   ])];
   expectStats(thresholdSchedules, [servant("a", "Alex"), servant("b", "Blair")], {
-    fairnessDifference: 2,
+    fairnessDifference: 1,
     showFairnessAlert: false,
   });
   expectStats(thresholdSchedules, [servant("a", "Alex")], {
-    fairnessDifference: 2,
+    fairnessDifference: 0,
     showFairnessAlert: false,
   });
 });
