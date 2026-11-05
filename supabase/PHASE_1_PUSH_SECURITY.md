@@ -20,7 +20,7 @@
 - Staging Supabase project: `uurgomjrsvzfmcpsnitu`.
 - Staging migration `20261105042202_gms_push_subscription_endpoint_security` is applied. The branch migration file is now named with this same recorded version; its function definition and ACL were compared with the live staging function/grants before aligning the filename.
 - Staging Edge Functions `dispatch-push` and `username-login` are ACTIVE. The current `dispatch-push` deployment is version 2 with `verify_jwt=false`; the dispatcher performs its own shared-secret authentication.
-- The last confirmed full validation workflow passed both jobs at commit `28c78c42da37f2356cd56185c625fd22278e0c45`: Deno endpoint/queue tests and dispatcher type-check; plus rollback-only push-registration and admin-RPC SQL regressions. The subsequent `is_admin()` and anonymous-grant assertions require a fresh workflow pass before this branch is treated as fully revalidated.
+- The latest full validation workflow (run `41978852552`, run number 12) passed at commit `e5b78a235fae07e76da36430f9078fde4ff53258`: the SQL job passed the required staging-secret guard and both rollback-only SQL regressions; the Deno job passed endpoint/queue tests and dispatcher type-check. This includes the added `is_admin()` and anonymous-grant assertions. The later documentation-only commit does not change those test inputs.
 - The admin RPC regression now also asserts authenticated-vs-anonymous function grants and checks that `is_admin()` returns false for a servant and true for an administrator.
 - Staging currently has one admin profile and one servant profile, but no schedules, assignments, push subscriptions, queued pushes, or serving notifications. The database regression tests roll back their temporary changes.
 - No physical-device push delivery has been confirmed. The user does not have an Android device available, so Android/device delivery validation remains waived/unverified rather than passed.
@@ -49,4 +49,4 @@
 - Queue rows and notifications remain in the database; do not truncate or delete them as part of rollback.
 
 ## Deployment boundary
-Staging-only changes have been applied as listed above. No production SQL, production Edge Function, production secrets, production Vercel environment, or production deployment has been changed. `main` remains untouched; the security branch is 22 commits ahead of `main` and zero commits behind at the latest comparison, and no pull request or merge has been opened.
+Staging-only changes have been applied as listed above. No production SQL, production Edge Function, production secrets, production Vercel environment, or production deployment has been changed. `main` remains untouched; the security branch remains unmerged and has no pull request open.
