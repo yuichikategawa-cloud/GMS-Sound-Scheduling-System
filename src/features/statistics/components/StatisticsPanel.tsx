@@ -1,4 +1,5 @@
 import { BarChart3, ShieldCheck } from "lucide-react";
+import "./StatisticsPanel.css";
 import type { ScheduleView, Servant } from "../../../types";
 import { calculateServingStatistics } from "../services/servingStatistics";
 
