@@ -5,6 +5,7 @@ import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
 import { today, fmtDate, shortTime, dayNameForTemplate, errorText, displayList } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
+import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -61,7 +62,7 @@ export default function App() {
   const [fullName,setFullName] = useState("");
   const [signupCgStatus,setSignupCgStatus] = useState("");
   const [mobileNav,setMobileNav] = useState(false);
-  const [actionDialog,setActionDialog] = useState<{title:string;message:string;confirmLabel?:string;danger?:boolean;inputLabel?:string;requiredText?:string}|null>(null);
+  const [actionDialog,setActionDialog] = useState<ActionDialogState|null>(null);
   const [actionDialogInput,setActionDialogInput] = useState("");
   const actionDialogResolver = useRef<((accepted:boolean)=>void)|null>(null);
   const actionTextResolver = useRef<((value:string|null)=>void)|null>(null);
@@ -990,7 +991,7 @@ export default function App() {
         <button className="mobile-more-signout" onClick={signOut}><LogOut size={18}/> Sign out</button>
       </div>
     </div>}
-    {actionDialog&&<div className="modal-backdrop action-dialog-backdrop" role="presentation"><section className="modal-card action-dialog" role="alertdialog" aria-modal="true" aria-labelledby="action-dialog-title"><div className="modal-head"><div><h2 id="action-dialog-title">{actionDialog.title}</h2><p className="subtle action-dialog-message">{actionDialog.message}</p></div><button type="button" className="icon-btn" aria-label="Close" onClick={()=>closeActionDialog(false)}><X/></button></div>{actionDialog.inputLabel&&<label className="action-dialog-input">{actionDialog.inputLabel}<input autoFocus value={actionDialogInput} onChange={e=>setActionDialogInput(e.target.value)}/></label>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={()=>closeActionDialog(false)}>Cancel</button><button type="button" className={`btn ${actionDialog.danger?"danger":"primary"}`} disabled={!!actionDialog.requiredText&&actionDialogInput!==actionDialog.requiredText} onClick={()=>closeActionDialog(true)}>{actionDialog.confirmLabel??"Continue"}</button></div></section></div>}
+    {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
     {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}

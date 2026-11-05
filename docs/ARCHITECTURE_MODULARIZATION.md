@@ -154,6 +154,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M1 first extraction: pure formatting/display helpers moved to `src/shared/formatters.ts`; `App.tsx` imports them.
 - [ ] M1 remaining pure helpers and regression coverage.
 - [ ] M2 shared UI and app shell.
+- [x] M2 second shared UI extraction: the action-confirmation dialog is now `src/shared/components/ActionDialog.tsx`; the app retains the confirmation resolver/state and passes controlled props into the component.
 - [x] M2 first shared UI extraction: branded `GmsLoader` moved to `src/shared/components/GmsLoader.tsx`; both app call sites use the extracted component, with existing global loader styles unchanged.
 - [ ] M3 authentication/profile.
 - [ ] M4 schedule.
