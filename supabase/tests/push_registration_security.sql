@@ -53,6 +53,16 @@ BEGIN
   v_again := public.register_serving_push_subscription(v_endpoint,repeat('A',87),repeat('B',22),'phase 1 test');
   IF v_id IS DISTINCT FROM v_again THEN RAISE EXCEPTION 'Same endpoint registration was not idempotent'; END IF;
 
+  -- iOS/iPadOS Home Screen Web Push endpoints use Apple's web.push.apple.com host.
+  v_endpoint := 'https://web.push.apple.com/phase1-' || v_suffix;
+  PERFORM public.register_serving_push_subscription(v_endpoint,repeat('A',87),repeat('B',22),'phase 1 Apple endpoint test');
+  IF NOT EXISTS (
+    SELECT 1 FROM public.serving_push_subscriptions
+    WHERE endpoint=v_endpoint AND user_id=v_user_1
+  ) THEN RAISE EXCEPTION 'Supported Apple Web Push endpoint was not registered'; END IF;
+  DELETE FROM public.serving_push_subscriptions WHERE endpoint=v_endpoint;
+
+  v_endpoint := 'https://fcm.googleapis.com/fcm/send/phase1-' || v_suffix;
   FOREACH v_endpoint IN ARRAY ARRAY[
     'http://fcm.googleapis.com/fcm/send/phase1-' || v_suffix,
     'https://attacker.example/fcm/send/phase1-' || v_suffix,
