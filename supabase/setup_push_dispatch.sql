@@ -2,16 +2,17 @@
 -- 1) Replace every placeholder below with values from YOUR Supabase project.
 -- 2) Deploy supabase/functions/dispatch-push and set its function secrets first.
 -- 3) Run this file in Supabase SQL Editor.
--- The shared dispatch secret must be identical in the Edge Function secret and Vault.
+-- Generate a fresh random 32-byte dispatch secret. Set the same value as PUSH_DISPATCH_SECRET in the Edge Function secrets and in Vault below. Do not reuse or paste a production secret into source control.
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 
 -- Supabase Vault is used so the cron job does not contain credentials in plain text.
 -- If these names already exist, update/remove the existing Vault secrets before rerunning.
-select vault.create_secret('https://zqpmzvhudxprzdfijrtu.supabase.co', 'gms_push_project_url');
-select vault.create_secret('sb_publishable_7nURmIs2t0CUGA7PUzGI7Q_NJWDS8RQ', 'gms_push_anon_key');
-select vault.create_secret('b46e500c34270d7eaad6078dcf2b03a4e7d9a36e436a19efed77e6ed5cec20b1', 'gms_push_dispatch_secret');
+-- Replace placeholders in your private SQL Editor session; never commit live values.
+select vault.create_secret('https://<PROJECT_REF>.supabase.co', 'gms_push_project_url');
+select vault.create_secret('sb_publishable_REPLACE_WITH_PROJECT_KEY', 'gms_push_anon_key');
+select vault.create_secret('REPLACE_WITH_A_NEW_RANDOM_32_BYTE_HEX_SECRET', 'gms_push_dispatch_secret');
 
 do $setup$
 declare
