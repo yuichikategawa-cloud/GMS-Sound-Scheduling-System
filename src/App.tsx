@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
-import { CalendarDays, Church, AudioLines, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
 import { today, fmtDate, shortTime, dayNameForTemplate, errorText, displayList } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
 import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
+import Sidebar from "./app/components/Sidebar";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -888,21 +889,23 @@ export default function App() {
   if(!profile)return <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
 
   return <div className="app-shell" data-theme={theme}>
-    <aside className="sidebar">
-      <div className="brand brand-sound-identity"><div className="brand-sound-icon"><AudioLines size={25}/></div><div className="brand-sound-copy"><b>GMS Sound Scheduling</b><small>SERVE WITH EXCELLENCE</small></div></div>
-      <div className="nav-label">WORKSPACE</div>
-      <button className={`nav-item ${tab==="schedule"?"active":""}`} onClick={()=>{setTab("schedule");setMobileNav(false);}}><CalendarDays size={18}/> Schedule</button>
-      <button className={`nav-item ${tab==="availability"?"active":""}`} onClick={()=>{setTab("availability");setMobileNav(false);}}><ClipboardCheck size={18}/> Availability</button>
-      {!isAdmin&&<button className={`nav-item ${tab==="inbox"?"active":""}`} onClick={()=>{setTab("inbox");setMobileNav(false);}}><InboxIcon size={18}/> Inbox{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length>0&&<span className="inbox-count">{requests.filter(r=>r.requester_servant_id===myServant?.id&&["approved","declined","rejected"].includes(String(r.status).toLowerCase())&&!requestReads.some(x=>x.request_id===r.id&&x.user_id===session?.user?.id)).length}</span>}</button>}
-      {isAdmin&&<button className={`nav-item ${tab==="requests"?"active":""}`} onClick={()=>{setTab("requests");setMobileNav(false);}}><InboxIcon size={18}/> Servant Requests{(requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length)>0&&<span className="inbox-count">{requests.filter(r=>r.status==="pending").length+notifications.filter(n=>n.recipient_user_id===session?.user?.id&&!n.is_read).length}</span>}</button>}
-      {!isAdmin&&<button className={`nav-item ${tab==="profile"?"active":""}`} onClick={()=>{setTab("profile");setMobileNav(false);}}><Users size={18}/> My profile</button>}
-      {isAdmin&&<>
-        <button className={`nav-item ${tab==="servantInfo"?"active":""}`} onClick={()=>{setTab("servantInfo");setMobileNav(false);}}><Users size={18}/> Servant Information</button>
-        <button className={`nav-item ${tab==="statistics"?"active":""}`} onClick={()=>{setTab("statistics");setMobileNav(false);}}><BarChart3 size={18}/> Statistics</button>
-        <button className={`nav-item ${tab==="audit"?"active":""}`} onClick={()=>{setTab("audit");setMobileNav(false);}}><ClipboardCheck size={18}/> Audit log</button>
-      </>}
-      <div className="sidebar-bottom"><div className="user-chip"><div className="avatar">{(profile.display_name||session.user.email||"G").slice(0,1).toUpperCase()}</div><div className="user-meta"><b>{profile.display_name||session.user.email}</b><small>{isAdmin?"Administrator":"Servant"}</small></div><button title="Sign out" className="icon-btn" onClick={signOut}><LogOut size={17}/></button></div></div>
-    </aside>
+    <Sidebar
+      activeTab={tab}
+      isAdmin={isAdmin}
+      displayName={profile.display_name || session.user.email || "G"}
+      unreadServantRequestCount={requests.filter(r =>
+        r.requester_servant_id === myServant?.id &&
+        ["approved", "declined", "rejected"].includes(String(r.status).toLowerCase()) &&
+        !requestReads.some(x => x.request_id === r.id && x.user_id === session?.user?.id)
+      ).length}
+      adminRequestCount={
+        requests.filter(r => r.status === "pending").length +
+        notifications.filter(n => n.recipient_user_id === session?.user?.id && !n.is_read).length
+      }
+      onSelectTab={setTab}
+      onCloseMobileNav={() => setMobileNav(false)}
+      onSignOut={signOut}
+    />
     <div className="main-area">
       <header className="topbar"><button className="mobile-menu icon-btn" onClick={()=>setMobileNav(!mobileNav)}><Menu/></button><div><div className="eyebrow">GMS • CHURCH SERVING</div><h1>{tab==="schedule"?"Serving schedule":tab==="servantInfo"?"Servant Information":tab==="availability"?"Availability management":tab==="audit"?"Audit log":tab==="profile"?"My profile":tab==="inbox"?"Inbox":tab==="requests"?"Servant Requests":"Serving statistics"}</h1></div><div className="top-actions"><span className="role-tag"><ShieldCheck size={14}/>{isAdmin?"Admin access":"View access"}</span>{!pwaInstalled&&<button className="btn secondary pwa-install-button" onClick={installGmsApp}><Smartphone size={15}/> Install app</button>}<button className="icon-btn theme-toggle" onClick={toggleTheme} aria-pressed={theme==="dark"} title={theme==="dark"?"Switch to light mode":"Switch to dark mode"} aria-label={theme==="dark"?"Switch to light mode":"Switch to dark mode"}>{theme==="dark"?<Sun size={18}/>:<Moon size={18}/>}</button><button className="icon-btn" onClick={loadData} title="Refresh"><RefreshCw size={17}/></button></div></header>
       <main className="content">
