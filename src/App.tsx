@@ -18,6 +18,7 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
+import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -1155,13 +1156,7 @@ function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;up
  </section>;
 }
 
-const DAILY_CHURCH_COLORS = ["#405A78", "#5B5076", "#3F665F"];
-const DAILY_TEAM_TINTS = ["rgba(133,180,211,.085)", "rgba(177,155,211,.085)", "rgba(137,184,157,.085)", "rgba(211,177,125,.085)", "rgba(127,174,184,.085)", "rgba(197,151,157,.085)"];
-const DAILY_CATEGORY_TINTS = { vss: "rgba(132,177,211,.105)", aog: "rgba(174,145,199,.105)" };
-function dailyHash(value:string){let hash=0;for(let i=0;i<value.length;i++)hash=(hash*31+value.charCodeAt(i))|0;return Math.abs(hash);}
-function dailyChurchColor(name:string){const n=name.toLowerCase();if(n.includes("alam sutera"))return DAILY_CHURCH_COLORS[0];if(n.includes("bsd"))return DAILY_CHURCH_COLORS[1];if(n.includes("karawaci"))return DAILY_CHURCH_COLORS[2];return DAILY_CHURCH_COLORS[dailyHash(n)%DAILY_CHURCH_COLORS.length];}
-function dailyServiceCategory(name:string):"vss"|"aog"|"regular"{const n=name.trim().toLowerCase();if(n==="vss"||n.startsWith("vss "))return "vss";if(n.includes("aog"))return "aog";return "regular";}
-function dailyTeamTint(servantId:string|null|undefined,servantName:string|undefined){if(!servantId&&!servantName)return undefined;return DAILY_TEAM_TINTS[dailyHash(servantId||servantName||"")%DAILY_TEAM_TINTS.length];}
+
 
 function DailySummary({date,items,isAdmin=true}:{date:string;items:ScheduleView[];isAdmin?:boolean}){
  const locations=[...new Map(items.map(item=>[item.location_id,{id:item.location_id,name:item.location_name}])).values()];
