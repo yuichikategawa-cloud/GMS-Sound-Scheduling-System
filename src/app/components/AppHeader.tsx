@@ -21,7 +21,7 @@ type AppHeaderProps = {
 
 const PAGE_TITLES: Record<SidebarTab, string> = {
   schedule: "Serving schedule",
-  people: "Serving schedule",
+  people: "Serving statistics",
   servantInfo: "Servant Information",
   availability: "Availability management",
   statistics: "Serving statistics",
