@@ -4499,3 +4499,39 @@
     max-width: 100%;
   }
 }
+
+
+/* Keep the admin account-link action visible even while servant details are collapsed. */
+.servant-record-heading {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding-right: 10px;
+  min-width: 0;
+  background: var(--surface, #fff);
+}
+.servant-record-heading .servant-record-summary {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+.servant-record-heading .servant-link-trigger {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .servant-record-heading {
+    gap: 2px 8px;
+    flex-wrap: wrap;
+    padding: 0 10px 10px;
+  }
+  .servant-record-heading .servant-record-summary {
+    flex: 1 1 100%;
+    padding: 10px 0 8px;
+  }
+  .servant-record-heading .servant-link-trigger {
+    margin: 0 0 0 44px;
+  }
+}
