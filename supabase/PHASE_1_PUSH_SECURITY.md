@@ -27,6 +27,8 @@
 - iPhone/iPadOS compatibility was checked against Apple's current Web Push documentation: iOS/iPadOS 16.4 or later supports Web Push for Home Screen web apps. The app manifest uses `display: standalone`; the page registers a service worker; the worker handles `push` by immediately calling `showNotification`; and the outbound endpoint validator accepts Apple Web Push subdomains such as `web.push.apple.com`.
 - The UI now instructs iPhone/iPad users to use Safari → Share → Add to Home Screen, turn on **Open as Web App**, then open the installed icon before enabling push. It also detects iPadOS desktop-mode devices and provides a Settings recovery hint when notification permission is denied.
 - The push registration SQL regression now explicitly creates and verifies a valid `web.push.apple.com` endpoint inside its rollback-only test transaction.
+- Live staging now has one valid `web.push.apple.com` subscription associated with a servant profile. The stored user-agent identifies iPhone Safari/iOS, and both stored subscription-key encodings pass format/length validation. This proves that an iPhone Home Screen app completed browser subscription and server registration; it does not prove a push notification was delivered or displayed.
+- Staging does not currently have `pg_cron` or `pg_net` installed and has no `gms_push_*` Vault secrets. The notification-to-queue trigger exists, but automatic dispatch scheduling is not configured. A controlled delivery test is therefore blocked until the staging dispatcher schedule and matching Vault/Edge Function credentials are configured.
 - Static compatibility checks do not replace a real iPhone test. User permission prompt, browser subscription creation, receipt on the lock screen, and notification click-through still require a physical iPhone/iPad test.
 
 ## Security advisor findings and interpretation
@@ -46,6 +48,10 @@
 3. Verify the VAPID public/private key pair as a cryptographic pair without exposing either secret.
 4. Review the deployed production worker diff against staging before any production release.
 5. Obtain explicit approval before any merge to `main`, production secret change, production database migration, or production deployment.
+
+## Additional credential hygiene finding
+- The public default branch contained hard-coded production-target setup values, including a high-entropy push-dispatch credential literal, in `supabase/setup_push_dispatch.sql`. Treat that dispatch credential as exposed and rotate the corresponding production `PUSH_DISPATCH_SECRET` before any production release. The security branch version of the setup file now uses placeholders only; the public `main` branch and its Git history have not been changed, and no production credential was rotated as part of this staging task.
+- The production credential rotation is a separate, explicit approval gate. Removing the literal from the current branch file does not erase it from prior public Git history.
 
 ## Rollback
 - SQL migration: restore the previous function definition and grants only through a reviewed forward migration; do not restore broad anonymous execution or unrestricted endpoints.
