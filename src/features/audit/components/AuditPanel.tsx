@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Download } from "lucide-react";
 
 export default function AuditPanel({
   logs,
@@ -24,7 +24,7 @@ export default function AuditPanel({
         <p className="subtle">Showing up to 50 events from the last 14 days. Records older than 14 days can be downloaded; all audit data is automatically deleted after 30 days.</p>
       </div>
       <button className="btn secondary" onClick={onDownload}>
-        <ClipboardCheck size={16} /> Download older records (15+ days)
+        <Download size={16} /> Download older records (15+ days)
       </button>
     </div>
     {logs.length === 0
