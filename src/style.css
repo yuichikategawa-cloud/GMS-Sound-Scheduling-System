@@ -4438,3 +4438,57 @@
     justify-content: center;
   }
 }
+
+
+/* Registration and generator guidance fixes: stable checkbox layout and dark-mode contrast. */
+.auth-registration .days-field {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start;
+  align-content: start;
+  gap: 10px 16px;
+  height: auto !important;
+  min-height: max-content;
+  overflow: visible !important;
+  padding: 14px 15px 16px;
+}
+.auth-registration .days-field legend {
+  float: none;
+  width: auto;
+  max-width: 100%;
+  padding: 0 7px;
+}
+.auth-registration .days-field label {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+.auth-registration .days-field label input[type="checkbox"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+:root[data-theme="dark"] .generate-note-title {
+  color: #f1f3ff !important;
+}
+:root[data-theme="dark"] .generate-note-title svg {
+  color: #aaa2ff !important;
+}
+:root[data-theme="dark"] .generate-note p b {
+  color: #f1f5fc !important;
+}
+:root[data-theme="dark"] .generate-note p span {
+  color: #c0cbe0 !important;
+}
+@media (max-width: 600px) {
+  .auth-registration .days-field {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
