@@ -2,8 +2,9 @@
 
 ## Base and branch
 - Base: `main` at `2a78fb894d3e15e8c5f0bc72bc1a0f5c7d0eaf54`
-- Branch: `security/push-endpoint-hardening`
-- Scope: push subscription registration validation and outbound endpoint validation in the push dispatcher.
+- Working branch: `security/push-endpoint-hardening`
+- Current reviewed branch tip before this documentation update: `df3fd182d83dfdd3eed604e8371a446497e1738e`
+- Scope: push subscription registration, outbound endpoint validation, dispatch queue reliability, and regression coverage.
 
 ## Changes prepared
 - Restrict registration to authenticated GMS admin/servant profiles.
@@ -12,14 +13,35 @@
 - Prevent cross-account endpoint takeover unless the caller supplies the exact previously registered key pair.
 - Serialize endpoint ownership and per-user device-count changes; enforce a ten-device cap.
 - Re-check stored endpoints immediately before outbound push calls and remove unsupported persisted endpoints rather than sending to them.
-- Reuse the staging-tested queue claim, lease, checkpoint, and retry implementation. Notification content and assignment workflows are unchanged.
+- Use atomic queue claiming, lease renewal/checkpointing, retry backoff, and bounded attempts for dispatch processing.
+- Preserve the existing notification content and assignment workflows.
 
-## Validation plan
-1. Run Deno endpoint allowlist tests and dispatcher type-check.
-2. Run `supabase/tests/push_registration_security.sql` against staging only. It requires two existing GMS profiles without push subscriptions and rolls all data changes back.
-3. Re-run the staging Supabase security advisor and verify registration grants remain authenticated-only.
-4. Confirm a staging Chrome/Android browser subscription and a physical-device push delivery using the staging VAPID key.
-5. Review the deployed production worker diff against the staged worker before any production release.
+## Staging deployment and verification
+- Staging Supabase project: `uurgomjrsvzfmcpsnitu`.
+- Staging migration `20261105042202_gms_push_subscription_endpoint_security` is applied.
+- Staging Edge Functions `dispatch-push` and `username-login` are ACTIVE. The current `dispatch-push` deployment is version 2 with `verify_jwt=false`; the dispatcher performs its own shared-secret authentication.
+- The latest full validation workflow before this documentation update passed both jobs: Deno endpoint/queue tests and dispatcher type-check; plus the rollback-only push registration and admin RPC SQL regressions.
+- The admin RPC regression now also asserts authenticated-vs-anonymous function grants and checks that `is_admin()` returns false for a servant and true for an administrator.
+- Staging currently has one admin profile and one servant profile, but no schedules, assignments, push subscriptions, queued pushes, or serving notifications. The database regression tests roll back their temporary changes.
+- No physical-device push delivery has been confirmed. The user does not have an Android device available, so Android/device delivery validation remains waived/unverified rather than passed.
+
+## Security advisor findings and interpretation
+- The advisor reports nine authenticated-callable SECURITY DEFINER functions: six admin workflow RPCs, `is_admin()`, `notify_admin_assignment_confirmation()`, and `register_serving_push_subscription()`.
+- Staging ACL inspection confirms all nine are executable by `authenticated` and none by `anon`; neither `authenticated` nor `anon` can create objects in the `public` schema.
+- The six admin workflow RPCs explicitly call `public.is_admin()` before performing their protected work; the staging regression verifies that a servant identity is rejected and an administrator identity reaches the expected input/resource validation.
+- `is_admin()` returns only the role result for `auth.uid()` and is used by row-level security policies.
+- `notify_admin_assignment_confirmation()` requires an authenticated user, checks that the assignment belongs to that user's linked servant account, and requires the assignment to be confirmed.
+- `register_serving_push_subscription()` requires an authenticated GMS admin/servant profile and validates the endpoint, subscription keys, ownership transition, and per-account device limit.
+- These grants are required by the current authenticated application RPC flows. Revoking authenticated execution wholesale would break those flows; the advisor warning is retained as a documented, code-guarded exception, not treated as a clean scan.
+- The advisor also reports `serving_push_queue` has RLS enabled without user policies. This is intentional: queue access is service-role-only.
+- Leaked-password protection is still disabled in staging. It has not been changed as part of this work and remains an outstanding Auth hardening decision.
+
+## Remaining validation and release gates
+1. Complete any remaining staging regression checks and inspect fresh security advisor output.
+2. Perform a real browser subscription and end-to-end push delivery when a supported test device/browser is available.
+3. Verify the VAPID public/private key pair as a cryptographic pair without exposing either secret.
+4. Review the deployed production worker diff against staging before any production release.
+5. Obtain explicit approval before any merge to `main`, production secret change, production database migration, or production deployment.
 
 ## Rollback
 - SQL migration: restore the previous function definition and grants only through a reviewed forward migration; do not restore broad anonymous execution or unrestricted endpoints.
@@ -27,4 +49,4 @@
 - Queue rows and notifications remain in the database; do not truncate or delete them as part of rollback.
 
 ## Deployment boundary
-Prepared on an isolated branch only. No SQL was applied, no Edge Function was deployed, no secrets were read/changed, no Vercel environment was changed, no PR was opened, and `main` was not modified.
+Staging-only changes have been applied as listed above. No production SQL, production Edge Function, production secrets, production Vercel environment, or production deployment has been changed. `main` remains untouched; the security branch is 18 commits ahead of `main` at the last comparison, and no pull request or merge has been opened.
