@@ -8,6 +8,8 @@ Deno.test("accepts supported browser push-service endpoints", () => {
     "https://updates.push.services.mozilla.com/wpush/v2/test-endpoint-token",
     "https://push.services.mozilla.com/wpush/v2/test-endpoint-token",
     "https://web.push.apple.com/Q-test-endpoint-token",
+    "https://web2.push.apple.com/Q-test-endpoint-token",
+    "https://a.b.push.apple.com/Q-test-endpoint-token",
     "https://wns2-example.notify.windows.com/w/?token=test-endpoint-token",
   ];
 
@@ -30,6 +32,9 @@ Deno.test("rejects arbitrary hosts, private addresses and insecure endpoints", (
     "https://fcm.googleapis.com:8443/fcm/send/test-endpoint-token",
     "https://fcm.googleapis.com/fcm/send/test-endpoint-token#fragment",
     "https://fcm.googleapis.com",
+    "https://push.apple.com/Q-test-endpoint-token",
+    "https://push.apple.com.attacker.example/Q-test-endpoint-token",
+    "https://attackerpush.apple.com/Q-test-endpoint-token",
   ];
 
   for (const endpoint of invalid) {

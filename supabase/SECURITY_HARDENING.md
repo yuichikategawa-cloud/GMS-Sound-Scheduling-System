@@ -33,10 +33,12 @@ Push registration accepts HTTPS endpoints only from these browser push services:
 - `android.googleapis.com` (legacy Google endpoint)
 - `updates.push.services.mozilla.com`
 - `push.services.mozilla.com`
-- `web.push.apple.com`
+- Any valid DNS subdomain of `push.apple.com` (as required for Apple Web Push)
 - One-label Microsoft WNS hosts below `notify.windows.com`
 
 The Edge Function repeats the allowlist check before any outbound push request. This is intentional defense in depth. If a browser vendor changes its push-service host, update the SQL and Edge allowlists together and add tests before deployment.
+Apple Web Push endpoints may use any subdomain of `push.apple.com`. Both the SQL registration function and Edge Function validator accept one or more valid DNS labels before that suffix; the bare `push.apple.com` host and lookalike suffixes remain rejected.
+
 
 Registration limits each account to ten devices. A same-endpoint re-registration by the same user updates the existing row. A shared-device account switch is allowed only when the caller presents the exact stored `p256dh` and `auth` key pair for that endpoint. Knowing the endpoint URL alone is insufficient. If a device remains registered to another account and the current browser cannot present the matching key pair, sign out from the prior account on that device and remove its subscription before switching.
 
