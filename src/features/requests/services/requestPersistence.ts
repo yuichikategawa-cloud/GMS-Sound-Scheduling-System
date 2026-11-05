@@ -1,10 +1,10 @@
 export interface RequestPersistenceResponse {
-  error: unknown | null;
+  error: { message: string } | null;
 }
 
 export interface ServingRequestInsertPayload {
   schedule_id: string;
-  assignment_id: string;
+  assignment_id: string | undefined;
   requester_servant_id: string;
   request_type: "replacement" | "swap";
   details: string;
@@ -26,27 +26,10 @@ export interface ServingRequestReviewPayload {
   reviewed_at: string;
 }
 
+/** Minimal structural contract for the existing Supabase client methods. */
 export interface ServingRequestPersistenceClient {
-  from(tableName: "serving_requests"): {
-    insert(values: ServingRequestInsertPayload): PromiseLike<RequestPersistenceResponse>;
-    update(values: ServingRequestReviewPayload): {
-      eq(column: "id", value: string): PromiseLike<RequestPersistenceResponse>;
-    };
-  };
-  from(tableName: "serving_request_reads"): {
-    upsert(
-      values: ServingRequestReadPayload,
-      options: { onConflict: "request_id,user_id" },
-    ): PromiseLike<RequestPersistenceResponse>;
-  };
-  rpc(
-    functionName: "admin_execute_servant_swap",
-    args: { p_request_id: string },
-  ): PromiseLike<RequestPersistenceResponse>;
-  rpc(
-    functionName: "admin_resolve_replacement",
-    args: { p_request_id: string; p_replacement_servant_id: string },
-  ): PromiseLike<RequestPersistenceResponse>;
+  from(tableName: string): any;
+  rpc(functionName: string, args: Record<string, string>): PromiseLike<RequestPersistenceResponse>;
 }
 
 /** Inserts a pending replacement or swap request using the existing row contract. */
