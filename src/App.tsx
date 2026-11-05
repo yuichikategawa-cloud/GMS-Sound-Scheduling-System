@@ -22,6 +22,7 @@ import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeam
 import { validateScheduleAssignment } from "./features/schedule/services/assignmentValidation";
 import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGeneration";
 import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedules } from "./features/schedule/services/schedulePersistence";
+import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -219,9 +220,8 @@ export default function App() {
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
       const loadedRules=ruleRes.error?[]:(ruleRes.data??[]);setAvailabilityRules(loadedRules);setServingPreferences(preferenceRes.error?[]:(preferenceRes.data??[]));
       const explicitAvailability=availRes.error?[]:(availRes.data??[]);
-      const virtualAvailability:any[]=[];
       const ruleEndLimit=new Date();ruleEndLimit.setFullYear(ruleEndLimit.getFullYear()+2);
-      for(const rule of loadedRules){const from=new Date(`${rule.effective_from}T12:00:00`);const until=rule.effective_until?new Date(`${rule.effective_until}T12:00:00`):ruleEndLimit;for(const d=new Date(from);d<=until&&d<=ruleEndLimit;d.setDate(d.getDate()+1)){const day=d.getDay(),date=d.toLocaleDateString("en-CA"),dayOfMonth=d.getDate(),lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();let matches=false;if(rule.pattern==="weekday")matches=day>=1&&day<=5;else if(rule.pattern==="saturday")matches=day===6;else if(rule.pattern==="sunday")matches=day===0;else if(rule.pattern==="second_week")matches=dayOfMonth>=8&&dayOfMonth<=14;else if(rule.pattern==="month_edges")matches=dayOfMonth<=3||dayOfMonth>lastDay-3;else if(rule.pattern==="nth_weekday"){const ordinal=Math.ceil(dayOfMonth/7),isLast=dayOfMonth+7>lastDay;matches=day===Number(rule.weekday)&&(Number(rule.ordinal)===5?isLast:ordinal===Number(rule.ordinal));}if(matches)virtualAvailability.push({id:`rule-${rule.id}-${date}`,servant_id:rule.servant_id,service_date:date,status:rule.status,notes:rule.notes||"Recurring restriction",is_recurring:true,rule_id:rule.id});}}
+      const virtualAvailability=buildVirtualAvailability(loadedRules,ruleEndLimit);
       setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestRes.error?[]:(requestRes.data??[]));setRequestReads(readRes.error?[]:(readRes.data??[]));setNotifications(notificationRes.error?[]:(notificationRes.data??[]));
       setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
@@ -499,12 +499,15 @@ export default function App() {
   }
   async function saveAvailabilityRule(rule:any) {
     if(!supabase)return false;
-    const overlaps=availabilityRules.filter(r=>r.servant_id===rule.servant_id&&r.status!==rule.status&&(!r.effective_until||r.effective_until>=rule.effective_from)&&(!rule.effective_until||rule.effective_until>=r.effective_from));
-    if(overlaps.length){setMessage("This recurring rule overlaps an existing rule with a different status. Review or remove the existing rule first.");return false;}
-    const end=rule.effective_until?new Date(`${rule.effective_until}T12:00:00`):new Date(new Date().setFullYear(new Date().getFullYear()+2));
-    const cursor=new Date(`${rule.effective_from}T12:00:00`);let conflictDate="";
-    for(let i=0;cursor<=end&&i<740;cursor.setDate(cursor.getDate()+1),i++){const day=cursor.getDay(),dom=cursor.getDate(),last=new Date(cursor.getFullYear(),cursor.getMonth()+1,0).getDate();let match=rule.pattern==="weekday"?day>=1&&day<=5:rule.pattern==="saturday"?day===6:rule.pattern==="sunday"?day===0:rule.pattern==="second_week"?dom>=8&&dom<=14:rule.pattern==="month_edges"?dom<=3||dom>last-3:rule.pattern==="nth_weekday"?day===Number(rule.weekday)&&(Number(rule.ordinal)===5?dom+7>last:Math.ceil(dom/7)===Number(rule.ordinal)):false;const date=cursor.toLocaleDateString("en-CA");if(match&&availability.some(a=>a.servant_id===rule.servant_id&&a.service_date===date&&a.status!==rule.status)){conflictDate=date;break;}}
-    if(conflictDate){setMessage(`This rule conflicts with an existing availability entry on ${conflictDate}. Resolve that date before saving the recurring rule.`);return false;}
+    const validation=validateRecurringAvailabilityRule(rule,availabilityRules,availability);
+    if(!validation.ok){
+      if(validation.reason==="overlapping_rule"){
+        setMessage("This recurring rule overlaps an existing rule with a different status. Review or remove the existing rule first.");
+        return false;
+      }
+      setMessage(`This rule conflicts with an existing availability entry on ${validation.conflictDate}. Resolve that date before saving the recurring rule.`);
+      return false;
+    }
     const {error}=await supabase.from("servant_availability_rules").insert({...rule,created_by:session?.user?.id});
     if(error){setMessage(error.message);return false;} await loadData();setMessage("Recurring availability restriction saved.");return true;
   }
