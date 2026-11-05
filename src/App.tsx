@@ -29,6 +29,7 @@ import { buildServantAccountCandidates, loadServantDirectoryData } from "./featu
 import { loadServingRequestData } from "./features/requests/services/requestData";
 import { loadServingNotificationData } from "./features/notifications/services/notificationData";
 import { markServingNotificationRead, saveServingNotificationPreferences } from "./features/notifications/services/notificationPersistence";
+import { cleanupServingPushSubscriptionForSignOut, disableServingPushSubscription, enableServingPushSubscription, isServingPushSubscriptionEnabled, type PushLifecycleRuntime } from "./features/notifications/services/pushSubscription";
 import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
@@ -173,14 +174,9 @@ export default function App() {
   useEffect(() => {
     let cancelled=false;
     async function checkPush(){
-      if(!session?.user?.id||!("serviceWorker" in navigator)||!("PushManager" in window)){if(!cancelled)setPushEnabled(false);return;}
-      try{
-        const registration=await navigator.serviceWorker.ready;
-        const subscription=await registration.pushManager.getSubscription();
-        if(!subscription){if(!cancelled)setPushEnabled(false);return;}
-        const {data,error}=await supabase!.from("serving_push_subscriptions").select("id").eq("user_id",session.user.id).eq("endpoint",subscription.endpoint).maybeSingle();
-        if(!cancelled)setPushEnabled(!error&&!!data);
-      }catch{if(!cancelled)setPushEnabled(false);}
+      if(!session?.user?.id){if(!cancelled)setPushEnabled(false);return;}
+      const enabled=await isServingPushSubscriptionEnabled(supabase!,session.user.id,getPushLifecycleRuntime());
+      if(!cancelled)setPushEnabled(enabled);
     }
     void checkPush();return()=>{cancelled=true;};
   },[session?.user?.id]);
@@ -248,36 +244,47 @@ export default function App() {
     await askAction("Install app",message,"Got it",false);
   }
 
-  function decodeVapidKey(value:string){const padding="=".repeat((4-value.length%4)%4);const base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/");const raw=window.atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+  function getPushLifecycleRuntime():PushLifecycleRuntime {
+    const isIOS=/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+    const isStandalone=window.matchMedia?.("(display-mode: standalone)").matches||(navigator as any).standalone===true;
+    return {
+      serviceWorkerSupported:"serviceWorker" in navigator,
+      pushManagerSupported:"PushManager" in window,
+      notificationSupported:"Notification" in window,
+      isIOS,
+      isStandalone,
+      userAgent:navigator.userAgent,
+      notificationPermission:()=>Notification.permission,
+      requestNotificationPermission:()=>Notification.requestPermission(),
+      serviceWorkerReady:()=>navigator.serviceWorker.ready as unknown as ReturnType<PushLifecycleRuntime["serviceWorkerReady"]>,
+      getServiceWorkerRegistration:(scope)=>navigator.serviceWorker.getRegistration(scope) as unknown as ReturnType<PushLifecycleRuntime["getServiceWorkerRegistration"]>,
+      delay:(milliseconds)=>new Promise<void>(resolve=>window.setTimeout(resolve,milliseconds)),
+      warn:(message,error)=>console.warn(message,error),
+    };
+  }
 
   async function enablePushNotifications(){
     if(!supabase||!session?.user?.id)return;
-    const vapidKey=(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
-    if(!vapidKey){setMessage("Push delivery is not configured yet. Set VITE_VAPID_PUBLIC_KEY in Vercel and your local environment, then redeploy.");return;}
-    if(!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)){setMessage("This browser does not support web push notifications. You can still use the in-app Inbox.");return;}
-    const isIOS=/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-    const isStandalone=window.matchMedia?.("(display-mode: standalone)").matches||(navigator as any).standalone===true;
-    if(isIOS&&!isStandalone){setMessage("On iPhone or iPad, install GMS first: open this page in Safari → Share → Add to Home Screen, turn on Open as Web App, then tap Add. Open GMS from the new Home Screen icon and enable push notifications there.");return;}
-    setPushBusy(true);setMessage("");
+    let started=false;
     try{
-      const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
-      if(permission!=="granted"){setMessage(permission==="denied"?"Notifications are blocked for this device. Open iPhone Settings, find the installed Sound Scheduling web app, and allow notifications. In-app Inbox notifications will continue to work.":"Notification permission was not granted. In-app Inbox notifications will continue to work.");return;}
-      const registration=await navigator.serviceWorker.ready;
-      const existing=await registration.pushManager.getSubscription();
-      const subscription=existing??await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:decodeVapidKey(vapidKey)});
-      const json=subscription.toJSON();
-      if(!json.endpoint||!json.keys?.p256dh||!json.keys?.auth)throw new Error("The browser did not return a complete push subscription.");
-      const {error}=await supabase.rpc("register_serving_push_subscription",{p_endpoint:json.endpoint,pp256dh:json.keys.p256dh,pauth:json.keys.auth,p_user_agent:navigator.userAgent});
-      if(error)throw error;
-      setPushEnabled(true);setMessage("Push notifications enabled on this device. Your in-app Inbox remains the primary notification history.");
+      const vapidKey=(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
+      const result=await enableServingPushSubscription(supabase,session.user.id,vapidKey,getPushLifecycleRuntime(),()=>{
+        started=true;setPushBusy(true);setMessage("");
+      });
+      if(result==="missing-vapid-key")setMessage("Push delivery is not configured yet. Set VITE_VAPID_PUBLIC_KEY in Vercel and your local environment, then redeploy.");
+      else if(result==="unsupported-browser")setMessage("This browser does not support web push notifications. You can still use the in-app Inbox.");
+      else if(result==="ios-install-required")setMessage("On iPhone or iPad, install GMS first: open this page in Safari → Share → Add to Home Screen, turn on Open as Web App, then tap Add. Open GMS from the new Home Screen icon and enable push notifications there.");
+      else if(result==="permission-blocked")setMessage("Notifications are blocked for this device. Open iPhone Settings, find the installed Sound Scheduling web app, and allow notifications. In-app Inbox notifications will continue to work.");
+      else if(result==="permission-not-granted")setMessage("Notification permission was not granted. In-app Inbox notifications will continue to work.");
+      else {setPushEnabled(true);setMessage("Push notifications enabled on this device. Your in-app Inbox remains the primary notification history.");}
     }catch(e){setMessage(errorText(e));}
-    finally{setPushBusy(false);}
+    finally{if(started)setPushBusy(false);}
   }
 
   async function disablePushNotifications(){
     if(!supabase||!session?.user?.id||!("serviceWorker" in navigator))return;
     setPushBusy(true);
-    try{const registration=await navigator.serviceWorker.ready;const subscription=await registration.pushManager.getSubscription();if(subscription){await supabase.from("serving_push_subscriptions").delete().eq("endpoint",subscription.endpoint);await subscription.unsubscribe();}setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
+    try{await disableServingPushSubscription(supabase,getPushLifecycleRuntime());setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
     catch(e){setMessage(errorText(e));}finally{setPushBusy(false);}
   }
 
@@ -328,21 +335,7 @@ export default function App() {
     // Do not await navigator.serviceWorker.ready: if /sw.js is missing or fails
     // to install, that promise can remain pending forever and trap the user.
     if(supabase&&userId&&"serviceWorker" in navigator){
-      try{
-        const registration=await Promise.race([
-          navigator.serviceWorker.getRegistration("/"),
-          new Promise<undefined>(resolve=>window.setTimeout(()=>resolve(undefined),500))
-        ]);
-        const subscription=await registration?.pushManager?.getSubscription();
-        if(subscription){
-          const cleanup=(async()=>{
-            const {error}=await supabase.from("serving_push_subscriptions").delete().eq("user_id",userId).eq("endpoint",subscription.endpoint);
-            if(error)console.warn("Could not remove this device push subscription during sign out",error);
-            await subscription.unsubscribe();
-          })();
-          await Promise.race([cleanup,new Promise<void>(resolve=>window.setTimeout(resolve,700))]);
-        }
-      }catch(e){console.warn("Could not remove this device push subscription during sign out",e);}
+      await cleanupServingPushSubscriptionForSignOut(supabase,userId,getPushLifecycleRuntime());
     }
 
     try{
