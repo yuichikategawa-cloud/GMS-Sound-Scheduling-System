@@ -24,7 +24,7 @@ import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGe
 import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedules } from "./features/schedule/services/schedulePersistence";
 import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
 import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
-import { createServantRecord, linkServantAccountRecord, setServantActive } from "./features/servants/services/servantManagement";
+import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 
@@ -194,7 +194,7 @@ export default function App() {
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
       const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestRes,readRes,notificationRes,settingRes,auditRes,servantDirectoryRes,notificationPrefsRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
-        supabase.from("servants").select("*").order("full_name"),
+        loadServantRecords(supabase),
         supabase.from("service_templates").select("*").eq("active",true),
         supabase.from("schedules").select("*").order("service_date").order("start_time"),
         supabase.from("assignments").select("*"),

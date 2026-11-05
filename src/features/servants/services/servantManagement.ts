@@ -1,4 +1,11 @@
+import type { Servant } from "../../../types";
+
 export interface ServantManagementResponse {
+  error: unknown | null;
+}
+
+export interface ServantRecordsResponse {
+  data: Servant[] | null;
   error: unknown | null;
 }
 
@@ -16,6 +23,9 @@ export interface ServantManagementClient {
         value: string,
       ): PromiseLike<ServantManagementResponse>;
     };
+    select(columns: "*"): {
+      order(column: "full_name"): PromiseLike<ServantRecordsResponse>;
+    };
   };
   rpc(
     functionName: "admin_link_servant_account",
@@ -25,6 +35,13 @@ export interface ServantManagementClient {
       p_verified_nij: string;
     },
   ): PromiseLike<ServantManagementResponse>;
+}
+
+/** Loads required servant records using the existing full-row, name-ordered query. */
+export function loadServantRecords(
+  client: ServantManagementClient,
+): PromiseLike<ServantRecordsResponse> {
+  return client.from("servants").select("*").order("full_name");
 }
 
 /** Creates an active servant record; authorization remains with the caller and database. */

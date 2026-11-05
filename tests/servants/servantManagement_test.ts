@@ -3,10 +3,13 @@
 import {
   createServantRecord,
   linkServantAccountRecord,
+  loadServantRecords,
   setServantActive,
   type ServantManagementClient,
   type ServantManagementResponse,
+  type ServantRecordsResponse,
 } from "../../src/features/servants/services/servantManagement.ts";
+import type { Servant } from "../../src/types.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -26,9 +29,14 @@ interface RecordedCalls {
   update: unknown[];
   eq: Array<{ column: string; value: string }>;
   rpc: Array<{ functionName: string; args: unknown }>;
+  select: string[];
+  order: string[];
 }
 
-function createFakeClient(response: ServantManagementResponse = { error: null }): {
+function createFakeClient(
+  response: ServantManagementResponse = { error: null },
+  recordsResponse: ServantRecordsResponse = { data: [], error: null },
+): {
   client: ServantManagementClient;
   calls: RecordedCalls;
 } {
@@ -38,6 +46,8 @@ function createFakeClient(response: ServantManagementResponse = { error: null })
     update: [],
     eq: [],
     rpc: [],
+    select: [],
+    order: [],
   };
 
   const client: ServantManagementClient = {
@@ -57,6 +67,15 @@ function createFakeClient(response: ServantManagementResponse = { error: null })
             },
           };
         },
+        select: columns => {
+          calls.select.push(columns);
+          return {
+            order: async column => {
+              calls.order.push(column);
+              return recordsResponse;
+            },
+          };
+        },
       };
     },
     rpc: async (functionName, args) => {
@@ -67,6 +86,44 @@ function createFakeClient(response: ServantManagementResponse = { error: null })
 
   return { client, calls };
 }
+
+Deno.test("servant management loads all servant columns ordered by full name", async () => {
+  const servantRows: Servant[] = [
+    { id: "servant-1", full_name: "Alicia Tan", active: true, auth_user_id: null },
+    { id: "servant-2", full_name: "Jordan Tan", active: false, auth_user_id: "user-2" },
+  ];
+  const recordsResponse = { data: servantRows, error: null };
+  const { client, calls } = createFakeClient({ error: null }, recordsResponse);
+
+  const result = await loadServantRecords(client);
+
+  assertEqual(calls.from, ["servants"], "Servant loading must target the existing servants table.");
+  assertEqual(calls.select, ["*"], "Servant loading must retain the existing full-row selection.");
+  assertEqual(calls.order, ["full_name"], "Servant loading must retain alphabetical name ordering.");
+  assertSame(result, recordsResponse, "Servant query response must pass through unchanged.");
+  assertSame(result.data, servantRows, "Servant data must not be copied or transformed.");
+});
+
+Deno.test("servant management preserves servant-list database errors", async () => {
+  const databaseError = { code: "42501", message: "Servant records could not be loaded." };
+  const recordsResponse = { data: null, error: databaseError };
+  const { client } = createFakeClient({ error: null }, recordsResponse);
+
+  const result = await loadServantRecords(client);
+
+  assertSame(result.error, databaseError, "The caller must receive the original database error.");
+  assertSame(result.data, null, "A failed required servant query must not fabricate rows.");
+});
+
+Deno.test("servant management preserves an empty successful servant list", async () => {
+  const recordsResponse = { data: [] as Servant[], error: null };
+  const { client } = createFakeClient({ error: null }, recordsResponse);
+
+  const result = await loadServantRecords(client);
+
+  assertEqual(result.data, [], "An empty successful servant list must remain empty.");
+  assertSame(result.error, null, "An empty successful query must not be reported as an error.");
+});
 
 Deno.test("servant management creates an active servant with the existing row shape", async () => {
   const { client, calls } = createFakeClient();
@@ -112,7 +169,7 @@ Deno.test("servant management links through the existing admin RPC and trims ver
   assertEqual(calls.update, [], "Linking must not issue a direct update.");
 });
 
-Deno.test("servant management passes database errors through unchanged", async () => {
+Deno.test("servant management passes mutation database errors through unchanged", async () => {
   const databaseError = { code: "P0001", message: "The account cannot be linked to this servant." };
   const response = { error: databaseError };
 
