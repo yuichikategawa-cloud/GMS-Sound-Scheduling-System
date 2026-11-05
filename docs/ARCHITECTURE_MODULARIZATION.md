@@ -157,6 +157,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M2 first shared UI extraction: branded `GmsLoader` moved to `src/shared/components/GmsLoader.tsx`; both app call sites use the extracted component, with existing global loader styles unchanged.
 - [x] M2 second shared UI extraction: the action-confirmation dialog is now `src/shared/components/ActionDialog.tsx`; the app retains the confirmation resolver/state and passes controlled props into the component.
 - [x] M2 app-shell extraction: sidebar/navigation moved to `src/app/components/Sidebar.tsx`; App retains navigation state and computes the two role-specific badge counts.
+- [x] M2 mobile navigation extraction: bottom navigation and More menu moved to `src/app/components/MobileNavigation.tsx`; role-specific visibility, badge state, theme/install/sign-out actions remain controlled through App callbacks.
 - [ ] M3 authentication/profile.
 - [ ] M4 schedule.
 - [ ] M5 availability/servants.
