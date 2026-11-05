@@ -21,6 +21,7 @@ import { mapSchedules } from "./features/schedule/services/mapSchedules";
 import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
 import { validateScheduleAssignment } from "./features/schedule/services/assignmentValidation";
 import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGeneration";
+import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedules } from "./features/schedule/services/schedulePersistence";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -442,10 +443,10 @@ export default function App() {
     if(validation.highWorkload.length&&!await askAction("High workload warning",`${validation.highWorkload.map(item=>`${servants.find(p=>p.id===item.servantId)?.full_name??"Servant"} (${item.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
     setLoading(true);setMessage("");
     try {
-      const {error}=await supabase.rpc("admin_save_schedule_with_assignments",{
-        p_schedule_id:editing?.id??null,
-        p_service:payload,
-        p_assignments:ROLES.filter(role=>selected[role]).map(role=>({role,servant_id:selected[role]}))
+      const {error}=await saveScheduleWithAssignments(supabase,{
+        scheduleId:editing?.id??null,
+        service:payload,
+        assignments:ROLES.filter(role=>selected[role]).map(role=>({role,servant_id:selected[role]}))
       });
       if(error)throw error;
       setScheduleError("");setModal(null);setEditing(null);await loadData();
@@ -464,7 +465,7 @@ export default function App() {
     }
     setLoading(true);setMessage("");setScheduleError("");
     try {
-      const {error}=await supabase.from("schedules").upsert(generation.rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:mode==="add"});
+      const {error}=await upsertGeneratedSchedules(supabase,generation.rows,mode);
       if(error)throw error;
       await loadData();setMessage(`${generation.weekendCount} weekend(s) generated using ${generation.selectedTemplateCount} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
@@ -569,7 +570,7 @@ export default function App() {
   }
   async function deleteSchedule(s:ScheduleView){
     if(!supabase||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This also removes its assignments.`,"Delete service",true))return;
-    const {error}=await supabase.from("schedules").delete().eq("id",s.id);
+    const {error}=await deleteScheduleById(supabase,s.id);
     if(error)setMessage(error.message);else await loadData();
   }
   async function publishSchedule(s:ScheduleView){
