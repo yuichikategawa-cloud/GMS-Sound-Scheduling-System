@@ -89,6 +89,9 @@ BEGIN
     IF v_message <> 'Push user agent is invalid or too long' THEN RAISE; END IF;
   END;
 
+  -- Restore the valid test endpoint after the FOREACH loop reused this variable.
+  v_endpoint := 'https://fcm.googleapis.com/fcm/send/phase1-' || v_suffix;
+
   PERFORM set_config('request.jwt.claim.sub', v_user_2::text, true);
   BEGIN
     PERFORM public.register_serving_push_subscription(v_endpoint,repeat('C',87),repeat('D',22),'phase 1 test');
