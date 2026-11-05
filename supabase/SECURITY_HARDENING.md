@@ -23,6 +23,11 @@ A separate follow-up migration has also been applied to the dedicated staging pr
 
 The follow-up keeps the trigger as SECURITY INVOKER, explicitly sets `search_path` to `pg_catalog` only, and qualifies `pg_catalog.now()`. The read-only post-migration assertion in `supabase/tests/availability_touch_search_path.sql` passed against staging.
 
+
+A third follow-up migration updates the SQL registration allowlist to accept any valid DNS subdomain of `push.apple.com`, matching the Edge Function validator. It has been applied to the dedicated staging project only and has not been applied to production:
+
+- `supabase/migrations/20261105110000_gms_apple_push_subdomain_allowlist.sql`
+
 The notification event key includes the assignment ID, the latest audited transition timestamp, the number of non-confirmed -> confirmed transitions still present in `audit_logs`, and the administrator recipient ID. Repeated RPC calls for the same state transition therefore collide with the existing unique `serving_notifications_event_key_uidx` index and are ignored. A later decline/pending -> confirmed transition receives a different key.
 
 The event token deliberately uses the existing audit trail instead of adding a schema column or new table. Audit and notification retention should remain aligned: if either retention policy changes, re-review the deduplication window.
