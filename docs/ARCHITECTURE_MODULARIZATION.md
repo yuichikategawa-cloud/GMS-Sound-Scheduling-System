@@ -170,6 +170,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M3 session-lifecycle extraction: auth subscription, initial session restoration, local invalid-refresh cleanup, recovery events, and unmount cancellation moved to `src/features/auth/services/sessionLifecycle.ts` with five Deno tests.
 - [ ] M4 schedule.
 - [x] M4 first pure schedule-service extraction: schedule/location/servant/assignment view mapping moved to `src/features/schedule/services/mapSchedules.ts`, with regression tests for ordering, fallback labels, confirmation defaults, empty assignments, and input immutability.
+- [x] M4 schedule display-token extraction: church color selection, VSS/AOG categorization, and servant tint selection moved to `src/features/schedule/services/dailyDisplay.ts` with deterministic behavior tests.
 - [ ] M5 availability/servants.
 - [ ] M6 requests/notifications.
 - [ ] M7 statistics/audit/CSS.
