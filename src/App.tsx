@@ -4,6 +4,7 @@ import { CalendarDays, Church, AudioLines, Users, Search, Plus, LogOut, Pencil, 
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
 import { today, fmtDate, shortTime, dayNameForTemplate, errorText, displayList } from "./shared/formatters";
+import GmsLoader from "./shared/components/GmsLoader";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -1340,27 +1341,6 @@ function ScheduleModal({locations,servants,availability,preferences,schedules,ed
 }
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
  return <div className="modal-backdrop"><form className="modal-card compact" onSubmit={onSave}><div className="modal-head"><h2>Add servant</h2><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><label>Full name<input name="full_name" required autoFocus placeholder="Servant's full name"/></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Add person</button></div></form></div>;
-}
-function GmsLoader({label="Getting the sound system ready..."}:{label?:string}){
- const soundFacts=[
-  "A 3 dB increase represents roughly twice the sound intensity.",
-  "Sound travels faster through water than through air.",
-  "Human hearing typically spans frequencies from 20 Hz to 20 kHz.",
-  "A sound wave transfers energy through a medium.",
-  "Reverberation is the persistence of sound after its source stops."
- ];
- const [factIndex,setFactIndex]=useState(()=>Math.floor(Math.random()*soundFacts.length));
- useEffect(()=>{const timer=window.setInterval(()=>setFactIndex(index=>(index+1)%soundFacts.length),5000);return()=>window.clearInterval(timer);},[]);
- return <div className="gms-loader-screen" role="status" aria-live="polite" aria-label={label}>
-  <main className="gms-loader-content">
-   <h1 className="gms-loader-title">GMS Sound Scheduling System</h1>
-   <div className="gms-equalizer" aria-hidden="true">
-    {[42,66,88,100,88,66,42].map((height,index)=><span key={index} style={{"--bar-height":`${height}%`,"--bar-delay":`${index*110}ms`} as CSSProperties}/>)}
-   </div>
-   <h2 className="gms-loader-message">{label}</h2>
-   <p className="gms-loader-caption" key={factIndex}>{soundFacts[factIndex]}</p>
-  </main>
- </div>;
 }
 function ServantInformationPanel({servants,memberDirectory,accountCandidates,locations,schedules,requests,onAdd,onToggle,onLink}:{servants:Servant[];memberDirectory:any[];accountCandidates:any[];locations:Location[];schedules:ScheduleView[];requests:any[];onAdd:()=>void;onToggle:(p:Servant)=>void;onLink:(servant:Servant,userId:string,verifiedNij:string)=>Promise<boolean>}){
   const [query,setQuery]=useState(""); const [locationFilter,setLocationFilter]=useState(""); const [cgFilter,setCgFilter]=useState(""); const [statusFilter,setStatusFilter]=useState("");
