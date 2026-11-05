@@ -20,6 +20,7 @@ import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/ser
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
 import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
 import { validateScheduleAssignment } from "./features/schedule/services/assignmentValidation";
+import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGeneration";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -453,21 +454,19 @@ export default function App() {
 
   async function generateWeekend(date:string,weeks=1,templateIds:string[]=[],mode:"add"|"replace"="add") {
     if(!supabase||!isAdmin)return;
-    const d=new Date(`${date}T12:00:00`);
-    if(d.getDay()!==6){setMessage("Choose a Saturday to generate the weekend.");return;}
-    const dates:{date:string;day:number}[]=[];
-    for(let w=0;w<weeks;w++){const sat=new Date(d);sat.setDate(d.getDate()+w*7);const sun=new Date(sat);sun.setDate(sat.getDate()+1);dates.push({date:sat.toLocaleDateString("en-CA"),day:6},{date:sun.toLocaleDateString("en-CA"),day:0});}
-    const selected=templates.filter(t=>templateIds.includes(String(t.id)));
-    if(!selected.length){setMessage("Select at least one service template to generate.");return;}
+    const generation=buildWeekendScheduleRows({startDate:date,weeks,templateIds,templates});
+    if(!generation.ok){
+      if(generation.reason==="choose_saturday"){setMessage("Choose a Saturday to generate the weekend.");return;}
+      if(generation.reason==="select_template"){setMessage("Select at least one service template to generate.");return;}
+      if(generation.reason==="no_weekend_services"){setScheduleError("The selected templates do not include Saturday or Sunday services.");return;}
+      setScheduleError("Choose a valid Saturday and a positive number of weekends.");
+      return;
+    }
     setLoading(true);setMessage("");setScheduleError("");
     try {
-      const rows=dates.flatMap(x=>selected.filter(t=>Number(t.day_of_week)===x.day).map(t=>({
-        service_date:x.date,location_id:t.location_id,service_name:t.service_name,start_time:t.start_time,end_time:t.end_time
-      })));
-      if(!rows.length)throw new Error("The selected templates do not include Saturday or Sunday services.");
-      const {error}=await supabase.from("schedules").upsert(rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:mode==="add"});
+      const {error}=await supabase.from("schedules").upsert(generation.rows,{onConflict:"service_date,location_id,service_name",ignoreDuplicates:mode==="add"});
       if(error)throw error;
-      await loadData();setMessage(`${weeks} weekend(s) generated using ${selected.length} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
+      await loadData();setMessage(`${generation.weekendCount} weekend(s) generated using ${generation.selectedTemplateCount} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
