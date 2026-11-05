@@ -171,6 +171,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [ ] M4 schedule.
 - [x] M4 first pure schedule-service extraction: schedule/location/servant/assignment view mapping moved to `src/features/schedule/services/mapSchedules.ts`, with regression tests for ordering, fallback labels, confirmation defaults, empty assignments, and input immutability.
 - [x] M4 schedule display-token extraction: church color selection, VSS/AOG categorization, and servant tint selection moved to `src/features/schedule/services/dailyDisplay.ts` with deterministic behavior tests.
+- [x] M4.2 manual-assignment validation extraction: duplicate selection, serving eligibility, cross-church conflicts, same-church overlap, availability, and workload checks moved to `src/features/schedule/services/assignmentValidation.ts` with 12 Deno regression tests; App retains messaging, warning confirmations, and RPC orchestration.
 - [ ] M5 availability/servants.
 - [ ] M6 requests/notifications.
 - [ ] M7 statistics/audit/CSS.
