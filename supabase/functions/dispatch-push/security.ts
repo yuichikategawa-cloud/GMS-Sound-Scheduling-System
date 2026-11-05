@@ -30,12 +30,12 @@ export function isAllowedPushEndpoint(value: string): boolean {
 
   const host = endpoint.hostname.toLowerCase();
   const isMicrosoftWnsHost =
-    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.notify\.windows\.com$/.test(host);
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?[.]notify[.]windows[.]com$/.test(host);
   // Apple documents Web Push endpoints on any subdomain of push.apple.com.
   // Require at least one valid DNS label before the suffix, and anchor the
   // expression so lookalike attacker-controlled domains are not accepted.
   const isApplePushHost =
-    /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+push\.apple\.com$/.test(host);
+    /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?[.])+push[.]apple[.]com$/.test(host);
 
   return endpoint.protocol === "https:" &&
     endpoint.username === "" &&
