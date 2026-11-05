@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
+export default function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAdmin:boolean;directory:any[];onSave:(payload:any)=>Promise<void>}){
  const [saving,setSaving]=useState(false);
  const current=profile??{full_name:"",email:"",gender:"Prefer not to say",date_of_birth:"",nij:"",phone_number:"",domicile_area:"Alam Sutera",domicile_other:"",cg_category:"AOG Youth",cg_status:"Member",cg_number:"",cg_days:[],cg_time:"",team_leader_name:"",coach_name:"",cg_leader_name:"",leader_phone_numbers:[],last_verified_at:new Date().toISOString()};
  const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
