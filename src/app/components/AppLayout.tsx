@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "./AppShell.css";
 
 type AppLayoutProps = {
   theme: "light" | "dark";

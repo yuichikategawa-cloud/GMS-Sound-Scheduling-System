@@ -1,4 +1,5 @@
 import { ClipboardCheck } from "lucide-react";
+import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView } from "../../../types";
 import PushNotificationSettings from "../../notifications/components/PushNotificationSettings";

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView, Servant } from "../../../types";
 import PushNotificationSettings from "../../notifications/components/PushNotificationSettings";
