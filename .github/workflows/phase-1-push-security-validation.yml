@@ -24,8 +24,12 @@ jobs:
         with:
           deno-version: v2.x
       - name: Run push endpoint and queue helper tests
-        run: |
-          deno test --no-lock --config supabase/functions/dispatch-push/deno.json             supabase/functions/dispatch-push/security_test.ts             supabase/functions/_shared/leaseKeeper_test.ts             supabase/functions/_shared/retryBackoff_test.ts
+        run: >-
+          deno test --no-lock --config supabase/functions/dispatch-push/deno.json
+          supabase/functions/dispatch-push/security_test.ts
+          supabase/functions/_shared/leaseKeeper_test.ts
+          supabase/functions/_shared/retryBackoff_test.ts
       - name: Type-check push dispatcher
-        run: |
-          deno check --no-lock --config supabase/functions/dispatch-push/deno.json             supabase/functions/dispatch-push/index.ts
+        run: >-
+          deno check --no-lock --config supabase/functions/dispatch-push/deno.json
+          supabase/functions/dispatch-push/index.ts
