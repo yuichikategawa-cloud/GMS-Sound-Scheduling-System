@@ -11,6 +11,7 @@ import MobileNavigation from "./app/components/MobileNavigation";
 import AppHeader from "./app/components/AppHeader";
 import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
+import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
 import { buildSignupMetadata } from "./features/auth/services/registration";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -844,7 +845,7 @@ export default function App() {
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-serving-schedule.csv";a.click();URL.revokeObjectURL(url);
   }
 
-  if(!isSupabaseConfigured)return <SetupScreen/>;
+  if(!isSupabaseConfigured)return <SupabaseSetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
   if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={updateRecoveredPassword}/>;
   if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={submitAuth} onSendPasswordReset={sendPasswordReset}/>;
@@ -1513,6 +1514,4 @@ function MemberProfilePanel({profile,isAdmin,directory,onSave}:{profile:any;isAd
  {isAdmin&&<section className="availability-form-panel"><h2>Member profile overview (admin only)</h2><p className="subtle">Personal information is visible only to administrators and the member concerned.</p><div className="stats-table-wrap"><table className="stats-table"><thead><tr><th>Name</th><th>NIJ</th><th>Domicile</th><th>CG</th><th>Status</th><th>Phone</th></tr></thead><tbody>{directory.map(p=><tr key={p.user_id}><td>{p.full_name}</td><td>{p.nij}</td><td>{p.domicile_area}{p.domicile_other?` · ${p.domicile_other}`:''}</td><td>{p.cg_category} · {p.cg_number}</td><td>{p.cg_status}</td><td>{p.phone_number}</td></tr>)}</tbody></table></div></section>}</>;
 }
 
-function SetupScreen(){
- return <div className="auth-page"><div className="auth-card setup-card"><div className="brand-mark"><Church size={24}/></div><p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p><h1>Connect your Supabase project</h1><p className="subtle">The app is ready. Add your Supabase project credentials to enable shared login and scheduling.</p><ol><li>Create a Supabase project.</li><li>Run <code>supabase/schema.sql</code> in the SQL Editor.</li><li>Copy <code>.env.example</code> to <code>.env</code> and fill in your Project URL and anon/publishable key.</li><li>Restart the development server.</li></ol><p className="message">No database password or service-role key is needed in this frontend.</p></div></div>;
-}
+
