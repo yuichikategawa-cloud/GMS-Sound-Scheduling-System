@@ -34,6 +34,7 @@ import { createServingRequest, executeServingRequestSwap, markServingRequestRead
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
 import RequestsPanel from "./features/requests/components/RequestsPanel";
+import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -1199,7 +1200,6 @@ function DailySummary({date,items,isAdmin=true}:{date:string;items:ScheduleView[
  </details>;
 }
 
-function Stat({label,value}:{label:string;value:number|string}){return <div className="stat-card"><span>{label}</span><b>{value}</b></div>;}
 function ScheduleCard({item,isAdmin,onEdit,onDelete,onPublish,myServantId,onConfirm,onRequest}:{item:ScheduleView;isAdmin:boolean;onEdit:()=>void;onDelete:()=>void;onPublish:()=>void;myServantId:string;onConfirm:(status:"confirmed"|"declined")=>void;onRequest:(kind:"replacement"|"swap")=>void}){
  const own=item.assignments.find(a=>a.servant_id===myServantId);
  return <details className="schedule-card" open><summary className="schedule-card-summary"><div><div className="date-text">{fmtDate(item.service_date)} {isAdmin&&<span className={`status-chip ${item.status||"draft"}`}>{item.status||"draft"}</span>}</div><div className="location-text">{item.location_name}</div><div className="service-title">{item.service_name}</div><div className="time-text">{shortTime(item.start_time)} – {shortTime(item.end_time)}</div></div><ChevronDown size={19}/></summary>
@@ -1336,20 +1336,4 @@ function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
  const [page,setPage]=useState(1);const pageSize=10;const pageCount=Math.max(1,Math.ceil(logs.length/pageSize));const visible=logs.slice((page-1)*pageSize,page*pageSize);
  useEffect(()=>{setPage(1);},[logs.length]);
  return <><div className="toolbar audit-toolbar"><div><h2>System audit trail</h2><p className="subtle">Showing up to 50 events from the last 14 days. Records older than 14 days can be downloaded; all audit data is automatically deleted after 30 days.</p></div><button className="btn secondary" onClick={onDownload}><Download size={16}/> Download older records (15+ days)</button></div>{logs.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No audit activity in the last 14 days</b><p>Older records, if available, can be downloaded using the button above.</p></div>:<><div className="people-list">{visible.map(log=><div className="audit-row" key={log.id}><div><b>{log.action} · {log.table_name}</b><small>Record: {log.record_id}</small><small>{new Date(log.created_at).toLocaleString()}</small></div><span>{log.actor_id?`User ${String(log.actor_id).slice(0,8)}`:"System"}</span></div>)}</div><div className="audit-pagination"><span>Page {page} of {pageCount} · {logs.length} events from the last 14 days</span><div><button className="btn secondary tiny" disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))}>Previous</button><button className="btn secondary tiny" disabled={page>=pageCount} onClick={()=>setPage(p=>Math.min(pageCount,p+1))}>Next</button></div></div></>}</>;
-}
-
-function StatisticsPanel({schedules,servants}:{schedules:ScheduleView[];servants:Servant[]}){
- const counts=new Map<string,{total:number;FOH:number;Monitor:number;Assistant:number}>();
- for(const s of schedules)for(const a of s.assignments){const c=counts.get(a.servant_id)??{total:0,FOH:0,Monitor:0,Assistant:0};c.total++;c[a.role]++;counts.set(a.servant_id,c);}
- const rows=servants.filter(p=>p.active).map(p=>{const c=counts.get(p.id)??{total:0,FOH:0,Monitor:0,Assistant:0};return {id:p.id,name:p.full_name,...c};}).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
- const totalAssignments=rows.reduce((n,r)=>n+r.total,0);const filledRequired=schedules.reduce((n,s)=>n+s.assignments.filter(a=>a.role!=="Assistant").length,0);const requiredSlots=schedules.length*2;
- const allConfirmations=schedules.flatMap(s=>s.assignments);const confirmed=allConfirmations.filter(a=>a.confirmation_status==="confirmed").length;const declined=allConfirmations.filter(a=>a.confirmation_status==="declined").length;const confirmationRate=allConfirmations.length?Math.round(confirmed/allConfirmations.length*100):0;const activeServants=servants.filter(p=>p.active).length;const notScheduled=Math.max(0,activeServants-rows.filter(r=>r.total>0).length);
- const locationCounts=new Map<string,number>();for(const s of schedules)locationCounts.set(s.location_name,(locationCounts.get(s.location_name)??0)+s.assignments.length);
- return <><div className="toolbar"><div><h2>Serving statistics</h2><p className="subtle">Based on the currently selected schedule filters.</p></div></div>
-  <section className="stats-grid stats-grid-wide"><Stat label="TOTAL ASSIGNMENTS" value={totalAssignments}/><Stat label="REQUIRED ROLES FILLED" value={filledRequired}/><Stat label="REQUIRED ROLE GAPS" value={Math.max(0,requiredSlots-filledRequired)}/><Stat label="SERVANTS ASSIGNED" value={rows.length}/><Stat label="CONFIRMATION RATE" value={`${confirmationRate}%`}/><Stat label="DECLINED ASSIGNMENTS" value={declined}/><Stat label="ACTIVE SERVANTS NOT SCHEDULED" value={notScheduled}/></section>
-  <section className="filter-panel"><div className="filter-title"><BarChart3 size={17}/><b>Assignments by church location</b></div><div className="location-stat-list">{[...locationCounts.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([name,count])=><div className="location-stat" key={name}><span>{name}</span><b>{count}</b></div>)}</div></section>
-  <section className="filter-panel fairness-panel"><div className="filter-title"><ShieldCheck size={17}/><b>Fairness checker</b></div><p className="subtle">Workload comparison for the selected date range. Use this as a review aid, not a performance ranking.</p><div className="fairness-metrics"><div><small>Average assignments</small><b>{rows.length?(totalAssignments/rows.length).toFixed(1):"0"}</b></div><div><small>Highest workload</small><b>{rows[0]?.total??0}</b></div><div><small>Lowest workload</small><b>{rows.length?Math.min(...rows.map(r=>r.total)):0}</b></div></div>{rows.length>1&&rows[0].total-Math.min(...rows.map(r=>r.total))>=3&&<div className="fairness-alert">Workload difference is 3 or more assignments. Consider reviewing upcoming assignments and availability.</div>}</section>
-  <div className="list-heading"><h2>Assignments by servant</h2><span>{rows.length} servants</span></div>
-  <div className="stats-table-wrap stats-desktop-table"><table className="stats-table"><thead><tr><th>Servant</th><th>Total</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b></td><td>{r.total}</td><td>{r.FOH}</td><td>{r.Monitor}</td><td>{r.Assistant}</td></tr>)}</tbody></table></div><div className="stats-servant-cards">{rows.map(r=><article className="stats-servant-card" key={r.id}><b className="stats-servant-name">{r.name}</b><div className="stats-servant-metrics"><div><small>Total</small><strong>{r.total}</strong></div><div><small>FOH</small><strong>{r.FOH}</strong></div><div><small>Monitor</small><strong>{r.Monitor}</strong></div><div><small>Assistant</small><strong>{r.Assistant}</strong></div></div></article>)}</div>
- </>;
 }
