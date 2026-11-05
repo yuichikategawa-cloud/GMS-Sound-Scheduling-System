@@ -3,7 +3,8 @@
 ## Base and branch
 - Base: `main` at `2a78fb894d3e15e8c5f0bc72bc1a0f5c7d0eaf54`
 - Working branch: `security/push-endpoint-hardening`
-- Last reviewed test-code commit: `df3fd182d83dfdd3eed604e8371a446497e1738e`; migration filename alignment followed on the same branch.
+- Current working branch tip at this review: `3f0a1f48c71df97ee7c6dad3f1c5ee88280112ba`.
+- Last full CI validation: run `41990087590` (run 19), all jobs passed including the frontend production build.
 - Scope: push subscription registration, outbound endpoint validation, dispatch queue reliability, and regression coverage.
 
 ## Changes prepared
@@ -20,7 +21,7 @@
 - Staging Supabase project: `uurgomjrsvzfmcpsnitu`.
 - Staging migration `20261105042202_gms_push_subscription_endpoint_security` is applied. The branch migration file is now named with this same recorded version; its function definition and ACL were compared with the live staging function/grants before aligning the filename.
 - Staging Edge Functions `dispatch-push` and `username-login` are ACTIVE. The current `dispatch-push` deployment is version 3 with `verify_jwt=false`; the dispatcher performs its own shared-secret authentication. Its `index.ts`, endpoint-security module, lease keeper, and retry helper are byte-for-byte identical to the security branch.
-- The latest full validation workflow (run `41987380626`, run number 17) passed at commit `6b0c51141f7bb32e1636516625ee4e02b839bfe1`: `sql-staging` passed the staging-secret guard and both rollback-only SQL regressions; `deno` passed endpoint/queue helper tests and dispatcher type-check. The run includes the final migration filename aligned to staging history. Earlier run `41985055561` (run 15) also passed after the dispatcher cadence change.
+- Validation workflow run `41990087590` (run 19) passed all three jobs on commit `3f0a1f48c71df97ee7c6dad3f1c5ee88280112ba`: `sql-staging` passed the staging-secret guard and both rollback-only SQL regressions; `deno` passed endpoint/queue helper tests and dispatcher type-check; `frontend` installed dependencies and passed `npm run build` (TypeScript + Vite). Run 18 (`41989324829`) also passed the initial frontend build job.
 - The admin RPC regression now also asserts authenticated-vs-anonymous function grants and checks that `is_admin()` returns false for a servant and true for an administrator.
 - Staging has one iPhone Web Push subscription on the servant profile. Controlled staging notifications were created and delivered to that iPhone; the user confirmed the banner appeared and tapping it opened GMS on the Inbox tab. Queue records show successful delivery to one Apple endpoint with no retry/error. The user also confirmed the corresponding Inbox item remains marked Read after refreshing.
 - Android delivery remains waived/unverified because the user has no Android device. iPhone physical-device delivery, notification tap navigation, Inbox rendering, and read-state persistence after refresh are verified.
@@ -31,6 +32,12 @@
 - Staging has `pg_cron` 1.6.4, `pg_net` 0.20.4, and the three required Vault entries. The notification-to-queue trigger is active. The dispatcher job was tuned from every minute to every 5 seconds and now invokes the Edge Function only when an unprocessed queue row is eligible (retry time reached and lease absent/expired).
 - The user completed physical iPhone testing: subscription registration, notification banner display, notification tap opening the GMS Inbox, and Read-state persistence after refresh are verified.
 
+## Frontend UI review (branch-only; preview not yet deployed)
+- Removed the church icon from the account registration card; the password-recovery screen retains its separate brand mark.
+- Corrected the registration CG-day fieldset so its legend occupies a full row and checkbox labels wrap predictably. Desktop/tablet uses two columns; narrow screens use one column. The fieldset no longer clips its options.
+- Corrected the generation-guidance dark-mode selectors to target the actual `.app-shell[data-theme="dark"]` element, and increased text/icon contrast.
+- Frontend build passes in CI. These are code/build-verified only; actual visual acceptance is pending one consolidated Vercel preview after the deployment quota resets. No Vercel deployment was made for these commits.
+- GitHub Actions now runs the frontend TypeScript/Vite production build on relevant frontend changes, in addition to Deno and staging SQL regression jobs.
 ## Security advisor findings and interpretation
 - The advisor reports nine authenticated-callable SECURITY DEFINER functions: six admin workflow RPCs, `is_admin()`, `notify_admin_assignment_confirmation()`, and `register_serving_push_subscription()`.
 - Staging ACL inspection confirms all nine are executable by `authenticated` and none by `anon`; neither `authenticated` nor `anon` can create objects in the `public` schema.
@@ -71,5 +78,7 @@
 - Edge Function: disable push dispatch or deploy a fail-closed worker if the new worker misbehaves. Do not revert to unrestricted endpoint delivery.
 - Queue rows and notifications remain in the database; do not truncate or delete them as part of rollback.
 
-## Deployment boundary
+## Deployment boundary and deployment minimization
 Staging-only changes have been applied as listed above. Production was inspected read-only; no production SQL, production Edge Function, production secrets, production Cron schedule, production Vercel environment, or production deployment has been changed. `main` remains untouched; the security branch remains unmerged and has no pull request open.
+- Deployment policy: batch related UI/code changes; prefer local/static checks and GitHub CI; create a Vercel preview only when browser/integration validation materially requires it; reuse a valid preview where possible; never use production deploys as a test mechanism.
+- The latest preview attempt was blocked by Vercel's daily deployment API quota (HTTP 402). No workaround or plan/team setting was changed. The visual UI fixes remain pending preview verification.
