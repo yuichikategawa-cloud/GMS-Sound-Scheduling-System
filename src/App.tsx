@@ -571,7 +571,7 @@ export default function App() {
   async function togglePerson(p:Servant){
     if(!supabase||!isAdmin)return;
     const {error}=await setServantActive(supabase,p.id,!p.active);
-    if(error)setMessage(error.message);else await loadData();
+    if(error)setMessage(errorText(error));else await loadData();
   }
   async function deleteSchedule(s:ScheduleView){
     if(!supabase||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This also removes its assignments.`,"Delete service",true))return;
