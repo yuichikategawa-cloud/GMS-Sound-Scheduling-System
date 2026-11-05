@@ -13,26 +13,35 @@ DECLARE
   v_owner uuid;
   v_message text;
   v_count integer;
+  v_user_1_initial_count integer;
   v_suffix text := left(md5(txid_current()::text || clock_timestamp()::text), 16);
   i integer;
 BEGIN
-  SELECT p.id INTO v_user_1
+  -- Select two existing accounts with room under the ten-device cap.
+  -- Existing device subscriptions are preserved; the transaction rolls back.
+  SELECT p.id, count(s.id)::integer
+    INTO v_user_1, v_user_1_initial_count
   FROM public.profiles p
+  LEFT JOIN public.serving_push_subscriptions s ON s.user_id=p.id
   WHERE p.role IN ('admin','servant')
-    AND NOT EXISTS (SELECT 1 FROM public.serving_push_subscriptions s WHERE s.user_id=p.id)
+  GROUP BY p.id, p.role, p.created_at
+  HAVING count(s.id) < 10
   ORDER BY CASE WHEN p.role='admin' THEN 0 ELSE 1 END, p.created_at
   LIMIT 1;
 
-  SELECT p.id INTO v_user_2
+  SELECT p.id
+    INTO v_user_2
   FROM public.profiles p
+  LEFT JOIN public.serving_push_subscriptions s ON s.user_id=p.id
   WHERE p.role IN ('admin','servant')
     AND p.id IS DISTINCT FROM v_user_1
-    AND NOT EXISTS (SELECT 1 FROM public.serving_push_subscriptions s WHERE s.user_id=p.id)
+  GROUP BY p.id, p.created_at
+  HAVING count(s.id) < 10
   ORDER BY p.created_at
   LIMIT 1;
 
   IF v_user_1 IS NULL OR v_user_2 IS NULL THEN
-    RAISE EXCEPTION 'Two existing GMS profiles without push subscriptions are required';
+    RAISE EXCEPTION 'Two existing GMS profiles with room under the ten-device cap are required';
   END IF;
 
   PERFORM set_config('request.jwt.claim.sub', v_unregistered::text, true);
@@ -119,14 +128,16 @@ BEGIN
   IF v_owner IS DISTINCT FROM v_user_2 THEN RAISE EXCEPTION 'Proven shared-device transfer did not update owner'; END IF;
 
   PERFORM set_config('request.jwt.claim.sub', v_user_1::text, true);
-  FOR i IN 1..10 LOOP
+  FOR i IN 1..(10-v_user_1_initial_count) LOOP
     PERFORM public.register_serving_push_subscription(
       'https://fcm.googleapis.com/fcm/send/phase1-cap-' || v_suffix || '-' || i::text,
       repeat('A',87),repeat('B',22),'phase 1 test'
     );
   END LOOP;
   SELECT count(*)::integer INTO v_count FROM public.serving_push_subscriptions WHERE user_id=v_user_1;
-  IF v_count <> 10 THEN RAISE EXCEPTION 'Expected 10 devices, found %',v_count; END IF;
+  IF v_count <> 10 THEN
+    RAISE EXCEPTION 'Expected device cap of 10 from starting count %, found %',v_user_1_initial_count,v_count;
+  END IF;
   BEGIN
     PERFORM public.register_serving_push_subscription(
       'https://fcm.googleapis.com/fcm/send/phase1-cap-overflow-' || v_suffix,
