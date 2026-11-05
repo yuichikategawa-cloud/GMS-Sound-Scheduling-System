@@ -35,3 +35,28 @@ jobs:
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json
           supabase/functions/dispatch-push/index.ts
+
+  sql-staging:
+    runs-on: ubuntu-latest
+    # Configure STAGING_DATABASE_URL as a GitHub Actions secret.
+    # This must point only to the disposable/staging database, never production.
+    env:
+      STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        if: env.STAGING_DATABASE_URL != ''
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+      - name: Run rollback-only push registration SQL regression
+        if: env.STAGING_DATABASE_URL != ''
+        run: >-
+          psql "$STAGING_DATABASE_URL"
+          --no-psqlrc
+          --set ON_ERROR_STOP=1
+          --file supabase/tests/push_registration_security.sql
+      - name: Report skipped staging SQL test
+        if: env.STAGING_DATABASE_URL == ''
+        run: echo "Skipped - configure the STAGING_DATABASE_URL GitHub Actions secret to run the rollback-only staging SQL regression."
