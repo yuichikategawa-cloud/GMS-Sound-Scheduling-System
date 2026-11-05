@@ -36,6 +36,8 @@ jobs:
           supabase/functions/dispatch-push/security_test.ts
           supabase/functions/_shared/leaseKeeper_test.ts
           supabase/functions/_shared/retryBackoff_test.ts
+      - name: Test authentication registration metadata
+        run: deno test --no-lock src/features/auth/services/registration_test.ts
       - name: Type-check push dispatcher
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json

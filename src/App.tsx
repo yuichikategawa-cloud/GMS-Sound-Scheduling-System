@@ -11,6 +11,7 @@ import MobileNavigation from "./app/components/MobileNavigation";
 import AppHeader from "./app/components/AppHeader";
 import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
+import { buildSignupMetadata } from "./features/auth/services/registration";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -307,21 +308,7 @@ export default function App() {
     const fd=new FormData(e.currentTarget);
     try {
       if(authMode==="signup") {
-        const days=fd.getAll("cg_days").map(String);
-        if(!days.length)throw new Error("Please select at least one CG day.");
-        const leaderPhones=String(fd.get("leader_phone_numbers")||"").split(/[;,\n]/).map(x=>x.trim()).filter(Boolean);
-        const meta={
-          username:String(fd.get("username")).trim().toLowerCase(), full_name:String(fd.get("full_name")).trim(), email:String(fd.get("email")).trim(),
-          gender:String(fd.get("gender")), date_of_birth:String(fd.get("date_of_birth")), nij:String(fd.get("nij")).trim(), phone_number:String(fd.get("phone_number")).trim(),
-          domicile_area:String(fd.get("domicile_area")), domicile_other:String(fd.get("domicile_other")||""), cg_category:String(fd.get("cg_category")),
-          cg_status:String(fd.get("cg_status")), cg_number:String(fd.get("cg_number")).trim(), cg_days:days, cg_time:String(fd.get("cg_time")),
-          team_leader_name:String(fd.get("team_leader_name")||""), coach_name:String(fd.get("coach_name")||""), cg_leader_name:String(fd.get("cg_leader_name")||""), leader_phone_numbers:leaderPhones
-        };
-        if(meta.domicile_area==="Others"&&!meta.domicile_other.trim())throw new Error("Please specify your domicile area.");
-        if(!leaderPhones.length)throw new Error("Enter at least one leader phone number.");
-        if(meta.cg_status==="Team Leader")meta.team_leader_name="";
-        if(meta.cg_status==="Coach")meta.coach_name="";
-        if(meta.cg_status==="CG Leader")meta.cg_leader_name="";
+        const meta=buildSignupMetadata(fd);
         const {error}=await supabase.auth.signUp({email:meta.email,password:String(fd.get("password")),options:{data:meta}});
         if(error)throw error;
         setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
