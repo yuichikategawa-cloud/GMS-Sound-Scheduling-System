@@ -17,6 +17,7 @@ import MemberProfilePanel from "./features/auth/components/MemberProfilePanel";
 import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccountPassword } from "./features/auth/services/authentication";
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
+import { mapSchedules } from "./features/schedule/services/mapSchedules";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -209,14 +210,7 @@ export default function App() {
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
       const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
       const assignments=(assignRes.data??[]) as Assignment[];
-      const byId=new Map(people.map(p=>[p.id,p.full_name]));
-      const locById=new Map(locs.map(l=>[l.id,l.name]));
-      const mapped=(schedRes.data??[] as Schedule[]).map(s=>({
-        ...s,location_name:locById.get(s.location_id)??"Unknown location",
-        assignments:assignments.filter(a=>a.schedule_id===s.id).map(a=>({
-          id:a.id,role:a.role,servant_id:a.servant_id,servant_name:byId.get(a.servant_id)??"Unknown servant",confirmation_status:a.confirmation_status??"pending"
-        }))
-      })) as ScheduleView[];
+      const mapped=mapSchedules((schedRes.data??[]) as Schedule[],assignments,locs,people);
       const safeMemberRows = memberRes.error ? [] : (memberRes.data ?? []);
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
       const loadedRules=ruleRes.error?[]:(ruleRes.data??[]);setAvailabilityRules(loadedRules);setServingPreferences(preferenceRes.error?[]:(preferenceRes.data??[]));
