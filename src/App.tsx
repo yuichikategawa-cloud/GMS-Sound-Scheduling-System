@@ -279,7 +279,7 @@ export default function App() {
     if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch(e){console.warn("PWA install prompt was not completed",e);}finally{setInstallPrompt(null);}return;}
     const ua=navigator.userAgent.toLowerCase();
     const ios=/iphone|ipad|ipod/.test(ua);
-    const message=ios?"To install Sound Scheduling on your iPhone: open this page in Safari, tap the Share button, choose Add to Home Screen, then tap Add. The installed icon will open Sound Scheduling in its own app window.":"To install Sound Scheduling: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";
+    const message=ios?"On your iPhone, open this page in Safari, tap Share, choose Add to Home Screen, turn on Open as Web App, then tap Add. If Add to Home Screen is missing, scroll to Edit Actions and enable it. Open GMS from the new Home Screen icon before enabling notifications.":"To install Sound Scheduling: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";
     await askAction("Install app",message,"Got it",false);
   }
 
@@ -290,13 +290,13 @@ export default function App() {
     const vapidKey=(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
     if(!vapidKey){setMessage("Push delivery is not configured yet. Set VITE_VAPID_PUBLIC_KEY in Vercel and your local environment, then redeploy.");return;}
     if(!("serviceWorker" in navigator)||!("PushManager" in window)||!("Notification" in window)){setMessage("This browser does not support web push notifications. You can still use the in-app Inbox.");return;}
-    const isIOS=/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isIOS=/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
     const isStandalone=window.matchMedia?.("(display-mode: standalone)").matches||(navigator as any).standalone===true;
-    if(isIOS&&!isStandalone){setMessage("On iPhone or iPad, first install GMS using Safari → Share → Add to Home Screen, open the installed GMS icon, then enable push notifications.");return;}
+    if(isIOS&&!isStandalone){setMessage("On iPhone or iPad, install GMS first: open this page in Safari → Share → Add to Home Screen, turn on Open as Web App, then tap Add. Open GMS from the new Home Screen icon and enable push notifications there.");return;}
     setPushBusy(true);setMessage("");
     try{
       const permission=Notification.permission==="granted"?"granted":await Notification.requestPermission();
-      if(permission!=="granted"){setMessage("Notification permission was not granted. In-app Inbox notifications will continue to work.");return;}
+      if(permission!=="granted"){setMessage(permission==="denied"?"Notifications are blocked for this device. Open iPhone Settings, find the installed Sound Scheduling web app, and allow notifications. In-app Inbox notifications will continue to work.":"Notification permission was not granted. In-app Inbox notifications will continue to work.");return;}
       const registration=await navigator.serviceWorker.ready;
       const existing=await registration.pushManager.getSubscription();
       const subscription=existing??await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:decodeVapidKey(vapidKey)});
