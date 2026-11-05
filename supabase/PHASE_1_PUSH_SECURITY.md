@@ -24,6 +24,10 @@
 - The admin RPC regression now also asserts authenticated-vs-anonymous function grants and checks that `is_admin()` returns false for a servant and true for an administrator.
 - Staging currently has one admin profile and one servant profile, but no schedules, assignments, push subscriptions, queued pushes, or serving notifications. The database regression tests roll back their temporary changes.
 - No physical-device push delivery has been confirmed. The user does not have an Android device available, so Android/device delivery validation remains waived/unverified rather than passed.
+- iPhone/iPadOS compatibility was checked against Apple's current Web Push documentation: iOS/iPadOS 16.4 or later supports Web Push for Home Screen web apps. The app manifest uses `display: standalone`; the page registers a service worker; the worker handles `push` by immediately calling `showNotification`; and the outbound endpoint validator accepts Apple Web Push subdomains such as `web.push.apple.com`.
+- The UI now instructs iPhone/iPad users to use Safari → Share → Add to Home Screen, turn on **Open as Web App**, then open the installed icon before enabling push. It also detects iPadOS desktop-mode devices and provides a Settings recovery hint when notification permission is denied.
+- The push registration SQL regression now explicitly creates and verifies a valid `web.push.apple.com` endpoint inside its rollback-only test transaction.
+- Static compatibility checks do not replace a real iPhone test. User permission prompt, browser subscription creation, receipt on the lock screen, and notification click-through still require a physical iPhone/iPad test.
 
 ## Security advisor findings and interpretation
 - The advisor reports nine authenticated-callable SECURITY DEFINER functions: six admin workflow RPCs, `is_admin()`, `notify_admin_assignment_confirmation()`, and `register_serving_push_subscription()`.
