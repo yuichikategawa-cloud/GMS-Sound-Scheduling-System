@@ -29,6 +29,8 @@ import { buildServantAccountCandidates, loadServantDirectoryData } from "./featu
 import { loadServingRequestData } from "./features/requests/services/requestData";
 import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
+import ServantInbox from "./features/requests/components/ServantInbox";
+import RequestsPanel from "./features/requests/components/RequestsPanel";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -1334,63 +1336,8 @@ function AvailabilityPanel({servants,availability,rules,preferences,locations,sc
  </>;
 }
 
-function PushNotificationSettings({enabled,busy,onEnable,onDisable,preferences,onSavePreferences}:{enabled:boolean;busy:boolean;onEnable:()=>void;onDisable:()=>void;preferences:any;onSavePreferences:(next:any)=>void}){
- const configured=!!(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
- const options=[["new_assignments","New serving assignments"],["schedule_changes","Schedule changes"],["confirmation_reminders","Confirmation reminders"],["availability_deadlines","Availability deadline reminders"],["request_updates","Swap and replacement updates"]];
- return <section className="push-settings-card"><div className="push-settings-icon"><Bell size={19}/></div><div className="push-settings-copy"><b>Device notifications</b><p>In-app Inbox is your primary notification history. Choose which optional push alerts this account receives.</p>{!configured&&<small>Push delivery setup is still pending. The in-app Inbox continues to work.</small>}<div className="notification-preference-grid">{options.map(([key,label])=><label key={key}><input type="checkbox" checked={preferences?.[key]!==false} onChange={e=>onSavePreferences({...preferences,[key]:e.target.checked})}/>{label}</label>)}</div></div><button className="btn secondary tiny" disabled={busy||(!configured&&!enabled)} onClick={enabled?onDisable:onEnable}>{busy?"Please wait…":enabled?"Disable on this device":"Enable push"}</button></section>;
-}
 
-function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
- const decisions=requests.filter(r=>["approved","declined","rejected"].includes(String(r.status??"").toLowerCase())).sort((a,b)=>String(b.reviewed_at??b.created_at).localeCompare(String(a.reviewed_at??a.created_at)));
- const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
- const unread=notifications.filter(n=>!n.is_read).length;
- return <section className="servant-inbox"><div className="inbox-intro"><div><h2>Inbox</h2><p className="subtle">Assignment confirmations and replacement updates.</p></div><span className="inbox-unread-count">{unread} unread</span></div>
- <PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>
- <div className="list-heading"><h3>Notification history</h3><span>{notifications.length} recent</span></div>
- {notifications.map(n => (
-    <article className={`inbox-item ${n.is_read ? "read" : "unread"}`} key={n.id} onClick={() => onNotificationRead(n.id)}>
-      <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
-      <div className="inbox-item-body">
-        <div className="inbox-item-title"><b>{n.title}</b><span className="inbox-status approved">{n.is_read ? "Read" : "New"}</span></div>
-        <p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small>
-      </div>
-    </article>
-  ))}
-  {decisions.map(r => {
-    const s = schedules.find(x => x.id === r.schedule_id);
-    const approved = String(r.status).toLowerCase() === "approved";
-    return (
-      <article className={`inbox-item ${reads.some(x => x.request_id === r.id) ? "read" : "unread"}`} key={r.id} onClick={() => onRead(r.id)}>
-        <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
-        <div className="inbox-item-body">
-          <div className="inbox-item-title"><b>{r.request_type === "swap" ? "Swap request" : "Replacement request"}</b><span className={`inbox-status ${approved ? "approved" : "rejected"}`}>{approved ? "Approved" : "Rejected"}</span></div>
-          <p>{approved ? "Your request has been approved by the administrator." : "Your request was not approved by the administrator."}</p>
-          <small>{s ? `${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}` : "Schedule details unavailable"}</small>
-          {r.details && <small>{r.details}</small>}
-        </div>
-      </article>
-    );
-  })}
-  {pending.map(r=>{const s=schedules.find(x=>x.id===r.schedule_id);return <article className="inbox-item" key={r.id}><div className="inbox-item-icon"><ClipboardCheck size={19}/></div><div className="inbox-item-body"><div className="inbox-item-title"><b>{r.request_type==="swap"?"Swap request":"Replacement request"}</b><span className="inbox-status pending">Pending</span></div><p>Your request is waiting for administrator review.</p><small>{s?`${fmtDate(s.service_date)} · ${s.location_name} · ${s.service_name}`:"Schedule details unavailable"}</small></div></article>;})}
- {notifications.length+decisions.length+pending.length===0&&<div className="empty-state"><ClipboardCheck size={28}/><b>No notifications yet</b><p>You'll be notified when assignments or requests change.</p></div>}
- </section>;
-}
 
-function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
- const pending=requests.filter(r=>r.status==="pending");
- const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
- return <section className="requests-panel">
-  <PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>
-  <section className="requests-content-card notification-history-section">
-   <div className="list-heading requests-content-heading"><h2>Notification history</h2><span>{notifications.length} in the last 30 days</span></div>
-   {notifications.length===0?<div className="requests-empty-note">No notifications in the last 30 days.</div>:<div className="notification-history-list">{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}</div>}
-  </section>
-  <section className="requests-content-card servant-requests-section">
-   <div className="list-heading requests-content-heading"><h2>Servant requests</h2><span>{pending.length} pending</span></div>
-   {requests.length===0?<div className="requests-empty-note">No replacement or swap requests yet.</div>:<div className="people-list">{requests.map(r=>{const service=schedules.find(s=>s.id===r.schedule_id);const person=servants.find(p=>p.id===r.requester_servant_id);const candidates=servants.filter(p=>p.active&&p.id!==r.requester_servant_id);return <div className="request-row" key={r.id}><div className="request-main"><b>{person?.full_name??"Servant"} · {r.request_type}</b><small>{service?`${fmtDate(service.service_date)} · ${service.location_name} · ${service.service_name}`:"Schedule unavailable"}</small><small>{r.details||"No details provided"}</small><span className={`status-chip ${r.status}`}>{r.status}</span></div>{r.status==="pending"&&<div className="request-actions">{r.request_type==="replacement"&&<><select value={replacementChoice[r.id]??""} onChange={e=>setReplacementChoice(v=>({...v,[r.id]:e.target.value}))}><option value="">Choose replacement servant</option>{candidates.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select><button className="btn tiny primary" disabled={!replacementChoice[r.id]} onClick={()=>onResolve(r,replacementChoice[r.id])}>Assign replacement</button></>}<button className="btn tiny secondary" onClick={()=>onReview(r,false)}>Decline request</button></div>}</div>;})}</div>}
-  </section>
- </section>;
-}
 
 function AuditPanel({logs,onDownload}:{logs:any[];onDownload:()=>void}){
  const [page,setPage]=useState(1);const pageSize=10;const pageCount=Math.max(1,Math.ceil(logs.length/pageSize));const visible=logs.slice((page-1)*pageSize,page*pageSize);
