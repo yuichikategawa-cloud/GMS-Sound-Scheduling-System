@@ -4440,32 +4440,38 @@
 }
 
 
-/* Registration and generator guidance fixes: stable checkbox layout and dark-mode contrast. */
+/* Registration CG day group: keep the legend on its own row and let options wrap naturally. */
 .auth-registration .days-field {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: start;
-  align-content: start;
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 10px 16px;
+  width: 100%;
+  min-width: 0;
+  min-inline-size: 0;
   height: auto !important;
-  min-height: max-content;
+  min-height: 0;
   overflow: visible !important;
   padding: 14px 15px 16px;
 }
 .auth-registration .days-field legend {
+  display: block;
   float: none;
-  width: auto;
+  width: 100%;
   max-width: 100%;
+  flex: 0 0 100%;
   padding: 0 7px;
+  margin-bottom: 2px;
 }
 .auth-registration .days-field label {
   display: flex !important;
+  flex: 1 1 calc(50% - 16px);
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
   gap: 9px !important;
-  width: 100%;
   min-width: 0;
+  max-width: calc(50% - 8px);
   margin: 0;
   white-space: nowrap;
 }
@@ -4475,20 +4481,21 @@
   height: 18px;
   margin: 0;
 }
-:root[data-theme="dark"] .generate-note-title {
+.app-shell[data-theme="dark"] .generate-note-title {
   color: #f1f3ff !important;
 }
-:root[data-theme="dark"] .generate-note-title svg {
+.app-shell[data-theme="dark"] .generate-note-title svg {
   color: #aaa2ff !important;
 }
-:root[data-theme="dark"] .generate-note p b {
+.app-shell[data-theme="dark"] .generate-note p b {
   color: #f1f5fc !important;
 }
-:root[data-theme="dark"] .generate-note p span {
+.app-shell[data-theme="dark"] .generate-note p span {
   color: #c0cbe0 !important;
 }
 @media (max-width: 600px) {
-  .auth-registration .days-field {
-    grid-template-columns: minmax(0, 1fr) !important;
+  .auth-registration .days-field label {
+    flex-basis: 100%;
+    max-width: 100%;
   }
 }
