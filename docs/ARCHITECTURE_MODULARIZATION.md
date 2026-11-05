@@ -8,8 +8,8 @@ This is an incremental refactor, not a rewrite and not a microservices conversio
 
 ## Current baseline (2026-11-05)
 
-- `src/App.tsx` is approximately 1,350 lines and still owns application-level state, authorization gates, data-loading orchestration, refresh flows, and several feature workflows.
-- `src/style.css` remains a single large stylesheet (approximately 205 KB) containing base styles, feature styles, responsive overrides, and accumulated theme-specific fixes.
+- `src/App.tsx` is 1,340 lines and still owns application-level state, authorization gates, data-loading orchestration, refresh flows, and several feature workflows.
+- `src/style.css` remains a single large stylesheet (approximately 204.8 KB) containing base styles, feature styles, responsive overrides, and accumulated theme-specific fixes.
 - Feature boundaries now exist under `src/features`, alongside `src/app` and `src/shared`; App remains the composition/orchestration root.
 - The application is still a monolith in transition. Extracting services and screens has reduced coupling, but further boundary and dependency verification is required.
 
@@ -189,7 +189,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M6.4 notification data/preferences extraction (prepared for review): notification history and current-user preference reads moved behind `src/features/notifications/services/notificationData.ts`; preference upsert and notification read-state update moved behind `notificationPersistence.ts`. Existing 30-day cutoff, descending order, 100-row limit, `user_id` lookup/upsert conflict key, five boolean preference fields/defaults, notification-ID read filter, and optional-data fallback behavior are preserved. Eight Deno regression tests cover query contracts, independent read errors, empty/missing results, preference payload/coercion, upsert conflict key, error pass-through, and read-state updates. CI workflow updated to execute both notification test files. No schema, migration, RLS, or authorization changes. CI run #42038625179 passed Deno, SQL staging, and frontend validation.
 - [x] M6.5 push-subscription lifecycle: browser capability and iOS standalone checks, VAPID decoding, current-user subscription status, enable/register, disable/unsubscribe, and bounded best-effort sign-out cleanup moved to `src/features/notifications/services/pushSubscription.ts`. App retains UI state and user-facing messages. Existing RPC arguments, database filters, service worker, dispatcher, and SQL contracts remain unchanged; 11 Deno regression tests cover capability guards, decoding, ownership, reuse/creation, permission outcomes, incomplete payloads, RPC errors, disable behavior, and sign-out cleanup. GitHub Actions run #42047486473 passed Deno, SQL staging, and frontend validation. No schema, migration, RLS, or authorization changes.
 - [ ] M7 statistics/audit/CSS.
-- [ ] M7.1 statistics extraction: pure serving-statistics calculations and the Statistics panel are moved into feature-owned modules with eight Deno regression tests; workflow integration is added. CI validation is pending.
+- [x] M7.1 statistics extraction: pure serving-statistics calculations and the Statistics panel are moved into feature-owned modules with eight Deno regression tests; workflow integration is added. GitHub Actions run [#42055970811](https://github.com/yuichikategawa-cloud/GMS-Sound-Scheduling-System/actions/runs/42055970811) passed the full Deno regression suite, SQL staging checks, and frontend TypeScript/Vite build. The extraction does not change database schema, migrations, RLS, or authorization behavior.
 - [ ] M8 architecture verification.
 
 Status: **still a monolith in transition**. Do not describe the app as modular until M2–M8 have established and verified feature boundaries.
