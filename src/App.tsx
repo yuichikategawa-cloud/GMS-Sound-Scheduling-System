@@ -14,6 +14,7 @@ import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
 import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccountPassword } from "./features/auth/services/authentication";
+import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
@@ -94,47 +95,15 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
-    let active = true;
-    // Subscribe before reading the stored session so a token refresh or sign-out
-    // event cannot be overwritten by a late initial getSession() response.
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,next)=>{
-      if (!active) return;
-      setSession(next);
-      if (event === "PASSWORD_RECOVERY") setRecoveryMode(true);
+    const lifecycle = startAuthSessionLifecycle(supabase, {
+      setSession,
+      setRecoveryMode,
+      setAuthLoading,
+      setMessage,
+      errorText
     });
-    void (async()=>{
-      try {
-        const {data,error} = await supabase.auth.getSession();
-        if (!active) return;
-        if (error) {
-          const authError = error as any;
-          const status = Number(authError.status ?? 0);
-          const messageText = String(authError.message ?? errorText(error));
-          const invalidStoredSession = status === 400 || status === 401 || /invalid.*refresh|refresh.*(invalid|expired|not found|already used)/i.test(messageText);
-          if (invalidStoredSession) {
-            // A stale/revoked refresh token should not keep the app retrying it.
-            // Local scope clears this device only and does not call /auth/v1/logout.
-            await supabase.auth.signOut({scope:"local"}).catch(()=>undefined);
-            if (active) {
-              setSession(null);
-              setMessage("Your saved sign-in session has expired. Please sign in again.");
-            }
-          } else {
-            console.warn("Unable to restore the saved GMS session.", error);
-            if (active) setSession(data.session ?? null);
-          }
-        } else if (active) {
-          setSession(data.session);
-        }
-      } catch (error) {
-        console.warn("Session restoration failed.", error);
-        if (active) setSession(null);
-      } finally {
-        if (active) setAuthLoading(false);
-      }
-    })();
-    return ()=>{active=false;subscription.unsubscribe();};
-  },[]);
+    return () => lifecycle.stop();
+  }, []);
 
   useEffect(() => {
     setTab("schedule");setMobileNav(false);

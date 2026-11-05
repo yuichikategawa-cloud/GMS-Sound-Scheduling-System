@@ -165,6 +165,7 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M3 setup-screen extraction: the unconfigured-Supabase setup instructions moved into `SupabaseSetupScreen.tsx` under the auth feature; configuration detection remains in App.
 - [x] M3 registration-validation extraction: metadata normalization and CG/domicile/leader-phone validation moved to `src/features/auth/services/registration.ts` with five Deno regression tests.
 - [x] M3 authentication service extraction: sign-up, username login/session establishment, password-reset requests, and password updates moved to `src/features/auth/services/authentication.ts`; App retains UI state, messaging, and form orchestration.
+- [x] M3 session-lifecycle extraction: auth subscription, initial session restoration, local invalid-refresh cleanup, recovery events, and unmount cancellation moved to `src/features/auth/services/sessionLifecycle.ts` with five Deno tests.
 - [ ] M4 schedule.
 - [ ] M5 availability/servants.
 - [ ] M6 requests/notifications.

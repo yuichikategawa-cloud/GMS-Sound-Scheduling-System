@@ -38,6 +38,8 @@ jobs:
           supabase/functions/_shared/retryBackoff_test.ts
       - name: Test authentication registration metadata
         run: deno test --no-lock tests/auth/registration_test.ts
+      - name: Test authentication session lifecycle
+        run: deno test --no-lock tests/auth/sessionLifecycle_test.ts
       - name: Type-check push dispatcher
         run: >-
           deno check --no-lock --config supabase/functions/dispatch-push/deno.json
