@@ -1,0 +1,43 @@
+import { buildVirtualAvailability } from "./recurringAvailability";
+
+interface AvailabilityQueryResult {
+  data: any;
+  error: { message?: string } | null;
+}
+
+/** Loads Availability-owned reads and materializes the two-year recurring-rule view. */
+export async function loadAvailabilityWorkspaceData(
+  client: any,
+  now: Date = new Date(),
+): Promise<{
+  availability: any[];
+  rules: any[];
+  preferences: any[];
+  deadline: string;
+  optionalErrors: string[];
+}> {
+  const [availabilityResult, rulesResult, preferencesResult, deadlineResult] = await Promise.all([
+    client.from("servant_availability").select("*").order("service_date", { ascending: true }),
+    client.from("servant_availability_rules").select("*").order("created_at", { ascending: false }),
+    client.from("servant_serving_preferences").select("*").eq("active", true).order("created_at", { ascending: false }),
+    client.from("system_settings").select("*").eq("key", "availability_deadline").maybeSingle(),
+  ]) as AvailabilityQueryResult[];
+
+  const rules = rulesResult.error ? [] : (rulesResult.data ?? []);
+  const horizon = new Date(now);
+  horizon.setFullYear(horizon.getFullYear() + 2);
+  const explicitAvailability = availabilityResult.error ? [] : (availabilityResult.data ?? []);
+  const preferences = preferencesResult.error ? [] : (preferencesResult.data ?? []);
+  const deadline = deadlineResult.error ? "" : (deadlineResult.data?.value ?? "");
+  const optionalErrors = [availabilityResult, rulesResult, preferencesResult, deadlineResult]
+    .filter(result => result.error)
+    .map(result => result.error?.message ?? "Availability data could not be loaded.");
+
+  return {
+    availability: [...explicitAvailability, ...buildVirtualAvailability(rules, horizon)],
+    rules,
+    preferences,
+    deadline,
+    optionalErrors,
+  };
+}

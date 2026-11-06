@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
-import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
 import { today, fmtDate, shortTime, errorText } from "./shared/formatters";
@@ -18,12 +18,14 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
-import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
-import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
+import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
+import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
+import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
 import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import { loadServingRequestData } from "./features/requests/services/requestData";
 import { loadServingNotificationData } from "./features/notifications/services/notificationData";
+import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
 import { markServingNotificationRead, saveServingNotificationPreferences } from "./features/notifications/services/notificationPersistence";
 import { cleanupServingPushSubscriptionForSignOut, disableServingPushSubscription, enableServingPushSubscription, isServingPushSubscriptionEnabled, type PushLifecycleRuntime } from "./features/notifications/services/pushSubscription";
 import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
@@ -189,39 +191,34 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availRes,ruleRes,preferenceRes,requestDataRes,notificationDataRes,settingRes,auditRes,servantDirectoryRes] = await Promise.all([
+      const [locRes,servRes,tempRes,schedRes,assignRes,availabilityDataRes,requestDataRes,notificationDataRes,auditRes,servantDirectoryRes] = await Promise.all([
         supabase.from("locations").select("*").order("name"),
         loadServantRecords(supabase),
         supabase.from("service_templates").select("*").eq("active",true),
         supabase.from("schedules").select("*").order("service_date").order("start_time"),
         supabase.from("assignments").select("*"),
-        supabase.from("servant_availability").select("*").order("service_date",{ascending:true}),
-        supabase.from("servant_availability_rules").select("*").order("created_at",{ascending:false}),
-        supabase.from("servant_serving_preferences").select("*").eq("active",true).order("created_at",{ascending:false}),
+        loadAvailabilityWorkspaceData(supabase),
         loadServingRequestData(supabase),
         loadServingNotificationData(supabase, notificationCutoff, session?.user?.id??""),
-        supabase.from("system_settings").select("*").eq("key","availability_deadline").maybeSingle(),
         loadRecentAuditLogs(supabase, auditCutoff),
         loadServantDirectoryData(supabase),
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
       for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [tempRes,availRes,ruleRes,preferenceRes,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,settingRes,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
+      const optionalErrors = [...availabilityDataRes.optionalErrors,...[tempRes,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
         .filter((r:any) => r.error)
-        .map((r:any) => r.error.message);
+        .map((r:any) => r.error.message)];
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
       const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
       const assignments=(assignRes.data??[]) as Assignment[];
       const mapped=mapSchedules((schedRes.data??[]) as Schedule[],assignments,locs,people);
       const safeMemberRows = servantDirectoryRes.memberProfiles.error ? [] : (servantDirectoryRes.memberProfiles.data ?? []);
       setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
-      const loadedRules=ruleRes.error?[]:(ruleRes.data??[]);setAvailabilityRules(loadedRules);setServingPreferences(preferenceRes.error?[]:(preferenceRes.data??[]));
-      const explicitAvailability=availRes.error?[]:(availRes.data??[]);
-      const ruleEndLimit=new Date();ruleEndLimit.setFullYear(ruleEndLimit.getFullYear()+2);
-      const virtualAvailability=buildVirtualAvailability(loadedRules,ruleEndLimit);
-      setAvailability([...explicitAvailability,...virtualAvailability]);setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationDataRes.notifications.error?[]:(notificationDataRes.notifications.data??[]));
-      setAvailabilityDeadline(settingRes.error?"":(settingRes.data?.value??""));setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
+      setAvailabilityRules(availabilityDataRes.rules);setServingPreferences(availabilityDataRes.preferences);
+      setAvailability(availabilityDataRes.availability);setAvailabilityDeadline(availabilityDataRes.deadline);
+      setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationDataRes.notifications.error?[]:(notificationDataRes.notifications.data??[]));
+      setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
       setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
       setAccountProfiles(servantDirectoryRes.accountProfiles.error?[]:(servantDirectoryRes.accountProfiles.data??[]));
       setNotificationPrefs(notificationDataRes.preferences.error||!notificationDataRes.preferences.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationDataRes.preferences.data);
@@ -384,113 +381,12 @@ export default function App() {
     schedules, isAdmin, myServantId: myServant?.id
   });
 
-  async function saveAvailability(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault();if(!supabase)return;
-    const form=e.currentTarget;
-    const fd=new FormData(form);
-    const linkedServant=servants.find(p=>p.auth_user_id===session?.user?.id);
-    const row={servant_id:String(fd.get("servant_id")),service_date:String(fd.get("service_date")),status:String(fd.get("status")),notes:String(fd.get("notes")||"").trim()};
-    if(!isAdmin&&availabilityDeadline&&today()>availabilityDeadline){setMessage(`The availability submission deadline (${fmtDate(availabilityDeadline)}) has passed. Please contact the administrator if you need to change your availability.`);return;}
-    if(!isAdmin&&(!linkedServant||row.servant_id!==linkedServant.id)){setMessage("Your login is not linked to a servant profile. Please ask an administrator to link your account.");return;}
-    const recurringConflict=availability.find(a=>a.is_recurring&&a.servant_id===row.servant_id&&a.service_date===row.service_date&&a.status!==row.status);
-    if(recurringConflict){setMessage(`This date conflicts with a recurring ${recurringConflict.status.replace("_"," ")} restriction. Review the recurring rule before saving.`);return;}
-    setLoading(true);setMessage("");
-    try {
-      const {error}=await upsertAvailabilityRecord(supabase,row);
-      if(error)throw error;
-      await loadData();form.reset();setMessage("Availability saved.");
-    } catch(e){setMessage(errorText(e));}
-    finally{setLoading(false);}
-  }
-  async function saveBulkAvailability(rows:any[]) {
-    if(!supabase)return false;
-    const conflicts=rows.filter(row=>availability.some(a=>a.servant_id===row.servant_id&&a.service_date===row.service_date&&a.status!==row.status));
-    if(conflicts.length){setMessage(`Cannot save: ${conflicts.length} date/person combination(s) already have a different availability status. Resolve the conflicts first.`);return false;}
-    setLoading(true);setMessage("");
-    try { const {error}=await upsertAvailabilityRecords(supabase,rows); if(error)throw error; await loadData();setMessage(`${rows.length} availability record(s) saved.`);return true; }
-    catch(e){setMessage(errorText(e));return false;} finally{setLoading(false);}
-  }
-  async function saveAvailabilityRule(rule:any) {
-    if(!supabase)return false;
-    const validation=validateRecurringAvailabilityRule(rule,availabilityRules,availability);
-    if(!validation.ok){
-      if(validation.reason==="overlapping_rule"){
-        setMessage("This recurring rule overlaps an existing rule with a different status. Review or remove the existing rule first.");
-        return false;
-      }
-      setMessage(`This rule conflicts with an existing availability entry on ${validation.conflictDate}. Resolve that date before saving the recurring rule.`);
-      return false;
-    }
-    const {error}=await insertAvailabilityRule(supabase,rule,session?.user?.id);
-    if(error){setMessage(errorText(error));return false;} await loadData();setMessage("Recurring availability restriction saved.");return true;
-  }
-  async function deleteAvailabilityRule(id:string){if(!supabase)return;const {error}=await deleteAvailabilityRuleById(supabase,id);if(error)setMessage(errorText(error));else await loadData();}
+  const availabilityActions = useAvailabilityActions({
+    client: supabase, isAdmin, servants, sessionUserId: session?.user?.id,
+    availability, availabilityRules, servingPreferences, schedules, deadline: availabilityDeadline,
+    loadData, setLoading, setMessage, setScheduleError, setAvailabilityDeadline
+  });
 
-  async function saveServingPreference(preference:any){
-    if(!supabase)return false;
-    const currentForPerson=servingPreferences.filter(r=>r.servant_id===preference.servant_id&&r.active!==false);
-    const combined=[...currentForPerson,preference];
-    const conflicts=schedules.filter(schedule=>schedule.service_date>=today()&&schedule.assignments.some(a=>a.servant_id===preference.servant_id)).filter(schedule=>{
-      const dateDow=new Date(`${schedule.service_date}T12:00:00`).getDay();
-      const timeRules=combined.filter(r=>r.rule_type==="allowed_time_window");
-      const serviceRules=combined.filter(r=>r.rule_type==="allowed_service_scope");
-      const timeAllowed=!timeRules.length||timeRules.some(r=>(!r.days_of_week?.length||r.days_of_week.includes(dateDow))&&shortTime(schedule.start_time)>=String(r.start_time).slice(0,5)&&shortTime(schedule.end_time)<=String(r.end_time).slice(0,5));
-      const serviceAllowed=!serviceRules.length||serviceRules.some(r=>r.location_id===schedule.location_id&&(!r.service_names?.length||r.service_names.includes(schedule.service_name)));
-      return !timeAllowed||!serviceAllowed;
-    });
-    if(conflicts.length){setMessage(`This restriction would conflict with ${conflicts.length} existing upcoming assignment(s): ${conflicts.slice(0,4).map(s=>`${s.service_name} · ${fmtDate(s.service_date)}`).join("; ")}. Review or change those assignments before saving the restriction.`);return false;}
-    const {error}=await insertServingPreference(supabase,preference,session?.user?.id);
-    if(error){setMessage(errorText(error));return false;}
-    await loadData();setMessage("Serving eligibility rule saved and will be checked during manual assignment.");return true;
-  }
-  async function deleteServingPreference(id:string){
-    if(!supabase)return;
-    const {error}=await deleteServingPreferenceById(supabase,id);
-    if(error)setMessage(errorText(error));else{await loadData();setMessage("Serving eligibility rule removed.");}
-  }
-
-  async function deleteAvailability(id:string){
-    if(!supabase||!isAdmin)return;
-    const {error}=await deleteAvailabilityRecordById(supabase,id);
-    if(error)setMessage(errorText(error));else await loadData();
-  }
-
-  async function linkServantAccount(servant:Servant,userId:string,verifiedNij:string):Promise<boolean>{
-    if(!supabase||!isAdmin)return false;
-    const {error}=await linkServantAccountRecord(supabase,{
-      servantId:servant.id,
-      userId,
-      verifiedNij
-    });
-    if(error){setMessage(errorText(error));return false;}
-    await loadData();
-    setMessage(`Account successfully linked to ${servant.full_name}. Identity verification was recorded in the audit trail.`);
-    return true;
-  }
-
-  async function savePerson(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault();if(!supabase||!isAdmin)return;
-    setScheduleError("");
-    const fd=new FormData(e.currentTarget);const name=String(fd.get("full_name")).trim();
-    if(!name)return;
-    setLoading(true);
-    try{
-      const {error}=await createServantRecord(supabase,name);if(error)throw error;
-      setModal(null);await loadData();
-    }catch(e){setScheduleError(errorText(e));setLoading(false);}
-  }
-  async function togglePerson(p:Servant){
-    if(!supabase||!isAdmin)return;
-    const {error}=await setServantActive(supabase,p.id,!p.active);
-    if(error)setMessage(errorText(error));else await loadData();
-  }
-  async function saveDeadline(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();if(!supabase||!isAdmin)return;
-    setScheduleError("");
-    const fd=new FormData(e.currentTarget);const value=String(fd.get("deadline")||"");
-    const {error}=await upsertAvailabilityDeadline(supabase,value,session.user.id);
-    if(error)setMessage(errorText(error));else {setAvailabilityDeadline(value);setMessage("Availability deadline updated.");}
-  }
   async function submitServingRequest(schedule:ScheduleView,kind:"replacement"|"swap"){
     if(kind==="swap"){setSwapDraft(schedule);return;}
     if(!supabase||!myServant)return;
@@ -684,7 +580,7 @@ export default function App() {
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
           onConfirmAssignment={confirmAssignment} onSubmitServingRequest={submitServingRequest}
-        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
+        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
 }
@@ -699,46 +595,3 @@ function PeoplePanel({servants,isAdmin,onAdd,onToggle}:{servants:Servant[];isAdm
  const rows=servants.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase()));
  return <><div className="toolbar"><div><h2>Servant directory</h2><p className="subtle">Manage the names available for role assignments.</p></div>{isAdmin&&<button className="btn primary" onClick={onAdd}><Plus size={16}/> Add servant</button>}</div><section className="filter-panel"><label className="search-field"><span>Search people</span><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name"/></label></section><div className="people-list">{rows.map(p=><div className="person-row" key={p.id}><div className="avatar">{p.full_name.slice(0,1).toUpperCase()}</div><div className="person-name"><b>{p.full_name}</b><small>{p.active?"Active":"Inactive"}</small></div>{isAdmin&&<button className={`btn tiny ${p.active?"secondary":"primary"}`} onClick={()=>onToggle(p)}>{p.active?"Deactivate":"Activate"}</button>}</div>)}</div></>;
 }
-function AvailabilityPanel({servants,availability,rules,preferences,locations,schedules,templates,isAdmin,currentUserId,onSave,onBulkSave,onSaveRule,onDeleteRule,onSavePreference,onDeletePreference,onDelete,deadline,onSaveDeadline}:{servants:Servant[];availability:any[];rules:any[];preferences:any[];locations:Location[];schedules:ScheduleView[];templates:any[];isAdmin:boolean;currentUserId:string;onSave:(e:FormEvent<HTMLFormElement>)=>void;onBulkSave:(rows:any[])=>Promise<boolean>;onSaveRule:(rule:any)=>Promise<boolean>;onDeleteRule:(id:string)=>void;onSavePreference:(preference:any)=>Promise<boolean>;onDeletePreference:(id:string)=>void;onDelete:(id:string)=>void;deadline:string;onSaveDeadline:(e:FormEvent<HTMLFormElement>)=>void}){
- const [dateFilter,setDateFilter]=useState("");
- const [entryMode,setEntryMode]=useState<"single"|"person"|"day">("single");
- const [bulkPerson,setBulkPerson]=useState(""); const [bulkPeople,setBulkPeople]=useState<string[]>([]);
- const [bulkFrom,setBulkFrom]=useState(today()); const [bulkTo,setBulkTo]=useState(today()); const [bulkStatus,setBulkStatus]=useState("unavailable");
- const [bulkPattern,setBulkPattern]=useState("daily"); const [bulkWeekdays,setBulkWeekdays]=useState<number[]>([1,2,3,4,5,6,0]); const [bulkNotes,setBulkNotes]=useState("");
- const [previewRows,setPreviewRows]=useState<any[]|null>(null); const [previewConflicts,setPreviewConflicts]=useState<any[]>([]);
- const [rulePerson,setRulePerson]=useState(""); const [rulePattern,setRulePattern]=useState("weekday"); const [ruleStatus,setRuleStatus]=useState("unavailable"); const [ruleFrom,setRuleFrom]=useState(today()); const [ruleUntil,setRuleUntil]=useState(""); const [ruleWeekday,setRuleWeekday]=useState("6"); const [ruleOrdinal,setRuleOrdinal]=useState("2"); const [ruleNotes,setRuleNotes]=useState("");
- const [preferencePerson,setPreferencePerson]=useState(""); const [preferenceType,setPreferenceType]=useState("allowed_time_window"); const [preferenceDays,setPreferenceDays]=useState<number[]>([0]); const [preferenceStart,setPreferenceStart]=useState("07:00"); const [preferenceEnd,setPreferenceEnd]=useState("11:00"); const [preferenceLocation,setPreferenceLocation]=useState(""); const [preferenceServices,setPreferenceServices]=useState<string[]>([]); const [preferenceNotes,setPreferenceNotes]=useState("");
- const myServant=servants.find(p=>p.auth_user_id===currentUserId);
- const selectable=servants.filter(p=>p.active&&(isAdmin||p.id===myServant?.id));
- const ownRules=rules.filter(r=>isAdmin||r.servant_id===myServant?.id);
- const rows=availability.filter(a=>!a.is_recurring&&a.service_date>=today()&&(isAdmin||a.servant_id===myServant?.id)&&(!dateFilter||a.service_date===dateFilter)).sort((a,b)=>a.service_date.localeCompare(b.service_date));
- const name=(id:string)=>servants.find(p=>p.id===id)?.full_name??"Unknown servant";
- const dateRange=(from:string,to:string)=>{const out:string[]=[];const d=new Date(`${from}T12:00:00`),last=new Date(`${to}T12:00:00`);for(let n=0;d<=last&&n<370;n++,d.setDate(d.getDate()+1))out.push(d.toLocaleDateString("en-CA"));return out;};
- const buildBulkPreview=()=>{if(!bulkFrom||!bulkTo||bulkTo<bulkFrom){setPreviewRows([]);return;}const people=entryMode==="person"?[isAdmin?bulkPerson:(myServant?.id??"")]:bulkPeople;const dates=dateRange(bulkFrom,bulkTo).filter(ds=>{const d=new Date(`${ds}T12:00:00`).getDay();if(bulkPattern==="daily")return true;if(bulkPattern==="weekdays")return d>=1&&d<=5;if(bulkPattern==="weekends")return d===0||d===6;return bulkWeekdays.includes(d);});const next=people.filter(Boolean).flatMap(servant_id=>dates.map(service_date=>({servant_id,service_date,status:bulkStatus,notes:bulkNotes.trim()})));const conflicts=next.filter(n=>availability.some(a=>a.servant_id===n.servant_id&&a.service_date===n.service_date&&a.status!==n.status));setPreviewConflicts(conflicts);setPreviewRows(next);};
- const togglePerson=(id:string)=>setBulkPeople(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
- const savePreview=async()=>{if(!previewRows?.length)return;const ok=await onBulkSave(previewRows);if(ok){setPreviewRows(null);setBulkPeople([]);setBulkNotes("");}};
- const makeRule=async(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const servant_id=isAdmin?rulePerson:myServant?.id;if(!servant_id)return;const rule={servant_id,pattern:rulePattern,status:ruleStatus,effective_from:ruleFrom,effective_until:ruleUntil||null,weekday:Number(ruleWeekday),ordinal:Number(ruleOrdinal),notes:ruleNotes.trim()};await onSaveRule(rule);};
- const savePreference=async(e:FormEvent<HTMLFormElement>)=>{e.preventDefault();const servant_id=isAdmin?preferencePerson:myServant?.id;if(!servant_id)return;const payload=preferenceType==="allowed_time_window"?{servant_id,rule_type:preferenceType,days_of_week:preferenceDays,start_time:preferenceStart,end_time:preferenceEnd,location_id:null,service_names:[],notes:preferenceNotes.trim(),active:true}:{servant_id,rule_type:preferenceType,days_of_week:[],start_time:null,end_time:null,location_id:preferenceLocation,service_names:preferenceServices,notes:preferenceNotes.trim(),active:true};if(preferenceType==="allowed_time_window"&&(!preferenceDays.length||preferenceStart>=preferenceEnd))return;if(preferenceType==="allowed_service_scope"&&(!preferenceLocation||!preferenceServices.length))return;const ok=await onSavePreference(payload);if(ok){setPreferenceNotes("");setPreferenceServices([]);}};
- const togglePreferenceDay=(day:number)=>setPreferenceDays(v=>v.includes(day)?v.filter(x=>x!==day):[...v,day]);
- const selectablePreferenceServices=[...new Set([...templates.filter(t=>t.location_id===preferenceLocation).map(t=>t.service_name),...schedules.filter(s=>s.location_id===preferenceLocation).map(s=>s.service_name)])].sort();
- const visiblePreferences=preferences.filter(r=>isAdmin||r.servant_id===myServant?.id);
- return <><div className="toolbar"><div><h2>{isAdmin?"Servant availability":"My availability"}</h2><p className="subtle">{isAdmin?"Manage availability records for the serving team.":"Mark the dates when you can or cannot serve."}</p></div></div>
-  {deadline&&<div className="message-banner"><span>Availability submission deadline: <b>{fmtDate(deadline)}</b>{new Date(`${deadline}T23:59:59`).getTime()>=Date.now()?` · ${Math.ceil((new Date(`${deadline}T23:59:59`).getTime()-Date.now())/86400000)} day(s) remaining`:" · Deadline passed"}</span></div>}
-  {isAdmin&&<section className="availability-form-panel"><h3>Set availability deadline</h3><form className="availability-form" onSubmit={onSaveDeadline}><label>Submission deadline<input type="date" name="deadline" defaultValue={deadline}/></label><button className="btn primary">Save deadline</button></form></section>}
-  {(isAdmin||myServant)&&<section className="availability-form-panel"><h3>{isAdmin?"Record servant availability":"Update my availability"}</h3><div className="availability-mode-switch"><button type="button" className={entryMode==="single"?"active":""} onClick={()=>{setEntryMode("single");setPreviewRows(null);}}>Single entry</button><button type="button" className={entryMode==="person"?"active":""} onClick={()=>{setEntryMode("person");setPreviewRows(null);setPreviewConflicts([]);}}>{isAdmin?"Bulk per person":"Multiple dates"}</button>{isAdmin&&<button type="button" className={entryMode==="day"?"active":""} onClick={()=>{setEntryMode("day");setPreviewRows(null);setPreviewConflicts([]);}}>Bulk per day</button>}</div>
-   {entryMode==="single"?<><form className="availability-form" onSubmit={onSave}>{isAdmin?<label>Servant<select name="servant_id" required defaultValue=""><option value="" disabled>Select servant</option>{selectable.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>:<><input type="hidden" name="servant_id" value={myServant!.id}/><div className="availability-self-name"><span>Servant</span><b>{myServant!.full_name}</b></div></>}<label>Date<input name="service_date" type="date" required defaultValue={today()}/></label><label>Status<select name="status" defaultValue="available"><option value="available">Available</option><option value="unavailable">Unavailable</option><option value="prefer_not">Prefer not to serve</option></select></label><label className="availability-notes">Notes (optional)<input name="notes" placeholder="e.g. only available in the morning"/></label><button className="btn primary">Save availability</button></form><p className="subtle availability-note">One status per person per date. Saving again updates the existing entry.</p></>:
-   <div className="bulk-availability-form"><div className={`bulk-form-grid ${entryMode==="day"?"is-day":"is-person"}`}>{entryMode==="person"?(isAdmin?<label className="bulk-person-servant">Servant<select value={bulkPerson} onChange={e=>setBulkPerson(e.target.value)}><option value="">Select servant</option>{selectable.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>:<div className="availability-self-name bulk-person-servant"><span>Servant</span><b>{myServant?.full_name??"Your linked servant profile"}</b></div>):<div className="bulk-servant-picker"><b>Select servants</b><div className="bulk-servant-list">{selectable.map(p=><label key={p.id}><input type="checkbox" checked={bulkPeople.includes(p.id)} onChange={()=>togglePerson(p.id)}/>{p.full_name}</label>)}</div><small>{bulkPeople.length} servant(s) selected</small></div>}<label className="bulk-from-date">From date<input type="date" value={bulkFrom} onChange={e=>setBulkFrom(e.target.value)}/></label><label className="bulk-to-date">To date<input type="date" value={bulkTo} onChange={e=>setBulkTo(e.target.value)}/></label><label className="bulk-status">Status<select value={bulkStatus} onChange={e=>setBulkStatus(e.target.value)}><option value="available">Available</option><option value="unavailable">Unavailable</option><option value="prefer_not">Prefer not to serve</option></select></label><label className="bulk-apply-to">Apply to<select value={bulkPattern} onChange={e=>setBulkPattern(e.target.value)}><option value="daily">Every day</option><option value="weekdays">Weekdays (Mon–Fri)</option><option value="weekends">Weekends (Sat–Sun)</option><option value="selected">Selected weekdays</option></select></label>{bulkPattern==="selected"&&<div className="bulk-weekdays"><b>Select weekdays</b>{[ [1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[0,"Sun"] ].map(([d,label])=><label key={d}><input type="checkbox" checked={bulkWeekdays.includes(Number(d))} onChange={()=>setBulkWeekdays(v=>v.includes(Number(d))?v.filter(x=>x!==Number(d)):[...v,Number(d)])}/>{label}</label>)}</div>}<label className="wide">Notes (optional)<input value={bulkNotes} onChange={e=>setBulkNotes(e.target.value)} placeholder="Optional note"/></label></div><button type="button" className="btn primary" onClick={buildBulkPreview}>Preview affected dates</button>
-   {previewRows!==null&&<div className="bulk-preview-card"><div className="bulk-preview-head"><b>Preview before saving</b><span>{previewRows.length} record(s)</span></div>{previewRows.length===0?<p className="subtle">No dates or servants selected.</p>:<>{previewConflicts.length>0&&<div className="bulk-conflict-warning"><b>{previewConflicts.length} conflicting record(s)</b><span>These person/date combinations already have a different status. Resolve them before saving.</span>{previewConflicts.slice(0,12).map((r,i)=><small key={i}>{name(r.servant_id)} · {fmtDate(r.service_date)} · currently {availability.find(a=>a.servant_id===r.servant_id&&a.service_date===r.service_date)?.status}</small>)}</div>}<div className="bulk-preview-list">{previewRows.map((r,i)=><div key={i}><b>{name(r.servant_id)}</b><span>{fmtDate(r.service_date)} · {r.status.replace("_"," ")}</span></div>)}</div><button type="button" className="btn primary" disabled={previewConflicts.length>0} onClick={savePreview}>Confirm and save {previewRows.length} records</button></>}</div>}</div>}
-  </section>}
-  {(isAdmin||myServant)&&<section className="availability-form-panel recurring-rule-panel"><h3>Recurring availability restrictions</h3><form className="recurring-rule-form" onSubmit={makeRule}>{isAdmin&&<label className="rule-field-servant">Servant<select value={rulePerson} onChange={e=>setRulePerson(e.target.value)} required><option value="">Select servant</option>{selectable.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>}<label className="rule-field-pattern">Pattern<select value={rulePattern} onChange={e=>setRulePattern(e.target.value)}><option value="weekday">Every weekday (Mon–Fri)</option><option value="saturday">Every Saturday</option><option value="sunday">Every Sunday</option><option value="second_week">Second week of each month (8th–14th)</option><option value="nth_weekday">Specific weekday occurrence each month</option><option value="month_edges">Beginning and end of month (first/last 3 days)</option></select></label>{rulePattern==="nth_weekday"&&<div className="rule-inline rule-field-occurrence"><label>Occurrence<select value={ruleOrdinal} onChange={e=>setRuleOrdinal(e.target.value)}>{[[1,"First"],[2,"Second"],[3,"Third"],[4,"Fourth"],[5,"Last"]].map(([v,l])=><option value={v}>{l}</option>)}</select></label><label>Weekday<select value={ruleWeekday} onChange={e=>setRuleWeekday(e.target.value)}>{[[1,"Monday"],[2,"Tuesday"],[3,"Wednesday"],[4,"Thursday"],[5,"Friday"],[6,"Saturday"],[0,"Sunday"]].map(([v,l])=><option value={v}>{l}</option>)}</select></label></div>}<label className="rule-field-status">Status<select value={ruleStatus} onChange={e=>setRuleStatus(e.target.value)}><option value="unavailable">Unavailable</option><option value="prefer_not">Prefer not to serve</option></select></label><div className="rule-inline rule-field-dates"><label>Effective from<input type="date" value={ruleFrom} onChange={e=>setRuleFrom(e.target.value)}/></label><label>Until (optional)<input type="date" value={ruleUntil} onChange={e=>setRuleUntil(e.target.value)}/></label></div><label className="rule-field-notes">Notes (optional)<input value={ruleNotes} onChange={e=>setRuleNotes(e.target.value)} placeholder="e.g. family commitment"/></label><button className="btn primary rule-save">Save recurring restriction</button></form><div className="saved-rules-list">{ownRules.map(r=><div className="saved-rule-row" key={r.id}><div><b>{name(r.servant_id)}</b><small>{r.pattern.replaceAll("_"," ")} · {r.status} · from {fmtDate(r.effective_from)}{r.effective_until?` until ${fmtDate(r.effective_until)}`:" · no end date"}</small></div><button className="icon-btn" onClick={()=>onDeleteRule(r.id)} title="Delete recurring rule"><Trash2 size={15}/></button></div>)}</div></section>}
-  {(isAdmin||myServant)&&<section className="availability-form-panel serving-preferences-panel"><h3>Serving preferences & eligibility</h3><form className="serving-preference-form" onSubmit={savePreference}>{isAdmin?<label>Servant<select value={preferencePerson} onChange={e=>setPreferencePerson(e.target.value)} required><option value="">Select servant</option>{selectable.map(p=><option key={p.id} value={p.id}>{p.full_name}</option>)}</select></label>:<div className="availability-self-name"><span>Servant</span><b>{myServant?.full_name}</b></div>}<label>Restriction type<select value={preferenceType} onChange={e=>setPreferenceType(e.target.value)}><option value="allowed_time_window">Can serve only during these time windows</option><option value="allowed_service_scope">Can serve only at these services / church</option></select></label>{preferenceType==="allowed_time_window"?<><div className="preference-weekday-picker"><b>Allowed days</b><div>{[[1,"Mon"],[2,"Tue"],[3,"Wed"],[4,"Thu"],[5,"Fri"],[6,"Sat"],[0,"Sun"]].map(([day,label])=><label key={day}><input type="checkbox" checked={preferenceDays.includes(Number(day))} onChange={()=>togglePreferenceDay(Number(day))}/>{label}</label>)}</div></div><div className="rule-inline"><label>Allowed from<input type="time" value={preferenceStart} onChange={e=>setPreferenceStart(e.target.value)}/></label><label>Allowed until<input type="time" value={preferenceEnd} onChange={e=>setPreferenceEnd(e.target.value)}/></label></div><small className="subtle">The entire service must fit inside the allowed window. Example: Sunday 07:00–11:00.</small></>:<><label>Church location<select value={preferenceLocation} onChange={e=>{setPreferenceLocation(e.target.value);setPreferenceServices([]);}} required><option value="">Select church</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label><div className="preference-service-picker"><b>Allowed services</b>{selectablePreferenceServices.length?selectablePreferenceServices.map(name=><label key={name}><input type="checkbox" checked={preferenceServices.includes(name)} onChange={()=>setPreferenceServices(v=>v.includes(name)?v.filter(x=>x!==name):[...v,name])}/>{name}</label>):<small className="subtle">Choose a church to see its service templates and scheduled service names.</small>}</div><small className="subtle">Example: GMS Alam Sutera · Service 3, Service 4 and Service 5.</small></>}<label>Notes (optional)<input value={preferenceNotes} onChange={e=>setPreferenceNotes(e.target.value)} placeholder="e.g. Only available for morning services"/></label><button className="btn primary">Save serving preference</button></form><div className="saved-rules-list">{visiblePreferences.map(rule=><div className="saved-rule-row" key={rule.id}><div><b>{name(rule.servant_id)}</b><small>{rule.rule_type==="allowed_time_window"?`Only ${rule.days_of_week?.length?rule.days_of_week.map((d:number)=>["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d]).join(", "):"any day"} · ${String(rule.start_time).slice(0,5)}–${String(rule.end_time).slice(0,5)}`:`Only ${rule.service_names?.join(", ")||"selected services"} · ${locations.find(l=>l.id===rule.location_id)?.name??"Selected church"}`}{rule.notes?` · ${rule.notes}`:""}</small></div><button className="icon-btn" title="Remove serving preference" onClick={()=>onDeletePreference(rule.id)}><Trash2 size={15}/></button></div>)}</div></section>}
-  {!isAdmin&&!myServant&&<div className="message-banner"><span>Your login is not linked to a servant directory profile yet. Please ask a GMS administrator to link your account before submitting availability.</span></div>}
-  <section className="filter-panel availability-filter"><label><span>Filter by date</span><input type="date" value={dateFilter} onChange={e=>setDateFilter(e.target.value)}/></label><button className="clear-btn" onClick={()=>setDateFilter("")}>Clear date</button></section>
-  <div className="list-heading"><h2>{isAdmin?"Availability records":"My availability records"}</h2><span>{rows.length} records</span></div>
-  {rows.length===0?<div className="empty-state"><ClipboardCheck size={28}/><b>No availability records</b><p>Add a record above to help coordinators plan assignments.</p></div>:<div className="people-list">{rows.map(a=><div className="availability-row" key={a.id}><div className="availability-date">{fmtDate(a.service_date)}</div><div className="availability-person"><b>{name(a.servant_id)}</b><small>{a.notes||"No notes"}</small></div><span className={`availability-status ${a.status}`}>{a.status==="prefer_not"?"Prefer not to serve":a.status}</span>{(isAdmin||a.servant_id===myServant?.id)&&<button className="icon-btn" title="Delete record" onClick={()=>onDelete(a.id)}><Trash2 size={16}/></button>}</div>)}</div>}
- </>;
-}
-
-
-
-

@@ -1,14 +1,14 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView, Servant } from "../../../types";
-import PushNotificationSettings from "../../notifications/components/PushNotificationSettings";
 
-export default function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,pushEnabled,pushBusy,onEnablePush,onDisablePush,notificationPrefs,onSaveNotificationPreferences}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;pushEnabled:boolean;pushBusy:boolean;onEnablePush:()=>void;onDisablePush:()=>void;notificationPrefs:any;onSaveNotificationPreferences:(next:any)=>void}){
+export default function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,notificationSettings}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;notificationSettings:ReactNode}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
  return <section className="requests-panel">
-  <PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={onEnablePush} onDisable={onDisablePush} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>
+  {notificationSettings}
   <section className="requests-content-card notification-history-section">
    <div className="list-heading requests-content-heading"><h2>Notification history</h2><span>{notifications.length} in the last 30 days</span></div>
    {notifications.length===0?<div className="requests-empty-note">No notifications in the last 30 days.</div>:<div className="notification-history-list">{notifications.map(n=><article className={`inbox-item ${n.is_read?"read":"unread"}`} key={n.id} onClick={()=>onNotificationRead(n.id)}><div className="inbox-item-body"><b>{n.title}</b><p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small></div><span className="inbox-status approved">{n.is_read?"Read":"New"}</span></article>)}</div>}

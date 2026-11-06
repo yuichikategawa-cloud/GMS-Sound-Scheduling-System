@@ -80,5 +80,5 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
   assert(globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Cross-cutting Inbox dark-mode overrides must remain global and late in the cascade.");
   assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
   assert(globalCss.includes(".schedule-grid{"), "App-composed Schedule workspace styles remain global pending the Schedule UI extraction.");
-  assert(globalCss.includes(".availability-form-panel{"), "App-composed Availability workspace styles remain global pending the Availability UI extraction.");
+  assert(globalCss.includes(".availability-form-panel{"), "Availability workspace styles remain global pending a cascade-preserving feature stylesheet migration.");
 });

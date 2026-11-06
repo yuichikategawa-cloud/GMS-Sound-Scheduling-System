@@ -62,6 +62,10 @@ jobs:
         run: deno test --no-lock tests/availability/recurringAvailability_test.ts
       - name: Test availability persistence operations
         run: deno test --no-lock tests/availability/availabilityPersistence_test.ts
+      - name: Test Availability data loading
+        run: deno test --no-lock tests/availability/availabilityData_test.ts
+      - name: Test Availability and Requests feature boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/availability/availabilityArchitecture_test.ts
       - name: Test servant management persistence operations
         run: deno test --no-lock tests/servants/servantManagement_test.ts
       - name: Test servant account candidate mapping
