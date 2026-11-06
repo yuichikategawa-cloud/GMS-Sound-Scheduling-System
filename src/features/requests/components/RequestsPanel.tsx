@@ -23,7 +23,7 @@ export default function RequestsPanel({
   onResolve: (request: ServingRequestRecord, replacementServantId: string) => void;
   notifications: ServingNotificationRecord[];
   onNotificationRead: (id: string) => void;
-  notificationSettings: ReactNode;
+  notificationSettings:ReactNode;
 }) {
   const pending = requests.filter(request => request.status === "pending");
   const [replacementChoice, setReplacementChoice] = useState<Record<string, string>>({});
