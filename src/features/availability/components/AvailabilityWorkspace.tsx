@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { ClipboardCheck, Trash2 } from "lucide-react";
 import "./AvailabilityWorkspace.css";
 import { fmtDate, today } from "../../../shared/formatters";
-import type { Location, ScheduleView, Servant } from "../../../types";
+import type { Location, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type {
   AvailabilityRecord,
   AvailabilityStatus,
@@ -16,7 +16,6 @@ import type {
   AvailabilitySubmissionRow,
   ServingPreferencePayload,
 } from "../services/availabilityPersistence";
-import type { ServiceTemplate } from "../../schedule/services/scheduleData";
 
 export default function AvailabilityWorkspace({servants,availability,rules,preferences,locations,schedules,templates,isAdmin,currentUserId,onSave,onBulkSave,onSaveRule,onDeleteRule,onSavePreference,onDeletePreference,onDelete,deadline,onSaveDeadline}:{servants:Servant[];availability:AvailabilityRecord[];rules:RecurringAvailabilityRule[];preferences:ServingPreferenceRecord[];locations:Location[];schedules:ScheduleView[];templates:ServiceTemplate[];isAdmin:boolean;currentUserId:string;onSave:(e:FormEvent<HTMLFormElement>)=>void;onBulkSave:(rows:AvailabilitySubmissionRow[])=>Promise<boolean>;onSaveRule:(rule:AvailabilityRulePayload)=>Promise<boolean>;onDeleteRule:(id:string)=>void;onSavePreference:(preference:ServingPreferencePayload)=>Promise<boolean>;onDeletePreference:(id:string)=>void;onDelete:(id:string)=>void;deadline:string;onSaveDeadline:(e:FormEvent<HTMLFormElement>)=>void}){
  const [dateFilter,setDateFilter]=useState("");
