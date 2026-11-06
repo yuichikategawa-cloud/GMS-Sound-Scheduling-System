@@ -65,8 +65,9 @@ export function saveScheduleWithAssignments(
 }
 
 /**
- * Upserts generated draft rows with the existing conflict key. Add mode
- * ignores matching rows; replace mode updates matching rows as before.
+ * Adds only missing generated rows with the existing natural conflict key.
+ * Replace mode remains guarded; use replaceGeneratedSchedulesAtomically for
+ * the staged all-or-nothing replacement path after its rollout is approved.
  */
 export function upsertGeneratedSchedules(
   client: SchedulePersistenceClient,
