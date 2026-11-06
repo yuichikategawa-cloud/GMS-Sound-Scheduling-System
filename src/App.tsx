@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useBrowserLifecycle } from "./app/hooks/useBrowserLifecycle";
 import { CalendarDays, Church, Users, Search, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { loadDashboardData } from "./app/services/dashboardData";
@@ -63,10 +64,6 @@ export default function App() {
   const [availability,setAvailability] = useState<any[]>([]);
   const [availabilityRules,setAvailabilityRules] = useState<any[]>([]);
   const [servingPreferences,setServingPreferences] = useState<any[]>([]);
-  const [installPrompt,setInstallPrompt] = useState<any>(null);
-  const [pwaInstalled,setPwaInstalled] = useState(false);
-  const [isOnline,setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
-  const lastForegroundRefresh = useRef(0);
   const [requests,setRequests] = useState<any[]>([]);
   const [requestReads,setRequestReads] = useState<any[]>([]);
   const [notifications,setNotifications] = useState<any[]>([]);
@@ -95,6 +92,13 @@ export default function App() {
   const [actionDialogInput,setActionDialogInput] = useState("");
   const actionDialogResolver = useRef<((accepted:boolean)=>void)|null>(null);
   const actionTextResolver = useRef<((value:string|null)=>void)|null>(null);
+
+  const { installPrompt, pwaInstalled, isOnline, clearInstallPrompt } = useBrowserLifecycle({
+    profileId: profile?.id,
+    userId: session?.user?.id,
+    refreshData: loadData,
+    setMessage,
+  });
 
   const pushActions = usePushNotificationActions({
     client: supabase,
@@ -146,38 +150,6 @@ export default function App() {
 
   const toggleTheme=()=>setTheme(current=>current==="dark"?"light":"dark");
 
-  useEffect(() => {
-    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true;
-    setPwaInstalled(!!standalone);
-    const onBeforeInstall = (event:Event) => { event.preventDefault(); setInstallPrompt(event as any); };
-    const onInstalled = () => { setPwaInstalled(true); setInstallPrompt(null); setMessage("Sound Scheduling is installed on this device."); };
-    window.addEventListener("beforeinstallprompt",onBeforeInstall);
-    window.addEventListener("appinstalled",onInstalled);
-    return () => { window.removeEventListener("beforeinstallprompt",onBeforeInstall); window.removeEventListener("appinstalled",onInstalled); };
-  },[]);
-
-  useEffect(() => {
-    const online = () => setIsOnline(true);
-    const offline = () => setIsOnline(false);
-    window.addEventListener("online", online);
-    window.addEventListener("offline", offline);
-    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
-  }, []);
-
-  useEffect(() => {
-    if (!profile || !session?.user?.id) return;
-    const refreshWhenVisible = () => {
-      if (document.visibilityState !== "visible" || !navigator.onLine) return;
-      const now = Date.now();
-      if (now - lastForegroundRefresh.current < 5000) return;
-      lastForegroundRefresh.current = now;
-      void loadData();
-    };
-    document.addEventListener("visibilitychange", refreshWhenVisible);
-    window.addEventListener("pageshow", refreshWhenVisible);
-    return () => { document.removeEventListener("visibilitychange", refreshWhenVisible); window.removeEventListener("pageshow", refreshWhenVisible); };
-  }, [profile?.id, session?.user?.id]);
-
   async function loadProfile() {
     if (!supabase || !session) return;
     const {data,error} = await loadMemberAccountProfile(supabase,session.user.id);
@@ -227,7 +199,7 @@ export default function App() {
   useEffect(()=>{if(profile) void loadData();},[profile]);
 
   async function installGmsApp(){
-    if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch(e){console.warn("PWA install prompt was not completed",e);}finally{setInstallPrompt(null);}return;}
+    if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch(e){console.warn("PWA install prompt was not completed",e);}finally{clearInstallPrompt();}return;}
     const ua=navigator.userAgent.toLowerCase();
     const ios=/iphone|ipad|ipod/.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
     const message=ios?"On your iPhone, open this page in Safari, tap Share, choose Add to Home Screen, turn on Open as Web App, then tap Add. If Add to Home Screen is missing, scroll to Edit Actions and enable it. Open GMS from the new Home Screen icon before enabling notifications.":"To install Sound Scheduling: open your browser menu and choose Install app or Add to Home Screen. If the install option is not shown, refresh the page once and try again.";

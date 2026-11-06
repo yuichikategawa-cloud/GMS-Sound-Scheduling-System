@@ -44,6 +44,10 @@ jobs:
         run: deno test --no-lock tests/auth/sessionLifecycle_test.ts
       - name: Test App dashboard data composition
         run: deno test --no-lock tests/app/dashboardData_test.ts
+      - name: Test App browser lifecycle behavior
+        run: deno test --no-lock tests/app/browserLifecycle_test.ts
+      - name: Test App browser lifecycle architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/app/browserLifecycleArchitecture_test.ts
       - name: Test Auth workflow architecture boundaries
         run: deno test --no-lock --allow-read=src,tests tests/auth/authArchitecture_test.ts
       - name: Test schedule mapping
