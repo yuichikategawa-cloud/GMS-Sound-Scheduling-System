@@ -18,7 +18,11 @@ import type {
   ServingRequestRecord,
   ServingRequestReadMarker,
 } from "../../features/requests/services/requestData";
-import type { ServingNotificationRecord } from "../../features/notifications/services/notificationData";
+import type {
+  NotificationPreferenceState,
+  ServingNotificationRecord,
+} from "../../features/notifications/services/notificationData";
+export type { NotificationPreferenceState } from "../../features/notifications/services/notificationData";
 import type { AuditLogRecord } from "../../features/audit/services/auditData";
 import { loadAvailabilityWorkspaceData } from "../../features/availability/services/availabilityData";
 import { loadServantRecords, type ServantRecordsResponse } from "../../features/servants/services/servantManagement";
@@ -35,14 +39,6 @@ export interface DashboardDataLoaders {
   loadServingNotificationData: typeof loadServingNotificationData;
   loadRecentAuditLogs: typeof loadRecentAuditLogs;
   loadServantDirectoryData: typeof loadServantDirectoryData;
-}
-
-export interface NotificationPreferenceState {
-  new_assignments: boolean;
-  schedule_changes: boolean;
-  confirmation_reminders: boolean;
-  availability_deadlines: boolean;
-  request_updates: boolean;
 }
 
 export interface DashboardData {

@@ -76,8 +76,22 @@ function createClient(
 }
 
 Deno.test("notification data preserves the history and current-user preference query contracts", async () => {
-  const notifications = { data: [{ id: "notification-1" }], error: null };
-  const preferences = { data: { user_id: "user-1", new_assignments: false }, error: null };
+  const notifications = { data: [{
+    id: "notification-1",
+    recipient_user_id: "user-1",
+    title: "Schedule update",
+    body: "Your assignment has changed.",
+    created_at: "2026-11-06T10:00:00.000Z",
+    is_read: false,
+  }], error: null };
+  const preferences = { data: {
+    user_id: "user-1",
+    new_assignments: false,
+    schedule_changes: true,
+    confirmation_reminders: true,
+    availability_deadlines: true,
+    request_updates: true,
+  }, error: null };
   const { client, calls } = createClient(notifications, preferences);
 
   const result = await loadServingNotificationData(
@@ -108,7 +122,14 @@ Deno.test("notification data preserves the history and current-user preference q
 Deno.test("notification data keeps history errors independent from preference rows", async () => {
   const notificationError = { code: "42501", message: "Notification history is unavailable." };
   const notifications = { data: null, error: notificationError };
-  const preferences = { data: { user_id: "user-1" }, error: null };
+  const preferences = { data: {
+    user_id: "user-1",
+    new_assignments: false,
+    schedule_changes: true,
+    confirmation_reminders: true,
+    availability_deadlines: true,
+    request_updates: true,
+  }, error: null };
   const { client } = createClient(notifications, preferences);
 
   const result = await loadServingNotificationData(client, "cutoff", "user-1");
@@ -118,7 +139,14 @@ Deno.test("notification data keeps history errors independent from preference ro
 });
 
 Deno.test("notification data keeps preference errors independent from history", async () => {
-  const notifications = { data: [{ id: "notification-1" }], error: null };
+  const notifications = { data: [{
+    id: "notification-1",
+    recipient_user_id: "user-1",
+    title: "Schedule update",
+    body: "Your assignment has changed.",
+    created_at: "2026-11-06T10:00:00.000Z",
+    is_read: false,
+  }], error: null };
   const preferenceError = { code: "42P01", message: "Notification preferences are unavailable." };
   const preferences = { data: null, error: preferenceError };
   const { client } = createClient(notifications, preferences);

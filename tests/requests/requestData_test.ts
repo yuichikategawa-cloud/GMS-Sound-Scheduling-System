@@ -4,6 +4,8 @@ import {
   loadServingRequestData,
   type ServingRequestDataClient,
   type ServingRequestQueryResponse,
+  type ServingRequestRecord,
+  type ServingRequestReadMarker,
 } from "../../src/features/requests/services/requestData.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
@@ -25,8 +27,8 @@ interface RecordedCall {
 }
 
 function createClient(
-  requestsResponse: ServingRequestQueryResponse,
-  readsResponse: ServingRequestQueryResponse,
+  requestsResponse: ServingRequestQueryResponse<ServingRequestRecord>,
+  readsResponse: ServingRequestQueryResponse<ServingRequestReadMarker>,
 ): { client: ServingRequestDataClient; calls: RecordedCall[] } {
   const calls: RecordedCall[] = [];
   const client = {
@@ -52,7 +54,16 @@ function createClient(
 }
 
 Deno.test("serving request data preserves both query contracts and their parallel result order", async () => {
-  const requestRows = [{ id: "request-1", status: "pending", created_at: "2026-11-01T10:00:00Z" }];
+  const requestRows = [{
+    id: "request-1",
+    schedule_id: "schedule-1",
+    assignment_id: "assignment-1",
+    requester_servant_id: "servant-1",
+    request_type: "replacement",
+    details: "Family commitment",
+    status: "pending",
+    created_at: "2026-11-01T10:00:00Z",
+  }];
   const readRows = [{ request_id: "request-1", user_id: "servant-1" }];
   const requestsResponse = { data: requestRows, error: null };
   const readsResponse = { data: readRows, error: null };
@@ -71,7 +82,7 @@ Deno.test("serving request data preserves both query contracts and their paralle
 Deno.test("serving request data keeps request-table errors independent from read markers", async () => {
   const requestError = { code: "42501", message: "Serving requests are unavailable." };
   const requestsResponse = { data: null, error: requestError };
-  const readsResponse = { data: [{ request_id: "request-1" }], error: null };
+  const readsResponse = { data: [{ request_id: "request-1", user_id: "servant-1" }], error: null };
   const { client } = createClient(requestsResponse, readsResponse);
 
   const result = await loadServingRequestData(client);
@@ -81,7 +92,16 @@ Deno.test("serving request data keeps request-table errors independent from read
 });
 
 Deno.test("serving request data keeps read-marker errors independent from requests", async () => {
-  const requestsResponse = { data: [{ id: "request-1" }], error: null };
+  const requestsResponse = { data: [{
+    id: "request-1",
+    schedule_id: "schedule-1",
+    assignment_id: "assignment-1",
+    requester_servant_id: "servant-1",
+    request_type: "replacement",
+    details: "Family commitment",
+    status: "pending",
+    created_at: "2026-11-01T10:00:00Z",
+  }], error: null };
   const readsError = { code: "42P01", message: "Request read markers are unavailable." };
   const readsResponse = { data: null, error: readsError };
   const { client } = createClient(requestsResponse, readsResponse);
