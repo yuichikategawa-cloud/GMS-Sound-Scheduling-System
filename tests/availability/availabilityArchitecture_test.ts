@@ -27,6 +27,10 @@ Deno.test("Availability owns its workspace UI, orchestration, and read boundary"
   assert(!app.includes("function AvailabilityPanel("), "Availability presentation should not remain embedded in App.");
   assert(!app.includes("async function saveAvailability("), "Availability mutation orchestration should not remain embedded in App.");
   assert(workspace.includes("export default function AvailabilityWorkspace("), "Availability should own the extracted workspace UI.");
+  assert(workspace.includes('import type { Location, ScheduleView, Servant, ServiceTemplate } from "../../../types";'),
+    "Availability must consume shared domain types rather than importing Schedule implementation details.");
+  assert(!workspace.includes('from "../../schedule/'),
+    "Availability must not depend on relative imports from the Schedule feature.");
   assert(!/client\.(?:rpc|from)\(/.test(workspace), "Availability presentation must not access Supabase directly.");
   assert(!/client\.(?:rpc|from)\(/.test(actions), "Availability action orchestration must delegate persistence to Availability services.");
   assert(data.includes('from("servant_availability")') && data.includes('from("servant_availability_rules")') &&
