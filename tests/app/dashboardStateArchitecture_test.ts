@@ -2,6 +2,7 @@
 
 const app = await Deno.readTextFile("src/App.tsx");
 const state = await Deno.readTextFile("src/app/state/dashboardState.ts");
+const dashboardData = await Deno.readTextFile("src/app/services/dashboardData.ts");
 
 Deno.test("App hydrates dashboard state through one application boundary", () => {
   if (!app.includes("dashboardStateReducer") || !app.includes('type: "hydrate", data: dashboard')) {
@@ -28,7 +29,7 @@ Deno.test("App hydrates dashboard state through one application boundary", () =>
 });
 
 Deno.test("dashboard state contracts include typed member-directory and notification preference models", () => {
-  if (!state.includes("ServantDirectoryMember") || !state.includes("NotificationPreferenceState")) {
+  if (!dashboardData.includes("ServantDirectoryMember") || !state.includes("NotificationPreferenceState")) {
     throw new Error("Dashboard state must use shared member-directory and preference contracts.");
   }
   for (const action of [
