@@ -10,7 +10,7 @@ Deno.test("App hydrates dashboard state through one application boundary", () =>
   if (!app.includes("dashboardStateReducer") || !app.includes("useDashboardLoader({")) {
     throw new Error("App must compose the dashboard reducer and dedicated loading hook.");
   }
-  if (app.includes("loadDashboardData(") || app.includes("setLoading(true); setMessage("")")) {
+  if (app.includes("loadDashboardData(") || app.includes('setLoading(true); setMessage("")')) {
     throw new Error("App must not own dashboard loading orchestration directly.");
   }
   if (!dashboardLoaderHook.includes("createDashboardLoadController") ||

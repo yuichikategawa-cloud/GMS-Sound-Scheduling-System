@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { errorText } from "../../../shared/formatters";
+import { errorText } from "../../shared/formatters";
 import { loadDashboardData } from "../services/dashboardData";
 import type { DashboardStateAction } from "../state/dashboardState";
 import { createDashboardLoadController } from "../services/dashboardLoadController";
@@ -13,7 +13,7 @@ export function useDashboardLoader({
   setLoading,
   setMessage,
 }: {
-  client: typeof import("../../../supabase").supabase;
+  client: typeof import("../../supabase").supabase;
   userId?: string;
   dispatchDashboardState: Dispatch<DashboardStateAction>;
   setLoading: Dispatch<SetStateAction<boolean>>;
