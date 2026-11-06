@@ -12,6 +12,7 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "src/features/schedule/components/ScheduleManagementPanels.tsx",
     "src/features/schedule/components/ScheduleDisplayComponents.tsx",
     "src/features/schedule/components/ScheduleDialogs.tsx",
+    "src/features/schedule/services/schedulePersistence.ts",
   ];
   const sources = await Promise.all(paths.map(path =>
     Deno.readTextFile(new URL("../../" + path, import.meta.url))
@@ -22,8 +23,10 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     assert(!/from\s+["'][^"']*\/App["']/.test(sources[index]),
       paths[index] + " must not depend on the App composition root.");
   }
-  assert(sources[1].includes("admin_publish_schedules_grouped") && sources[1].includes("admin_bulk_assignments_grouped"),
-    "Schedule actions must keep the existing admin publication and bulk-assignment RPC contracts.");
+  assert(sources[6].includes("admin_publish_schedules_grouped") && sources[6].includes("admin_bulk_assignments_grouped"),
+    "Schedule persistence must keep the existing admin publication and bulk-assignment RPC contracts.");
   assert(sources[1].includes("validateScheduleAssignment") && sources[1].includes("highWorkload"),
     "Schedule actions must retain assignment validation and workload safeguards.");
+  assert(!/client\.(?:rpc|from)\(/.test(sources[1]),
+    "Schedule action orchestration must delegate persistence to Schedule-owned services.");
 });

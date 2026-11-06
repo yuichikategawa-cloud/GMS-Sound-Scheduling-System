@@ -110,7 +110,7 @@ export function useScheduleActions({
       if(missing.length&&!await askAction("Incomplete service",`${s.service_name} is missing ${missing.join(" and ")}. Publish anyway?`,"Publish anyway",true))return;
     }
     const {error}=await updateSchedulePublication(client,{locationId:null,scheduleIds:[s.id],status:nextStatus});
-    if(error){setMessage(error.message);return;}
+    if(error){setMessage(errorText(error));return;}
     setMessage(nextStatus==="published"?"Schedule published. Affected servants receive one grouped notification.":"Schedule moved back to draft.");
     await loadData();
   }
@@ -205,7 +205,7 @@ export function useScheduleActions({
     if(!client||!isAdmin)return;
     const name=await askText("Add church location","Enter the name of the new church location.","Church name");if(!name?.trim())return;
     const {error}=await createScheduleLocation(client,name.trim());
-    if(error)setMessage(error.message);else {setMessage("Church location added.");await loadData();}
+    if(error)setMessage(errorText(error));else {setMessage("Church location added.");await loadData();}
   }
 
   async function addRecurringTemplate(){
@@ -217,7 +217,7 @@ export function useScheduleActions({
     const start_time=await askText("Start time","Enter the start time in HH:MM format.","Start time",undefined,"09:00");if(!start_time)return;
     const end_time=await askText("End time","Enter the end time in HH:MM format.","End time",undefined,"11:00");if(!end_time)return;
     const {error}=await upsertScheduleServiceTemplate(client,{location_id:location.id,day_of_week:Number(day),service_name:service_name.trim(),start_time,end_time,active:true});
-    if(error)setMessage(error.message);else {setMessage("Recurring service template saved.");await loadData();}
+    if(error)setMessage(errorText(error));else {setMessage("Recurring service template saved.");await loadData();}
   }
 
   async function addServiceTemplate(locationId: string, day: number, name: string, start: string, end: string) {
@@ -246,7 +246,7 @@ export function useScheduleActions({
     if (!confirmed) return;
     const { error } = await archiveScheduleServiceTemplate(client, template.id);
     if (error) {
-      setMessage(error.message);
+      setMessage(errorText(error));
       return;
     }
     await loadData();
