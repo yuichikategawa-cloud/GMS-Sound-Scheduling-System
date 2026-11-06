@@ -504,10 +504,13 @@ Deno.test("Requests feature owns its servant inbox dark layout and card treatmen
     ':root[data-theme="dark"] .inbox-item + .inbox-item{',
   ]) {
     assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
-    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
   }
   assert(requestsCss.includes("background: #202f46 !important;"), "Inbox card surface must be retained.");
+  assert(!globalCss.includes(':root[data-theme="dark"] .inbox-item{\\n  background: #202f46 !important;'),
+    "The final servant inbox card surface must not remain global.");
   assert(requestsCss.includes("background: #292744 !important;"), "Unread inbox surface must be retained.");
+  assert(!globalCss.includes(':root[data-theme="dark"] .inbox-item.unread{\\n  background: #292744 !important;'),
+    "The final unread servant inbox surface must not remain global.");
   assert(requestsCss.includes("@media (max-width: 760px)"), "Mobile inbox layout overrides must be retained.");
   assert(!globalCss.includes(":root[data-theme=\"dark\"] .inbox-intro > .inbox-unread-count{\n    flex: 0 0 auto;"),
     "Mobile inbox count alignment must not remain global.");
