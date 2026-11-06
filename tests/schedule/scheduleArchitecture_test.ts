@@ -34,12 +34,14 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
   assert(!/client\.(?:rpc|from)\(/.test(sources[1]),
     "Schedule action orchestration must delegate persistence to Schedule-owned services.");
   
-  const [app, dashboard] = await Promise.all([
+  const [app, dashboard, dashboardLoader] = await Promise.all([
     Deno.readTextFile(new URL("../../src/App.tsx", import.meta.url)),
     Deno.readTextFile(new URL("../../src/app/services/dashboardData.ts", import.meta.url)),
+    Deno.readTextFile(new URL("../../src/app/hooks/useDashboardLoader.ts", import.meta.url)),
   ]);
-  assert(app.includes('from "./app/services/dashboardData"'),
-    "App must compose dashboard data through its application-owned service.");
+  assert(app.includes('from "./app/hooks/useDashboardLoader"') &&
+    dashboardLoader.includes('from "../services/dashboardData"'),
+    "App must compose dashboard data through its application-owned loading boundary.");
   assert(dashboard.includes("loadScheduleWorkspaceData"),
     "The app-owned dashboard service must compose the Schedule-owned dashboard data service.");
   assert(!app.includes("supabase.from(") && !app.includes("supabase.rpc("),
