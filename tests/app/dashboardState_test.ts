@@ -23,19 +23,19 @@ const availabilityRuleRow = {
   effective_until: null,
   pattern: "weekday",
   status: "unavailable",
-};
+} as const;
 const servingPreferenceRow = {
   id: "preference-1",
   servant_id: "servant-1",
   rule_type: "allowed_time_window",
   active: true,
-};
+} as const;
 const availabilityRow = {
   id: "availability-1",
   servant_id: "servant-1",
   service_date: "2026-11-07",
   status: "available",
-};
+} as const;
 const requestRow = {
   id: "request-1",
   schedule_id: "schedule-1",
@@ -45,7 +45,7 @@ const requestRow = {
   details: "Family commitment",
   status: "pending",
   created_at: "2026-11-06T10:00:00.000Z",
-};
+} as const;
 const notificationRow = {
   id: "notification-1",
   recipient_user_id: "user-1",
