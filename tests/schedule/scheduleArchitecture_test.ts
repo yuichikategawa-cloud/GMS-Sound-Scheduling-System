@@ -13,6 +13,7 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "src/features/schedule/components/ScheduleDisplayComponents.tsx",
     "src/features/schedule/components/ScheduleDialogs.tsx",
     "src/features/schedule/services/schedulePersistence.ts",
+    "src/features/schedule/services/scheduleData.ts",
   ];
   const sources = await Promise.all(paths.map(path =>
     Deno.readTextFile(new URL("../../" + path, import.meta.url))
@@ -29,4 +30,10 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "Schedule actions must retain assignment validation and workload safeguards.");
   assert(!/client\.(?:rpc|from)\(/.test(sources[1]),
     "Schedule action orchestration must delegate persistence to Schedule-owned services.");
+  
+  const app = await Deno.readTextFile(new URL("../../src/App.tsx", import.meta.url));
+  assert(app.includes('from "./features/schedule/services/scheduleData"'),
+    "App must compose the Schedule-owned dashboard data service.");
+  assert(!/supabase\\.(?:from|rpc)\\s*\\(/.test(app),
+    "App must not issue direct database reads or RPC calls outside feature-owned services.");
 });

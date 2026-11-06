@@ -18,6 +18,7 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
+import { loadScheduleWorkspaceData, loadHistoricalScheduleData } from "./features/schedule/services/scheduleData";
 import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
 import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
@@ -192,12 +193,9 @@ export default function App() {
     try {
       const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [locRes,servRes,tempRes,schedRes,assignRes,availabilityDataRes,requestDataRes,notificationDataRes,auditRes,servantDirectoryRes] = await Promise.all([
-        supabase.from("locations").select("*").order("name"),
+      const [scheduleDataRes,servRes,availabilityDataRes,requestDataRes,notificationDataRes,auditRes,servantDirectoryRes] = await Promise.all([
+        loadScheduleWorkspaceData(supabase),
         loadServantRecords(supabase),
-        supabase.from("service_templates").select("*").eq("active",true),
-        supabase.from("schedules").select("*").order("service_date").order("start_time"),
-        supabase.from("assignments").select("*"),
         loadAvailabilityWorkspaceData(supabase),
         loadServingRequestData(supabase),
         loadServingNotificationData(supabase, notificationCutoff, session?.user?.id??""),
@@ -206,16 +204,16 @@ export default function App() {
       ]);
       // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
       // when their RLS policy or migration is not yet configured.
-      for (const r of [locRes,servRes,schedRes,assignRes]) if (r.error) throw r.error;
-      const optionalErrors = [...availabilityDataRes.optionalErrors,...[tempRes,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
+      for (const r of [scheduleDataRes.locations,servRes,scheduleDataRes.schedules,scheduleDataRes.assignments]) if (r.error) throw r.error;
+      const optionalErrors = [...availabilityDataRes.optionalErrors,...[scheduleDataRes.templates,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
         .filter((r:any) => r.error)
         .map((r:any) => r.error.message)];
       if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
-      const locs=(locRes.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
-      const assignments=(assignRes.data??[]) as Assignment[];
-      const mapped=mapSchedules((schedRes.data??[]) as Schedule[],assignments,locs,people);
+      const locs=(scheduleDataRes.locations.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
+      const assignments=(scheduleDataRes.assignments.data??[]) as Assignment[];
+      const mapped=mapSchedules((scheduleDataRes.schedules.data??[]) as Schedule[],assignments,locs,people);
       const safeMemberRows = servantDirectoryRes.memberProfiles.error ? [] : (servantDirectoryRes.memberProfiles.data ?? []);
-      setLocations(locs);setServants(people);setTemplates(tempRes.error?[]:(tempRes.data??[]));setSchedules(mapped);
+      setLocations(locs);setServants(people);setTemplates(scheduleDataRes.templates.error?[]:(scheduleDataRes.templates.data??[]));setSchedules(mapped);
       setAvailabilityRules(availabilityDataRes.rules);setServingPreferences(availabilityDataRes.preferences);
       setAvailability(availabilityDataRes.availability);setAvailabilityDeadline(availabilityDataRes.deadline);
       setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationDataRes.notifications.error?[]:(notificationDataRes.notifications.data??[]));
@@ -517,7 +515,7 @@ export default function App() {
   }
   async function exportScheduleHistory(){
     if(!supabase||!isAdmin)return;
-    const {data,error}=await supabase.from("schedules").select("*,locations(name),assignments(role,servants(full_name))").lt("service_date",today()).order("service_date",{ascending:false});
+    const {data,error}=await loadHistoricalScheduleData(supabase,today());
     if(error){setMessage(error.message);return;}
     const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),...(data??[]).map((s:any)=>[s.service_date,s.locations?.name??"",s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments?.find((a:any)=>a.role===r)?.servants?.full_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
     const blob=new Blob([rows.join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-schedule-history.csv";a.click();URL.revokeObjectURL(url);
