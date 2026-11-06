@@ -431,3 +431,25 @@ Deno.test("application shell owns its sidebar and mobile-navigation dark theme",
   assertBalancedCss(shellCss, "AppShell.css");
   assertBalancedCss(globalCss, "src/style.css");
 });
+
+
+Deno.test("shared dark secondary buttons and action controls have one effective rule", async () => {
+  const css = await readRepoFile("src/style.css");
+  assert(css.split(':root[data-theme="dark"] .btn.secondary,').length - 1 === 2,
+    "The base and hover shared button groups should each occur once.");
+  assert(css.includes("background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;"),
+    "The final shared button palette must be retained.");
+  assert(css.includes("background:#364764!important;color:#fff!important"),
+    "The final shared hover palette must be retained.");
+  assert(!css.includes("background:#26324a;border-color:#3c4963;color:#dbe4f5"),
+    "The superseded bulk-row action palette must be removed.");
+  assert(css.split(':root[data-theme="dark"] .bulk-row-action.danger{').length - 1 === 1,
+    "The explicit dangerous action treatment must remain unique.");
+  assert(css.includes(":root[data-theme=\"dark\"] .generate-toggle-hint{"),
+    "The generation hint must keep its separate dark-mode treatment.");
+  assert(!css.includes(".action-dialog .btn.secondary{"),
+    "The superseded action-dialog secondary button override must be removed.");
+  assert(!css.includes(".schedule-overview-shortcuts .btn.secondary{"),
+    "The superseded schedule shortcut secondary button override must be removed.");
+  assertBalancedCss(css, "src/style.css");
+});

@@ -308,12 +308,11 @@
 }
 
 
-:root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .generate-toggle-hint{
+:root[data-theme="dark"] .generate-toggle-hint{
   background:#26324a;
   color:#e0e7f6;
   border-color:#3b4862;
 }
-:root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover{background:#33415d;color:#fff}
 :root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
 :root[data-theme="dark"] .schedule-workspace-tabs{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .schedule-workspace-tabs button{color:#b7c1d5}
@@ -340,8 +339,6 @@
 :root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
 :root[data-theme="dark"] .bulk-church-group>summary{background:#202c42;color:#edf2fb}
-:root[data-theme="dark"] .bulk-row-action{background:#26324a;border-color:#3c4963;color:#dbe4f5}
-:root[data-theme="dark"] .bulk-row-action.danger{background:#43282e;border-color:#684049;color:#ffb6c1}
 :root[data-theme="dark"] .calendar-switch{background:#202c42;border-color:#354059}
 :root[data-theme="dark"] .calendar-switch button{color:#b9c4d8}
 :root[data-theme="dark"] .calendar-switch button.selected{background:#393b72;color:#fff}
@@ -382,8 +379,6 @@
 :root[data-theme="dark"] .template-delete-btn{background:#43282e;border-color:#684049;color:#ffb6c1}
 :root[data-theme="dark"] .generate-note p span,:root[data-theme="dark"] .new-template-help{color:#a3aec3}
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}
-:root[data-theme="dark"] .action-dialog .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
-:root[data-theme="dark"] .schedule-overview-shortcuts .btn.secondary{background:#26324a;color:#e8edf7;border-color:#3b4862}
 :root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}
 :root[data-theme="dark"] .availability-status.available{background:var(--status-success-bg);color:var(--status-success-text)}
 :root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
