@@ -14,7 +14,7 @@ export default function ServantInbox({requests,schedules,reads,onRead,notificati
  {notificationSettings}
  <div className="list-heading"><h3>Notification history</h3><span>{notifications.length} recent</span></div>
  {notifications.map(n => (
-    <article className={`inbox-item ${n.is_read ? "read" : "unread"}`} key={n.id} onClick={() => onNotificationRead(n.id)}>
+    <article className={`inbox-item ${n.is_read ? "read" : "unread"}`} key={n.id} role="button" tabIndex={0} onClick={() => onNotificationRead(n.id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onNotificationRead(n.id); } }}>
       <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
       <div className="inbox-item-body">
         <div className="inbox-item-title"><b>{n.title}</b><span className="inbox-status approved">{n.is_read ? "Read" : "New"}</span></div>
@@ -26,7 +26,7 @@ export default function ServantInbox({requests,schedules,reads,onRead,notificati
     const s = schedules.find(x => x.id === r.schedule_id);
     const approved = String(r.status).toLowerCase() === "approved";
     return (
-      <article className={`inbox-item ${reads.some(x => x.request_id === r.id) ? "read" : "unread"}`} key={r.id} onClick={() => onRead(r.id)}>
+      <article className={`inbox-item ${reads.some(x => x.request_id === r.id) ? "read" : "unread"}`} key={r.id} role="button" tabIndex={0} onClick={() => onRead(r.id)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onRead(r.id); } }}>
         <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
         <div className="inbox-item-body">
           <div className="inbox-item-title"><b>{r.request_type === "swap" ? "Swap request" : "Replacement request"}</b><span className={`inbox-status ${approved ? "approved" : "rejected"}`}>{approved ? "Approved" : "Rejected"}</span></div>

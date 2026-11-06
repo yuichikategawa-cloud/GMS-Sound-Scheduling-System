@@ -44,7 +44,15 @@ export default function RequestsPanel({
               <article
                 className={`inbox-item ${notification.is_read ? "read" : "unread"}`}
                 key={notification.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onNotificationRead(notification.id)}
+                onKeyDown={event => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onNotificationRead(notification.id);
+                  }
+                }}
               >
                 <div className="inbox-item-body">
                   <b>{notification.title}</b>

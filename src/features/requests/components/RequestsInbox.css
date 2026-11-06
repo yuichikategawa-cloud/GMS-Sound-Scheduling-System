@@ -421,3 +421,10 @@ gap:13px
 :root[data-theme="dark"] .request-target{background:#182437!important;border-color:#3b4b65!important}
 :root[data-theme="dark"] .request-target small{color:#b8c5d8!important}
 :root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}
+
+
+/* Keyboard affordance for inbox cards that mark a notification or request as read. */
+.inbox-item[role="button"]:focus-visible{
+  outline:3px solid #8b5cf6;
+  outline-offset:2px;
+}

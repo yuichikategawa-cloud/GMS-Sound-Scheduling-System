@@ -34,6 +34,19 @@ Deno.test("Requests workflow orchestration is owned by its feature hook", async 
   }
   assert(swapValidation.includes("findCrossLocationAssignmentConflict"), "Swap revalidation must remain in the Requests validation service.");
 
+  const [inbox, inboxStyles] = await Promise.all([
+    readRepoFile("src/features/requests/components/ServantInbox.tsx"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+  ]);
+  assert(panel.includes('role="button"') && panel.includes("tabIndex={0}") &&
+    panel.includes('event.key === "Enter"') && panel.includes('event.key === " "'),
+    "Administrator notification history cards must support keyboard activation.");
+  assert((inbox.match(/role="button"/g) ?? []).length === 2 &&
+    inbox.includes('event.key === "Enter"') && inbox.includes('event.key === " "'),
+    "Servant notification and request history cards must support keyboard activation.");
+  assert(inboxStyles.includes('.inbox-item[role="button"]:focus-visible'),
+    "Interactive inbox cards must have a visible keyboard focus indicator.");
+
   assert(panel.includes("onReview(request, true)") && panel.includes("Approve swap"),
     "Administrators must be able to approve valid swap requests from the Requests panel.");
   assert(panel.includes("target_schedule_id") && panel.includes("target_assignment_id") &&
