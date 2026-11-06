@@ -9,7 +9,14 @@ export interface NotificationPreferencesPayload extends NotificationPreferenceSt
   updated_at: string;
 }
 
-export type NotificationPreferenceValues = Partial<NotificationPreferenceState>;
+/** Untrusted/partial form input is normalized to boolean domain state before persistence. */
+export interface NotificationPreferenceValues {
+  new_assignments?: unknown;
+  schedule_changes?: unknown;
+  confirmation_reminders?: unknown;
+  availability_deadlines?: unknown;
+  request_updates?: unknown;
+}
 
 /** Structural contract for the two notification write operations. */
 export interface NotificationPersistenceClient {
