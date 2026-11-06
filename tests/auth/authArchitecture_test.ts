@@ -45,8 +45,9 @@ Deno.test("Authentication form workflows are owned by the Auth feature hook", as
     "Auth form workflow must remain separate from session lifecycle management.");
 
   assert(app.includes("startAuthSessionLifecycle(supabase") &&
-    app.includes("cleanupServingPushSubscriptionForSignOut"),
-    "Session restoration and push-aware sign-out must remain coordinated by App.");
+    app.includes("pushActions.cleanupForSignOut(userId)") &&
+    app.includes("supabase.auth.signOut"),
+    "App must retain session restoration and await push cleanup before local authentication sign-out.");
 
   for (const forbidden of [
     "features/availability/",
