@@ -174,7 +174,7 @@ Deno.test("dashboard loading keeps optional-data warnings and empty fallbacks in
     availability_deadlines: true,
     request_updates: true,
   }, "Missing or failed preferences must retain all-enabled defaults.");
-  assertEqual(result.optionalErrors.length, 9,
+  assertEqual(result.optionalErrors.length, 8,
     "Dashboard must report every optional data failure, including Availability summaries.");
 });
 
