@@ -169,7 +169,7 @@ Deno.test("atomic weekend replacement uses one database RPC for the complete bat
   ];
   const result = await replaceGeneratedSchedulesAtomically(client, rows);
   assertEqual(calls, [{
-    name: "admin_replace_weekend_schedules_atomic",
+    name: "admin_replace_generated_weekend_schedules",
     args: { p_rows: rows },
   }], "All template rows must be sent together in one atomic database call.");
   assertSame(result, databaseResponse, "The replacement RPC response must pass through unchanged.");

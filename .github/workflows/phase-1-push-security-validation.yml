@@ -145,7 +145,7 @@ jobs:
       - name: Apply bulk-assignment pending-request guard migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261116000000_gms_bulk_assignment_pending_request_guard.sql
       - name: Apply atomic weekend-template replacement migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_template_replace.sql
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_schedule_replace.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/bulk_assignment_pending_request_guard.sql
       - name: Run rollback-only push registration SQL regression
@@ -153,7 +153,7 @@ jobs:
       - name: Run rollback-only publication integrity regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/publication_integrity.sql
       - name: Run rollback-only weekend-template replacement regression
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/weekend_template_replace_integrity.sql
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/weekend_replace_atomicity.sql
       - name: Run rollback-only admin RPC authorization regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
 

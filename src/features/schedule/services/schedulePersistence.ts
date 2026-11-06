@@ -99,7 +99,7 @@ export interface WeekendReplacementResponse {
 
 export interface WeekendReplacementClient {
   rpc(
-    functionName: "admin_replace_weekend_schedules_atomic",
+    functionName: "admin_replace_generated_weekend_schedules",
     args: { p_rows: SchedulePersistenceRow[] },
   ): PromiseLike<WeekendReplacementResponse>;
 }
@@ -112,7 +112,7 @@ export function replaceGeneratedSchedulesAtomically(
   client: WeekendReplacementClient,
   rows: SchedulePersistenceRow[],
 ): PromiseLike<WeekendReplacementResponse> {
-  return client.rpc("admin_replace_weekend_schedules_atomic", { p_rows: rows });
+  return client.rpc("admin_replace_generated_weekend_schedules", { p_rows: rows });
 }
 
 /** Deletes one schedule by ID; the database retains assignment cascade behavior. */
