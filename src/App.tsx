@@ -465,12 +465,6 @@ export default function App() {
     const {error}=await markServingNotificationRead(supabase,id);
     if(!error)setNotifications(v=>v.map(n=>n.id===id?{...n,is_read:true}:n));
   }
-  async function resolveReplacement(request:any,replacementServantId:string){
-    if(!supabase||!isAdmin)return;
-    const {error}=await resolveServingRequestReplacement(supabase,request.id,replacementServantId);
-    if(error){setMessage(error.message);return;}
-    setMessage("Replacement assigned. Both servants have been notified.");await loadData();
-  }
   async function exportAuditHistory(){
     if(!supabase||!isAdmin)return;
     const newerThan=new Date(Date.now()-14*24*60*60*1000).toISOString();

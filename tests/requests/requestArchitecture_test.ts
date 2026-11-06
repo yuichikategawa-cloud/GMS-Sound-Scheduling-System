@@ -20,39 +20,59 @@ Deno.test("Requests workflow orchestration is owned by its feature hook", async 
     "App must compose the Requests-owned action hook.");
   assert(app.includes("const requestActions = useRequestActions({"),
     "App must supply shared session, dialog, data, and UI state dependencies.");
-  for (const handler of [
+
+  const handlers = [
     "submitServingRequest",
     "submitDirectSwap",
     "markRequestRead",
     "reviewRequest",
     "resolveReplacement",
-  ]) {
-    assert(!new RegExp("async function " + handler + "\\s*\\(").test(app),
+  ];
+  for (const handler of handlers) {
+    assert(!app.includes("async function " + handler + "("),
       "App must not retain the Requests workflow handler " + handler + ".");
-    assert(actions.includes("function " + handler + "("),
+    assert(actions.includes("async function " + handler + "("),
       "The Requests action hook must own " + handler + ".");
   }
 
-  assert(!/client\\.(?:rpc|from)\\(/.test(actions),
+  assert(!actions.includes("client.from(") && !actions.includes("client.rpc("),
     "Requests workflow orchestration must delegate database operations to Requests services.");
-  assert(actions.includes("executeServingRequestSwap") && actions.includes("updateServingRequestReview") &&
-    actions.includes("resolveServingRequestReplacement") && actions.includes("markServingRequestRead") &&
-    actions.includes("createServingRequest"),
-    "The Requests hook must delegate each operation to the Requests persistence boundary.");
+  for (const operation of [
+    "createServingRequest",
+    "executeServingRequestSwap",
+    "markServingRequestRead",
+    "updateServingRequestReview",
+    "resolveServingRequestReplacement",
+  ]) {
+    assert(actions.includes(operation),
+      "The Requests hook must delegate " + operation + " to the persistence boundary.");
+  }
   assert(swapValidation.includes("findCrossLocationAssignmentConflict"),
     "Swap revalidation must remain in the Requests validation service.");
-  assert(persistence.includes('from("serving_requests")') && persistence.includes('admin_execute_servant_swap') &&
-    persistence.includes('admin_resolve_replacement'),
+  assert(persistence.includes('from("serving_requests")') &&
+    persistence.includes("admin_execute_servant_swap") &&
+    persistence.includes("admin_resolve_replacement"),
     "Request inserts, review writes, and guarded admin RPCs must remain in the Requests persistence service.");
 
+  const forbiddenFeatureImports = [
+    "features/availability/",
+    "features/notifications/",
+    "features/auth/",
+    "features/statistics/",
+    "features/audit/",
+    "features/servants/",
+    "features/schedule/",
+  ];
   for (const [path, source] of [
     ["Requests action hook", actions],
     ["Requests persistence", persistence],
     ["Requests swap validation", swapValidation],
   ] as const) {
-    assert(!/from\\s+["'][^"']*features\\/(availability|notifications|auth|statistics|audit|servants|schedule)\\//.test(source),
-      path + " must not import another feature's implementation.");
-    assert(!/from\\s+["'][^"']*\\/App["']/.test(source),
+    for (const forbidden of forbiddenFeatureImports) {
+      assert(!source.includes(forbidden),
+        path + " must not import another feature's implementation: " + forbidden);
+    }
+    assert(!source.includes('/App"') && !source.includes("/App'"),
       path + " must not depend on the App composition root.");
   }
 });
@@ -61,7 +81,7 @@ Deno.test("Requests workflow hook leaves assignment confirmation and replacement
   const app = await readRepoFile("src/App.tsx");
   assert(app.includes("async function confirmAssignment("),
     "Cross-feature assignment confirmation orchestration must remain in App.");
-  assert(app.includes("updateAssignmentConfirmation(supabase,assignment.id,\"declined\")") &&
+  assert(app.includes('updateAssignmentConfirmation(supabase,assignment.id,"declined")') &&
     app.includes("createServingRequest(supabase,{schedule_id:schedule.id"),
     "Assignment decline must continue to persist confirmation before creating its replacement request.");
 });
