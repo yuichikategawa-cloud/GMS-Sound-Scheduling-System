@@ -136,6 +136,10 @@ jobs:
         run: test -n "$STAGING_DATABASE_URL" || (echo "STAGING_DATABASE_URL is required and must point only to staging" && exit 1)
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Apply bulk-assignment pending-request guard migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261116000000_gms_bulk_assignment_pending_request_guard.sql
+      - name: Run rollback-only bulk-assignment pending-request guard regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/bulk_assignment_pending_request_guard.sql
       - name: Run rollback-only push registration SQL regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/push_registration_security.sql
       - name: Run rollback-only admin RPC authorization regression
