@@ -11,3 +11,12 @@ export type ScheduleView = Schedule & {
   location_name: string;
   assignments: { id?: string; role: Role; servant_id: string; servant_name: string; confirmation_status?: string }[];
 };
+export type ServiceTemplate = {
+  id: string;
+  location_id: string;
+  day_of_week: number;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+  active: boolean;
+};
