@@ -5,6 +5,7 @@ import {
   displayList,
   errorText,
   fmtDate,
+  localDateKey,
   shortTime,
   today,
 } from "../../src/shared/formatters.ts";
@@ -16,6 +17,12 @@ function assertEqual(actual: unknown, expected: unknown, message: string): void 
     );
   }
 }
+
+Deno.test("localDateKey formats local calendar components consistently", () => {
+  assertEqual(localDateKey(new Date(2024, 1, 29, 12)), "2024-02-29", "Leap days must retain their local calendar date.");
+  assertEqual(localDateKey(new Date(2027, 0, 1, 0)), "2027-01-01", "Year boundaries must use padded year-month-day output.");
+  assertEqual(localDateKey(new Date(2026, 10, 7, 23, 59)), "2026-11-07", "Late-evening values must retain their local date.");
+});
 
 Deno.test("shared date helpers use local calendar dates without UTC midnight shifts", () => {
   const currentDate = today();

@@ -1,5 +1,12 @@
 /** Shared, side-effect-free formatting and display helpers. */
-export const today = () => new Date().toLocaleDateString("en-CA");
+export function localDateKey(date: Date): string {
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export const today = () => localDateKey(new Date());
 
 export const fmtDate = (d: string) =>
   new Date(`${d}T12:00:00`).toLocaleDateString("en-US", {

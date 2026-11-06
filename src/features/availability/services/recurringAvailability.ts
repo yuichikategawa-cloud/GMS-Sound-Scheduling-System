@@ -1,3 +1,5 @@
+import { localDateKey } from "../../../shared/formatters.ts";
+
 export type AvailabilityStatus = "available" | "unavailable" | "prefer_not";
 export type RecurringAvailabilityPattern =
   | "weekday"
@@ -48,10 +50,6 @@ function ruleDate(value: string): Date {
   return new Date(`${value}T12:00:00`);
 }
 
-function formatLocalDate(date: Date): string {
-  return date.toLocaleDateString("en-CA");
-}
-
 function matchesPattern(rule: RecurringAvailabilityRule, date: Date): boolean {
   const day = date.getDay();
   const dayOfMonth = date.getDate();
@@ -94,7 +92,7 @@ export function expandRecurringAvailabilityRule(
   ) {
     if (!matchesPattern(rule, cursor)) continue;
 
-    const date = formatLocalDate(cursor);
+    const date = localDateKey(cursor);
     records.push({
       id: `rule-${rule.id}-${date}`,
       servant_id: rule.servant_id,
@@ -178,7 +176,7 @@ export function validateRecurringAvailabilityRule(
   for (let index = 0; cursor <= end && index < 740; cursor.setDate(cursor.getDate() + 1), index += 1) {
     if (!matchesPattern(candidate, cursor)) continue;
 
-    const date = formatLocalDate(cursor);
+    const date = localDateKey(cursor);
     const conflict = availability.some(record =>
       record.servant_id === candidate.servant_id &&
       record.service_date === date &&

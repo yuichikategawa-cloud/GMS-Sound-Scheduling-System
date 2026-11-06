@@ -1,3 +1,5 @@
+import { localDateKey } from "../../../shared/formatters.ts";
+
 export interface WeekendServiceTemplate {
   id: string | number;
   day_of_week: string | number;
@@ -39,13 +41,6 @@ export type WeekendGenerationResult =
         | "no_weekend_services";
     };
 
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 /**
  * Expands a Saturday into Saturday/Sunday dates and maps the selected
  * service templates to schedule rows. It performs no I/O and does not
@@ -65,7 +60,7 @@ export function buildWeekendScheduleRows(
   }
 
   const start = new Date(`${startDate}T12:00:00`);
-  if (!Number.isFinite(start.getTime()) || formatLocalDate(start) !== startDate) {
+  if (!Number.isFinite(start.getTime()) || localDateKey(start) !== startDate) {
     return { ok: false, reason: "invalid_date" };
   }
 
@@ -89,8 +84,8 @@ export function buildWeekendScheduleRows(
     sunday.setDate(saturday.getDate() + 1);
 
     dates.push(
-      { date: formatLocalDate(saturday), day: 6 },
-      { date: formatLocalDate(sunday), day: 0 },
+      { date: localDateKey(saturday), day: 6 },
+      { date: localDateKey(sunday), day: 0 },
     );
   }
 

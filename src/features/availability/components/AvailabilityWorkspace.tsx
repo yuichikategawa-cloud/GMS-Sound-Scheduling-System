@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { ClipboardCheck, Trash2 } from "lucide-react";
 import "./AvailabilityWorkspace.css";
-import { fmtDate, today } from "../../../shared/formatters";
+import { fmtDate, localDateKey, today } from "../../../shared/formatters";
 import type { Location, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type {
   AvailabilityRecord,
@@ -31,7 +31,7 @@ export default function AvailabilityWorkspace({servants,availability,rules,prefe
  const ownRules=rules.filter(r=>isAdmin||r.servant_id===myServant?.id);
  const rows=availability.filter(a=>!a.is_recurring&&a.service_date>=today()&&(isAdmin||a.servant_id===myServant?.id)&&(!dateFilter||a.service_date===dateFilter)).sort((a,b)=>a.service_date.localeCompare(b.service_date));
  const name=(id:string)=>servants.find(p=>p.id===id)?.full_name??"Unknown servant";
- const dateRange=(from:string,to:string)=>{const out:string[]=[];const d=new Date(`${from}T12:00:00`),last=new Date(`${to}T12:00:00`);for(let n=0;d<=last&&n<370;n++,d.setDate(d.getDate()+1))out.push(d.toLocaleDateString("en-CA"));return out;};
+ const dateRange=(from:string,to:string)=>{const out:string[]=[];const d=new Date(`${from}T12:00:00`),last=new Date(`${to}T12:00:00`);for(let n=0;d<=last&&n<370;n++,d.setDate(d.getDate()+1))out.push(localDateKey(d));return out;};
  const buildBulkPreview=()=>{if(!bulkFrom||!bulkTo||bulkTo<bulkFrom){setPreviewRows([]);return;}const people=entryMode==="person"?[isAdmin?bulkPerson:(myServant?.id??"")]:bulkPeople;const dates=dateRange(bulkFrom,bulkTo).filter(ds=>{const d=new Date(`${ds}T12:00:00`).getDay();if(bulkPattern==="daily")return true;if(bulkPattern==="weekdays")return d>=1&&d<=5;if(bulkPattern==="weekends")return d===0||d===6;return bulkWeekdays.includes(d);});const next=people.filter(Boolean).flatMap(servant_id=>dates.map(service_date=>({servant_id,service_date,status:bulkStatus,notes:bulkNotes.trim()})));const conflicts=next.filter(n=>availability.some(a=>a.servant_id===n.servant_id&&a.service_date===n.service_date&&a.status!==n.status));setPreviewConflicts(conflicts);setPreviewRows(next);};
  const togglePerson=(id:string)=>setBulkPeople(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const savePreview=async()=>{if(!previewRows?.length)return;const ok=await onBulkSave(previewRows);if(ok){setPreviewRows(null);setBulkPeople([]);setBulkNotes("");}};
