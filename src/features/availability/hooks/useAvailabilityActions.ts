@@ -120,6 +120,10 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       if (!client) return false;
       const validation = validateRecurringAvailabilityRule(rule, availabilityRules, availability);
       if (!validation.ok) {
+        if (validation.reason === "invalid_date_range") {
+          setMessage("Choose a valid start date and ensure the optional end date is on or after the start date.");
+          return false;
+        }
         if (validation.reason === "overlapping_rule") {
           setMessage("This recurring rule overlaps an existing rule with a different status. Review or remove the existing rule first.");
           return false;

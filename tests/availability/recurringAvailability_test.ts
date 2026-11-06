@@ -196,6 +196,23 @@ Deno.test("unknown recurring patterns create no virtual availability records", (
   );
 });
 
+Deno.test("recurring rule validation rejects invalid or reversed effective date ranges", () => {
+  const invalidCases = [
+    rule({ effective_from: "" }),
+    rule({ effective_from: "2026-02-30" }),
+    rule({ effective_until: "not-a-date" }),
+    rule({ effective_from: "2026-11-07", effective_until: "2026-11-06" }),
+  ];
+
+  for (const candidate of invalidCases) {
+    assertEqual(
+      validateRecurringAvailabilityRule(candidate, [], [], horizon),
+      { ok: false, reason: "invalid_date_range" },
+      "A recurring rule with an invalid start/end date or reversed range must be rejected.",
+    );
+  }
+});
+
 Deno.test("recurring rule validation rejects overlapping rules with different statuses", () => {
   const candidate = rule({
     effective_from: "2026-11-05",
