@@ -1,5 +1,6 @@
 import type { ScheduleView } from "../../../types";
 import { today, shortTime } from "../../../shared/formatters";
+import type { Dispatch, SetStateAction } from "react";
 import { ROLES } from "../constants";
 import { prepareHistoricalScheduleCsv } from "../services/scheduleExport";
 import { buildScheduleCsv } from "../services/scheduleCsv";
@@ -8,6 +9,7 @@ type ScheduleExportActionsInput = {
   client: typeof import("../../../supabase").supabase;
   isAdmin: boolean;
   filteredSchedules: ScheduleView[];
+  setMessage: Dispatch<SetStateAction<string>>;
 };
 
 function downloadCsv(csv: string, filename: string): void {
@@ -25,16 +27,20 @@ export function useScheduleExportActions({
   client,
   isAdmin,
   filteredSchedules,
+  setMessage,
 }: ScheduleExportActionsInput) {
   async function exportScheduleHistory() {
     if (!client || !isAdmin) return;
-    const { csv, recordCount, error } = await prepareHistoricalScheduleCsv(
+    const { csv, error } = await prepareHistoricalScheduleCsv(
       client,
       today(),
       ROLES,
       shortTime,
     );
-    if (error) throw error;
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
     if (csv === null) return;
     downloadCsv(csv, "gms-schedule-history.csv");
   }

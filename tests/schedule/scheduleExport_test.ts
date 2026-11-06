@@ -52,7 +52,7 @@ Deno.test("historical schedule export preparation preserves query and CSV contra
     ],
   }], "Historical export must retain the existing Schedule query.");
   assertEqual(result, {
-    csv: "date,location,service,start,end,FOH,Monitor\\r\\n" +
+    csv: "date,location,service,start,end,FOH,Monitor\r\n" +
       "\"2026-11-01\",\"North Campus\",\"Sunday Service\",\"09:00\",\"11:00\",\"Ada\",\"\"",
     recordCount: 1,
     error: null,

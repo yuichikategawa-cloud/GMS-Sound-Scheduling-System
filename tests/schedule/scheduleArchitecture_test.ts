@@ -52,8 +52,8 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
   assert(!/client\\.(?:rpc|from)\\(/.test(exportHook),
     "Schedule export orchestration must delegate historical data access to Schedule services.");
   assert(exportHook.includes("isAdmin") && exportHook.includes("prepareHistoricalScheduleCsv") &&
-    exportHook.includes("downloadCsv"),
-    "Schedule export hook must retain admin protection and own browser downloads.");
+    exportHook.includes("downloadCsv") && exportHook.includes("setMessage(error.message)"),
+    "Schedule export hook must retain admin protection, own browser downloads, and surface query errors through App feedback.");
   assert(exportService.includes("loadHistoricalScheduleData") && exportService.includes("buildScheduleCsv"),
     "Schedule export service must use the existing historical query and CSV builder.");
 });
