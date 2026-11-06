@@ -121,27 +121,24 @@
 
 
 
-/* Keep the CG-day legend and all weekday choices inside the fieldset.
-   A grid avoids the flex/fieldset legend sizing issue seen on narrow mobile viewports. */
+/* Use a normal fieldset with a separate options grid.
+   Fieldset grid layout is inconsistent across mobile browsers and caused
+   the legend/options rows to overlap the following CG-time field. */
 .auth-registration .days-field{
   box-sizing:border-box;
-  display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-  align-items:center;
-  gap:10px 16px;
+  display:block !important;
   width:100%;
   max-width:100%;
   min-width:0;
   min-inline-size:0;
   height:auto !important;
   min-height:0;
+  margin:0;
+  padding:12px 14px 14px;
   overflow:visible !important;
-  padding:14px 15px 16px;
 }
 .auth-registration .days-field legend{
-  display:block;
-  grid-column:1 / -1;
-  width:auto;
+  display:inline-block;
   max-width:100%;
   padding:0 7px;
   margin:0;
@@ -150,7 +147,16 @@
   line-height:1.4;
   font-weight:750;
 }
-.auth-registration .days-field label{
+.auth-registration .days-options{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:center;
+  gap:10px 16px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+}
+.auth-registration .days-options label{
   display:flex !important;
   flex-direction:row !important;
   align-items:center !important;
@@ -165,7 +171,7 @@
   white-space:normal;
   overflow-wrap:anywhere;
 }
-.auth-registration .days-field label input[type="checkbox"]{
+.auth-registration .days-options label input[type="checkbox"]{
   flex:0 0 18px;
   width:18px;
   min-width:18px;
@@ -175,7 +181,7 @@
   accent-color:var(--accent-primary);
 }
 @media(max-width:360px){
-  .auth-registration .days-field{grid-template-columns:minmax(0,1fr) !important}
+  .auth-registration .days-options{grid-template-columns:minmax(0,1fr)}
 }
 /* The registration form is the intentional scroll region on compact screens.
    Keep this exception more specific than the broad dark-mode .stack overflow reset. */
