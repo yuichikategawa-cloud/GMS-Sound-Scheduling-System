@@ -13,18 +13,7 @@
   .push-settings-card>button{grid-column:1/-1;width:100%;min-height:42px}
   .push-settings-icon{width:36px;height:36px}
 }
-/* Preserve the original three successive dark-mode card overrides. */
-:root[data-theme="dark"] .push-settings-card{
-  background:#1b2437!important;
-  border-color:#354059!important;
-  color:#e8edf7;
-  box-shadow:0 4px 18px rgba(0,0,0,.16);
-}
-:root[data-theme="dark"] .push-settings-card{
-  background:#1b2437!important;
-  border-color:#354059!important;
-  color:#e8edf7!important;
-}
+/* One dark-mode surface rule; values match the final pre-cleanup override. */
 :root[data-theme="dark"] .push-settings-card{
   background:#1b263a!important;
   border-color:#3a4963!important;

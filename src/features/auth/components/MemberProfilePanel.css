@@ -4,12 +4,7 @@
 .profile-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:end}
 .profile-edit-grid>label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700;color:#475569}
 .profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:1/-1}
-@media(max-width:600px){.profile-edit-grid{grid-template-columns:1fr}.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:auto}}:root[data-theme="dark"] .profile-edit-grid{
-  background:#1b2437!important;
-  border-color:#354059!important;
-  color:#e8edf7!important;
-}
-:root[data-theme="dark"] .profile-edit-grid input,:root[data-theme="dark"] .profile-edit-grid select,:root[data-theme="dark"] .profile-edit-grid textarea{
+@media(max-width:600px){.profile-edit-grid{grid-template-columns:1fr}.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:auto}}:root[data-theme="dark"] .profile-edit-grid input,:root[data-theme="dark"] .profile-edit-grid select,:root[data-theme="dark"] .profile-edit-grid textarea{
   box-sizing: border-box !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -43,13 +38,13 @@
   border: 1px solid #465873 !important;
   border-radius: 10px;
 }
-:root[data-theme="dark"] .profile-edit-grid .days-field legend{
-  color: #f0f4fb !important;
-  background: #202f46 !important;
-  padding: 0 7px;
-}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend,
 :root[data-theme="dark"] .profile-edit-grid .days-field label{
-  color: #dbe5f2 !important;
+  color:#edf3fb!important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend{
+  background:#202f46!important;
+  padding:0 7px;
 }
 :root[data-theme="dark"] .profile-edit-grid .days-field input{
   accent-color: #a99fff;
@@ -89,13 +84,7 @@
   height: 18px;
   margin: 0;
 }
-:root[data-theme="dark"] .profile-edit-grid .days-field{
-  background: #202f46 !important;
-  border-color: #465873 !important;
-}
-:root[data-theme="dark"] .profile-edit-grid .days-field legend,:root[data-theme="dark"] .profile-edit-grid .days-field label{
-  color: #edf3fb !important;
-}
+
 
 @media (max-width: 760px){
   .profile-edit-grid .days-field{

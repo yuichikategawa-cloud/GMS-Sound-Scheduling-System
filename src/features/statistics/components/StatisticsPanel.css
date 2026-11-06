@@ -52,19 +52,13 @@
 .stats-servant-metrics small{font-size:9px}
 .stats-servant-metrics strong{font-size:16px}}
 :root[data-theme="dark"] .stat-card{
-  background:#1b2437!important;
-  border-color:#354059!important;
-  color:#e8edf7;
+  background:#222f46!important;
+  border-color:#40516d!important;
+  color:#edf2fa!important;
   box-shadow:0 4px 18px rgba(0,0,0,.16);
 }
-:root[data-theme="dark"] .stats-servant-card,
-:root[data-theme="dark"] .location-stat{
-  background:#202c42!important;
-  border-color:#394660!important;
-}
-:root[data-theme="dark"] .stats-servant-card,
-:root[data-theme="dark"] .location-stat,
-:root[data-theme="dark"] .stat-card{
+/* Retain a root-level fallback; the app-shell rule below specializes mobile cards. */
+:root[data-theme="dark"] .stats-servant-card{
   background:#222f46!important;
   border-color:#40516d!important;
   color:#edf2fa!important;

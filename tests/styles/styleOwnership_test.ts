@@ -359,3 +359,44 @@ Deno.test("Servant Information has no dead inline link panel or competing dark r
   assert(styles.split(':root[data-theme="dark"] .servant-record-detail{').length - 1 === 1, "Dark servant detail styling must be consolidated.");
   assertBalancedCss(styles, "ServantInformationPanel.css");
 });
+
+
+Deno.test("Audit dark row surfaces and muted labels have one final declaration", async () => {
+  const css = await readRepoFile("src/features/audit/components/AuditPanel.css");
+  assert(css.split(':root[data-theme="dark"] .audit-row{').length - 1 === 1, "Audit rows must have one dark surface rule.");
+  assert(css.includes("background:#1b2437!important;"), "The effective Audit row background must be preserved.");
+  assert(css.includes("border-color:#3b4b65!important;"), "The effective Audit row border must be preserved.");
+  assert(css.includes("color:#b9c6da!important;"), "The final Audit muted text color must be preserved.");
+  assert(css.includes("box-shadow:0 4px 18px rgba(0,0,0,.16);"), "The Audit row shadow must be preserved.");
+  assertBalancedCss(css, "AuditPanel.css");
+});
+
+Deno.test("Push notification card dark styling has one consolidated final rule", async () => {
+  const css = await readRepoFile("src/features/notifications/components/PushNotificationSettings.css");
+  assert(css.split(':root[data-theme="dark"] .push-settings-card{').length - 1 === 1, "Push settings must have one dark card rule.");
+  assert(css.includes("background:#1b263a!important;"), "The final push card background must be preserved.");
+  assert(css.includes("border-color:#3a4963!important;"), "The final push card border must be preserved.");
+  assert(css.includes("color:#edf2fa!important;"), "The final push card text color must be preserved.");
+  assert(css.includes("box-shadow:0 5px 18px rgba(0,0,0,.16);"), "The final push card shadow must be preserved.");
+  assertBalancedCss(css, "PushNotificationSettings.css");
+});
+
+Deno.test("Statistics dark cards retain final metric surfaces without duplicate root overrides", async () => {
+  const css = await readRepoFile("src/features/statistics/components/StatisticsPanel.css");
+  assert(css.split(':root[data-theme="dark"] .stat-card{').length - 1 === 1, "Stat cards must have one root dark rule.");
+  assert(css.split(':root[data-theme="dark"] .stats-servant-card{').length - 1 === 1, "Servant statistic cards must have one root fallback rule.");
+  assert(css.split(':root[data-theme="dark"] .location-stat{').length - 1 === 1, "Location statistic cards must have one dark rule.");
+  assert(css.includes("background:#222f46!important;"), "The effective standard statistic card surface must be preserved.");
+  assert(css.includes("background: #26364f !important;"), "The final location metric surface must be preserved.");
+  assert(css.includes("background: #1d2a40 !important;"), "The app-shell-specific servant metric surface must be preserved.");
+  assertBalancedCss(css, "StatisticsPanel.css");
+});
+
+Deno.test("Member profile dark theme does not retain superseded form and fieldset color rules", async () => {
+  const css = await readRepoFile("src/features/auth/components/MemberProfilePanel.css");
+  assert(!css.includes("background:#1b2437!important;"), "The fully overridden member form surface must be removed.");
+  assert(css.includes("background: #202f46 !important;"), "The current member CG-day fieldset background must be preserved.");
+  assert(css.includes("color:#edf3fb!important;"), "Member CG-day legend and labels must retain the final contrast color.");
+  assert(!css.includes("color: #dbe5f2 !important;"), "The superseded member weekday label color must be removed.");
+  assertBalancedCss(css, "MemberProfilePanel.css");
+});

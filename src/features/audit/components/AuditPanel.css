@@ -19,22 +19,15 @@
   .audit-toolbar{flex-direction:column;align-items:stretch;gap:12px}
   .audit-toolbar>.btn{width:100%;white-space:normal;line-height:1.35;text-align:center}
 }
-/* Dark-theme row surfaces and text retain the original override order. */
+/* The important dark surface remains the final rendered row color. */
+.audit-row{border-color:#354059!important}
 :root[data-theme="dark"] .audit-row{
   background:#1b2437!important;
-  border-color:#354059!important;
+  border-color:#3b4b65!important;
   color:#e8edf7;
   box-shadow:0 4px 18px rgba(0,0,0,.16);
 }
 :root[data-theme="dark"] .audit-row small,
 :root[data-theme="dark"] .audit-pagination{
-  color:#a3aec3!important;
-}
-/* This border declaration intentionally also applies in light mode, matching the original selector list. */
-.audit-row{border-color:#354059!important}
-:root[data-theme="dark"] .audit-row{background:#202c42}
-:root[data-theme="dark"] .audit-row small,
-:root[data-theme="dark"] .audit-pagination{
   color:#b9c6da!important;
 }
-:root[data-theme="dark"] .audit-row{border-color:#3b4b65!important}
