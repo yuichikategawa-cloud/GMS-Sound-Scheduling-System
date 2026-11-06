@@ -7,6 +7,54 @@ import {
 } from "../../src/app/state/dashboardState.ts";
 import type { DashboardData } from "../../src/app/services/dashboardData.ts";
 
+const templateRow = {
+  id: "template-1",
+  location_id: "loc-1",
+  day_of_week: 0,
+  service_name: "Sunday",
+  start_time: "09:00",
+  end_time: "11:00",
+  active: true,
+};
+const availabilityRuleRow = {
+  id: "rule-1",
+  servant_id: "servant-1",
+  effective_from: "2026-11-07",
+  effective_until: null,
+  pattern: "weekday",
+  status: "unavailable",
+};
+const servingPreferenceRow = {
+  id: "preference-1",
+  servant_id: "servant-1",
+  rule_type: "allowed_time_window",
+  active: true,
+};
+const availabilityRow = {
+  id: "availability-1",
+  servant_id: "servant-1",
+  service_date: "2026-11-07",
+  status: "available",
+};
+const requestRow = {
+  id: "request-1",
+  schedule_id: "schedule-1",
+  assignment_id: "assignment-1",
+  requester_servant_id: "servant-1",
+  request_type: "replacement" as const,
+  details: "Family commitment",
+  status: "pending",
+  created_at: "2026-11-06T10:00:00.000Z",
+};
+const notificationRow = {
+  id: "notification-1",
+  recipient_user_id: "user-1",
+  title: "Schedule update",
+  body: "Your assignment has changed.",
+  created_at: "2026-11-06T10:00:00.000Z",
+  is_read: false,
+};
+
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     throw new Error(message + "\nExpected: " + JSON.stringify(expected) + "\nActual: " + JSON.stringify(actual));
@@ -26,7 +74,7 @@ Deno.test("dashboard hydration replaces all dashboard-owned state atomically", (
   const data: DashboardData = {
     locations: [{ id: "loc-1", name: "North Campus" }],
     servants: [{ id: "servant-1", full_name: "Ada", active: true, auth_user_id: "user-1" }],
-    templates: [{ id: "template-1" }],
+    templates: [templateRow],
     schedules: [{
       id: "schedule-1",
       service_date: "2026-11-08",
@@ -37,13 +85,13 @@ Deno.test("dashboard hydration replaces all dashboard-owned state atomically", (
       location_name: "North Campus",
       assignments: [],
     }],
-    availabilityRules: [{ id: "rule-1" }],
-    servingPreferences: [{ id: "preference-1" }],
-    availability: [{ id: "availability-1" }],
+    availabilityRules: [availabilityRuleRow],
+    servingPreferences: [servingPreferenceRow],
+    availability: [availabilityRow],
     availabilityDeadline: "2026-11-07",
-    requests: [{ id: "request-1" }],
+    requests: [requestRow],
     requestReads: [{ request_id: "request-1", user_id: "user-1" }],
-    notifications: [{ id: "notification-1", is_read: false }],
+    notifications: [notificationRow],
     auditLogs: [{ id: "audit-1" }],
     memberDirectory: [{ user_id: "user-1", full_name: "Ada" }],
     memberProfile: { user_id: "user-1", full_name: "Ada" },
@@ -70,13 +118,13 @@ Deno.test("targeted collection updates support functional updates against the la
   const initial = createInitialDashboardState();
   const withNotification = dashboardStateReducer(initial, {
     type: "set-notifications",
-    update: [{ id: "notification-1", is_read: false }],
+    update: [notificationRow],
   });
   const markedRead = dashboardStateReducer(withNotification, {
     type: "set-notifications",
     update: current => current.map(item => ({ ...item, is_read: true })),
   });
-  assertEqual(markedRead.notifications, [{ id: "notification-1", is_read: true }],
+  assertEqual(markedRead.notifications, [{ ...notificationRow, is_read: true }],
     "Functional notification updates should transform the latest state.");
 
   const withRead = dashboardStateReducer(markedRead, {
@@ -114,7 +162,7 @@ Deno.test("sign-out clears member-specific dashboard data and preserves unrelate
       memberDirectory: [{ user_id: "user-1", full_name: "Ada" }],
       availability: [{ id: "availability-1" }],
       requests: [{ id: "request-1" }],
-      notifications: [{ id: "notification-1" }],
+      notifications: [notificationRow],
       optionalErrors: [],
     },
   });
