@@ -76,12 +76,14 @@ Deno.test("Servant management workflows are owned by the Servants feature hook",
 });
 
 Deno.test("App retains shared Servants and cross-feature data loading", async () => {
-  const [app, dashboard] = await Promise.all([
+  const [app, dashboard, dashboardLoader] = await Promise.all([
     readRepoFile("src/App.tsx"),
     readRepoFile("src/app/services/dashboardData.ts"),
+    readRepoFile("src/app/hooks/useDashboardLoader.ts"),
   ]);
-  assert(app.includes("loadDashboardData(supabase"),
-    "App must compose servant records through the shared dashboard loader.");
+  assert(app.includes('from "./app/hooks/useDashboardLoader"') &&
+    dashboardLoader.includes('from "../services/dashboardData"'),
+    "App must compose servant records through the shared dashboard loading boundary.");
   assert(dashboard.includes("loadServantRecords") && dashboard.includes("loadServantDirectoryData"),
     "Required servant rows and optional account directory reads must remain composed in app dashboard loading.");
   assert(app.includes("async function confirmAssignment("),
