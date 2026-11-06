@@ -43,6 +43,7 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     { component: "src/app/components/AppLayout.tsx", stylesheet: "src/app/components/AppShell.css", importLine: 'import "./AppShell.css";', marker: ".app-shell" },
     { component: "src/features/requests/components/RequestsPanel.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".requests-content-card" },
     { component: "src/features/requests/components/ServantInbox.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".servant-inbox" },
+    { component: "src/features/availability/components/AvailabilityWorkspace.tsx", stylesheet: "src/features/availability/components/AvailabilityWorkspace.css", importLine: 'import "./AvailabilityWorkspace.css";', marker: ".availability-form-panel" },
   ] as const;
 
   for (const item of ownership) {
@@ -80,5 +81,85 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
   assert(globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Cross-cutting Inbox dark-mode overrides must remain global and late in the cascade.");
   assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
   assert(globalCss.includes(".schedule-grid{"), "App-composed Schedule workspace styles remain global pending the Schedule UI extraction.");
-  assert(globalCss.includes(".availability-form-panel{"), "Availability workspace styles remain global pending a cascade-preserving feature stylesheet migration.");
+  assert(!globalCss.includes(".availability-form-panel{"), "Availability workspace base presentation must be owned by its colocated stylesheet.");
+});
+
+
+Deno.test("semantic theme tokens cover both schemes and retain legacy aliases", async () => {
+  const tokensCss = await readRepoFile("src/styles/tokens.css");
+  const light = tokensCss.match(/:root\s*\{([^}]*)\}/)?.[1] ?? "";
+  const dark = tokensCss.match(/:root\[data-theme="dark"\]\s*\{([^}]*)\}/)?.[1] ?? "";
+  assert(light.length > 0, "Light semantic theme tokens must be defined on :root.");
+  assert(dark.length > 0, "Dark semantic theme tokens must be defined on the data-theme root.");
+
+  const semanticTokens = [
+    "page-bg", "surface", "surface-muted", "surface-raised", "surface-contrast",
+    "text-primary", "text-secondary", "text-subtle",
+    "border-subtle", "border-strong",
+    "accent-primary", "accent-hover", "accent-soft",
+    "focus-border", "focus-ring",
+    "status-success-text", "status-success-bg",
+    "status-warning-text", "status-warning-bg",
+    "status-danger-text", "status-danger-bg",
+    "status-info-text", "status-info-bg",
+    "overlay-scrim",
+  ];
+  for (const token of semanticTokens) {
+    assert(new RegExp("--" + token + "\\s*:").test(light), "Light theme is missing --" + token + ".");
+    assert(new RegExp("--" + token + "\\s*:").test(dark), "Dark theme is missing --" + token + ".");
+  }
+
+  const aliases = [
+    ["ink", "text-primary"],
+    ["muted", "text-secondary"],
+    ["line", "border-subtle"],
+    ["brand", "accent-primary"],
+    ["navy", "surface-contrast"],
+    ["card", "surface"],
+  ] as const;
+  for (const [alias, semantic] of aliases) {
+    const expected = new RegExp("--" + alias + "\\s*:\\s*var\\(--" + semantic + "\\)");
+    assert(expected.test(light), "Light theme must retain --" + alias + " as an alias for --" + semantic + ".");
+    assert(expected.test(dark), "Dark theme must retain --" + alias + " as an alias for --" + semantic + ".");
+  }
+});
+
+Deno.test("Availability owns its component rules while mixed dark-mode overrides stay global", async () => {
+  const [globalCss, availabilityCss] = await Promise.all([
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
+  ]);
+
+  for (const selector of [
+    ".availability-form-panel",
+    ".availability-form",
+    ".availability-filter",
+    ".availability-row",
+    ".availability-status",
+    ".availability-mode-switch",
+    ".availability-self-name",
+  ]) {
+    const escaped = selector.split(".").join("\\.");
+    const pattern = new RegExp("(^|[\\n}])\\s*" + escaped + "\\s*\\{");
+    assert(!pattern.test(globalCss), selector + " must no longer have a bare global rule.");
+  }
+
+  assert(availabilityCss.includes(".availability-form-panel{"), "Availability's workspace card styles must live with the component.");
+  assert(availabilityCss.includes("@media(max-width:1050px)"), "The existing tablet form breakpoint must be preserved.");
+  assert(availabilityCss.includes("@media(max-width:760px)"), "The existing mobile form breakpoint must be preserved.");
+  assert(availabilityCss.includes("@media(max-width:600px)"), "The existing filter breakpoint must be preserved.");
+  assert(!availabilityCss.includes(':root[data-theme="dark"]'), "Dark-mode overrides remain global until the shared cascade is decomposed.");
+
+  assert(globalCss.includes(':root[data-theme="dark"] .availability-status.available'), "Availability status dark-mode overrides must remain global.");
+  assert(globalCss.includes(':root[data-theme="dark"] .availability-filter .clear-btn'), "Availability filter dark-mode overrides must remain global.");
+  assert(/:root\[data-theme="dark"\][^{]*\.availability-form input[^{]*\{/.test(globalCss), "Mixed dark-mode form-control overrides must remain global.");
+});
+
+Deno.test("app theme persistence and document theme-color behavior remain in the app shell", async () => {
+  const app = await readRepoFile("src/App.tsx");
+  assert(app.includes('window.localStorage.getItem("gms-sound-theme")'), "The saved theme preference must still be restored from localStorage.");
+  assert(app.includes('window.localStorage.setItem("gms-sound-theme",theme)'), "The selected theme must still persist to localStorage.");
+  assert(app.includes("document.documentElement.dataset.theme=theme"), "The document root must still receive the active data-theme value.");
+  assert(app.includes('themeColor?.setAttribute("content",theme==="dark"?"#101727":"#171d35")'), "The browser theme color must still track the selected theme.");
+  assert(app.includes("theme={theme}"), "The active theme must still be passed into the app shell.");
 });

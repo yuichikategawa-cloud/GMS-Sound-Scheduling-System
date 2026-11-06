@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { ClipboardCheck, Trash2 } from "lucide-react";
+import "./AvailabilityWorkspace.css";
 import { fmtDate, today } from "../../../shared/formatters";
 import type { Location, ScheduleView, Servant } from "../../../types";
 

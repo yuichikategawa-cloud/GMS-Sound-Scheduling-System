@@ -1,0 +1,438 @@
+/* Availability workspace presentation. Component-owned light and responsive rules live here.
+   Dark-mode overrides stay in the global stylesheet until shared theme cascade cleanup. */
+
+.availability-form-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+
+.availability-form-panel h3{font-size:15px;margin:0 0 14px}
+
+.availability-form{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.5fr auto;gap:10px;align-items:end}
+
+.availability-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579}
+
+.availability-form input,.availability-form select,.availability-filter input{min-width:0;width:100%;border:1px solid #dfe4ec;border-radius:8px;padding:10px;color:#293448;background:#fff;font-size:13px}
+
+.availability-note{margin-top:12px;font-size:12px}
+
+.availability-filter{display:flex;align-items:end;gap:15px}
+
+.availability-filter label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579;max-width:240px}
+
+.availability-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid #f0f1f4}
+
+.availability-row:last-child{border-bottom:0}
+
+.availability-date{font-size:13px;font-weight:750;min-width:135px}
+
+.availability-person{flex:1;min-width:0}
+
+.availability-person b,.availability-person small{display:block}
+
+.availability-person b{font-size:14px}
+
+.availability-person small{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+
+.availability-status{font-size:12px;font-weight:800;text-transform:capitalize;padding:7px 10px;border-radius:20px;white-space:nowrap}
+
+.availability-status.available{color:#166534;background:#dcfce7}
+
+.availability-status.unavailable{color:#991b1b;background:#fee2e2}
+
+.availability-status.prefer_not{color:#92400e;background:#fef3c7}
+
+@media(max-width:1050px) {
+.availability-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:1050px) {
+.availability-form button{grid-column:1/-1}
+}
+
+@media(max-width:760px) {
+.availability-form{grid-template-columns:1fr}
+}
+
+@media(max-width:760px) {
+.availability-form button{grid-column:auto}
+}
+
+@media(max-width:760px) {
+.availability-row{flex-wrap:wrap;gap:8px}
+}
+
+@media(max-width:760px) {
+.availability-date{min-width:100%;font-size:12px}
+}
+
+@media(max-width:760px) {
+.availability-person{min-width:50%}
+}
+
+@media(max-width:760px) {
+.availability-status{font-size:11px}
+}
+
+.availability-filter{display:grid;grid-template-columns:minmax(0,240px) auto;align-items:end;justify-content:start;gap:12px}
+
+.availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:#f8fafc;font-size:13px;white-space:nowrap}
+
+@media(max-width:600px) {
+.availability-filter{grid-template-columns:1fr;align-items:stretch}
+}
+
+@media(max-width:600px) {
+.availability-filter label{max-width:none;width:100%}
+}
+
+@media(max-width:600px) {
+.availability-filter .clear-btn{width:100%;margin:0;padding:12px}
+}
+
+/* Brittany Signature is loaded from a properly licensed local webfont file. */
+/* 2026-11-03 servant-facing clarity and responsive refinements */
+.availability-self-name{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:4px;
+  min-width:0;
+  padding:2px 0 6px;
+}
+
+.availability-self-name span{font-size:12px;color:var(--muted);line-height:1.35}
+
+.availability-self-name b{display:block;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+
+.availability-form-panel h2{margin-bottom:6px}
+
+@media(max-width:640px) {
+.availability-self-name{gap:5px;padding:3px 0 8px}
+}
+
+@media(max-width:640px) {
+.availability-self-name b{font-size:15px}
+}
+
+/* Bulk availability and recurring restriction cards */
+.availability-mode-switch{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;padding:5px;background:#f4f5fb;border:1px solid var(--line);border-radius:11px;width:fit-content;max-width:100%}
+
+.availability-mode-switch button{border:0;background:transparent;color:#596579;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
+
+.availability-mode-switch button.active{background:#fff;color:var(--brand);box-shadow:0 1px 5px #18223014}
+
+@media(max-width:760px) {
+.availability-mode-switch{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:760px) {
+.availability-mode-switch button{min-height:42px;padding:9px 7px}
+}
+
+/* Clear separation for a servant's linked profile in Serving preferences & eligibility. */
+.serving-preferences-panel .availability-self-name{
+  margin:6px 0 8px;
+  padding:12px 14px;
+  border:1px solid #e2e6f0;
+  border-radius:11px;
+  background:#f8f9fd;
+  gap:5px;
+}
+
+.serving-preferences-panel .availability-self-name span{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:#737d91;
+}
+
+.serving-preferences-panel .availability-self-name b{
+  font-size:15px;
+  font-weight:800;
+  color:#202b40;
+}
+
+/* Give the self identity its own full row in the multiple-date form; date fields then align below. */
+.bulk-form-grid > .availability-self-name{
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bulk-form-grid > .availability-self-name span{
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.bulk-form-grid > .availability-self-name b{
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+.bulk-form-grid > .availability-self-name{
+    grid-column: 1 / -1;
+  }
+}
+
+/* Final availability/admin consistency pass from the 14:21 review screenshots. */
+.availability-form > .availability-self-name{
+  align-self: stretch;
+  justify-content: center;
+  min-height: 44px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8f9fc;
+  gap: 3px;
+}
+
+.availability-form > .availability-self-name span{
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.availability-form > .availability-self-name b{
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+/* Multiple-date servant identity should use one compact grid cell, not a blank full-width row. */
+.bulk-form-grid > .availability-self-name{
+  grid-column: auto !important;
+  align-self: stretch;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8f9fc;
+  gap: 3px;
+}
+
+/* Keep availability actions visually consistent: Save actions are primary; Clear is secondary. */
+.availability-form-panel form > button.btn.primary,.availability-form-panel form > button.btn.secondary{
+  min-height: 42px;
+  border-radius: 9px;
+  font-weight: 750;
+}
+
+.availability-filter .clear-btn{
+  min-height: 42px;
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #394357;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.bulk-form-grid > .availability-self-name{
+  grid-column: auto !important;
+  align-self: end;
+  min-height: 44px;
+  padding: 8px 11px;
+}
+
+@media (max-width: 760px) {
+.availability-form{ grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+.bulk-form-grid .availability-self-name{
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* GMS 2026-11-03: final mobile and assignment-save presentation pass. */
+/* Availability: use one seamless card surface. Nested form grids must not look like
+   a second shaded card, and all fields must consume their assigned grid width. */
+.availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid,.availability-form-panel .recurring-rule-form{
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.availability-form-panel .bulk-form-grid{
+  padding: 0 !important;
+  border: 0 !important;
+}
+
+.availability-form-panel .bulk-servant-picker{
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  background: transparent !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day{
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 13px 14px !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-person .bulk-person-servant,.availability-form-panel .bulk-form-grid.is-day .bulk-servant-picker,.availability-form-panel .bulk-form-grid.is-person > .wide,.availability-form-panel .bulk-form-grid.is-day > .wide,.availability-form-panel .bulk-form-grid.is-person .bulk-weekdays,.availability-form-panel .bulk-form-grid.is-day .bulk-weekdays{
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+.availability-form-panel .bulk-form-grid > label,.availability-form-panel .recurring-rule-form > label,.availability-form-panel .rule-inline,.availability-form-panel .rule-inline label{
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),.availability-form-panel .bulk-form-grid select,.availability-form-panel .recurring-rule-form input,.availability-form-panel .recurring-rule-form select{
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.availability-form-panel .recurring-rule-form{
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 13px 14px !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{
+  grid-column: auto !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-status,.availability-form-panel .recurring-rule-form > .rule-field-dates,.availability-form-panel .recurring-rule-form > .rule-field-notes,.availability-form-panel .recurring-rule-form > .rule-field-occurrence,.availability-form-panel .recurring-rule-form > .rule-save{
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-dates{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+}
+
+/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
+@media (max-width: 760px) {
+.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
+@media (max-width: 760px) {
+.availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
+@media (max-width: 760px) {
+.availability-form-panel .recurring-rule-form > .rule-field-dates{
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Exact field order: no half-width servant selector and no stray grid columns. */
+.availability-form-panel .bulk-form-grid.is-person{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: end !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-person > .bulk-person-servant{
+  grid-column: 1 / -1 !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-day{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-day > .bulk-servant-picker{
+  grid-column: 1 / -1 !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-person > .bulk-from-date,.availability-form-panel .bulk-form-grid.is-person > .bulk-to-date,.availability-form-panel .bulk-form-grid.is-person > .bulk-status,.availability-form-panel .bulk-form-grid.is-person > .bulk-apply-to,.availability-form-panel .bulk-form-grid.is-day > .bulk-from-date,.availability-form-panel .bulk-form-grid.is-day > .bulk-to-date,.availability-form-panel .bulk-form-grid.is-day > .bulk-status,.availability-form-panel .bulk-form-grid.is-day > .bulk-apply-to{
+  grid-column: auto !important;
+}
+
+.availability-form-panel .bulk-form-grid.is-person > .wide,.availability-form-panel .bulk-form-grid.is-day > .wide,.availability-form-panel .bulk-form-grid.is-person > .bulk-weekdays,.availability-form-panel .bulk-form-grid.is-day > .bulk-weekdays{
+  grid-column: 1 / -1 !important;
+}
+
+.availability-form-panel .recurring-rule-form{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  max-width: none !important;
+  gap: 13px 14px !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{
+  grid-column: auto !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-status,.availability-form-panel .recurring-rule-form > .rule-field-dates,.availability-form-panel .recurring-rule-form > .rule-field-notes,.availability-form-panel .recurring-rule-form > .rule-field-occurrence,.availability-form-panel .recurring-rule-form > .rule-save{
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+}
+
+.availability-form-panel .recurring-rule-form > .rule-field-dates{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+}
+
+.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),.availability-form-panel .bulk-form-grid select,.availability-form-panel .recurring-rule-form input,.availability-form-panel .recurring-rule-form select{
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 760px) {
+.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 760px) {
+.availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+.availability-form-panel .recurring-rule-form > .rule-field-dates{
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Availability mode switch: preserve one card width and horizontal geometry
+   while the form height naturally follows the selected mode's fields. */
+.availability-form-panel .availability-mode-switch,.availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid{
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.availability-form-panel .bulk-form-grid > *,.availability-form-panel .bulk-form-grid input,.availability-form-panel .bulk-form-grid select{
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+

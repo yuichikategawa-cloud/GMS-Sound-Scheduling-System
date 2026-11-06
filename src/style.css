@@ -48,28 +48,13 @@
 .role-box small{font-size:11px;color:#48566d;letter-spacing:.04em}
 .role-box b{font-size:15px;line-height:1.35;color:#1d293b}
 .role-box.optional b{color:#475569;font-weight:650}
-.availability-form-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
-.availability-form-panel h3{font-size:15px;margin:0 0 14px}
-.availability-form{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.5fr auto;gap:10px;align-items:end}
-.availability-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579}
-.availability-form input,.availability-form select,.availability-filter input{min-width:0;width:100%;border:1px solid #dfe4ec;border-radius:8px;padding:10px;color:#293448;background:#fff;font-size:13px}
-.availability-note{margin-top:12px;font-size:12px}
-.availability-filter{display:flex;align-items:end;gap:15px}
-.availability-filter label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579;max-width:240px}
-.availability-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid #f0f1f4}
-.availability-row:last-child{border-bottom:0}
-.availability-date{font-size:13px;font-weight:750;min-width:135px}
-.availability-person{flex:1;min-width:0}.availability-person b,.availability-person small{display:block}.availability-person b{font-size:14px}.availability-person small{font-size:12px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
-.availability-status{font-size:12px;font-weight:800;text-transform:capitalize;padding:7px 10px;border-radius:20px;white-space:nowrap}
-.availability-status.available{color:#166534;background:#dcfce7}.availability-status.unavailable{color:#991b1b;background:#fee2e2}.availability-status.prefer_not{color:#92400e;background:#fef3c7}
 .stats-table-wrap{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:auto}
 .stats-table{width:100%;border-collapse:collapse;min-width:520px}
 .stats-table th,.stats-table td{text-align:left;padding:13px 16px;border-bottom:1px solid #edf0f5;font-size:13px}
 .stats-table th{font-size:11px;color:#596579;text-transform:uppercase;letter-spacing:.05em;background:#f8f9fc}
 .stats-table td:not(:first-child),.stats-table th:not(:first-child){text-align:center}
 .stats-table tbody tr:last-child td{border-bottom:0}
-@media(max-width:1050px){.availability-form{grid-template-columns:repeat(2,minmax(0,1fr))}.availability-form button{grid-column:1/-1}}
-@media(max-width:760px){.daily-role-row{grid-template-columns:90px minmax(0,1fr);font-size:14px}.daily-role-row span{font-size:14px}.daily-role-row b{font-size:13px}.role-box b{font-size:14px}.role-box small{font-size:10px}.availability-form{grid-template-columns:1fr}.availability-form button{grid-column:auto}.availability-row{flex-wrap:wrap;gap:8px}.availability-date{min-width:100%;font-size:12px}.availability-person{min-width:50%}.availability-status{font-size:11px}.collapsible-panel>summary b{font-size:16px}}
+@media(max-width:760px){.daily-role-row{grid-template-columns:90px minmax(0,1fr);font-size:14px}.daily-role-row span{font-size:14px}.daily-role-row b{font-size:13px}.role-box b{font-size:14px}.role-box small{font-size:10px}.collapsible-panel>summary b{font-size:16px}}
 .day-conflict-warning{display:flex;align-items:flex-start;gap:8px;margin:12px 16px 0;padding:10px 12px;border-radius:9px;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;font-size:13px;line-height:1.45}
 .day-conflict-warning svg{flex:none;margin-top:1px}/* GMS Sound Scheduling System - calendar, publishing and servant tools */
 .calendar-switch{display:flex;align-items:center;gap:7px;margin:-6px 0 17px;color:#64748b;font-size:12px}.calendar-switch button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;color:#475569;font-weight:700}.calendar-switch button.selected{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
@@ -84,9 +69,6 @@
 .days-field legend{font-size:13px;font-weight:800;padding:0 5px;color:#475569}
 .days-field label{display:flex;align-items:center;gap:8px;font-size:13px}
 .days-field input{width:18px;height:18px;flex:none}
-.availability-filter{display:grid;grid-template-columns:minmax(0,240px) auto;align-items:end;justify-content:start;gap:12px}
-.availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:#f8fafc;font-size:13px;white-space:nowrap}
-@media(max-width:600px){.availability-filter{grid-template-columns:1fr;align-items:stretch}.availability-filter label{max-width:none;width:100%}.availability-filter .clear-btn{width:100%;margin:0;padding:12px}}
 .field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}/* v5: branded loading state */
 .gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}
 @media(max-width:600px){.servant-account-chip{font-size:9px}}/* v5 usability: service details use one full-width row instead of two columns */
@@ -322,19 +304,7 @@
  .generate-panel-summary{align-items:center}
  .generate-panel-summary .generate-heading p{line-height:1.5;max-width:38ch}
  .template-options{grid-template-columns:minmax(0,1fr)}
-}/* Brittany Signature is loaded from a properly licensed local webfont file. */
-/* 2026-11-03 servant-facing clarity and responsive refinements */
-.availability-self-name{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-start;
-  gap:4px;
-  min-width:0;
-  padding:2px 0 6px;
 }
-.availability-self-name span{font-size:12px;color:var(--muted);line-height:1.35}
-.availability-self-name b{display:block;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
-.availability-form-panel h2{margin-bottom:6px}
 .message-banner{
   display:block;
   line-height:1.55;
@@ -343,8 +313,6 @@
 .message-banner b{display:inline-block;margin:0 3px}
 
 @media(max-width:640px){
-  .availability-self-name{gap:5px;padding:3px 0 8px}
-  .availability-self-name b{font-size:15px}
   .message-banner{
     padding:11px 12px;
     line-height:1.6;
@@ -541,10 +509,7 @@
     border-radius: 9px;
     white-space: nowrap;
   }
-}/* Bulk availability and recurring restriction cards */
-.availability-mode-switch{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;padding:5px;background:#f4f5fb;border:1px solid var(--line);border-radius:11px;width:fit-content;max-width:100%}
-.availability-mode-switch button{border:0;background:transparent;color:#596579;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
-.availability-mode-switch button.active{background:#fff;color:var(--brand);box-shadow:0 1px 5px #18223014}
+}
 .bulk-availability-form,.recurring-rule-form{display:flex;flex-direction:column;gap:14px}
 .bulk-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .bulk-form-grid>label,.recurring-rule-form>label,.rule-inline label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579;min-width:0}
@@ -564,7 +529,7 @@
 .recurring-rule-panel>p{margin:-5px 0 15px;line-height:1.55}.recurring-rule-form{max-width:760px}.rule-inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.saved-rules-list{display:grid;gap:8px;margin-top:15px}.saved-rule-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcff}.saved-rule-row b,.saved-rule-row small{display:block}.saved-rule-row b{font-size:12px}.saved-rule-row small{font-size:10px;color:var(--muted);margin-top:4px}
 .bulk-form-grid input[type=date],.recurring-rule-form input[type=date],.availability-form input[type=date],.availability-filter input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
 .bulk-form-grid input[type=date]::-webkit-date-and-time-value,.recurring-rule-form input[type=date]::-webkit-date-and-time-value,.availability-form input[type=date]::-webkit-date-and-time-value,.availability-filter input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
-@media(max-width:760px){.availability-mode-switch{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.availability-mode-switch button{min-height:42px;padding:9px 7px}.bulk-form-grid{grid-template-columns:minmax(0,1fr)}.bulk-form-grid .wide,.bulk-weekdays{grid-column:auto}.bulk-servant-list{grid-template-columns:1fr}.rule-inline{grid-template-columns:minmax(0,1fr)}.bulk-preview-list>div{align-items:flex-start;flex-direction:column;gap:3px}.bulk-preview-list span{text-align:left}.recurring-rule-form{width:100%}}/* GMS PWA and scheduling intelligence surfaces */
+@media(max-width:760px){.bulk-form-grid{grid-template-columns:minmax(0,1fr)}.bulk-form-grid .wide,.bulk-weekdays{grid-column:auto}.bulk-servant-list{grid-template-columns:1fr}.rule-inline{grid-template-columns:minmax(0,1fr)}.bulk-preview-list>div{align-items:flex-start;flex-direction:column;gap:3px}.bulk-preview-list span{text-align:left}.recurring-rule-form{width:100%}}/* GMS PWA and scheduling intelligence surfaces */
 .offline-status-banner{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 13px;border:1px solid #f2d7a2;border-radius:11px;background:#fff9eb;color:#80530b;font-size:12px;font-weight:650;line-height:1.45}
 .offline-status-banner svg{flex:0 0 auto}
 .serving-preference-form{display:grid;gap:13px;max-width:760px}
@@ -593,26 +558,6 @@
 @media(max-width:640px){
   
   
-}/* Clear separation for a servant's linked profile in Serving preferences & eligibility. */
-.serving-preferences-panel .availability-self-name{
-  margin:6px 0 8px;
-  padding:12px 14px;
-  border:1px solid #e2e6f0;
-  border-radius:11px;
-  background:#f8f9fd;
-  gap:5px;
-}
-.serving-preferences-panel .availability-self-name span{
-  font-size:10px;
-  font-weight:800;
-  letter-spacing:.07em;
-  text-transform:uppercase;
-  color:#737d91;
-}
-.serving-preferences-panel .availability-self-name b{
-  font-size:15px;
-  font-weight:800;
-  color:#202b40;
 }/* Bulk Assignment Center */
 .bulk-assignment-center{background:#fff;border:1px solid #dfe5f2;border-radius:18px;padding:22px;margin:22px 0;box-shadow:0 4px 18px rgba(24,35,70,.035);min-width:0}
 .bulk-assignment-heading,.bulk-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
@@ -802,17 +747,10 @@
   .church-bulk-controls .church-location-picker,.church-bulk-controls .btn.danger{grid-column:auto}
 }/* Dark mode — a persistent, selectable GMS appearance. */
 :root[data-theme="dark"]{
-  color-scheme:dark;
-  --ink:#e8edf7;
-  --muted:#a3aec3;
-  --line:#354059;
-  --brand:#8980ff;
-  --navy:#10172b;
-  --card:#1b2437;
-  background:#101727;
+  background:var(--page-bg);
   color:#e8edf7;
 }
-:root[data-theme="dark"] body{background:#101727;color:#e8edf7}
+:root[data-theme="dark"] body{background:var(--page-bg);color:#e8edf7}
 :root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
 :root[data-theme="dark"] .main-area{background:#101727}
 :root[data-theme="dark"] .content{color:#e8edf7}
@@ -951,14 +889,7 @@
 :root[data-theme="dark"] .availability-status.available{background:#173d32;color:#91e0b7}
 :root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
 :root[data-theme="dark"] .availability-status.prefer_not{background:#49371e;color:#ffd28e}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
-:root[data-theme="dark"]{
-  --ink:#f2f5fb;
-  --muted:#b5c1d5;
-  --line:#3a4963;
-  --brand:#9b91ff;
-  --card:#1b263a;
-  color-scheme:dark;
-}
+
 :root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .requests-content-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
@@ -1379,21 +1310,6 @@
   background: #111c2e !important;
   color: #f0f4fb !important;
   border-color: #465773 !important;
-}/* Give the self identity its own full row in the multiple-date form; date fields then align below. */
-.bulk-form-grid > .availability-self-name{
-  grid-column: 1 / -1;
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.bulk-form-grid > .availability-self-name span{
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-}
-.bulk-form-grid > .availability-self-name b{
-  overflow-wrap: anywhere;
 }/* Use the whole availability card width consistently instead of ending forms mid-panel. */
 .recurring-rule-form,.serving-preference-form{
   width: 100%;
@@ -1465,9 +1381,6 @@
 }
 
 @media (max-width: 760px){
-  .bulk-form-grid > .availability-self-name{
-    grid-column: 1 / -1;
-  }
   .recurring-rule-form,.serving-preference-form{
     width: 100%;
   }
@@ -1556,39 +1469,6 @@
     min-width: 150px;
     font-size: 10px;
   }
-}/* Final availability/admin consistency pass from the 14:21 review screenshots. */
-.availability-form > .availability-self-name{
-  align-self: stretch;
-  justify-content: center;
-  min-height: 44px;
-  padding: 7px 11px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #f8f9fc;
-  gap: 3px;
-}
-.availability-form > .availability-self-name span{
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-}
-.availability-form > .availability-self-name b{
-  font-size: 13px;
-  line-height: 1.3;
-}/* Multiple-date servant identity should use one compact grid cell, not a blank full-width row. */
-.bulk-form-grid > .availability-self-name{
-  grid-column: auto !important;
-  align-self: stretch;
-  justify-content: center;
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 8px 11px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #f8f9fc;
-  gap: 3px;
 }/* Keep recurring restrictions readable: paired fields on desktop and one column on phones. */
 .recurring-rule-form{
   display: grid !important;
@@ -1661,22 +1541,6 @@
   height: 36px;
   margin: 0;
   align-self: flex-start;
-}/* Keep availability actions visually consistent: Save actions are primary; Clear is secondary. */
-.availability-form-panel form > button.btn.primary,.availability-form-panel form > button.btn.secondary{
-  min-height: 42px;
-  border-radius: 9px;
-  font-weight: 750;
-}
-.availability-filter .clear-btn{
-  min-height: 42px;
-  padding: 10px 15px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #f8fafc;
-  color: #394357;
-  font-size: 12px;
-  font-weight: 750;
-  white-space: nowrap;
 }
 
 :root[data-theme="dark"] .availability-form > .availability-self-name,:root[data-theme="dark"] .bulk-form-grid > .availability-self-name{
@@ -1970,12 +1834,6 @@
   min-width: 0 !important;
   max-width: 100% !important;
 }
-.bulk-form-grid > .availability-self-name{
-  grid-column: auto !important;
-  align-self: end;
-  min-height: 44px;
-  padding: 8px 11px;
-}
 .bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select,.serving-preference-form input:not([type="checkbox"]),.serving-preference-form select{
   box-sizing: border-box !important;
   display: block;
@@ -2191,7 +2049,6 @@
   .bulk-form-grid,.recurring-rule-form,.serving-preference-form{ grid-template-columns: minmax(0, 1fr) !important; }
   .bulk-form-grid.is-day .bulk-servant-picker{ grid-column: 1 !important; }
   .recurring-rule-form > .rule-field-dates{ grid-template-columns: minmax(0, 1fr); }
-  .availability-form{ grid-template-columns: minmax(0, 1fr) !important; }
   .availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *{ grid-column: 1 !important; }
 }/* Per-church group actions expose both selection operations at the same time. */
 .bulk-group-selection-actions{
@@ -2258,10 +2115,6 @@
 }
 .bulk-form-grid.is-day .bulk-servant-list{
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-.bulk-form-grid .availability-self-name{
-  min-height: 44px;
-  justify-content: center;
 }
 .bulk-form-grid .bulk-weekdays,.bulk-form-grid > .wide{
   grid-column: 1 / -1 !important;
@@ -2423,67 +2276,6 @@
   .bulk-form-grid.is-day .bulk-servant-picker .bulk-servant-list{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}/* GMS 2026-11-03: final mobile and assignment-save presentation pass. */
-/* Availability: use one seamless card surface. Nested form grids must not look like
-   a second shaded card, and all fields must consume their assigned grid width. */
-.availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid,.availability-form-panel .recurring-rule-form{
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-.availability-form-panel .bulk-form-grid{
-  padding: 0 !important;
-  border: 0 !important;
-}
-.availability-form-panel .bulk-servant-picker{
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-  background: transparent !important;
-}
-.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day{
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: end !important;
-  gap: 13px 14px !important;
-}
-.availability-form-panel .bulk-form-grid.is-person .bulk-person-servant,.availability-form-panel .bulk-form-grid.is-day .bulk-servant-picker,.availability-form-panel .bulk-form-grid.is-person > .wide,.availability-form-panel .bulk-form-grid.is-day > .wide,.availability-form-panel .bulk-form-grid.is-person .bulk-weekdays,.availability-form-panel .bulk-form-grid.is-day .bulk-weekdays{
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
-}
-.availability-form-panel .bulk-form-grid > label,.availability-form-panel .recurring-rule-form > label,.availability-form-panel .rule-inline,.availability-form-panel .rule-inline label{
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),.availability-form-panel .bulk-form-grid select,.availability-form-panel .recurring-rule-form input,.availability-form-panel .recurring-rule-form select{
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-}
-.availability-form-panel .recurring-rule-form{
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: end !important;
-  gap: 13px 14px !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{
-  grid-column: auto !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-status,.availability-form-panel .recurring-rule-form > .rule-field-dates,.availability-form-panel .recurring-rule-form > .rule-field-notes,.availability-form-panel .recurring-rule-form > .rule-field-occurrence,.availability-form-panel .recurring-rule-form > .rule-save{
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-dates{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 13px !important;
 }
 :root[data-theme="dark"] .availability-form-panel .bulk-form-grid,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
   background: transparent !important;
@@ -2658,17 +2450,6 @@
     min-width: 0 !important;
     flex: 1 1 calc(50% - 5px) !important;
   }
-}/* Availability controls deliberately stack on phones; desktop retains two-column pairs. */
-@media (max-width: 760px){
-  .availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-  .availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{
-    grid-column: 1 / -1 !important;
-  }
-  .availability-form-panel .recurring-rule-form > .rule-field-dates{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }/* FINAL MOBILE / DARK-MODE REGRESSION PASS (2026-11-03) */
 /* A single, guaranteed three-column role strip on phones. The identity remains
    above it; FOH, Monitor and Assistant cannot wrap onto separate rows. */
@@ -2738,64 +2519,6 @@
 :root[data-theme="dark"] .availability-form-panel .availability-self-name{
   background: transparent !important;
   border-color: #405571 !important;
-}/* Exact field order: no half-width servant selector and no stray grid columns. */
-.availability-form-panel .bulk-form-grid.is-person{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: end !important;
-}
-.availability-form-panel .bulk-form-grid.is-person > .bulk-person-servant{
-  grid-column: 1 / -1 !important;
-}
-.availability-form-panel .bulk-form-grid.is-day{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: start !important;
-}
-.availability-form-panel .bulk-form-grid.is-day > .bulk-servant-picker{
-  grid-column: 1 / -1 !important;
-}
-.availability-form-panel .bulk-form-grid.is-person > .bulk-from-date,.availability-form-panel .bulk-form-grid.is-person > .bulk-to-date,.availability-form-panel .bulk-form-grid.is-person > .bulk-status,.availability-form-panel .bulk-form-grid.is-person > .bulk-apply-to,.availability-form-panel .bulk-form-grid.is-day > .bulk-from-date,.availability-form-panel .bulk-form-grid.is-day > .bulk-to-date,.availability-form-panel .bulk-form-grid.is-day > .bulk-status,.availability-form-panel .bulk-form-grid.is-day > .bulk-apply-to{
-  grid-column: auto !important;
-}
-.availability-form-panel .bulk-form-grid.is-person > .wide,.availability-form-panel .bulk-form-grid.is-day > .wide,.availability-form-panel .bulk-form-grid.is-person > .bulk-weekdays,.availability-form-panel .bulk-form-grid.is-day > .bulk-weekdays{
-  grid-column: 1 / -1 !important;
-}
-.availability-form-panel .recurring-rule-form{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  width: 100% !important;
-  max-width: none !important;
-  gap: 13px 14px !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{
-  grid-column: auto !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-status,.availability-form-panel .recurring-rule-form > .rule-field-dates,.availability-form-panel .recurring-rule-form > .rule-field-notes,.availability-form-panel .recurring-rule-form > .rule-field-occurrence,.availability-form-panel .recurring-rule-form > .rule-save{
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
-}
-.availability-form-panel .recurring-rule-form > .rule-field-dates{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 13px !important;
-}
-.availability-form-panel .bulk-form-grid input:not([type="checkbox"]),.availability-form-panel .bulk-form-grid select,.availability-form-panel .recurring-rule-form input,.availability-form-panel .recurring-rule-form select{
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-}
-@media (max-width: 760px){
-  .availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-  .availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{
-    grid-column: 1 / -1 !important;
-  }
-  .availability-form-panel .recurring-rule-form > .rule-field-dates{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }/* Compact and predictable church group controls on small screens. */
 @media (max-width: 760px){
   .bulk-church-group > summary{
@@ -2886,18 +2609,6 @@
 }
 :root[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity,.app-shell[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity{
   background: var(--foh-team-tint, transparent) !important;
-}/* Availability mode switch: preserve one card width and horizontal geometry
-   while the form height naturally follows the selected mode's fields. */
-.availability-form-panel .availability-mode-switch,.availability-form-panel .bulk-availability-form,.availability-form-panel .bulk-form-grid{
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-}
-.availability-form-panel .bulk-form-grid > *,.availability-form-panel .bulk-form-grid input,.availability-form-panel .bulk-form-grid select{
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
 }/* Registration CG day group: keep the legend on its own row and let options wrap naturally. */
 .app-shell[data-theme="dark"] .generate-note-title{
   color: #f1f3ff !important;
