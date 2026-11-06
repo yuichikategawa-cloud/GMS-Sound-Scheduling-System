@@ -235,3 +235,43 @@ Deno.test("signup form remains scroll-contained in dark mode and authentication 
     assert(!source.includes("Church"), path + " must not import or render the church icon.");
   }
 });
+
+
+Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens", async () => {
+  const [globalCss, availabilityCss, scheduleCss, tokensCss] = await Promise.all([
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
+    readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+    readRepoFile("src/styles/tokens.css"),
+  ]);
+
+  for (const token of [
+    "text-subtle", "border-strong", "surface-muted", "focus-border", "focus-ring",
+    "status-success-text", "status-success-bg",
+    "status-warning-text", "status-warning-bg",
+    "status-danger-text", "status-danger-bg",
+  ]) {
+    assert(tokensCss.includes("--" + token + ":"), "The semantic token --" + token + " must remain defined.");
+  }
+
+  assert(globalCss.includes("color:var(--text-subtle)"), "Shared form labels and secondary headings must use the subtle-text token.");
+  assert(globalCss.includes("border:1px solid var(--border-strong)"), "Shared form controls must use the strong-border token.");
+  assert(globalCss.includes("border-color:var(--focus-border)"), "Shared form focus states must use the focus-border token.");
+  assert(globalCss.includes("box-shadow:0 0 0 3px var(--focus-ring)"), "Shared form focus states must use the focus-ring token.");
+  assert(globalCss.includes("background:var(--status-success-bg);color:var(--status-success-text)"), "Positive status chips must use semantic success tokens.");
+  assert(globalCss.includes("background:var(--status-danger-bg);color:var(--status-danger-text)"), "Declined status chips must use semantic danger tokens.");
+  assert(globalCss.includes("background:var(--status-warning-bg);color:var(--status-warning-text)"), "Dark warning states must use semantic warning tokens.");
+
+  assert(availabilityCss.includes(".availability-status.available{color:var(--status-success-text);background:var(--status-success-bg)}"), "Availability success state must use semantic success tokens.");
+  assert(availabilityCss.includes(".availability-status.unavailable{color:var(--status-danger-text);background:var(--status-danger-bg)}"), "Availability unavailable state must use semantic danger tokens.");
+  assert(availabilityCss.includes("background:var(--surface-muted)"), "Availability muted controls must use the muted-surface token.");
+
+  assert(scheduleCss.includes(".coverage-pill.complete{color:var(--status-success-text);background:var(--status-success-bg)}"), "Schedule coverage success state must use semantic success tokens.");
+  assert(scheduleCss.includes("color: var(--status-success-text);"), "Clear assignment feedback must use the semantic success-text token.");
+  assert(scheduleCss.includes("border-color:var(--focus-border)"), "Schedule focus states must use the focus-border token.");
+  assert(scheduleCss.includes("background:var(--surface-muted)"), "Schedule muted panels must use the muted-surface token.");
+
+  assertBalancedCss(globalCss, "src/style.css");
+  assertBalancedCss(availabilityCss, "AvailabilityWorkspace.css");
+  assertBalancedCss(scheduleCss, "ScheduleWorkspace.css");
+});

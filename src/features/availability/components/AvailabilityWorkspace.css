@@ -7,15 +7,15 @@
 
 .availability-form{display:grid;grid-template-columns:1.2fr 1fr 1fr 1.5fr auto;gap:10px;align-items:end}
 
-.availability-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579}
+.availability-form label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle)}
 
-.availability-form input,.availability-form select,.availability-filter input{min-width:0;width:100%;border:1px solid #dfe4ec;border-radius:8px;padding:10px;color:#293448;background:#fff;font-size:13px}
+.availability-form input,.availability-form select,.availability-filter input{min-width:0;width:100%;border:1px solid var(--border-strong);border-radius:8px;padding:10px;color:#293448;background:#fff;font-size:13px}
 
 .availability-note{margin-top:12px;font-size:12px}
 
 .availability-filter{display:flex;align-items:end;gap:15px}
 
-.availability-filter label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:#596579;max-width:240px}
+.availability-filter label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle);max-width:240px}
 
 .availability-row{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid #f0f1f4}
 
@@ -33,9 +33,9 @@
 
 .availability-status{font-size:12px;font-weight:800;text-transform:capitalize;padding:7px 10px;border-radius:20px;white-space:nowrap}
 
-.availability-status.available{color:#166534;background:#dcfce7}
+.availability-status.available{color:var(--status-success-text);background:var(--status-success-bg)}
 
-.availability-status.unavailable{color:#991b1b;background:#fee2e2}
+.availability-status.unavailable{color:var(--status-danger-text);background:var(--status-danger-bg)}
 
 .availability-status.prefer_not{color:#92400e;background:#fef3c7}
 
@@ -73,7 +73,7 @@
 
 .availability-filter{display:grid;grid-template-columns:minmax(0,240px) auto;align-items:end;justify-content:start;gap:12px}
 
-.availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:#f8fafc;font-size:13px;white-space:nowrap}
+.availability-filter .clear-btn{align-self:end;min-height:42px;padding:10px 16px;border:1px solid #dbe1ea;border-radius:9px;background:var(--surface-muted);font-size:13px;white-space:nowrap}
 
 @media(max-width:600px) {
 .availability-filter{grid-template-columns:1fr;align-items:stretch}
@@ -115,7 +115,7 @@
 /* Bulk availability and recurring restriction cards */
 .availability-mode-switch{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;padding:5px;background:#f4f5fb;border:1px solid var(--line);border-radius:11px;width:fit-content;max-width:100%}
 
-.availability-mode-switch button{border:0;background:transparent;color:#596579;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
+.availability-mode-switch button{border:0;background:transparent;color:var(--text-subtle);border-radius:8px;padding:9px 13px;font-size:12px;font-weight:750}
 
 .availability-mode-switch button.active{background:#fff;color:var(--brand);box-shadow:0 1px 5px #18223014}
 
@@ -227,7 +227,7 @@
   padding: 10px 15px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #f8fafc;
+  background: var(--surface-muted);
   color: #394357;
   font-size: 12px;
   font-weight: 750;
