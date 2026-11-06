@@ -3,20 +3,8 @@ export interface ScheduleDataQueryResponse {
   error: { message: string } | null;
 }
 
-export interface ScheduleDataQueryBuilder extends PromiseLike<ScheduleDataQueryResponse> {
-  order(column: string, options?: { ascending?: boolean }): ScheduleDataQueryBuilder;
-  eq(column: string, value: unknown): ScheduleDataQueryBuilder;
-  lt(column: string, value: string): ScheduleDataQueryBuilder;
-}
-
-export interface ScheduleDataFromBuilder {
-  select(columns: string): ScheduleDataQueryBuilder;
-}
-
-/** Minimal query boundary for Schedule-owned dashboard reads. */
-export interface ScheduleDataClient {
-  from(tableName: "locations" | "service_templates" | "schedules" | "assignments"): ScheduleDataFromBuilder;
-}
+/** Supabase query-builder generics are intentionally kept behind this feature boundary. */
+export type ScheduleDataClient = any;
 
 export interface ScheduleWorkspaceData {
   locations: ScheduleDataQueryResponse;

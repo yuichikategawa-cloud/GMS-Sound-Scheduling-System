@@ -3,8 +3,6 @@
 import {
   loadHistoricalScheduleData,
   loadScheduleWorkspaceData,
-  type ScheduleDataClient,
-  type ScheduleDataFromBuilder,
   type ScheduleDataQueryResponse,
 } from "../../src/features/schedule/services/scheduleData.ts";
 
@@ -26,7 +24,7 @@ interface QueryOperation {
 }
 
 function createClient(responses: Record<string, ScheduleDataQueryResponse>): {
-  client: ScheduleDataClient;
+  client: any;
   calls: Array<{ table: string; operations: QueryOperation[] }>;
 } {
   const calls: Array<{ table: string; operations: QueryOperation[] }> = [];
@@ -58,10 +56,10 @@ function createClient(responses: Record<string, ScheduleDataQueryResponse>): {
           return Promise.resolve(responses[table]).then(onfulfilled, onrejected);
         },
       };
-      return builder as unknown as ScheduleDataFromBuilder;
+      return builder;
     },
   };
-  return { client: client as ScheduleDataClient, calls };
+  return { client, calls };
 }
 
 Deno.test("Schedule workspace loading preserves each dashboard query and runs independently", async () => {
