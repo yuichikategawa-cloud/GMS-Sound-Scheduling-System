@@ -82,6 +82,8 @@ jobs:
         run: deno test --no-lock tests/requests/requestPersistence_test.ts
       - name: Test serving request swap conflict validation
         run: deno test --no-lock tests/requests/swapValidation_test.ts
+      - name: Test Requests workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/requests/requestArchitecture_test.ts
       - name: Test notification data loading
         run: deno test --no-lock tests/notifications/notificationData_test.ts
       - name: Test notification persistence operations

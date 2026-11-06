@@ -31,8 +31,8 @@ import { loadServingNotificationData } from "./features/notifications/services/n
 import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
 import { markServingNotificationRead, saveServingNotificationPreferences } from "./features/notifications/services/notificationPersistence";
 import { cleanupServingPushSubscriptionForSignOut, disableServingPushSubscription, enableServingPushSubscription, isServingPushSubscriptionEnabled, type PushLifecycleRuntime } from "./features/notifications/services/pushSubscription";
-import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
-import { findCrossLocationAssignmentConflict } from "./features/requests/services/swapValidation";
+import { createServingRequest } from "./features/requests/services/requestPersistence";
+import { useRequestActions } from "./features/requests/hooks/useRequestActions";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
 import RequestsPanel from "./features/requests/components/RequestsPanel";
@@ -381,6 +381,20 @@ export default function App() {
   const scheduleWorkspace = useScheduleWorkspace({
     schedules, isAdmin, myServantId: myServant?.id
   });
+  const requestActions = useRequestActions({
+    client: supabase,
+    isAdmin,
+    schedules,
+    requests,
+    myServant,
+    sessionUserId: session?.user?.id,
+    swapDraft,
+    setSwapDraft,
+    setRequestReads,
+    askText,
+    loadData,
+    setMessage
+  });
 
   const availabilityActions = useAvailabilityActions({
     client: supabase, isAdmin, servants, sessionUserId: session?.user?.id,
@@ -418,55 +432,6 @@ export default function App() {
     if(error)setMessage(errorText(error));else await loadData();
   }
 
-  async function submitServingRequest(schedule:ScheduleView,kind:"replacement"|"swap"){
-    if(kind==="swap"){setSwapDraft(schedule);return;}
-    if(!supabase||!myServant)return;
-    const own=schedule.assignments.find(a=>a.servant_id===myServant.id);if(!own)return;
-    const note=await askText("Request a replacement","Tell the administrator why you need a replacement.","Reason (optional)");
-    if(note===null)return;
-    const {error}=await createServingRequest(supabase,{schedule_id:schedule.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"replacement",details:note.trim(),status:"pending"});
-    if(error)setMessage(error.message);else {setMessage("Your replacement request has been sent to the administrator.");await loadData();}
-  }
-  async function submitDirectSwap(targetScheduleId:string,targetAssignmentId:string,details:string){
-    if(!supabase||!myServant||!swapDraft)return;
-    const source=swapDraft, own=source.assignments.find(a=>a.servant_id===myServant.id);
-    const targetSchedule=schedules.find(s=>s.id===targetScheduleId);
-    const target=targetSchedule?.assignments.find(a=>a.id===targetAssignmentId);
-    if(!own||!targetSchedule||!target){setMessage("Please select a valid servant assignment to swap with.");return;}
-    if(target.servant_id===myServant.id){setMessage("You cannot swap with yourself.");return;}
-    if(source.id===targetSchedule.id){setMessage("Choose an assignment on a different service date.");return;}
-    // Each servant must be free of another church assignment on the day they would receive.
-    const targetConflict=findCrossLocationAssignmentConflict(schedules,target.servant_id,source.service_date,source.location_id);
-    const requesterConflict=findCrossLocationAssignmentConflict(schedules,myServant.id,targetSchedule.service_date,targetSchedule.location_id);
-    if(targetConflict||requesterConflict){setMessage(targetConflict?`${target.servant_name} already has an assignment at another church on ${fmtDate(source.service_date)}.`:`You already have an assignment at another church on ${fmtDate(targetSchedule.service_date)}.`);return;}
-    const {error}=await createServingRequest(supabase,{schedule_id:source.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"swap",details:details.trim(),status:"pending",target_schedule_id:targetSchedule.id,target_assignment_id:target.id,target_servant_id:target.servant_id});
-    if(error)setMessage(error.message);else {setSwapDraft(null);setMessage("Your cross-date swap request has been sent for admin approval.");await loadData();}
-  }
-  async function markRequestRead(requestId:string){
-    if(!supabase||!session)return;
-    const {error}=await markServingRequestRead(supabase,{request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()});
-    if(error)console.warn("Could not mark request notification as read:",error.message);
-    else setRequestReads(v=>[...v.filter(x=>x.request_id!==requestId),{request_id:requestId,user_id:session.user.id,read_at:new Date().toISOString()}]);
-  }
-  async function reviewRequest(request:any,approve:boolean){
-    if(!supabase||!isAdmin)return;
-    if(approve&&request.request_type==="swap"&&request.target_assignment_id){
-      const source=schedules.find(s=>s.id===request.schedule_id);
-      const targetSchedule=schedules.find(s=>s.id===request.target_schedule_id);
-      const sourceAssignment=source?.assignments.find(a=>a.id===request.assignment_id);
-      const targetAssignment=targetSchedule?.assignments.find(a=>a.id===request.target_assignment_id);
-      if(!source||!targetSchedule||!sourceAssignment||!targetAssignment){setMessage("Swap cannot be approved because one of the assignments no longer exists.");return;}
-      const excludedScheduleIds=[source.id,targetSchedule.id];
-      const targetConflict=findCrossLocationAssignmentConflict(schedules,targetAssignment.servant_id,source.service_date,source.location_id,excludedScheduleIds);
-      const requesterConflict=findCrossLocationAssignmentConflict(schedules,sourceAssignment.servant_id,targetSchedule.service_date,targetSchedule.location_id,excludedScheduleIds);
-      if(targetConflict||requesterConflict){setMessage("Swap approval blocked: one servant now has another assignment on the destination date. Review the schedule first.");return;}
-      const {error:swapError}=await executeServingRequestSwap(supabase,request.id);
-      if(swapError){setMessage(swapError.message);return;}
-      setMessage("Swap approved and assignments exchanged.");await loadData();return;
-    }
-    const {error}=await updateServingRequestReview(supabase,request.id,{status:approve?"approved":"declined",reviewed_by:session.user.id,reviewed_at:new Date().toISOString()});
-    if(error)setMessage(error.message);else {setMessage(approve?(request.request_type==="swap"?"Swap approved and assignments exchanged.":"Request approved. Please update the assignment if a replacement is needed."):"Request declined.");await loadData();}
-  }
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
     if(!supabase||!myServant||!session)return;
     const assignment=schedule.assignments.find(a=>a.servant_id===myServant.id);
@@ -585,7 +550,7 @@ export default function App() {
           {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={scheduleActions.saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
-    {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
+    {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={requestActions.submitDirectSwap}/>}
         </>
       }
     >
@@ -610,8 +575,8 @@ export default function App() {
           onAddTemplate={scheduleActions.addServiceTemplate}
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
-          onConfirmAssignment={confirmAssignment} onSubmitServingRequest={submitServingRequest}
-        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
+          onConfirmAssignment={confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
+        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={onSaveNotificationPreferences}/>} onNotificationRead={markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
 }
