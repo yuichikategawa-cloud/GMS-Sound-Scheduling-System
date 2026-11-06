@@ -54,6 +54,8 @@ jobs:
         run: deno test --no-lock tests/app/dashboardState_test.ts
       - name: Test App dashboard state architecture boundaries
         run: deno test --no-lock --allow-read=src,tests tests/app/dashboardStateArchitecture_test.ts
+      - name: Test repository-wide feature dependency direction
+        run: deno test --no-lock --allow-read=src,tests tests/architecture/featureDependencyGraph_test.ts
       - name: Test App browser lifecycle behavior
         run: deno test --no-lock tests/app/browserLifecycle_test.ts
       - name: Test App browser lifecycle architecture boundaries
