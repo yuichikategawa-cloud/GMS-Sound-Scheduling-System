@@ -152,14 +152,16 @@ Deno.test("schedule generation add mode ignores rows that match the conflict key
   }], "Add mode must preserve the original conflict key and ignore-duplicates behavior.");
 });
 
-Deno.test("schedule generation replace mode updates matching rows", async () => {
+Deno.test("schedule generation replace mode is blocked from bypassing the atomic admin save", async () => {
   const { client, calls } = createFakeClient();
-  await upsertGeneratedSchedules(client, generatedRows, "replace");
+  const result = await upsertGeneratedSchedules(client, generatedRows, "replace");
 
-  assertEqual(calls.upsert[0].options, {
-    onConflict: "service_date,location_id,service_name",
-    ignoreDuplicates: false,
-  }, "Replace mode must preserve the original upsert behavior.");
+  assertEqual(calls.upsert, [], "Replace mode must not issue a direct schedules upsert.");
+  assertEqual(calls.rpc, [], "Replace mode must not silently fall back to a partial sequence of per-slot RPCs.");
+  if (!result.error || !(result.error instanceof Error) ||
+      !result.error.message.includes("temporarily disabled")) {
+    throw new Error("Replace mode must return a clear safety error.");
+  }
 });
 
 Deno.test("schedule deletion filters by the requested schedule ID", async () => {

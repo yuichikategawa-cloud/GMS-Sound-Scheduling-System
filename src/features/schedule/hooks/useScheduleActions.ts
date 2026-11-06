@@ -80,6 +80,10 @@ export function useScheduleActions({
 
   async function generateWeekend(date:string,weeks=1,templateIds:string[]=[],mode:"add"|"replace"="add") {
     if(!client||!isAdmin)return;
+    if(mode==="replace"){
+      setScheduleError("Replacing existing service times is temporarily disabled because direct replacement could bypass assignment validation and servant reconfirmation. Use Edit service for existing slots; Add missing only remains available.");
+      return;
+    }
     const generation=buildWeekendScheduleRows({startDate:date,weeks,templateIds,templates});
     if(!generation.ok){
       if(generation.reason==="choose_saturday"){setMessage("Choose a Saturday to generate the weekend.");return;}
@@ -92,12 +96,12 @@ export function useScheduleActions({
     try {
       const {error}=await upsertGeneratedSchedules(client,generation.rows,mode);
       if(error)throw error;
-      await loadData();setMessage(`${generation.weekendCount} weekend(s) generated using ${generation.selectedTemplateCount} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
+      await loadData();setMessage(`${generation.weekendCount} weekend(s) generated using ${generation.selectedTemplateCount} selected template(s). Existing matching slots were left unchanged. New slots are drafts; assign servants and publish when ready.`);
     }catch(e){setScheduleError(errorText(e));setLoading(false);}
   }
 
   async function deleteSchedule(s:ScheduleView){
-    if(!client||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This also removes its assignments.`,"Delete service",true))return;
+    if(!client||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This permanently removes its assignments and any serving-request records linked to this service.`,"Delete service",true))return;
     const {error}=await deleteScheduleById(client,s.id);
     if(error)setMessage(errorText(error));else await loadData();
   }
@@ -177,7 +181,7 @@ export function useScheduleActions({
     if(!targetSchedules.length){setMessage(`There are no schedules to delete for ${scopeName}.`);return;}
     const confirmation=await askText(
       "Confirm permanent deletion",
-      `This will permanently delete ALL ${targetSchedules.length} schedules and their assignments for ${scopeName}. This cannot be undone.`,
+      `This will permanently delete ALL ${targetSchedules.length} schedules, their assignments, and any serving-request records linked to those services for ${scopeName}. This cannot be undone.`,
       'Type exactly: I do understand',
       "I do understand"
     );

@@ -73,9 +73,20 @@ export function upsertGeneratedSchedules(
   rows: SchedulePersistenceRow[],
   mode: ScheduleGenerationMode,
 ): PromiseLike<SchedulePersistenceResponse> {
+  // Replacing an existing slot via direct upsert bypasses the atomic schedule
+  // RPC, including confirmation resets and final assignment eligibility checks.
+  // Keep this guard here as well as in the UI so future callers cannot bypass it.
+  if (mode === "replace") {
+    return Promise.resolve({
+      error: new Error(
+        "Replacing existing service times is temporarily disabled. Use Edit service so assignments are revalidated and servants are asked to reconfirm.",
+      ),
+    });
+  }
+
   return client.from("schedules").upsert(rows, {
     onConflict: "service_date,location_id,service_name",
-    ignoreDuplicates: mode === "add",
+    ignoreDuplicates: true,
   });
 }
 
