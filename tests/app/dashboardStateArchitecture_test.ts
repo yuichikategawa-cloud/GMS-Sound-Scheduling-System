@@ -14,8 +14,10 @@ Deno.test("App hydrates dashboard state through one application boundary", () =>
     throw new Error("App must not own dashboard loading orchestration directly.");
   }
   if (!dashboardLoaderHook.includes("createDashboardLoadController") ||
-    !dashboardLoadController.includes('type: "hydrate"')) {
-    throw new Error("Dashboard loading and hydration must remain inside the app loading boundary.");
+    !dashboardLoaderHook.includes('type: "hydrate"') ||
+    !dashboardLoadController.includes("requestSequence") ||
+    !dashboardLoadController.includes("invalidate")) {
+    throw new Error("The hook must adapt hydration while the controller owns request sequencing and invalidation.");
   }
   if (!app.includes("invalidateDashboardLoad()")) {
     throw new Error("Sign-out must invalidate pending dashboard reads immediately.");
