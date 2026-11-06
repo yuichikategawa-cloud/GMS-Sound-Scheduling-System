@@ -14,7 +14,7 @@ import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen
 import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
 import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
 import MemberProfilePanel from "./features/auth/components/MemberProfilePanel";
-import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccountPassword } from "./features/auth/services/authentication";
+import { useAuthenticationActions } from "./features/auth/hooks/useAuthenticationActions";
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
@@ -191,6 +191,15 @@ export default function App() {
     else setProfile(data as Profile|null);
   }
 
+  const authenticationActions = useAuthenticationActions({
+    client: supabase,
+    mode: authMode,
+    setMode: setAuthMode,
+    setAuthLoading,
+    setMessage,
+    setRecoveryMode
+  });
+
   async function loadData() {
     if (!supabase) return;
     setLoading(true); setMessage("");
@@ -281,45 +290,6 @@ export default function App() {
     setPushBusy(true);
     try{await disableServingPushSubscription(supabase,getPushLifecycleRuntime());setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
     catch(e){setMessage(errorText(e));}finally{setPushBusy(false);}
-  }
-
-  async function submitAuth(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if(!supabase)return; setMessage(""); setAuthLoading(true);
-    const formData=new FormData(e.currentTarget);
-    try {
-      if(authMode==="signup") {
-        await registerAccount(supabase,formData);
-        setMessage("Registration submitted. Verify your email if confirmation is enabled, then sign in with your username.");
-        setAuthMode("login");
-      } else {
-        await signInWithUsername(supabase,String(formData.get("username")),String(formData.get("password")));
-      }
-    } catch(e){setMessage(errorText(e));}
-    finally{setAuthLoading(false);}
-  }
-
-  async function sendPasswordReset(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if(!supabase)return; setAuthLoading(true); setMessage("");
-    const formData=new FormData(e.currentTarget);
-    const recoveryEmail=String(formData.get("recovery_email")||"").trim();
-    try {
-      await sendPasswordResetLink(supabase,recoveryEmail,`${window.location.origin}/`);
-      setMessage("If an account exists for that email, a password reset link has been sent. Please check your inbox.");
-    } catch(e){setMessage(errorText(e));}
-    finally{setAuthLoading(false);}
-  }
-
-  async function updateRecoveredPassword(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault(); if(!supabase)return;
-    const formData=new FormData(e.currentTarget);
-    const next=String(formData.get("new_password")||"");
-    setAuthLoading(true); setMessage("");
-    try {
-      await updateAccountPassword(supabase,next);
-      setRecoveryMode(false);
-      setMessage("Password updated. You can now continue using your new password.");
-    } catch(e){setMessage(errorText(e));}
-    finally{setAuthLoading(false);}
   }
 
   async function signOut(){
@@ -463,8 +433,8 @@ export default function App() {
 
   if(!isSupabaseConfigured)return <SupabaseSetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
-  if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={updateRecoveredPassword}/>;
-  if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={submitAuth} onSendPasswordReset={sendPasswordReset}/>;
+  if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/>;
+  if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={authenticationActions.submitAuth} onSendPasswordReset={authenticationActions.sendPasswordReset}/>;
   if(!profile)return <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
 
   return (
