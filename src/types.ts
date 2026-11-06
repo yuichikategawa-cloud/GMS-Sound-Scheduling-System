@@ -20,3 +20,11 @@ export type ServiceTemplate = {
   end_time: string;
   active: boolean;
 };
+export type ServingNotificationRecord = {
+  id: string;
+  recipient_user_id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  is_read: boolean;
+};
