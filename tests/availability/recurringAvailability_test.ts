@@ -190,7 +190,7 @@ Deno.test("open-ended rules use the supplied horizon and virtual rows preserve t
 
 Deno.test("unknown recurring patterns create no virtual availability records", () => {
   assertEqual(
-    expandRecurringAvailabilityRule(rule({ pattern: "unknown" }), horizon),
+    expandRecurringAvailabilityRule(rule({ pattern: "unknown" as RecurringAvailabilityRule["pattern"] }), horizon),
     [],
     "Unsupported patterns should not create restriction dates.",
   );
