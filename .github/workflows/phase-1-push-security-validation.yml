@@ -60,6 +60,8 @@ jobs:
         run: deno test --no-lock tests/schedule/scheduleData_test.ts
       - name: Test Schedule CSV export formatting
         run: deno test --no-lock tests/schedule/scheduleCsv_test.ts
+      - name: Test Schedule historical export preparation
+        run: deno test --no-lock tests/schedule/scheduleExport_test.ts
       - name: Test Schedule feature architecture boundaries
         run: deno test --no-lock --allow-read=src,tests tests/schedule/scheduleArchitecture_test.ts
       - name: Test Vercel branch-specific Preview deployment guard

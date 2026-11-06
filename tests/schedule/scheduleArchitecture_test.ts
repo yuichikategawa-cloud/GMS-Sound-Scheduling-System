@@ -15,6 +15,8 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "src/features/schedule/services/schedulePersistence.ts",
     "src/features/schedule/services/scheduleData.ts",
     "src/features/schedule/services/scheduleCsv.ts",
+    "src/features/schedule/services/scheduleExport.ts",
+    "src/features/schedule/hooks/useScheduleExportActions.ts",
   ];
   const sources = await Promise.all(paths.map(path =>
     Deno.readTextFile(new URL("../../" + path, import.meta.url))
@@ -37,4 +39,21 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "App must compose the Schedule-owned dashboard data service.");
   assert(!app.includes("supabase.from(") && !app.includes("supabase.rpc("),
     "App must not issue direct database reads or RPC calls outside feature-owned services.");
+
+  const exportHook = await Deno.readTextFile(new URL("../../src/features/schedule/hooks/useScheduleExportActions.ts", import.meta.url));
+  const exportService = await Deno.readTextFile(new URL("../../src/features/schedule/services/scheduleExport.ts", import.meta.url));
+  assert(app.includes('from "./features/schedule/hooks/useScheduleExportActions"'),
+    "App must compose Schedule downloads through the Schedule feature hook.");
+  assert(!app.includes("async function exportScheduleHistory(") && !app.includes("function exportCsv("),
+    "Schedule CSV download orchestration must not remain in App.");
+  assert(app.includes("onExportCsv={scheduleExportActions.exportCsv}") &&
+    app.includes("onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}"),
+    "ScheduleWorkspace must receive both exports through the feature hook.");
+  assert(!/client\\.(?:rpc|from)\\(/.test(exportHook),
+    "Schedule export orchestration must delegate historical data access to Schedule services.");
+  assert(exportHook.includes("isAdmin") && exportHook.includes("prepareHistoricalScheduleCsv") &&
+    exportHook.includes("downloadCsv"),
+    "Schedule export hook must retain admin protection and own browser downloads.");
+  assert(exportService.includes("loadHistoricalScheduleData") && exportService.includes("buildScheduleCsv"),
+    "Schedule export service must use the existing historical query and CSV builder.");
 });

@@ -1,0 +1,48 @@
+import type { ScheduleView } from "../../../types";
+import { today, shortTime } from "../../../shared/formatters";
+import { ROLES } from "../constants";
+import { prepareHistoricalScheduleCsv } from "../services/scheduleExport";
+import { buildScheduleCsv } from "../services/scheduleCsv";
+
+type ScheduleExportActionsInput = {
+  client: typeof import("../../../supabase").supabase;
+  isAdmin: boolean;
+  filteredSchedules: ScheduleView[];
+};
+
+function downloadCsv(csv: string, filename: string): void {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Owns Schedule CSV preparation and browser downloads for the workspace. */
+export function useScheduleExportActions({
+  client,
+  isAdmin,
+  filteredSchedules,
+}: ScheduleExportActionsInput) {
+  async function exportScheduleHistory() {
+    if (!client || !isAdmin) return;
+    const { csv, recordCount, error } = await prepareHistoricalScheduleCsv(
+      client,
+      today(),
+      ROLES,
+      shortTime,
+    );
+    if (error) throw error;
+    if (csv === null) return;
+    downloadCsv(csv, "gms-schedule-history.csv");
+  }
+
+  function exportCsv() {
+    const csv = buildScheduleCsv(filteredSchedules, ROLES, shortTime);
+    downloadCsv(csv, "gms-serving-schedule.csv");
+  }
+
+  return { exportCsv, exportScheduleHistory };
+}

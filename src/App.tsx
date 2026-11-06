@@ -3,7 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
-import { today, fmtDate, shortTime, errorText } from "./shared/formatters";
+import { fmtDate, errorText } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
 import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
 import Sidebar from "./app/components/Sidebar";
@@ -18,8 +18,7 @@ import { useAuthenticationActions } from "./features/auth/hooks/useAuthenticatio
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
-import { buildScheduleCsv } from "./features/schedule/services/scheduleCsv";
-import { loadScheduleWorkspaceData, loadHistoricalScheduleData } from "./features/schedule/services/scheduleData";
+import { loadScheduleWorkspaceData } from "./features/schedule/services/scheduleData";
 import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
 import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
@@ -41,7 +40,7 @@ import AuditPanel from "./features/audit/components/AuditPanel";
 import { loadRecentAuditLogs } from "./features/audit/services/auditData";
 import { useAuditActions } from "./features/audit/hooks/useAuditActions";
 import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
-import { ROLES } from "./features/schedule/constants";
+import { useScheduleExportActions } from "./features/schedule/hooks/useScheduleExportActions";
 import { useScheduleActions } from "./features/schedule/hooks/useScheduleActions";
 import { useScheduleWorkspace } from "./features/schedule/hooks/useScheduleWorkspace";
 import ScheduleWorkspace from "./features/schedule/components/ScheduleWorkspace";
@@ -298,6 +297,11 @@ export default function App() {
   const scheduleWorkspace = useScheduleWorkspace({
     schedules, isAdmin, myServantId: myServant?.id
   });
+  const scheduleExportActions = useScheduleExportActions({
+    client: supabase,
+    isAdmin,
+    filteredSchedules: scheduleWorkspace.filtered
+  });
   const requestActions = useRequestActions({
     client: supabase,
     isAdmin,
@@ -362,20 +366,6 @@ export default function App() {
     if(notifyError)console.warn("Confirmation saved but admin notification failed:",notifyError.message);
     setMessage("Serving assignment confirmed. The administrator has been notified.");await loadData();
   }
-  async function exportScheduleHistory(){
-    if(!supabase||!isAdmin)return;
-    const {data,error}=await loadHistoricalScheduleData(supabase,today());
-    if(error){setMessage(error.message);return;}
-    const csv=buildScheduleCsv(data??[],ROLES,shortTime);
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-schedule-history.csv";a.click();URL.revokeObjectURL(url);
-  }
-
-  function exportCsv(){
-    const csv=buildScheduleCsv(scheduleWorkspace.filtered,ROLES,shortTime);
-    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-serving-schedule.csv";a.click();URL.revokeObjectURL(url);
-  }
-
   if(!isSupabaseConfigured)return <SupabaseSetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
   if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/>;
@@ -455,7 +445,7 @@ export default function App() {
           onGenerate={scheduleActions.generateWeekend}
           onAddTemplate={scheduleActions.addServiceTemplate}
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
-          onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
+          onExportCsv={scheduleExportActions.exportCsv} onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}
           onConfirmAssignment={confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
         />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
