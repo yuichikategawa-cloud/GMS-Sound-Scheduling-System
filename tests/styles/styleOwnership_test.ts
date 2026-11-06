@@ -455,3 +455,32 @@ Deno.test("shared dark secondary buttons and action controls have one effective 
     "The superseded schedule shortcut secondary button override must be removed.");
   assertBalancedCss(css, "src/style.css");
 });
+
+
+Deno.test("Requests and Inbox own their dark card and heading presentation", async () => {
+  const [requestsPanel, inbox, globalCss, requestsCss] = await Promise.all([
+    readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
+    readRepoFile("src/features/requests/components/ServantInbox.tsx"),
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+  ]);
+  assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import the shared Requests feature stylesheet.");
+  assert(inbox.includes('import "./RequestsInbox.css";'), "ServantInbox must import the shared Requests feature stylesheet.");
+  for (const selector of [
+    ':root[data-theme="dark"] .requests-content-card{',
+    ':root[data-theme="dark"] .requests-content-heading{',
+    ':root[data-theme="dark"] .requests-content-heading h2{',
+    ':root[data-theme="dark"] .requests-content-heading span,',
+    ':root[data-theme="dark"] .requests-content-card .people-list{',
+    ':root[data-theme="dark"] .requests-content-card .person-row{',
+  ]) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
+  }
+  assert(requestsCss.includes("background:#1b263a!important;"), "The final request card background must be preserved.");
+  assert(requestsCss.includes("border-bottom:1px solid #3b4b65!important;"), "The final request heading divider must be preserved.");
+  assert(requestsCss.includes("color:#f3f6fc!important;"), "The final request heading contrast must be preserved.");
+  assert(requestsCss.includes("color:#bdcbe0!important;"), "The final muted request text color must be preserved.");
+  assertBalancedCss(requestsCss, "RequestsInbox.css");
+  assertBalancedCss(globalCss, "src/style.css");
+});

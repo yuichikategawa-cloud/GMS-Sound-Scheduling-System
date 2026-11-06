@@ -317,3 +317,29 @@ font-size:15px
 gap:13px
 }
 }
+
+/* Requests and Inbox own their separate-card dark surfaces and muted headings. */
+:root[data-theme="dark"] .requests-content-card{
+  background:#1b263a!important;
+  border-color:#3c4c66!important;
+  color:#eaf0fa!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .requests-content-heading{
+  border-bottom:1px solid #3b4b65!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .requests-content-heading h2{
+  color:#f3f6fc!important;
+}
+:root[data-theme="dark"] .requests-content-heading span,
+:root[data-theme="dark"] .requests-empty-note{
+  color:#bdcbe0!important;
+}
+:root[data-theme="dark"] .requests-content-card .people-list{
+  background:transparent!important;
+  border-color:transparent!important;
+}
+:root[data-theme="dark"] .requests-content-card .person-row{
+  border-color:#394862!important;
+}

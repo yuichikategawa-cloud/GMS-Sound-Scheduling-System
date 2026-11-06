@@ -384,7 +384,7 @@
 :root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
 :root[data-theme="dark"] .availability-status.prefer_not{background:var(--status-warning-bg);color:var(--status-warning-text)}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
 
-:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .requests-content-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
   color:#edf2fa!important;
@@ -416,15 +416,10 @@
 :root[data-theme="dark"] .preference-weekday-picker input,:root[data-theme="dark"] .preference-service-picker input{
   accent-color:#a99fff;
 }
-:root[data-theme="dark"] .requests-content-heading h2,:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2,:root[data-theme="dark"] .servant-requests-section h2{
+:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2,:root[data-theme="dark"] .servant-requests-section h2{
   color:#f2f5fc!important;
 }/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
 
-:root[data-theme="dark"] .requests-content-card{background:#1b263a!important;border-color:#3a4963!important}
-:root[data-theme="dark"] .requests-content-heading{border-bottom-color:#394862!important}
-:root[data-theme="dark"] .requests-content-heading span,:root[data-theme="dark"] .requests-empty-note{color:#b9c6da!important}
-:root[data-theme="dark"] .requests-content-card .people-list{background:transparent!important;border-color:transparent!important}
-:root[data-theme="dark"] .requests-content-card .person-row{border-color:#394862!important}
 :root[data-theme="dark"] .requests-section-heading{border-top-color:#394862!important}
 :root[data-theme="dark"] .inbox-item{background:#222f46!important;border-color:#40516d!important;box-shadow:none!important}
 :root[data-theme="dark"] .inbox-item.unread{background:#292744!important;border-color:#514a79!important}
@@ -551,21 +546,10 @@
 :root[data-theme="dark"] .calendar-switch span{
   color: #c7d3e6 !important;
 }/* Remove residual light-mode styling from inner inbox/request wrappers. */
-:root[data-theme="dark"] .requests-content-card{
-  background: #1b263a !important;
-  border-color: #3c4c66 !important;
-  color: #eaf0fa !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .requests-content-heading{
-  border-bottom-color: #3c4c66 !important;
-}
-:root[data-theme="dark"] .requests-content-heading h2,:root[data-theme="dark"] .notification-history-section .list-heading h3{
-  color: #f1f5fb !important;
-}
-:root[data-theme="dark"] .requests-content-heading span,:root[data-theme="dark"] .requests-empty-note{
-  color: #b8c6da !important;
-}
+
+
+
+
 :root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .notification-history-section .inbox-item{
   background: #24334b !important;
   border-color: #40536f !important;
@@ -856,16 +840,9 @@
 :root[data-theme="dark"] .notification-history-list{
   gap: 12px !important;
 }
-:root[data-theme="dark"] .requests-content-heading{
-  border-bottom: 1px solid #3b4b65 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .requests-content-heading h2{
-  color: #f3f6fc !important;
-}
-:root[data-theme="dark"] .requests-content-heading span,:root[data-theme="dark"] .requests-empty-note{
-  color: #bdcbe0 !important;
-}
+
+
+
 
 @media (max-width: 760px){
   .recurring-rule-form,.serving-preference-form{
@@ -1660,4 +1637,9 @@
 :root[data-theme="dark"] .generate-panel .generate-note p span,
 .app-shell[data-theme="dark"] .generate-panel .generate-note p span{
   color: var(--text-secondary) !important;
+}
+
+/* Notification history heading color remains shared until its component CSS is moved. */
+:root[data-theme="dark"] .notification-history-section .list-heading h3{
+  color: #f1f5fb !important;
 }
