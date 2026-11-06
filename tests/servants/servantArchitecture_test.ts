@@ -86,6 +86,7 @@ Deno.test("App retains shared Servants and cross-feature data loading", async ()
     "App must compose servant records through the shared dashboard loading boundary.");
   assert(dashboard.includes("loadServantRecords") && dashboard.includes("loadServantDirectoryData"),
     "Required servant rows and optional account directory reads must remain composed in app dashboard loading.");
-  assert(app.includes("async function confirmAssignment("),
-    "Cross-feature assignment confirmation must remain in App.");
+  assert(app.includes('from "./app/hooks/useAssignmentConfirmationActions"') &&
+    app.includes("const assignmentConfirmationActions = useAssignmentConfirmationActions({"),
+    "Cross-feature assignment confirmation must remain composed through the application-owned workflow.");
 });
