@@ -9,11 +9,12 @@ async function readRepoFile(path: string): Promise<string> {
 }
 
 Deno.test("Servant management workflows are owned by the Servants feature hook", async () => {
-  const [app, actions, persistence, panel] = await Promise.all([
+  const [app, actions, persistence, panel, addDialog] = await Promise.all([
     readRepoFile("src/App.tsx"),
     readRepoFile("src/features/servants/hooks/useServantActions.ts"),
     readRepoFile("src/features/servants/services/servantManagement.ts"),
     readRepoFile("src/features/servants/components/ServantInformationPanel.tsx"),
+    readRepoFile("src/features/servants/components/AddServantDialog.tsx"),
   ]);
 
   assert(app.includes('import { useServantActions } from "./features/servants/hooks/useServantActions";'),
@@ -42,6 +43,15 @@ Deno.test("Servant management workflows are owned by the Servants feature hook",
     "Every administrative Servants action must retain the existing client and admin guard.");
   assert(panel.includes("onToggle") && panel.includes("onLink") && panel.includes("onAdd"),
     "Servant information presentation must continue to receive its actions through callbacks.");
+  assert(app.includes('import AddServantDialog from "./features/servants/components/AddServantDialog";') &&
+    app.includes("<AddServantDialog onClose={()=>setModal(null)} onSave={servantActions.savePerson}/>"),
+    "App must compose the Add Servant dialog from the Servants feature.");
+  assert(!app.includes("function PersonModal(") && !app.includes("function PeoplePanel("),
+    "Servants presentation components must not remain embedded in App.");
+  assert(addDialog.includes("onSave") && addDialog.includes("onClose") &&
+    addDialog.includes("name=\"full_name\""),
+    "The Servants-owned dialog must retain its existing form and callbacks.");
+
 
   for (const [path, source] of [
     ["Servants action hook", actions],
