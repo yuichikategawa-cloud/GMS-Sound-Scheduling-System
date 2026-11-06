@@ -69,3 +69,23 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
   assert(exportService.includes("loadHistoricalScheduleData") && exportService.includes("buildScheduleCsv"),
     "Schedule export service must use the existing historical query and CSV builder.");
 });
+
+Deno.test("weekend-template Replace remains gated until its production rollout is approved", async () => {
+  const [actions, persistence, panels] = await Promise.all([
+    Deno.readTextFile(new URL("../../src/features/schedule/hooks/useScheduleActions.ts", import.meta.url)),
+    Deno.readTextFile(new URL("../../src/features/schedule/services/schedulePersistence.ts", import.meta.url)),
+    Deno.readTextFile(new URL("../../src/features/schedule/components/ScheduleManagementPanels.tsx", import.meta.url)),
+  ]);
+
+  assert(actions.includes('if(mode==="replace"){') &&
+    actions.includes("temporarily disabled") &&
+    actions.includes("servant reconfirmation"),
+    "Schedule actions must refuse Replace until the database migration is approved for production.");
+  assert(persistence.includes('if (mode === "replace")') &&
+    persistence.includes("temporarily disabled") &&
+    persistence.includes("replaceGeneratedSchedulesAtomically") &&
+    persistence.includes("admin_replace_generated_weekend_schedules"),
+    "Persistence must block direct-upsert Replace callers while retaining the dedicated atomic RPC adapter.");
+  assert(panels.includes('<option value="replace" disabled>'),
+    "The Replace option must remain disabled in the Schedule generation UI before rollout approval.");
+});
