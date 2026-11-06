@@ -210,3 +210,28 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
   assert(globalCss.includes(':root[data-theme="dark"] .daily-location-name'), "Schedule summary dark-mode overrides must remain global.");
   assert(globalCss.includes(':root[data-theme="dark"] .bulk-assignment-center'), "Bulk assignment dark-mode overrides must remain global.");
 });
+
+
+Deno.test("dark recurring-generation guidance has readable semantic contrast", async () => {
+  const globalCss = await readRepoFile("src/style.css");
+  assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note-title'), "The document dark theme must explicitly style the generation guidance title.");
+  assert(globalCss.includes("color: var(--text-primary) !important;"), "The generation guidance title must use the dark theme's primary text token.");
+  assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note p span'), "Generation guidance descriptions must use a dark-theme secondary text rule.");
+});
+
+Deno.test("signup form remains scroll-contained in dark mode and authentication screens omit church marks", async () => {
+  const authCss = await readRepoFile("src/features/auth/components/AuthScreens.css");
+  assert(/\.auth-card form\.auth-registration\s*\{[^}]*overflow-y:\s*auto\s*!important/s.test(authCss), "The registration form must own a vertical scroll region.");
+  assert(/:root\[data-theme="dark"\] \.auth-card form\.auth-registration\s*\{[^}]*overflow-y:\s*auto\s*!important/s.test(authCss), "Dark mode must not override registration scrolling with overflow: visible.");
+  assert(authCss.includes("max-height:min(64dvh, 560px)"), "Small-screen registration scrolling must use the dynamic viewport height.");
+
+  for (const path of [
+    "src/features/auth/components/AuthScreen.tsx",
+    "src/features/auth/components/PasswordRecoveryScreen.tsx",
+    "src/features/auth/components/SupabaseSetupScreen.tsx",
+  ]) {
+    const source = await readRepoFile(path);
+    assert(!source.includes("brand-mark"), path + " must not render the church brand mark.");
+    assert(!source.includes("Church"), path + " must not import or render the church icon.");
+  }
+});

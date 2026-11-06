@@ -1,6 +1,6 @@
 /* Authentication feature styles. Shared controls, typography primitives, and form helpers remain global. */
 
-.auth-page{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(140deg,#f2f4ff,#f7f8fb 55%,#edf1f8)}.auth-card{width:min(420px,100%);background:white;padding:32px;border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 55px #1a254014}.auth-card h1{font-size:26px;margin:0 0 7px}.auth-card>.subtle{line-height:1.6;margin-bottom:23px}.auth-card .brand-mark{margin-bottom:18px}.auth-card .link-btn{display:block;margin:12px auto 0}.setup-card ol{padding-left:20px;font-size:13px;line-height:1.8;color:#475569}.setup-card code{background:#f1f3f8;padding:2px 4px;border-radius:4px;font-size:11px}
+.auth-page{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(140deg,#f2f4ff,#f7f8fb 55%,#edf1f8)}.auth-card{width:min(420px,100%);background:white;padding:32px;border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 55px #1a254014}.auth-card h1{font-size:26px;margin:0 0 7px}.auth-card>.subtle{line-height:1.6;margin-bottom:23px}.auth-card .link-btn{display:block;margin:12px auto 0}.setup-card ol{padding-left:20px;font-size:13px;line-height:1.8;color:#475569}.setup-card code{background:#f1f3f8;padding:2px 4px;border-radius:4px;font-size:11px}
 @media(max-width:430px){.auth-card{padding:25px}}
 
 
@@ -60,7 +60,6 @@
   }
   .auth-card .eyebrow{margin-bottom:10px}}
 @media(max-width:760px){
-  .auth-card .brand-mark{margin-bottom:24px}
   .auth-card .eyebrow{margin-bottom:14px}
   .auth-card h1.welcome-home-script{margin-top:12px;margin-bottom:22px}}
 
@@ -193,3 +192,40 @@
     flex-basis: 100%;
     max-width: 100%;
   }}
+
+/* The registration form is the intentional scroll region on compact screens.
+   Keep this exception more specific than the broad dark-mode .stack overflow reset. */
+.auth-card form.auth-registration{
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:0;
+  max-height:min(68vh, 620px);
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+:root[data-theme="dark"] .auth-card form.auth-registration{
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+}
+@supports (height: 100dvh){
+  .auth-card form.auth-registration{max-height:min(68dvh, 620px)}
+}
+@media(max-width:600px){
+  .auth-page:has(form.auth-registration){
+    place-items:start center;
+    padding-top:max(16px, env(safe-area-inset-top));
+    padding-bottom:max(20px, env(safe-area-inset-bottom));
+  }
+  .auth-card form.auth-registration{max-height:min(64vh, 560px)}
+  :root[data-theme="dark"] .auth-card form.auth-registration{overflow-y:auto !important}
+}
+@supports (height: 100dvh){
+  @media(max-width:600px){
+    .auth-card form.auth-registration{max-height:min(64dvh, 560px)}
+  }
+}

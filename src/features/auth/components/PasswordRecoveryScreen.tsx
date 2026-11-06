@@ -1,4 +1,3 @@
-import { Church } from "lucide-react";
 import type { FormEvent } from "react";
 
 type PasswordRecoveryScreenProps = {
@@ -15,7 +14,6 @@ export default function PasswordRecoveryScreen({
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="brand-mark"><Church size={24} /></div>
         <p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p>
         <h1>Set a new password</h1>
         <p className="subtle">Choose a new password for your account.</p>

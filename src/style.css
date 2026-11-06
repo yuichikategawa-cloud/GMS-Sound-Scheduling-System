@@ -1670,15 +1670,21 @@
 :root[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity,.app-shell[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity{
   background: var(--foh-team-tint, transparent) !important;
 }/* Registration CG day group: keep the legend on its own row and let options wrap naturally. */
-.app-shell[data-theme="dark"] .generate-note-title{
-  color: #f1f3ff !important;
+/* Keep recurring-generation guidance readable in dark mode whether the theme
+   is applied at the document root or directly to the application shell. */
+:root[data-theme="dark"] .generate-panel .generate-note-title,
+.app-shell[data-theme="dark"] .generate-panel .generate-note-title{
+  color: var(--text-primary) !important;
 }
-.app-shell[data-theme="dark"] .generate-note-title svg{
-  color: #aaa2ff !important;
+:root[data-theme="dark"] .generate-panel .generate-note-title svg,
+.app-shell[data-theme="dark"] .generate-panel .generate-note-title svg{
+  color: var(--accent-primary) !important;
 }
-.app-shell[data-theme="dark"] .generate-note p b{
-  color: #f1f5fc !important;
+:root[data-theme="dark"] .generate-panel .generate-note p b,
+.app-shell[data-theme="dark"] .generate-panel .generate-note p b{
+  color: var(--text-primary) !important;
 }
-.app-shell[data-theme="dark"] .generate-note p span{
-  color: #c0cbe0 !important;
+:root[data-theme="dark"] .generate-panel .generate-note p span,
+.app-shell[data-theme="dark"] .generate-panel .generate-note p span{
+  color: var(--text-secondary) !important;
 }
