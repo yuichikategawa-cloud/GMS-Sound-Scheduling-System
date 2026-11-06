@@ -38,6 +38,8 @@ jobs:
           supabase/functions/dispatch-push/security_test.ts
           supabase/functions/_shared/leaseKeeper_test.ts
           supabase/functions/_shared/retryBackoff_test.ts
+      - name: Test shared formatting helpers
+        run: deno test --no-lock tests/shared/formatters_test.ts
       - name: Test authentication registration metadata
         run: deno test --no-lock tests/auth/registration_test.ts
       - name: Test authentication session lifecycle
