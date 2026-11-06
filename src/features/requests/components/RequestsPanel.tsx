@@ -2,9 +2,8 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
-import type { ScheduleView, Servant } from "../../../types";
+import type { ScheduleView, Servant, ServingNotificationRecord } from "../../../types";
 import type { ServingRequestRecord } from "../services/requestData";
-import type { ServingNotificationRecord } from "../../notifications/services/notificationData";
 
 export default function RequestsPanel({
   requests,
