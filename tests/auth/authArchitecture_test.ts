@@ -9,10 +9,12 @@ async function readRepoFile(path: string): Promise<string> {
 }
 
 Deno.test("Authentication form workflows are owned by the Auth feature hook", async () => {
-  const [app, actions, service] = await Promise.all([
+  const [app, actions, service, memberProfileActions, memberProfileService] = await Promise.all([
     readRepoFile("src/App.tsx"),
     readRepoFile("src/features/auth/hooks/useAuthenticationActions.ts"),
     readRepoFile("src/features/auth/services/authentication.ts"),
+    readRepoFile("src/features/auth/hooks/useMemberProfileActions.ts"),
+    readRepoFile("src/features/auth/services/memberProfile.ts"),
   ]);
 
   assert(app.includes('import { useAuthenticationActions } from "./features/auth/hooks/useAuthenticationActions";'),
@@ -44,6 +46,23 @@ Deno.test("Authentication form workflows are owned by the Auth feature hook", as
   assert(!actions.includes("startAuthSessionLifecycle"),
     "Auth form workflow must remain separate from session lifecycle management.");
 
+  assert(app.includes('import { useMemberProfileActions } from "./features/auth/hooks/useMemberProfileActions";') &&
+    app.includes("const memberProfileActions = useMemberProfileActions({"),
+    "App must compose member-profile saving through the Auth feature hook.");
+  assert(app.includes("onSave={memberProfileActions.saveProfile}") &&
+    !app.includes("saveMemberProfile("),
+    "App must pass the Auth-owned profile-save action without retaining persistence orchestration.");
+  assert(memberProfileActions.includes("async function saveProfile(") &&
+    memberProfileActions.includes("saveMemberProfile(client, userId, payload, currentEmail)") &&
+    memberProfileActions.includes("await loadData()"),
+    "The Auth profile hook must own save, feedback, and refresh orchestration.");
+  assert(!/client\\.(?:rpc|from)\\(/.test(memberProfileActions),
+    "The Auth profile action hook must delegate persistence to its service.");
+  assert(memberProfileService.includes('from("member_profiles")') &&
+    memberProfileService.includes('from("profiles")') &&
+    memberProfileService.includes('from("servants")'),
+    "The Auth profile persistence service must retain the existing member/profile/servant synchronization.");
+
   assert(app.includes("startAuthSessionLifecycle(supabase") &&
     app.includes("pushActions.cleanupForSignOut(userId)") &&
     app.includes("supabase.auth.signOut"),
@@ -60,6 +79,8 @@ Deno.test("Authentication form workflows are owned by the Auth feature hook", as
   ]) {
     assert(!actions.includes(forbidden),
       "Auth action hook must not import another feature implementation: " + forbidden);
+    assert(!memberProfileActions.includes(forbidden),
+      "Auth member-profile hook must not import another feature implementation: " + forbidden);
   }
   assert(!actions.includes('/App"') && !actions.includes("/App'"),
     "Auth action hook must not depend on App.");
