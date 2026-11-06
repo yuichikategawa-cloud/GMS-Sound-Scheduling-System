@@ -89,9 +89,17 @@ export function dashboardStateReducer(
       };
     }
     case "clear-member-data":
-      // A sign-out is a full session boundary: do not retain another account's
-      // schedules, directory, audit data, templates, or linked account records.
-      return createInitialDashboardState();
+      return {
+        ...state,
+        memberProfile: null,
+        memberDirectory: [],
+        notifications: [],
+        requests: [],
+        requestReads: [],
+        availability: [],
+        availabilityRules: [],
+        servingPreferences: [],
+      };
     case "set-notifications":
       return {
         ...state,

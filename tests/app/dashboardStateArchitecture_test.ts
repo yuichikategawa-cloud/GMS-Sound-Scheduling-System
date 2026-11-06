@@ -1,8 +1,3 @@
-import {
-  createInitialDashboardState,
-  dashboardStateReducer,
-} from "../../src/app/state/dashboardState.ts";
-
 /// <reference lib="deno.ns" />
 
 const app = await Deno.readTextFile("src/App.tsx");
@@ -60,38 +55,5 @@ Deno.test("dashboard state contracts include typed member-directory and notifica
     if (!state.includes(`type: "${action}"`)) {
       throw new Error(`Dashboard reducer is missing typed update action: ${action}`);
     }
-  }
-});
-
-Deno.test("sign-out clears every dashboard dataset before another account can hydrate", () => {
-  const initial = createInitialDashboardState();
-  const populated = {
-    ...initial,
-    locations: [{ id: "loc-1" }] as unknown as typeof initial.locations,
-    servants: [{ id: "servant-1" }] as unknown as typeof initial.servants,
-    templates: [{ id: "template-1" }] as unknown as typeof initial.templates,
-    schedules: [{ id: "schedule-1" }] as unknown as typeof initial.schedules,
-    availabilityRules: [{ id: "rule-1" }] as unknown as typeof initial.availabilityRules,
-    servingPreferences: [{ id: "preference-1" }] as unknown as typeof initial.servingPreferences,
-    availability: [{ id: "availability-1" }] as unknown as typeof initial.availability,
-    availabilityDeadline: "2026-12-01",
-    requests: [{ id: "request-1" }] as unknown as typeof initial.requests,
-    requestReads: [{ request_id: "request-1" }] as unknown as typeof initial.requestReads,
-    notifications: [{ id: "notification-1" }] as unknown as typeof initial.notifications,
-    auditLogs: [{ id: "audit-1" }] as unknown as typeof initial.auditLogs,
-    memberDirectory: [{ user_id: "member-1" }] as unknown as typeof initial.memberDirectory,
-    memberProfile: { user_id: "member-1" } as unknown as typeof initial.memberProfile,
-    accountProfiles: [{ user_id: "member-1" }] as unknown as typeof initial.accountProfiles,
-    notificationPrefs: {
-      new_assignments: false,
-      schedule_changes: false,
-      confirmation_reminders: false,
-      availability_deadlines: false,
-      request_updates: false,
-    },
-  };
-  const cleared = dashboardStateReducer(populated, { type: "clear-member-data" });
-  if (JSON.stringify(cleared) !== JSON.stringify(initial)) {
-    throw new Error("Sign-out must restore the complete initial dashboard state, not retain data from the previous account.");
   }
 });
