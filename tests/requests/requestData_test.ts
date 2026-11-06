@@ -61,7 +61,7 @@ Deno.test("serving request data preserves both query contracts and their paralle
     requester_servant_id: "servant-1",
     request_type: "replacement" as const,
     details: "Family commitment",
-    status: "pending",
+    status: "pending" as const,
     created_at: "2026-11-01T10:00:00Z",
   }];
   const readRows = [{ request_id: "request-1", user_id: "servant-1" }];
@@ -99,7 +99,7 @@ Deno.test("serving request data keeps read-marker errors independent from reques
     requester_servant_id: "servant-1",
     request_type: "replacement" as const,
     details: "Family commitment",
-    status: "pending",
+    status: "pending" as const,
     created_at: "2026-11-01T10:00:00Z",
   }], error: null };
   const readsError = { code: "42P01", message: "Request read markers are unavailable." };
