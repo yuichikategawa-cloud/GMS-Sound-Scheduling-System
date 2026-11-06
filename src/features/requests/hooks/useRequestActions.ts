@@ -9,7 +9,7 @@ import {
   resolveServingRequestReplacement,
   updateServingRequestReview,
 } from "../services/requestPersistence";
-import { findCrossLocationAssignmentConflict } from "../services/swapValidation";
+import { findCrossLocationAssignmentConflict, isCrossDateSwap } from "../services/swapValidation";
 
 type AskText = (
   title: string,
@@ -109,7 +109,7 @@ export function useRequestActions({
       setMessage("You cannot swap with yourself.");
       return;
     }
-    if (source.id === targetSchedule.id) {
+    if (source.id === targetSchedule.id || !isCrossDateSwap(source.service_date, targetSchedule.service_date)) {
       setMessage("Choose an assignment on a different service date.");
       return;
     }
@@ -176,7 +176,11 @@ export function useRequestActions({
 
   async function reviewRequest(request: ServingRequestRecord, approve: boolean) {
     if (!client || !isAdmin || !sessionUserId) return;
-    if (approve && request.request_type === "swap" && request.target_assignment_id) {
+    if (approve && request.request_type === "swap") {
+      if (!request.target_schedule_id || !request.target_assignment_id || !request.target_servant_id) {
+        setMessage("Swap cannot be approved because its target details are incomplete. Decline or review the request.");
+        return;
+      }
       const source = schedules.find(schedule => schedule.id === request.schedule_id);
       const targetSchedule = schedules.find(schedule => schedule.id === request.target_schedule_id);
       const sourceAssignment = source?.assignments.find(assignment =>
@@ -187,6 +191,15 @@ export function useRequestActions({
       );
       if (!source || !targetSchedule || !sourceAssignment || !targetAssignment) {
         setMessage("Swap cannot be approved because one of the assignments no longer exists.");
+        return;
+      }
+      if (
+        !isCrossDateSwap(source.service_date, targetSchedule.service_date) ||
+        sourceAssignment.servant_id !== request.requester_servant_id ||
+        targetAssignment.servant_id !== request.target_servant_id ||
+        targetAssignment.servant_id === request.requester_servant_id
+      ) {
+        setMessage("Swap cannot be approved because its source or target assignment no longer matches the request.");
         return;
       }
 

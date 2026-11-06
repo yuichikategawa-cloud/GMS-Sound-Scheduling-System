@@ -1,6 +1,6 @@
 /// <reference lib="deno.ns" />
 
-import { findCrossLocationAssignmentConflict } from "../../src/features/requests/services/swapValidation.ts";
+import { findCrossLocationAssignmentConflict, isCrossDateSwap } from "../../src/features/requests/services/swapValidation.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (actual !== expected) {
@@ -61,4 +61,10 @@ Deno.test("swap validation excludes schedules participating in an approved swap"
     ["other-church"],
   );
   assertEqual(conflict, null, "The destination/participating schedule must be excluded from revalidation.");
+});
+
+Deno.test("swap validation requires two distinct service dates", () => {
+  assertEqual(isCrossDateSwap("2026-11-08", "2026-11-15"), true, "A cross-date pair must be allowed.");
+  assertEqual(isCrossDateSwap("2026-11-08", "2026-11-08"), false, "A same-date swap must be rejected.");
+  assertEqual(isCrossDateSwap("", "2026-11-15"), false, "A missing source date must be rejected.");
 });

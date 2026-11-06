@@ -24,3 +24,8 @@ export function findCrossLocationAssignmentConflict(
     schedule.assignments.some(assignment => assignment.servant_id === servantId)
   ) ?? null;
 }
+
+/** A valid swap must exchange assignments across two distinct service dates. */
+export function isCrossDateSwap(sourceDate: string, targetDate: string): boolean {
+  return Boolean(sourceDate && targetDate && sourceDate !== targetDate);
+}

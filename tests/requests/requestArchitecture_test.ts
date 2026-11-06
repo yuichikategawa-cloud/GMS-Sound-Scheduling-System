@@ -33,6 +33,8 @@ Deno.test("Requests workflow orchestration is owned by its feature hook", async 
     assert(actions.includes(operation), "The Requests hook must delegate " + operation + " to the persistence boundary.");
   }
   assert(swapValidation.includes("findCrossLocationAssignmentConflict"), "Swap revalidation must remain in the Requests validation service.");
+  assert(swapValidation.includes("isCrossDateSwap") && actions.includes("Swap cannot be approved because its target details are incomplete"),
+    "Swap approval must reject incomplete targets instead of falling through to a generic request review update.");
 
   const [inbox, inboxStyles] = await Promise.all([
     readRepoFile("src/features/requests/components/ServantInbox.tsx"),
