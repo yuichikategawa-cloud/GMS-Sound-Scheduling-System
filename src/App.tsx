@@ -469,7 +469,7 @@ export default function App() {
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
     if(!supabase||!myServant||!session)return;
     const assignment=schedule.assignments.find(a=>a.servant_id===myServant.id);
-    if(!assignment)return;
+    if(!assignment?.id)return;
     if(status==="declined"){
       const reason=await askText("Decline assignment","Please provide a reason for declining (optional).","Reason (optional)");
       if(reason===null)return;

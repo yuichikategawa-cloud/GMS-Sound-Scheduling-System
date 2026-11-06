@@ -10,6 +10,8 @@ import {
   createScheduleLocation,
   upsertScheduleServiceTemplate,
   archiveScheduleServiceTemplate,
+  updateAssignmentConfirmation,
+  notifyAdminAssignmentConfirmation,
   type SchedulePersistenceClient,
   type SchedulePersistenceResponse,
   type SchedulePersistenceRow,
