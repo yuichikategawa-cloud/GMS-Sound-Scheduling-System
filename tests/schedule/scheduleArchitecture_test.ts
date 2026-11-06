@@ -34,6 +34,6 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
   const app = await Deno.readTextFile(new URL("../../src/App.tsx", import.meta.url));
   assert(app.includes('from "./features/schedule/services/scheduleData"'),
     "App must compose the Schedule-owned dashboard data service.");
-  assert(!/supabase\\.(?:from|rpc)\\s*\\(/.test(app),
+  assert(!app.includes("supabase.from(") && !app.includes("supabase.rpc("),
     "App must not issue direct database reads or RPC calls outside feature-owned services.");
 });
