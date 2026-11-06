@@ -1,5 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useBrowserLifecycle } from "./app/hooks/useBrowserLifecycle";
+import {
+  createInitialDashboardState,
+  dashboardStateReducer,
+  type DashboardState,
+} from "./app/state/dashboardState";
 import { CalendarDays, Church, Users, Search, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { loadDashboardData } from "./app/services/dashboardData";
@@ -56,21 +62,39 @@ export default function App() {
   const [loading,setLoading] = useState(false);
   const [message,setMessage] = useState("");
   const [scheduleError,setScheduleError] = useState("");
-  const [schedules,setSchedules] = useState<ScheduleView[]>([]);
-  const [locations,setLocations] = useState<Location[]>([]);
-  const [servants,setServants] = useState<Servant[]>([]);
-  const [templates,setTemplates] = useState<any[]>([]);
+  const [dashboardState, dispatchDashboardState] = useReducer(
+    dashboardStateReducer,
+    createInitialDashboardState(),
+  );
+  const {
+    schedules,
+    locations,
+    servants,
+    templates,
+    availability,
+    availabilityRules,
+    servingPreferences,
+    requests,
+    requestReads,
+    notifications,
+    notificationPrefs,
+    auditLogs,
+    availabilityDeadline,
+    memberProfile,
+    memberDirectory,
+    accountProfiles,
+  } = dashboardState;
+  const setNotifications: Dispatch<SetStateAction<DashboardState["notifications"]>> =
+    update => dispatchDashboardState({ type: "set-notifications", update });
+  const setNotificationPrefs: Dispatch<SetStateAction<DashboardState["notificationPrefs"]>> =
+    update => dispatchDashboardState({ type: "set-notification-preferences", update });
+  const setRequestReads: Dispatch<SetStateAction<DashboardState["requestReads"]>> =
+    update => dispatchDashboardState({ type: "set-request-reads", update });
+  const setAvailabilityDeadline = (value: string) =>
+    dispatchDashboardState({ type: "set-availability-deadline", value });
+
   const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox"|"requests">("schedule");
-  const [availability,setAvailability] = useState<any[]>([]);
-  const [availabilityRules,setAvailabilityRules] = useState<any[]>([]);
-  const [servingPreferences,setServingPreferences] = useState<any[]>([]);
-  const [requests,setRequests] = useState<any[]>([]);
-  const [requestReads,setRequestReads] = useState<any[]>([]);
-  const [notifications,setNotifications] = useState<any[]>([]);
-  const [notificationPrefs,setNotificationPrefs] = useState<any>({new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true});
   const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
-  const [auditLogs,setAuditLogs] = useState<any[]>([]);
-  const [availabilityDeadline,setAvailabilityDeadline] = useState("");
   const [theme,setTheme] = useState<"light"|"dark">(()=>{
     try { return window.localStorage.getItem("gms-sound-theme")==="dark"?"dark":"light"; }
     catch { return "light"; }
@@ -80,9 +104,6 @@ export default function App() {
   const [authMode,setAuthMode] = useState<AuthMode>("login");
   const [email,setEmail] = useState("");
   const [username,setUsername] = useState("");
-  const [memberProfile,setMemberProfile] = useState<any>(null);
-  const [memberDirectory,setMemberDirectory] = useState<any[]>([]);
-  const [accountProfiles,setAccountProfiles] = useState<any[]>([]);
   const [password,setPassword] = useState("");
   const [recoveryMode,setRecoveryMode] = useState(false);
   const [fullName,setFullName] = useState("");
@@ -174,22 +195,7 @@ export default function App() {
       if (dashboard.optionalErrors.length) {
         console.warn("Some optional GMS dashboard data could not be loaded:", dashboard.optionalErrors);
       }
-      setLocations(dashboard.locations);
-      setServants(dashboard.servants);
-      setTemplates(dashboard.templates);
-      setSchedules(dashboard.schedules);
-      setAvailabilityRules(dashboard.availabilityRules);
-      setServingPreferences(dashboard.servingPreferences);
-      setAvailability(dashboard.availability);
-      setAvailabilityDeadline(dashboard.availabilityDeadline);
-      setRequests(dashboard.requests);
-      setRequestReads(dashboard.requestReads);
-      setNotifications(dashboard.notifications);
-      setAuditLogs(dashboard.auditLogs);
-      setMemberDirectory(dashboard.memberDirectory);
-      setMemberProfile(dashboard.memberProfile);
-      setAccountProfiles(dashboard.accountProfiles);
-      setNotificationPrefs(dashboard.notificationPrefs);
+      dispatchDashboardState({ type: "hydrate", data: dashboard });
     } catch(e) {
       setMessage(errorText(e));
     } finally {
@@ -235,7 +241,9 @@ export default function App() {
         if(projectRef) window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
       }catch{}
     }finally{
-      setProfile(null);setSession(null);setMemberProfile(null);setMemberDirectory([]);setNotifications([]);setRequests([]);setRequestReads([]);setAvailability([]);setAvailabilityRules([]);setServingPreferences([]);
+      setProfile(null);
+      setSession(null);
+      dispatchDashboardState({ type: "clear-member-data" });
     }
   }
   const isAdmin=profile?.role==="admin";

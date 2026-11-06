@@ -1,4 +1,8 @@
 import type { Assignment, Location, Schedule, ScheduleView, Servant } from "../../types";
+import type {
+  ServantDirectoryAccountProfile,
+  ServantDirectoryMember,
+} from "../../features/servants/services/servantDirectory";
 import { mapSchedules } from "../../features/schedule/services/mapSchedules";
 import { loadScheduleWorkspaceData, type ScheduleWorkspaceData } from "../../features/schedule/services/scheduleData";
 import { loadAvailabilityWorkspaceData } from "../../features/availability/services/availabilityData";
@@ -18,6 +22,14 @@ export interface DashboardDataLoaders {
   loadServantDirectoryData: typeof loadServantDirectoryData;
 }
 
+export interface NotificationPreferenceState {
+  new_assignments: boolean;
+  schedule_changes: boolean;
+  confirmation_reminders: boolean;
+  availability_deadlines: boolean;
+  request_updates: boolean;
+}
+
 export interface DashboardData {
   locations: Location[];
   servants: Servant[];
@@ -31,10 +43,10 @@ export interface DashboardData {
   requestReads: any[];
   notifications: any[];
   auditLogs: any[];
-  memberDirectory: any[];
-  memberProfile: any | null;
-  accountProfiles: any[];
-  notificationPrefs: any;
+  memberDirectory: ServantDirectoryMember[];
+  memberProfile: ServantDirectoryMember | null;
+  accountProfiles: ServantDirectoryAccountProfile[];
+  notificationPrefs: NotificationPreferenceState;
   optionalErrors: string[];
 }
 
