@@ -306,12 +306,8 @@
 :root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status,:root[data-theme="dark"] .availability-note,:root[data-theme="dark"] .availability-person small{
   color:#a3aec3!important;
 }
-:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select,:root[data-theme="dark"] .form-grid input,:root[data-theme="dark"] .form-grid select,:root[data-theme="dark"] .modal-card input,:root[data-theme="dark"] .modal-card select,:root[data-theme="dark"] .modal-card textarea,:root[data-theme="dark"] .availability-form input,:root[data-theme="dark"] .availability-form select,:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-copy-controls input,:root[data-theme="dark"] .bulk-matrix select,:root[data-theme="dark"] .new-template-form input,:root[data-theme="dark"] .new-template-form select,:root[data-theme="dark"] .generate-footer input,:root[data-theme="dark"] .generate-footer select{
-  background:#111a2b!important;
-  color:#e8edf7!important;
-  border-color:#3b4862!important;
-}
-:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:#7f8ba4!important}
+
+
 :root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .generate-toggle-hint{
   background:#26324a;
   color:#e0e7f6;
@@ -385,9 +381,9 @@
   color:#e8edf7!important;
 }
 :root[data-theme="dark"] .content input,:root[data-theme="dark"] .content select,:root[data-theme="dark"] .content textarea{
-  background:#111a2b!important;
-  color:#e8edf7!important;
-  border-color:#3b4862!important;
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
 }
 :root[data-theme="dark"] .content input[type="checkbox"],:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}
 :root[data-theme="dark"] .availability-mode-switch button{color:#b9c4d8}
@@ -477,11 +473,11 @@
   color:#d5deed!important;
 }
 :root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select,:root[data-theme="dark"] .form-grid input,:root[data-theme="dark"] .form-grid select,:root[data-theme="dark"] .modal-card input,:root[data-theme="dark"] .modal-card select,:root[data-theme="dark"] .modal-card textarea,:root[data-theme="dark"] .availability-form input,:root[data-theme="dark"] .availability-form select,:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-copy-controls input,:root[data-theme="dark"] .bulk-matrix select,:root[data-theme="dark"] .new-template-form input,:root[data-theme="dark"] .new-template-form select,:root[data-theme="dark"] .generate-footer input,:root[data-theme="dark"] .generate-footer select,:root[data-theme="dark"] .serving-preference-form input:not([type=checkbox]),:root[data-theme="dark"] .serving-preference-form select{
-  background:#111c2e!important;
-  color:#f0f4fb!important;
-  border-color:#465773!important;
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
 }
-:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:#9eacc3!important;opacity:1}
+:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:var(--text-secondary)!important;opacity:1}
 :root[data-theme="dark"] .preference-weekday-picker label,:root[data-theme="dark"] .preference-service-picker label{
   background:#26354d!important;border-color:#43536d!important;color:#e0e7f2!important;
 }
@@ -512,7 +508,7 @@
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row,:root[data-theme="dark"] .saved-rule-row{border-color:#3b4b65!important}
 :root[data-theme="dark"] .action-dialog{background:#1b263a!important;border-color:#40516d!important;color:#eef3fb!important}
-:root[data-theme="dark"] .action-dialog-input{background:#111c2e!important;border-color:#465773!important;color:#eef3fb!important}
+:root[data-theme="dark"] .action-dialog-input{background:var(--surface-control)!important;border-color:var(--border-strong)!important;color:var(--text-primary)!important}
 :root[data-theme="dark"] .mobile-bottom-nav{background:rgba(24,35,55,.98)!important;border-color:#394963!important}
 :root[data-theme="dark"] .mobile-nav-item{color:#bac7dc!important}
 :root[data-theme="dark"] .mobile-nav-item.active{background:#3b3970!important;color:#e5e1ff!important}

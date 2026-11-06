@@ -7,7 +7,7 @@
 .auth-registration{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:7px 9px 12px}
 .auth-registration label{font-size:13px;gap:7px}
 .auth-registration input:not([type=checkbox]),.auth-registration select,.auth-registration textarea{box-sizing:border-box;width:100%;max-width:100%;min-width:0;border:1px solid var(--border-strong);border-radius:9px;padding:12px 13px;background:var(--surface-control);color:var(--text-primary);font:inherit;font-size:14px}
-.auth-registration input:focus,.auth-registration select:focus,.auth-registration textarea:focus{outline:3px solid #e0e7ff;border-color:#6366f1}
+
 @media(max-width:600px){.auth-card{max-width:100%;padding:22px}}
 
 
@@ -87,12 +87,7 @@
   min-width: 0;
   border-radius: 9px;
 }
-:root[data-theme="dark"] .auth-card .stack input:focus,:root[data-theme="dark"] .auth-card .stack input:focus-visible{
-  outline: 2px solid #a9a2ff !important;
-  outline-offset: 3px !important;
-  border-color: #a9a2ff !important;
-  box-shadow: 0 0 0 1px rgba(169,162,255,.18) !important;
-}
+
 
 .auth-card{
   overflow: visible !important;
@@ -114,32 +109,16 @@
   background: #ffffff;
   color: #1f2937;
 }
-.auth-card .stack input:focus-visible{
-  outline: 2px solid #746bf0;
-  outline-offset: 2px;
-  border-color: #746bf0;
-  box-shadow: 0 0 0 3px rgba(116,107,240,.16);
-}
+
 :root[data-theme="dark"] .auth-card .stack input{
-  background: #111c2e !important;
-  color: #f3f6fc !important;
-  border-color: #50617d !important;
-}
-:root[data-theme="dark"] .auth-card .stack input:focus-visible{
-  outline-color: #a69cff;
-  border-color: #a69cff !important;
-  box-shadow: 0 0 0 3px rgba(166,156,255,.18);
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
 }
 
-.auth-card .stack input:focus,.auth-card .stack input:focus-visible{
-  outline: none !important;
-  border-color: #6558ed !important;
-  box-shadow: inset 0 0 0 1px #6558ed, 0 0 0 2px rgba(101,88,237,.13) !important;
-}
-:root[data-theme="dark"] .auth-card .stack input:focus,:root[data-theme="dark"] .auth-card .stack input:focus-visible{
-  border-color: #aa9fff !important;
-  box-shadow: inset 0 0 0 1px #aa9fff, 0 0 0 2px rgba(170,159,255,.17) !important;
-}
+
+
+
 
 
 /* Keep the CG-day legend and all weekday choices inside the fieldset.
@@ -255,4 +234,26 @@
 .auth-card form.auth-registration textarea::placeholder{
   color:var(--text-secondary);
   opacity:1;
+}
+
+
+/* On phones, 16px prevents iOS Safari from zooming the page when a field is focused.
+   An inset focus ring stays visible without expanding beyond the auth card edges. */
+.auth-card form input:not([type=checkbox]):focus,
+.auth-card form input:not([type=checkbox]):focus-visible,
+.auth-card form select:focus,
+.auth-card form select:focus-visible,
+.auth-card form textarea:focus,
+.auth-card form textarea:focus-visible{
+  outline:none!important;
+  outline-offset:0!important;
+  border-color:var(--focus-border)!important;
+  box-shadow:inset 0 0 0 2px var(--focus-border)!important;
+}
+@media(max-width:600px){
+  .auth-card form input:not([type=checkbox]),
+  .auth-card form select,
+  .auth-card form textarea{
+    font-size:16px!important;
+  }
 }

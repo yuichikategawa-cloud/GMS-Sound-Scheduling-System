@@ -335,4 +335,27 @@ Deno.test("signup card and every registration control stay within the mobile vie
   assert(tokensCss.includes("--surface-control: #ffffff;"), "The light theme must define a control surface token.");
   assert(tokensCss.includes("--surface-control: #111c2e;"), "The dark theme must define a control surface token.");
   assert(authCss.includes("background:var(--surface-control) !important;"), "Dark signup selects and textareas must use the dark control surface.");
+  assert(authCss.includes("font-size:16px!important;"), "Mobile auth controls must avoid iOS automatic page zoom.");
+  assert(authCss.includes("box-shadow:inset 0 0 0 2px var(--focus-border)!important;"), "Auth focus rings must remain inside their fields.");
+  assert(!authCss.includes("outline-offset: 3px !important;"), "The superseded outer focus ring must be removed.");
+});
+
+
+Deno.test("global dark controls use one shared theme surface across generic and content forms", async () => {
+  const globalCss = await readRepoFile("src/style.css");
+  assert(!globalCss.includes("background:#111a2b!important;"), "The superseded dark control surface must be removed.");
+  assert(!globalCss.includes("background:#111c2e!important;"), "The final dark control surface must use semantic tokens.");
+  assert(globalCss.includes("background:var(--surface-control)!important;"), "Generic dark controls must use the active control-surface token.");
+  assert(globalCss.includes("color:var(--text-primary)!important;"), "Dark content controls must use the active primary text token.");
+  assert(globalCss.includes("border-color:var(--border-strong)!important;"), "Dark controls must use the shared border token.");
+  assertBalancedCss(globalCss, "src/style.css");
+});
+
+Deno.test("Servant Information has no dead inline link panel or competing dark record overrides", async () => {
+  const styles = await readRepoFile("src/features/servants/components/ServantInformationPanel.css");
+  assert(!styles.includes(".servant-link-panel"), "The old inline account-link panel styles must be removed.");
+  assert(!styles.includes("#1b2437"), "The superseded Servant Information card color must be removed.");
+  assert(styles.includes("background:var(--accent-soft);color:var(--accent-hover)"), "The avatar must use the shared accent palette in both themes.");
+  assert(styles.split(':root[data-theme="dark"] .servant-record-detail{').length - 1 === 1, "Dark servant detail styling must be consolidated.");
+  assertBalancedCss(styles, "ServantInformationPanel.css");
 });
