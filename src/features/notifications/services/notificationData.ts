@@ -1,18 +1,12 @@
+import type { ServingNotificationRecord } from "../../../types";
+export type { ServingNotificationRecord } from "../../../types";
+
 export interface NotificationPreferenceState {
   new_assignments: boolean;
   schedule_changes: boolean;
   confirmation_reminders: boolean;
   availability_deadlines: boolean;
   request_updates: boolean;
-}
-
-export interface ServingNotificationRecord {
-  id: string;
-  recipient_user_id: string;
-  title: string;
-  body: string;
-  created_at: string;
-  is_read: boolean;
 }
 
 export interface NotificationPreferencesRow extends NotificationPreferenceState {
