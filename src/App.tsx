@@ -300,7 +300,8 @@ export default function App() {
   const scheduleExportActions = useScheduleExportActions({
     client: supabase,
     isAdmin,
-    filteredSchedules: scheduleWorkspace.filtered
+    filteredSchedules: scheduleWorkspace.filtered,
+    setMessage
   });
   const requestActions = useRequestActions({
     client: supabase,

@@ -49,7 +49,7 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
   assert(app.includes("onExportCsv={scheduleExportActions.exportCsv}") &&
     app.includes("onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}"),
     "ScheduleWorkspace must receive both exports through the feature hook.");
-  assert(!/client\\.(?:rpc|from)\\(/.test(exportHook),
+  assert(!/client\.(?:rpc|from)\(/.test(exportHook),
     "Schedule export orchestration must delegate historical data access to Schedule services.");
   assert(exportHook.includes("isAdmin") && exportHook.includes("prepareHistoricalScheduleCsv") &&
     exportHook.includes("downloadCsv") && exportHook.includes("setMessage(error.message)"),
