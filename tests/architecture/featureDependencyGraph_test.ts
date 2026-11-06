@@ -85,3 +85,72 @@ Deno.test("feature and shared modules do not depend on other feature implementat
       violations.join("\n"),
   );
 });
+
+function resolveKnownModule(
+  sourcePath: string,
+  specifier: string,
+  knownFiles: ReadonlySet<string>,
+): string | null {
+  const base = resolveRelativeImport(sourcePath, specifier);
+  if (!base) return null;
+  const candidates = /\\.(?:[cm]?tsx?|jsx?)$/.test(base)
+    ? [base]
+    : [
+      base + ".ts",
+      base + ".tsx",
+      base + ".js",
+      base + ".jsx",
+      base + "/index.ts",
+      base + "/index.tsx",
+      base + "/index.js",
+      base + "/index.jsx",
+    ];
+  return candidates.find(candidate => knownFiles.has(candidate)) ?? null;
+}
+
+Deno.test("app, feature, and shared module imports are acyclic", async () => {
+  const moduleFiles = [
+    ...await collectTypeScriptFiles("src/app"),
+    ...await collectTypeScriptFiles("src/features"),
+    ...await collectTypeScriptFiles("src/shared"),
+  ];
+  const knownFiles = new Set(moduleFiles);
+  const graph = new Map<string, string[]>();
+
+  for (const sourcePath of moduleFiles) {
+    const source = await Deno.readTextFile(sourcePath);
+    const targets = importedSpecifiers(source)
+      .map(specifier => resolveKnownModule(sourcePath, specifier, knownFiles))
+      .filter((target): target is string => target !== null);
+    graph.set(sourcePath, targets);
+  }
+
+  const visited = new Set<string>();
+  const visiting = new Set<string>();
+  const stack: string[] = [];
+  const cycles: string[] = [];
+
+  function visit(modulePath: string): void {
+    if (visiting.has(modulePath)) {
+      const cycleStart = stack.indexOf(modulePath);
+      cycles.push([...stack.slice(cycleStart), modulePath].join(" -> "));
+      return;
+    }
+    if (visited.has(modulePath)) return;
+
+    visiting.add(modulePath);
+    stack.push(modulePath);
+    for (const dependency of graph.get(modulePath) ?? []) visit(dependency);
+    stack.pop();
+    visiting.delete(modulePath);
+    visited.add(modulePath);
+  }
+
+  for (const modulePath of moduleFiles) visit(modulePath);
+
+  assert(
+    cycles.length === 0,
+    "Application, feature, and shared modules must not contain circular import chains:\\n" +
+      [...new Set(cycles)].join("\\n"),
+  );
+});
