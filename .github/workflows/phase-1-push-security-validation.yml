@@ -96,6 +96,8 @@ jobs:
         run: deno test --no-lock tests/statistics/servingStatistics_test.ts
       - name: Test audit data loading and export
         run: deno test --no-lock tests/audit/auditData_test.ts
+      - name: Test Audit workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/audit/auditArchitecture_test.ts
       - name: Test stylesheet ownership and decomposition
         run: deno test --no-lock --allow-read=src,tests tests/styles/styleOwnership_test.ts
       - name: Type-check push dispatcher

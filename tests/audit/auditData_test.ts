@@ -3,6 +3,7 @@
 import {
   buildAuditCsv,
   loadHistoricalAuditLogs,
+  prepareHistoricalAuditExport,
   loadRecentAuditLogs,
   type AuditDataClient,
   type AuditQueryResponse,
@@ -191,4 +192,44 @@ Deno.test("audit CSV emits only its header when the supplied export is empty", (
     "created_at,actor_id,action,table_name,record_id,old_data,new_data",
     "Empty CSV output must retain the stable header row.",
   );
+});
+
+
+Deno.test("historical audit export preparation returns a CSV and record count for available rows", async () => {
+  const rows = [{
+    created_at: "2026-11-01T10:00:00.000Z",
+    actor_id: "user-1",
+    action: "UPDATE",
+    table_name: "schedules",
+    record_id: "schedule-1",
+    old_data: null,
+    new_data: { status: "published" },
+  }];
+  const { client, calls } = createHistoricalClient([{ data: rows, error: null }]);
+
+  const result = await prepareHistoricalAuditExport(client, "2026-10-22T00:00:00.000Z");
+
+  assertEqual(calls.length, 1, "Export preparation must use the existing historical query and pagination.");
+  assertEqual(result, {
+    kind: "ready",
+    csv: buildAuditCsv(rows),
+    recordCount: 1,
+  }, "Prepared export must include the existing CSV representation and exact record count.");
+});
+
+Deno.test("historical audit export preparation distinguishes empty history", async () => {
+  const { client } = createHistoricalClient([{ data: [], error: null }]);
+
+  const result = await prepareHistoricalAuditExport(client, "2026-10-22T00:00:00.000Z");
+
+  assertEqual(result, { kind: "empty" }, "An empty historical query must be reported as an empty export.");
+});
+
+Deno.test("historical audit export preparation preserves database errors", async () => {
+  const error = { code: "42501", message: "Audit history access denied." };
+  const { client } = createHistoricalClient([{ data: null, error }]);
+
+  const result = await prepareHistoricalAuditExport(client, "2026-10-22T00:00:00.000Z");
+
+  assertEqual(result, { kind: "error", error }, "Export preparation must return the original database error.");
 });

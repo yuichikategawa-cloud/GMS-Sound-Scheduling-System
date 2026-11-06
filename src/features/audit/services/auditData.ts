@@ -80,3 +80,28 @@ export function buildAuditCsv(data: any[]): string {
     ...data.map((row: any) => columns.map(column => cell(row[column])).join(",")),
   ].join("\r\n");
 }
+
+
+export type HistoricalAuditExportPreparation =
+  | { kind: "error"; error: { message: string } }
+  | { kind: "empty" }
+  | { kind: "ready"; csv: string; recordCount: number };
+
+/**
+ * Prepares a complete historical export while preserving the existing query,
+ * pagination, CSV format, and explicit empty/error outcomes.
+ */
+export async function prepareHistoricalAuditExport(
+  client: AuditDataClient,
+  cutoff: string,
+): Promise<HistoricalAuditExportPreparation> {
+  const { data, error } = await loadHistoricalAuditLogs(client, cutoff);
+  if (error) return { kind: "error", error };
+  if (!data || data.length === 0) return { kind: "empty" };
+
+  return {
+    kind: "ready",
+    csv: buildAuditCsv(data),
+    recordCount: data.length,
+  };
+}
