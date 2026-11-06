@@ -18,6 +18,7 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
+import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
 import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
 import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
@@ -472,7 +473,7 @@ export default function App() {
     if(status==="declined"){
       const reason=await askText("Decline assignment","Please provide a reason for declining (optional).","Reason (optional)");
       if(reason===null)return;
-      const {error}=await supabase.from("assignments").update({confirmation_status:"declined"}).eq("id",assignment.id);
+      const {error}=await updateAssignmentConfirmation(supabase,assignment.id,"declined");
       if(error){setMessage(error.message);return;}
       const existing=requests.find(r=>r.assignment_id===assignment.id&&r.request_type==="replacement"&&r.status==="pending");
       if(!existing){
@@ -481,9 +482,9 @@ export default function App() {
       }
       setMessage("Assignment declined. A replacement request has been sent to the administrator.");await loadData();return;
     }
-    const {error}=await supabase.from("assignments").update({confirmation_status:"confirmed"}).eq("id",assignment.id);
+    const {error}=await updateAssignmentConfirmation(supabase,assignment.id,"confirmed");
     if(error){setMessage(error.message);return;}
-    const {error:notifyError}=await supabase.rpc("notify_admin_assignment_confirmation",{p_assignment_id:assignment.id});
+    const {error:notifyError}=await notifyAdminAssignmentConfirmation(supabase,assignment.id);
     if(notifyError)console.warn("Confirmation saved but admin notification failed:",notifyError.message);
     setMessage("Serving assignment confirmed. The administrator has been notified.");await loadData();
   }

@@ -262,3 +262,75 @@ Deno.test("schedule location and service-template writes preserve existing table
     { table: "service_templates", method: "update", values: { active: false }, column: "id", value: "template-3" },
   ], "Location and template operations must preserve existing table payloads and filters.");
 });
+
+
+Deno.test("assignment confirmation persistence updates only the selected assignment status", async () => {
+  const calls: unknown[] = [];
+  const client = {
+    from(tableName: string) {
+      calls.push({ from: tableName });
+      return {
+        update(values: unknown) {
+          calls.push({ update: values });
+          return {
+            eq(column: string, value: string) {
+              calls.push({ eq: { column, value } });
+              return Promise.resolve({ error: null });
+            },
+          };
+        },
+      };
+    },
+    rpc() {
+      throw new Error("Confirmation update must not send the notification RPC.");
+    },
+  };
+  await updateAssignmentConfirmation(client as any, "assignment-42", "declined");
+  assertEqual(calls, [
+    { from: "assignments" },
+    { update: { confirmation_status: "declined" } },
+    { eq: { column: "id", value: "assignment-42" } },
+  ], "Confirmation persistence must preserve the existing table, status field, and ID filter.");
+});
+
+Deno.test("assignment confirmation notification preserves the existing admin RPC contract", async () => {
+  const calls: unknown[] = [];
+  const client = {
+    from() {
+      throw new Error("Notification must not update assignments.");
+    },
+    rpc(name: string, args: unknown) {
+      calls.push({ name, args });
+      return Promise.resolve({ error: null });
+    },
+  };
+  await notifyAdminAssignmentConfirmation(client as any, "assignment-43");
+  assertEqual(calls, [{
+    name: "notify_admin_assignment_confirmation",
+    args: { p_assignment_id: "assignment-43" },
+  }], "The notification must use the existing RPC and assignment ID argument.");
+});
+
+Deno.test("assignment confirmation persistence returns database errors unchanged", async () => {
+  const databaseError = { code: "42501", message: "Confirmation update rejected." };
+  const client = {
+    from() {
+      return {
+        update() {
+          return {
+            eq() {
+              return Promise.resolve({ error: databaseError });
+            },
+          };
+        },
+      };
+    },
+    rpc() {
+      return Promise.resolve({ error: databaseError });
+    },
+  };
+  const update = await updateAssignmentConfirmation(client as any, "assignment-44", "confirmed");
+  const notification = await notifyAdminAssignmentConfirmation(client as any, "assignment-44");
+  assertSame(update.error, databaseError, "Assignment update errors must pass through unchanged.");
+  assertSame(notification.error, databaseError, "Notification RPC errors must pass through unchanged.");
+});

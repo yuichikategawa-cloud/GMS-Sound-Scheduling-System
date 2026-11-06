@@ -213,3 +213,35 @@ export function archiveScheduleServiceTemplate(
 ): PromiseLike<SchedulePersistenceResponse> {
   return client.from("service_templates").update({ active: false }).eq("id", templateId);
 }
+
+
+export type AssignmentConfirmationStatus = "confirmed" | "declined";
+
+export type AssignmentConfirmationClient = {
+  from(tableName: "assignments"): {
+    update(values: { confirmation_status: AssignmentConfirmationStatus }): {
+      eq(column: "id", value: string): PromiseLike<SchedulePersistenceResponse>;
+    };
+  };
+  rpc(
+    functionName: "notify_admin_assignment_confirmation",
+    args: { p_assignment_id: string },
+  ): PromiseLike<SchedulePersistenceResponse>;
+};
+
+/** Updates one servant's confirmation state without changing the existing row contract. */
+export function updateAssignmentConfirmation(
+  client: AssignmentConfirmationClient,
+  assignmentId: string,
+  status: AssignmentConfirmationStatus,
+): PromiseLike<SchedulePersistenceResponse> {
+  return client.from("assignments").update({ confirmation_status: status }).eq("id", assignmentId);
+}
+
+/** Sends the existing administrator notification after a confirmation is saved. */
+export function notifyAdminAssignmentConfirmation(
+  client: AssignmentConfirmationClient,
+  assignmentId: string,
+): PromiseLike<SchedulePersistenceResponse> {
+  return client.rpc("notify_admin_assignment_confirmation", { p_assignment_id: assignmentId });
+}
