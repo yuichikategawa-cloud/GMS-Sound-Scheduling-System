@@ -1,5 +1,9 @@
 /// <reference lib="deno.ns" />
 
+function assertCount(actual: number, expected: number, message: string): void {
+  if (actual !== expected) throw new Error(message);
+}
+
 import {
   registerConnectionStatusLifecycle,
   registerForegroundRefreshLifecycle,
@@ -75,7 +79,7 @@ Deno.test("foreground refresh requires visible online state and preserves the 5-
   documentTarget.dispatchEvent(new Event("visibilitychange"));
   currentTime = 9000;
   windowTarget.dispatchEvent(new Event("pageshow"));
-  if (refreshCount !== 1) throw new Error("Refreshes within 5 seconds should be throttled.");
+  assertCount(refreshCount, 1, "Refreshes within 5 seconds should be throttled.");
 
   currentTime = 11000;
   windowTarget.dispatchEvent(new Event("pageshow"));
@@ -87,10 +91,10 @@ Deno.test("foreground refresh requires visible online state and preserves the 5-
   currentTime = 23000;
   windowTarget.dispatchEvent(new Event("pageshow"));
 
-  if (refreshCount !== 2) throw new Error("Hidden or offline pages must not refresh dashboard data.");
+  assertCount(refreshCount, 2, "Hidden or offline pages must not refresh dashboard data.");
   cleanup();
   online = true;
   currentTime = 30000;
   windowTarget.dispatchEvent(new Event("pageshow"));
-  if (refreshCount !== 2) throw new Error("Foreground listeners should be removed during cleanup.");
+  assertCount(refreshCount, 2, "Foreground listeners should be removed during cleanup.");
 });
