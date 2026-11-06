@@ -44,6 +44,8 @@ jobs:
         run: deno test --no-lock tests/auth/sessionLifecycle_test.ts
       - name: Test App dashboard data composition
         run: deno test --no-lock tests/app/dashboardData_test.ts
+      - name: Test App dashboard loading lifecycle
+        run: deno test --no-lock tests/app/dashboardLoadController_test.ts
       - name: Test App dashboard state reducer
         run: deno test --no-lock tests/app/dashboardState_test.ts
       - name: Test App dashboard state architecture boundaries

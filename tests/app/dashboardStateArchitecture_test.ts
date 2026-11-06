@@ -3,10 +3,22 @@
 const app = await Deno.readTextFile("src/App.tsx");
 const state = await Deno.readTextFile("src/app/state/dashboardState.ts");
 const dashboardData = await Deno.readTextFile("src/app/services/dashboardData.ts");
+const dashboardLoaderHook = await Deno.readTextFile("src/app/hooks/useDashboardLoader.ts");
+const dashboardLoadController = await Deno.readTextFile("src/app/services/dashboardLoadController.ts");
 
 Deno.test("App hydrates dashboard state through one application boundary", () => {
-  if (!app.includes("dashboardStateReducer") || !app.includes('type: "hydrate", data: dashboard')) {
-    throw new Error("App must use the dashboard state reducer for dashboard hydration.");
+  if (!app.includes("dashboardStateReducer") || !app.includes("useDashboardLoader({")) {
+    throw new Error("App must compose the dashboard reducer and dedicated loading hook.");
+  }
+  if (app.includes("loadDashboardData(") || app.includes("setLoading(true); setMessage("")")) {
+    throw new Error("App must not own dashboard loading orchestration directly.");
+  }
+  if (!dashboardLoaderHook.includes("createDashboardLoadController") ||
+    !dashboardLoadController.includes('type: "hydrate"')) {
+    throw new Error("Dashboard loading and hydration must remain inside the app loading boundary.");
+  }
+  if (!app.includes("invalidateDashboardLoad()")) {
+    throw new Error("Sign-out must invalidate pending dashboard reads immediately.");
   }
   for (const setter of [
     "setLocations(dashboard.locations)",

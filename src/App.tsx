@@ -8,7 +8,7 @@ import {
 } from "./app/state/dashboardState";
 import { CalendarDays, Church, Users, Search, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
-import { loadDashboardData } from "./app/services/dashboardData";
+import { useDashboardLoader } from "./app/hooks/useDashboardLoader";
 import type { Location, Profile, ScheduleView, Servant } from "./types";
 import { fmtDate, errorText } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
@@ -114,6 +114,14 @@ export default function App() {
   const actionDialogResolver = useRef<((accepted:boolean)=>void)|null>(null);
   const actionTextResolver = useRef<((value:string|null)=>void)|null>(null);
 
+  const { loadData, invalidateDashboardLoad } = useDashboardLoader({
+    client: supabase,
+    userId: session?.user?.id,
+    dispatchDashboardState,
+    setLoading,
+    setMessage,
+  });
+
   const { installPrompt, pwaInstalled, isOnline, clearInstallPrompt } = useBrowserLifecycle({
     profileId: profile?.id,
     userId: session?.user?.id,
@@ -187,21 +195,6 @@ export default function App() {
     setRecoveryMode
   });
 
-  async function loadData() {
-    if (!supabase) return;
-    setLoading(true); setMessage("");
-    try {
-      const dashboard = await loadDashboardData(supabase, session?.user?.id ?? "");
-      if (dashboard.optionalErrors.length) {
-        console.warn("Some optional GMS dashboard data could not be loaded:", dashboard.optionalErrors);
-      }
-      dispatchDashboardState({ type: "hydrate", data: dashboard });
-    } catch(e) {
-      setMessage(errorText(e));
-    } finally {
-      setLoading(false);
-    }
-  }
   useEffect(()=>{if(profile) void loadData();},[profile]);
 
   async function installGmsApp(){
@@ -214,6 +207,7 @@ export default function App() {
 
   async function signOut(){
     const userId=session?.user?.id;
+    invalidateDashboardLoad();
     const pushCleanup = pushActions.cleanupForSignOut(userId);
     setTab("schedule");setMobileNav(false);
     await pushCleanup;
