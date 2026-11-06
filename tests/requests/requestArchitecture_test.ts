@@ -9,11 +9,12 @@ async function readRepoFile(path: string): Promise<string> {
 }
 
 Deno.test("Requests workflow orchestration is owned by its feature hook", async () => {
-  const [app, actions, persistence, swapValidation] = await Promise.all([
+  const [app, actions, persistence, swapValidation, panel] = await Promise.all([
     readRepoFile("src/App.tsx"),
     readRepoFile("src/features/requests/hooks/useRequestActions.ts"),
     readRepoFile("src/features/requests/services/requestPersistence.ts"),
     readRepoFile("src/features/requests/services/swapValidation.ts"),
+    readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
   ]);
 
   assert(app.includes('import { useRequestActions } from "./features/requests/hooks/useRequestActions";'),
@@ -32,6 +33,14 @@ Deno.test("Requests workflow orchestration is owned by its feature hook", async 
     assert(actions.includes(operation), "The Requests hook must delegate " + operation + " to the persistence boundary.");
   }
   assert(swapValidation.includes("findCrossLocationAssignmentConflict"), "Swap revalidation must remain in the Requests validation service.");
+
+  assert(panel.includes("onReview(request, true)") && panel.includes("Approve swap"),
+    "Administrators must be able to approve valid swap requests from the Requests panel.");
+  assert(panel.includes("target_schedule_id") && panel.includes("target_assignment_id") &&
+    panel.includes("target_servant_id") && panel.includes("Proposed swap target"),
+    "The Requests panel must show the proposed target service and assignment before approval.");
+  assert(panel.includes("disabled={!targetIsReviewable}"),
+    "Swap approval must be disabled when the source or target assignment is no longer reviewable.");
   assert(persistence.includes('from("serving_requests")') && persistence.includes("admin_execute_servant_swap") && persistence.includes("admin_resolve_replacement"),
     "Request inserts, review writes, and guarded admin RPCs must remain in the Requests persistence service.");
 

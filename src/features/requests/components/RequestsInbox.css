@@ -25,6 +25,24 @@ font-size:13px
 font-size:11px;color:#64748b;overflow-wrap:anywhere
 }
 
+
+.request-target {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.request-target b {
+  font-size: 11px;
+}
+.request-target small {
+  font-size: 11px;
+  color: #64748b;
+}
+
 .request-actions
 {
 display:flex;gap:6px;flex:none
@@ -400,4 +418,6 @@ gap:13px
   border-top-color:#394862!important;
 }
 :root[data-theme="dark"] .request-main b{color:#f1f5fb!important}
+:root[data-theme="dark"] .request-target{background:#182437!important;border-color:#3b4b65!important}
+:root[data-theme="dark"] .request-target small{color:#b8c5d8!important}
 :root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}
