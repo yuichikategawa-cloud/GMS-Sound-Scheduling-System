@@ -1,10 +1,19 @@
+export type AvailabilityStatus = "available" | "unavailable" | "prefer_not";
+export type RecurringAvailabilityPattern =
+  | "weekday"
+  | "saturday"
+  | "sunday"
+  | "second_week"
+  | "nth_weekday"
+  | "month_edges";
+
 export interface RecurringAvailabilityRule {
   id?: string;
   servant_id: string;
   effective_from: string;
   effective_until?: string | null;
-  pattern: string;
-  status: string;
+  pattern: RecurringAvailabilityPattern;
+  status: AvailabilityStatus;
   notes?: string | null;
   weekday?: string | number | null;
   ordinal?: string | number | null;
@@ -14,7 +23,7 @@ export interface AvailabilityRecord {
   id?: string;
   servant_id: string;
   service_date: string;
-  status: string;
+  status: AvailabilityStatus;
   notes?: string | null;
   is_recurring?: boolean;
   rule_id?: string;

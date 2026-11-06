@@ -1,28 +1,29 @@
+import type { NotificationPreferenceState } from "./notificationData";
+
 export interface NotificationPersistenceResponse {
   error: { message: string } | null;
 }
 
-export interface NotificationPreferencesPayload {
+export interface NotificationPreferencesPayload extends NotificationPreferenceState {
   user_id: string;
-  new_assignments: boolean;
-  schedule_changes: boolean;
-  confirmation_reminders: boolean;
-  availability_deadlines: boolean;
-  request_updates: boolean;
   updated_at: string;
 }
 
-export interface NotificationPreferenceValues {
-  new_assignments?: unknown;
-  schedule_changes?: unknown;
-  confirmation_reminders?: unknown;
-  availability_deadlines?: unknown;
-  request_updates?: unknown;
-}
+export type NotificationPreferenceValues = Partial<NotificationPreferenceState>;
 
-/** Structural boundary keeps Supabase's generated query-builder generics out of App. */
+/** Structural contract for the two notification write operations. */
 export interface NotificationPersistenceClient {
-  from(tableName: string): any;
+  from(tableName: "serving_notification_preferences"): {
+    upsert(
+      values: NotificationPreferencesPayload,
+      options: { onConflict: "user_id" },
+    ): PromiseLike<NotificationPersistenceResponse>;
+  };
+  from(tableName: "serving_notifications"): {
+    update(values: { is_read: true }): {
+      eq(column: "id", value: string): PromiseLike<NotificationPersistenceResponse>;
+    };
+  };
 }
 
 /** Saves the existing five-field preference row with the current user's key. */

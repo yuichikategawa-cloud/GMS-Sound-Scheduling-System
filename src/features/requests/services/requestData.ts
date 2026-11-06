@@ -1,11 +1,14 @@
+export type ServingRequestType = "replacement" | "swap";
+export type ServingRequestStatus = "pending" | "approved" | "declined" | "rejected";
+
 export interface ServingRequestRecord {
   id: string;
   schedule_id: string;
   assignment_id?: string | null;
   requester_servant_id: string;
-  request_type: "replacement" | "swap";
+  request_type: ServingRequestType;
   details?: string | null;
-  status: string;
+  status: ServingRequestStatus;
   created_at: string;
   reviewed_at?: string | null;
   reviewed_by?: string | null;

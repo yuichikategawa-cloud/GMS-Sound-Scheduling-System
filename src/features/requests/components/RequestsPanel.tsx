@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView, Servant } from "../../../types";
+import type { ServingRequestRecord } from "../services/requestData";
+import type { ServingNotificationRecord } from "../../notifications/services/notificationData";
 
-export default function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,notificationSettings}:{requests:any[];schedules:ScheduleView[];servants:Servant[];onReview:(request:any,approve:boolean)=>void;onResolve:(request:any,replacementServantId:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;notificationSettings:ReactNode}){
+export default function RequestsPanel({requests,schedules,servants,onReview,onResolve,notifications,onNotificationRead,notificationSettings}:{requests:ServingRequestRecord[];schedules:ScheduleView[];servants:Servant[];onReview:(request:ServingRequestRecord,approve:boolean)=>void;onResolve:(request:ServingRequestRecord,replacementServantId:string)=>void;notifications:ServingNotificationRecord[];onNotificationRead:(id:string)=>void;notificationSettings:ReactNode}){
  const pending=requests.filter(r=>r.status==="pending");
  const [replacementChoice,setReplacementChoice]=useState<Record<string,string>>({});
  return <section className="requests-panel">

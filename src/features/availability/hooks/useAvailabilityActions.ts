@@ -12,16 +12,27 @@ import {
   upsertAvailabilityRecord,
   upsertAvailabilityRecords,
 } from "../services/availabilityPersistence";
-import { validateRecurringAvailabilityRule } from "../services/recurringAvailability";
+import {
+  validateRecurringAvailabilityRule,
+  type AvailabilityRecord,
+  type AvailabilityStatus,
+  type RecurringAvailabilityRule,
+} from "../services/recurringAvailability";
+import type {
+  AvailabilityRulePayload,
+  AvailabilitySubmissionRow,
+  ServingPreferencePayload,
+} from "../services/availabilityPersistence";
+import type { ServingPreferenceRecord } from "../services/availabilityData";
 
 interface AvailabilityActionDependencies {
-  client: any;
+  client: typeof import("../../../supabase").supabase;
   isAdmin: boolean;
   servants: Servant[];
   sessionUserId?: string;
-  availability: any[];
-  availabilityRules: any[];
-  servingPreferences: any[];
+  availability: AvailabilityRecord[];
+  availabilityRules: RecurringAvailabilityRule[];
+  servingPreferences: ServingPreferenceRecord[];
   schedules: ScheduleView[];
   deadline: string;
   loadData: () => Promise<void>;
@@ -42,10 +53,15 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       const form = event.currentTarget;
       const formData = new FormData(form);
       const linkedServant = servants.find(servant => servant.auth_user_id === sessionUserId);
-      const row = {
+      const statusValue = String(formData.get("status"));
+      if (statusValue !== "available" && statusValue !== "unavailable" && statusValue !== "prefer_not") {
+        setMessage("Please select a valid availability status.");
+        return;
+      }
+      const row: AvailabilitySubmissionRow = {
         servant_id: String(formData.get("servant_id")),
         service_date: String(formData.get("service_date")),
-        status: String(formData.get("status")),
+        status: statusValue as AvailabilityStatus,
         notes: String(formData.get("notes") || "").trim(),
       };
       if (!isAdmin && deadline && today() > deadline) {
@@ -77,7 +93,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       }
     }
 
-    async function saveBulkAvailability(rows: any[]): Promise<boolean> {
+    async function saveBulkAvailability(rows: AvailabilitySubmissionRow[]): Promise<boolean> {
       if (!client) return false;
       const conflicts = rows.filter(row => availability.some(item => item.servant_id === row.servant_id && item.service_date === row.service_date && item.status !== row.status));
       if (conflicts.length) {
@@ -100,7 +116,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       }
     }
 
-    async function saveAvailabilityRule(rule: any): Promise<boolean> {
+    async function saveAvailabilityRule(rule: AvailabilityRulePayload): Promise<boolean> {
       if (!client) return false;
       const validation = validateRecurringAvailabilityRule(rule, availabilityRules, availability);
       if (!validation.ok) {
@@ -128,7 +144,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       else await loadData();
     }
 
-    async function saveServingPreference(preference: any): Promise<boolean> {
+    async function saveServingPreference(preference: ServingPreferencePayload): Promise<boolean> {
       if (!client) return false;
       const currentForPerson = servingPreferences.filter(rule => rule.servant_id === preference.servant_id && rule.active !== false);
       const combined = [...currentForPerson, preference];

@@ -30,9 +30,31 @@ export interface NotificationPreferenceQueryResponse {
   error: { message: string } | null;
 }
 
+interface NotificationHistorySelectBuilder {
+  gte(column: "created_at", value: string): {
+    order(
+      column: "created_at",
+      options: { ascending: false },
+    ): {
+      limit(count: number): PromiseLike<NotificationQueryResponse>;
+    };
+  };
+}
+
+interface NotificationPreferencesSelectBuilder {
+  eq(column: "user_id", value: string): {
+    maybeSingle(): PromiseLike<NotificationPreferenceQueryResponse>;
+  };
+}
+
 /** Structural boundary keeps Supabase's generated query-builder generics out of App. */
 export interface ServingNotificationDataClient {
-  from(tableName: string): any;
+  from(tableName: "serving_notifications"): {
+    select(columns: "*"): NotificationHistorySelectBuilder;
+  };
+  from(tableName: "serving_notification_preferences"): {
+    select(columns: "*"): NotificationPreferencesSelectBuilder;
+  };
 }
 
 export interface ServingNotificationData {

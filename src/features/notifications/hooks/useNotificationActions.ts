@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import type { NotificationPreferenceState, ServingNotificationRecord } from "../services/notificationData";
 import type { NotificationPreferenceValues } from "../services/notificationPersistence";
 import {
   markServingNotificationRead,
@@ -8,8 +9,8 @@ import {
 type NotificationActionsInput = {
   client: typeof import("../../../supabase").supabase;
   sessionUserId?: string;
-  setNotificationPrefs: Dispatch<SetStateAction<any>>;
-  setNotifications: Dispatch<SetStateAction<any[]>>;
+  setNotificationPrefs: Dispatch<SetStateAction<NotificationPreferenceState>>;
+  setNotifications: Dispatch<SetStateAction<ServingNotificationRecord[]>>;
   setMessage: Dispatch<SetStateAction<string>>;
 };
 

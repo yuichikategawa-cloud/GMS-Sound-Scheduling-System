@@ -26,9 +26,20 @@ export interface ServingRequestReviewPayload {
   reviewed_at: string;
 }
 
-/** Minimal structural contract for the existing Supabase client methods. */
+/** Minimal structural query contract for the existing Requests tables and RPCs. */
+interface ServingRequestWriteBuilder {
+  insert(payload: ServingRequestInsertPayload): PromiseLike<RequestPersistenceResponse>;
+  upsert(
+    payload: ServingRequestReadPayload,
+    options: { onConflict: "request_id,user_id" },
+  ): PromiseLike<RequestPersistenceResponse>;
+  update(payload: ServingRequestReviewPayload): {
+    eq(column: "id", value: string): PromiseLike<RequestPersistenceResponse>;
+  };
+}
+
 export interface ServingRequestPersistenceClient {
-  from(tableName: string): any;
+  from(tableName: "serving_requests" | "serving_request_reads"): ServingRequestWriteBuilder;
   rpc(functionName: string, args: Record<string, string>): PromiseLike<RequestPersistenceResponse>;
 }
 

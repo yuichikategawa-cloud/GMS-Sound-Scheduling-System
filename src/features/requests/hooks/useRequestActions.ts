@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ScheduleView, Servant } from "../../../types";
 import { fmtDate } from "../../../shared/formatters";
+import type { ServingRequestRecord, ServingRequestReadMarker } from "../services/requestData";
 import {
   createServingRequest,
   executeServingRequestSwap,
@@ -22,12 +23,12 @@ type RequestActionsInput = {
   client: typeof import("../../../supabase").supabase;
   isAdmin: boolean;
   schedules: ScheduleView[];
-  requests: any[];
+  requests: ServingRequestRecord[];
   myServant?: Servant;
   sessionUserId?: string;
   swapDraft: ScheduleView | null;
   setSwapDraft: Dispatch<SetStateAction<ScheduleView | null>>;
-  setRequestReads: Dispatch<SetStateAction<any[]>>;
+  setRequestReads: Dispatch<SetStateAction<ServingRequestReadMarker[]>>;
   askText: AskText;
   loadData: () => Promise<void>;
   setMessage: Dispatch<SetStateAction<string>>;
@@ -173,7 +174,7 @@ export function useRequestActions({
     }
   }
 
-  async function reviewRequest(request: any, approve: boolean) {
+  async function reviewRequest(request: ServingRequestRecord, approve: boolean) {
     if (!client || !isAdmin || !sessionUserId) return;
     if (approve && request.request_type === "swap" && request.target_assignment_id) {
       const source = schedules.find(schedule => schedule.id === request.schedule_id);
@@ -238,7 +239,7 @@ export function useRequestActions({
     }
   }
 
-  async function resolveReplacement(request: any, replacementServantId: string) {
+  async function resolveReplacement(request: ServingRequestRecord, replacementServantId: string) {
     if (!client || !isAdmin) return;
     const { error } = await resolveServingRequestReplacement(
       client,

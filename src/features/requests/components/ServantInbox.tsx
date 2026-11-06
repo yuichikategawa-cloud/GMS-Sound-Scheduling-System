@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import "./RequestsInbox.css";
 import { fmtDate } from "../../../shared/formatters";
 import type { ScheduleView } from "../../../types";
+import type { ServingRequestReadMarker, ServingRequestRecord } from "../services/requestData";
+import type { ServingNotificationRecord } from "../../notifications/services/notificationData";
 
-export default function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,notificationSettings}:{requests:any[];schedules:ScheduleView[];reads:any[];onRead:(id:string)=>void;notifications:any[];onNotificationRead:(id:string)=>void;notificationSettings:ReactNode}){
+export default function ServantInbox({requests,schedules,reads,onRead,notifications,onNotificationRead,notificationSettings}:{requests:ServingRequestRecord[];schedules:ScheduleView[];reads:ServingRequestReadMarker[];onRead:(id:string)=>void;notifications:ServingNotificationRecord[];onNotificationRead:(id:string)=>void;notificationSettings:ReactNode}){
  const decisions=requests.filter(r=>["approved","declined","rejected"].includes(String(r.status??"").toLowerCase())).sort((a,b)=>String(b.reviewed_at??b.created_at).localeCompare(String(a.reviewed_at??a.created_at)));
  const pending=requests.filter(r=>String(r.status??"").toLowerCase()==="pending");
  const unread=notifications.filter(n=>!n.is_read).length;

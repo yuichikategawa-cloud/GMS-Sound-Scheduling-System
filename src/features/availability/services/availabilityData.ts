@@ -4,10 +4,12 @@ import type {
   RecurringAvailabilityRule,
 } from "./recurringAvailability.ts";
 
+export type ServingPreferenceRuleType = "allowed_time_window" | "allowed_service_scope";
+
 export interface ServingPreferenceRecord {
   id: string;
   servant_id: string;
-  rule_type: "allowed_time_window" | "allowed_service_scope" | string;
+  rule_type: ServingPreferenceRuleType;
   days_of_week?: number[] | null;
   start_time?: string | null;
   end_time?: string | null;

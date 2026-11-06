@@ -1,3 +1,6 @@
+import type { AvailabilityStatus, RecurringAvailabilityPattern } from "./recurringAvailability.ts";
+import type { ServingPreferenceRuleType } from "./availabilityData.ts";
+
 export interface AvailabilityPersistenceResponse {
   error: unknown | null;
 }
@@ -5,14 +8,14 @@ export interface AvailabilityPersistenceResponse {
 export interface AvailabilitySubmissionRow {
   servant_id: string;
   service_date: string;
-  status: string;
+  status: AvailabilityStatus;
   notes: string;
 }
 
 export interface AvailabilityRulePayload {
   servant_id: string;
-  pattern: string;
-  status: string;
+  pattern: RecurringAvailabilityPattern;
+  status: AvailabilityStatus;
   effective_from: string;
   effective_until: string | null;
   weekday: number;
@@ -22,7 +25,7 @@ export interface AvailabilityRulePayload {
 
 export interface ServingPreferencePayload {
   servant_id: string;
-  rule_type: string;
+  rule_type: ServingPreferenceRuleType;
   days_of_week: number[];
   start_time: string | null;
   end_time: string | null;
