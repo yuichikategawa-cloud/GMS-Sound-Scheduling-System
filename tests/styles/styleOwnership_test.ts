@@ -275,3 +275,26 @@ Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens
   assertBalancedCss(availabilityCss, "AvailabilityWorkspace.css");
   assertBalancedCss(scheduleCss, "ScheduleWorkspace.css");
 });
+
+
+Deno.test("signup CG-day choices stay legible and contained on mobile", async () => {
+  const authCss = await readRepoFile("src/features/auth/components/AuthScreens.css");
+  assert(authCss.includes("grid-template-columns:repeat(2,minmax(0,1fr)) !important;"), "CG-day choices must use a bounded two-column grid by default.");
+  assert(authCss.includes("grid-column:1 / -1;"), "The CG-day legend must occupy its own full-width row.");
+  assert(authCss.includes("color:var(--text-subtle);"), "The CG-day legend must use the shared subtle-text token.");
+  assert(authCss.includes("color:var(--text-subtle) !important;"), "Weekday labels must use the same semantic text color as the legend.");
+  assert(authCss.includes("accent-color:var(--accent-primary);"), "Native checkboxes must use the theme accent.");
+  assert(authCss.includes("@media(max-width:360px)"), "Very narrow devices must fall back to a single-column CG-day layout.");
+  assert(!authCss.includes("flex-basis: 100%"), "CG-day options must not use the overflowing single-column flex layout.");
+});
+
+Deno.test("authentication dark card styling has one consolidated rule and registration owns scrolling", async () => {
+  const authCss = await readRepoFile("src/features/auth/components/AuthScreens.css");
+  const darkCardMarker = ':root[data-theme="dark"] .auth-card{';
+  assert(authCss.split(darkCardMarker).length - 1 === 1, "AuthScreens.css must keep one consolidated dark auth-card rule.");
+  const darkCard = authCss.slice(authCss.indexOf(darkCardMarker), authCss.indexOf("}", authCss.indexOf(darkCardMarker)));
+  assert(darkCard.includes("box-shadow:0 4px 18px rgba(0,0,0,.16);"), "Consolidating the dark card rules must retain the existing shadow.");
+  assert(authCss.includes(".auth-card form.auth-registration{"), "The registration form must remain the single owner of its bounded scroll region.");
+  assert(!authCss.includes(".auth-registration{max-height:72vh;overflow:auto"), "The superseded generic registration overflow rule must be removed.");
+  assert(!authCss.includes(".auth-registration{max-height:68vh}"), "The superseded mobile registration height rule must be removed.");
+});

@@ -4,11 +4,11 @@
 @media(max-width:430px){.auth-card{padding:25px}}
 
 
-.auth-registration{max-height:72vh;overflow:auto;padding:2px 5px 8px 0}
+.auth-registration{padding:2px 5px 8px 0}
 .auth-registration label{font-size:13px;gap:7px}
 .auth-registration input,.auth-registration select,.auth-registration textarea{width:100%;min-width:0;border:1px solid #d8dee9;border-radius:9px;padding:12px 13px;background:#fff;color:#1f2937;font:inherit;font-size:14px}
 .auth-registration input:focus,.auth-registration select:focus,.auth-registration textarea:focus{outline:3px solid #e0e7ff;border-color:#6366f1}
-@media(max-width:600px){.auth-card{max-width:100%;padding:22px}.auth-registration{max-height:68vh}}
+@media(max-width:600px){.auth-card{max-width:100%;padding:22px}}
 
 
 .auth-card h1.welcome-home-script{
@@ -67,17 +67,12 @@
   .auth-card .eyebrow:has(+ .welcome-home-script){
     margin-bottom: 23px;
   }}
-:root[data-theme="dark"] .auth-card{
-  background:#1b2437!important;
-  border-color:#354059!important;
-  color:#e8edf7;
-  box-shadow:0 4px 18px rgba(0,0,0,.16);
-}
 :root[data-theme="dark"] .auth-page{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
 :root[data-theme="dark"] .auth-card{
   background:#202f46!important;
   border-color:#40516d!important;
   color:#ecf1fa!important;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
 }
 
 :root[data-theme="dark"] .auth-page,:root[data-theme="dark"] .auth-card,:root[data-theme="dark"] .auth-card .stack{
@@ -147,52 +142,62 @@
 }
 
 
+/* Keep the CG-day legend and all weekday choices inside the fieldset.
+   A grid avoids the flex/fieldset legend sizing issue seen on narrow mobile viewports. */
 .auth-registration .days-field{
-  display: flex !important;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
-  width: 100%;
-  min-width: 0;
-  min-inline-size: 0;
-  height: auto !important;
-  min-height: 0;
-  overflow: visible !important;
-  padding: 14px 15px 16px;
+  box-sizing:border-box;
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  align-items:center;
+  gap:10px 16px;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-inline-size:0;
+  height:auto !important;
+  min-height:0;
+  overflow:visible !important;
+  padding:14px 15px 16px;
 }
 .auth-registration .days-field legend{
-  display: block;
-  float: none;
-  width: 100%;
-  max-width: 100%;
-  flex: 0 0 100%;
-  padding: 0 7px;
-  margin-bottom: 2px;
+  display:block;
+  grid-column:1 / -1;
+  width:auto;
+  max-width:100%;
+  padding:0 7px;
+  margin:0;
+  color:var(--text-subtle);
+  font-size:13px;
+  line-height:1.4;
+  font-weight:750;
 }
 .auth-registration .days-field label{
-  display: flex !important;
-  flex: 1 1 calc(50% - 16px);
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 9px !important;
-  min-width: 0;
-  max-width: calc(50% - 8px);
-  margin: 0;
-  white-space: nowrap;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:flex-start !important;
+  gap:9px !important;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  margin:0;
+  color:var(--text-subtle) !important;
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:anywhere;
 }
 .auth-registration .days-field label input[type="checkbox"]{
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin: 0;
+  flex:0 0 18px;
+  width:18px;
+  min-width:18px;
+  height:18px;
+  margin:0;
+  padding:0;
+  accent-color:var(--accent-primary);
 }
-@media (max-width: 600px){
-  .auth-registration .days-field label{
-    flex-basis: 100%;
-    max-width: 100%;
-  }}
-
+@media(max-width:360px){
+  .auth-registration .days-field{grid-template-columns:minmax(0,1fr) !important}
+}
 /* The registration form is the intentional scroll region on compact screens.
    Keep this exception more specific than the broad dark-mode .stack overflow reset. */
 .auth-card form.auth-registration{
