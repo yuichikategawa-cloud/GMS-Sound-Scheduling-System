@@ -57,6 +57,28 @@ BEGIN
     RAISE EXCEPTION 'Admin JWT simulation failed';
   END IF;
 
+  -- The server endpoint itself rejects weekday rows; it does not rely on
+  -- the frontend's Saturday/Sunday date expansion.
+  BEGIN
+    PERFORM public.admin_replace_generated_weekend_schedules(
+      jsonb_build_array(
+        jsonb_build_object(
+          'service_date', '2099-12-28',
+          'location_id', v_location,
+          'service_name', 'GMS_TEST_WEEKDAY_REJECT_' || left(md5(txid_current()::text), 8),
+          'start_time', '08:00',
+          'end_time', '09:00'
+        )
+      )
+    );
+    RAISE EXCEPTION USING ERRCODE = 'ZX905', MESSAGE = 'Weekday replacement row was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    IF v_message <> 'Each replacement row must contain a weekend date, service name and valid time range' THEN
+      RAISE EXCEPTION 'Unexpected weekday validation result: %', v_message;
+    END IF;
+  END;
+
   v_prefix := 'GMS_TEST_WEEKEND_REPLACE_' || left(md5(txid_current()::text), 10);
 
   INSERT INTO public.servants(full_name, active)
