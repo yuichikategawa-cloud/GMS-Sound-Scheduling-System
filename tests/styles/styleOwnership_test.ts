@@ -481,6 +481,18 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   assert(requestsCss.includes("border-bottom:1px solid #3b4b65!important;"), "The final request heading divider must be preserved.");
   assert(requestsCss.includes("color:#f3f6fc!important;"), "The final request heading contrast must be preserved.");
   assert(requestsCss.includes("color:#bdcbe0!important;"), "The final muted request text color must be preserved.");
+  for (const selector of [
+    ':root[data-theme="dark"] .requests-section-heading{',
+    ':root[data-theme="dark"] .request-main b{',
+    ':root[data-theme="dark"] .servant-requests-section .request-row{',
+  ]) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
+  }
+  assert(requestsCss.includes("border-top-color:#394862!important;"), "Request section heading top border must be preserved.");
+  assert(requestsCss.includes("color:#f1f5fb!important"), "Request main heading contrast must be preserved.");
+  assert(requestsCss.includes("background:transparent!important;border-bottom-color:#3b4b65!important"), "Request rows must retain their transparent dark surface.");
+
   assertBalancedCss(requestsCss, "RequestsInbox.css");
   assertBalancedCss(globalCss, "src/style.css");
 });

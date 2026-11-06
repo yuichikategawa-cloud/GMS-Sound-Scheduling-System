@@ -393,3 +393,11 @@ gap:13px
     white-space: nowrap;
   }
 }
+
+/* Dark theme rules for admin replacement/swap requests. */
+:root[data-theme="dark"] .requests-section-heading{
+  border-color:#3b4b65!important;
+  border-top-color:#394862!important;
+}
+:root[data-theme="dark"] .request-main b{color:#f1f5fb!important}
+:root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}

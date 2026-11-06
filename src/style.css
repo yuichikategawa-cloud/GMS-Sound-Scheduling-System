@@ -420,7 +420,7 @@
   color:#f2f5fc!important;
 }/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
 
-:root[data-theme="dark"] .requests-section-heading{border-top-color:#394862!important}
+
 :root[data-theme="dark"] .inbox-item{background:#222f46!important;border-color:#40516d!important;box-shadow:none!important}
 :root[data-theme="dark"] .inbox-item.unread{background:#292744!important;border-color:#514a79!important}
 :root[data-theme="dark"] .inbox-item.read{opacity:1!important}
@@ -442,7 +442,7 @@
 :root[data-theme="dark"] .schedule-workspace-tabs button{color:#cbd6e8!important}
 :root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#484582!important;color:#fff!important;border-color:#8982e9!important}
 :root[data-theme="dark"] .daily-location-name{background:#34345f!important;color:#e0dcff!important}
-:root[data-theme="dark"] .daily-head,:root[data-theme="dark"] .card-actions,:root[data-theme="dark"] .requests-section-heading,:root[data-theme="dark"] .daily-date-divider{
+:root[data-theme="dark"] .daily-head,:root[data-theme="dark"] .card-actions,:root[data-theme="dark"] .daily-date-divider{
   border-color:#3b4b65!important;
 }
 :root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-roles b,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .service-title,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4{
@@ -494,12 +494,12 @@
   
   
 }
-:root[data-theme="dark"] .request-main b{color:#f1f5fb!important}
+
 :root[data-theme="dark"] .status-chip{background:#293951!important;color:#d4deed!important}
 :root[data-theme="dark"] .status-chip.published,:root[data-theme="dark"] .status-chip.approved,:root[data-theme="dark"] .status-chip.confirmed{background:#194b39!important;color:#a7ecc9!important}
 :root[data-theme="dark"] .status-chip.draft,:root[data-theme="dark"] .status-chip.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
-:root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}/* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
+/* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
    and readable servant dashboard labels. Child cards retain their own surfaces. */
 :root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .requests-panel{
   background: transparent !important;
