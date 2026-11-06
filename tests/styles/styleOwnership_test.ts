@@ -298,3 +298,41 @@ Deno.test("authentication dark card styling has one consolidated rule and regist
   assert(!authCss.includes(".auth-registration{max-height:72vh;overflow:auto"), "The superseded generic registration overflow rule must be removed.");
   assert(!authCss.includes(".auth-registration{max-height:68vh}"), "The superseded mobile registration height rule must be removed.");
 });
+
+
+Deno.test("servant account linking opens in a portal dialog instead of inside each record", async () => {
+  const [component, styles] = await Promise.all([
+    readRepoFile("src/features/servants/components/ServantInformationPanel.tsx"),
+    readRepoFile("src/features/servants/components/ServantInformationPanel.css"),
+  ]);
+  assert(component.includes('import { createPortal } from "react-dom";'), "The account-link dialog must render outside record layout through a portal.");
+  assert(component.includes('role="dialog"'), "The account-link dialog must expose dialog semantics.");
+  assert(component.includes('aria-modal="true"'), "The account-link dialog must be modal to assistive technology.");
+  assert(component.includes('aria-haspopup="dialog"'), "The Link account action must announce that it opens a dialog.");
+  assert(component.includes('event.key === "Escape"'), "The account-link dialog must close with Escape.");
+  assert(!component.includes("servant-link-panel"), "The account-link form must not remain nested inside every expanded servant record.");
+  assert(styles.includes(".servant-link-backdrop{"), "The account-link dialog must have a viewport-level backdrop.");
+  assert(styles.includes("z-index:1200;"), "The dialog must appear above app navigation and content.");
+});
+
+Deno.test("servant directory controls and record surfaces use active dark theme tokens", async () => {
+  const styles = await readRepoFile("src/features/servants/components/ServantInformationPanel.css");
+  assert(styles.includes(":root[data-theme=\"dark\"] .servant-record-heading .servant-link-trigger"), "The Link account button must have an explicit dark theme.");
+  assert(styles.includes("background:var(--surface-muted) !important;"), "The dark Link account button must use a semantic muted surface.");
+  assert(styles.includes(":root[data-theme=\"dark\"] .servant-record-heading .servant-record-summary"), "The servant summary row must have an explicit dark theme.");
+  assert(styles.includes("color:var(--status-warning-text) !important;"), "The unlinked chip must use semantic warning text.");
+});
+
+Deno.test("signup card and every registration control stay within the mobile viewport", async () => {
+  const [authCss, tokensCss] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/styles/tokens.css"),
+  ]);
+  assert(authCss.includes("box-sizing:border-box;width:min(420px,100%)"), "The authentication card width must include its padding.");
+  assert(authCss.includes("overflow-x:clip"), "The auth page must prevent horizontal viewport spill.");
+  assert(authCss.includes("padding:7px 9px 12px"), "The registration form must reserve an inner gutter for focus rings.");
+  assert(authCss.includes("max-width:100%;min-width:0"), "Registration controls must be bounded by the card width.");
+  assert(tokensCss.includes("--surface-control: #ffffff;"), "The light theme must define a control surface token.");
+  assert(tokensCss.includes("--surface-control: #111c2e;"), "The dark theme must define a control surface token.");
+  assert(authCss.includes("background:var(--surface-control) !important;"), "Dark signup selects and textareas must use the dark control surface.");
+});

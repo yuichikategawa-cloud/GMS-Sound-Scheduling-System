@@ -12,6 +12,7 @@
   --surface-muted: #f8fafc;
   --surface-raised: #ffffff;
   --surface-contrast: #171d35;
+  --surface-control: #ffffff;
   --text-primary: #182230;
   --text-secondary: #718096;
   --text-subtle: #596579;
@@ -46,6 +47,7 @@
   --surface-muted: #202f46;
   --surface-raised: #1b263a;
   --surface-contrast: #10172b;
+  --surface-control: #111c2e;
   --text-primary: #f2f5fb;
   --text-secondary: #b5c1d5;
   --text-subtle: #b9c6da;

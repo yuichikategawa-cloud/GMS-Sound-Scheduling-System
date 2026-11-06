@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import "./ServantInformationPanel.css";
 import type { ReactNode } from "react";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, X } from "lucide-react";
 import type { Location, ScheduleView, Servant } from "../../../types";
 import { displayList, errorText } from "../../../shared/formatters";
 
@@ -46,6 +47,21 @@ export default function ServantInformationPanel({
   const [linkNijs, setLinkNijs] = useState<Record<string, string>>({});
   const [linkBusy, setLinkBusy] = useState<Record<string, boolean>>({});
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
+  const [linkingServant, setLinkingServant] = useState<Servant | null>(null);
+
+  useEffect(() => {
+    if (!linkingServant) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLinkingServant(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [linkingServant?.id]);
 
   const profiles = new Map(memberDirectory.map((member: any) => [member.user_id, member]));
   const rows = servants.map(servant => ({
@@ -133,6 +149,7 @@ export default function ServantInformationPanel({
       if (success) {
         setLinkChoices(current => ({ ...current, [servant.id]: "" }));
         setLinkNijs(current => ({ ...current, [servant.id]: "" }));
+        setLinkingServant(current => current?.id === servant.id ? null : current);
       } else {
         setLinkErrors(current => ({
           ...current,
@@ -282,8 +299,9 @@ export default function ServantInformationPanel({
                   <button
                     type="button"
                     className="btn tiny secondary servant-link-trigger"
-                    aria-expanded={expanded.includes(servant.id)}
-                    onClick={() => setExpanded(current => current.includes(servant.id) ? current : [...current, servant.id])}
+                    aria-haspopup="dialog"
+                    aria-expanded={linkingServant?.id === servant.id}
+                    onClick={() => setLinkingServant(servant)}
                   >Link account</button>
                 )}
               </div>
@@ -317,31 +335,6 @@ export default function ServantInformationPanel({
                     <p><b>Profile verified:</b> {profile?.last_verified_at ? new Date(profile.last_verified_at).toLocaleDateString() : "Not yet verified"}</p>
                     <p><b>Serving status:</b> {servant.active ? "Active" : "Inactive"}</p>
 
-                    {!servant.auth_user_id && servant.active && (
-                      <div className="servant-link-panel">
-                        <h5>Link existing account</h5>
-                        <p className="subtle">Select the member's existing login and verify the NIJ against their identity record before linking.</p>
-                        <label>Member account
-                          <select value={linkChoices[servant.id] ?? ""} onChange={event => setLinkChoices(current => ({ ...current, [servant.id]: event.target.value }))}>
-                            <option value="">Choose a member account</option>
-                            {accountCandidates.map((account: any) => (
-                              <option key={account.user_id} value={account.user_id}>
-                                {account.full_name} · {account.username || account.email || "No username"}{account.linked_servant ? ` (currently linked to ${account.linked_servant.full_name})` : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label>Verify NIJ
-                          <input type="password" autoComplete="off" value={linkNijs[servant.id] ?? ""} onChange={event => setLinkNijs(current => ({ ...current, [servant.id]: event.target.value }))} placeholder="Enter NIJ for identity verification" />
-                        </label>
-                        {accountCandidates.length === 0 && <small>No completed servant member profiles are available for linking. Ask the member to complete their profile first.</small>}
-                        {linkErrors[servant.id] && <small className="form-error">{linkErrors[servant.id]}</small>}
-                        <button type="button" className="btn tiny primary" disabled={!!linkBusy[servant.id] || !linkChoices[servant.id] || !(linkNijs[servant.id] ?? "").trim()} onClick={() => void submitLink(servant)}>
-                          {linkBusy[servant.id] ? "Linking account…" : "Link verified account"}
-                        </button>
-                        <small>Linking may consolidate an automatically created duplicate servant row. Historical assignment or request conflicts are blocked for manual review.</small>
-                      </div>
-                    )}
                     <button className={`btn tiny servant-status-toggle ${servant.active ? "danger" : "primary"}`} onClick={() => onToggle(servant)}>
                       {servant.active ? "Deactivate servant" : "Activate servant"}
                     </button>
@@ -352,6 +345,85 @@ export default function ServantInformationPanel({
           ))}
         </div>
       </div>
+      {linkingServant && typeof document !== "undefined" && createPortal(
+        <div
+          className="servant-link-backdrop"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setLinkingServant(null);
+          }}
+        >
+          <section
+            className="servant-link-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="servant-link-dialog-title"
+          >
+            <div className="servant-link-dialog-heading">
+              <div>
+                <h3 id="servant-link-dialog-title">Link existing account</h3>
+                <p>Link an existing login to <b>{linkingServant.full_name}</b>.</p>
+              </div>
+              <button
+                type="button"
+                className="icon-btn servant-link-dialog-close"
+                aria-label="Close account linking dialog"
+                onClick={() => setLinkingServant(null)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className="servant-link-dialog-description">
+              Select the member's existing login and verify the NIJ against their identity record before linking.
+            </p>
+            <div className="servant-link-dialog-fields">
+              <label>
+                Member account
+                <select
+                  value={linkChoices[linkingServant.id] ?? ""}
+                  onChange={event => setLinkChoices(current => ({ ...current, [linkingServant.id]: event.target.value }))}
+                >
+                  <option value="">Choose a member account</option>
+                  {accountCandidates.map((account: any) => (
+                    <option key={account.user_id} value={account.user_id}>
+                      {account.full_name} · {account.username || account.email || "No username"}{account.linked_servant ? ` (currently linked to ${account.linked_servant.full_name})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Verify NIJ
+                <input
+                  type="password"
+                  autoComplete="off"
+                  value={linkNijs[linkingServant.id] ?? ""}
+                  onChange={event => setLinkNijs(current => ({ ...current, [linkingServant.id]: event.target.value }))}
+                  placeholder="Enter NIJ for identity verification"
+                />
+              </label>
+            </div>
+            {accountCandidates.length === 0 && (
+              <p className="servant-link-dialog-note">
+                No completed servant member profiles are available for linking. Ask the member to complete their profile first.
+              </p>
+            )}
+            {linkErrors[linkingServant.id] && (
+              <p className="servant-link-dialog-error" role="alert">{linkErrors[linkingServant.id]}</p>
+            )}
+            <button
+              type="button"
+              className="btn primary servant-link-dialog-submit"
+              disabled={!!linkBusy[linkingServant.id] || !linkChoices[linkingServant.id] || !(linkNijs[linkingServant.id] ?? "").trim()}
+              onClick={() => void submitLink(linkingServant)}
+            >
+              {linkBusy[linkingServant.id] ? "Linking account…" : "Link verified account"}
+            </button>
+            <p className="servant-link-dialog-footnote">
+              Linking may consolidate an automatically created duplicate servant row. Historical assignment or request conflicts are blocked for manual review.
+            </p>
+          </section>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
