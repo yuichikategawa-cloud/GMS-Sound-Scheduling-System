@@ -160,7 +160,7 @@
 :root[data-theme="dark"] .servant-kpi,
 :root[data-theme="dark"] .servant-mini-grid>div,
 :root[data-theme="dark"] .servant-health-list>div{
-  background:var(--surface-muted)!important;
+  background:var(--surface-muted) !important;
   border-color:var(--border-strong)!important;
   color:var(--text-primary)!important;
 }
@@ -206,7 +206,7 @@
 }
 :root[data-theme="dark"] .servant-account-chip.unlinked{
   background:var(--status-warning-bg)!important;
-  color:var(--status-warning-text)!important;
+  color:var(--status-warning-text) !important;
 }
 :root[data-theme="dark"] .servant-record-heading .servant-link-trigger{
   background:var(--surface-muted)!important;
