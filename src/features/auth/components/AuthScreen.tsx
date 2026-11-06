@@ -106,9 +106,11 @@ export default function AuthScreen({
                 <label>CG number<input name="cg_number" required /></label>
                 <fieldset className="days-field">
                   <legend>CG day (select multiple)</legend>
-                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
-                    <label key={day}><input type="checkbox" name="cg_days" value={day} />{day}</label>
-                  ))}
+                  <div className="days-options">
+                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
+                      <label key={day}><input type="checkbox" name="cg_days" value={day} />{day}</label>
+                    ))}
+                  </div>
                 </fieldset>
                 <label>CG time<input name="cg_time" required placeholder="e.g. 19:00" /></label>
                 <label className={signupCgStatus === "Team Leader" ? "field-disabled" : ""}>
