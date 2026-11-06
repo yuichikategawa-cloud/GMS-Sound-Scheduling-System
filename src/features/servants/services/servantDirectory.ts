@@ -37,7 +37,7 @@ export interface ServantAccountCandidate {
   linked_servant: Servant | null;
 }
 
-export interface ServantDirectoryQueryResponse<T> {
+export interface ServantDirectoryQueryResponse<T = unknown> {
   data: T[] | null;
   error: { message: string } | null;
 }
