@@ -435,8 +435,10 @@ Deno.test("application shell owns its sidebar and mobile-navigation dark theme",
 
 Deno.test("shared dark secondary buttons and action controls have one effective rule", async () => {
   const css = await readRepoFile("src/style.css");
-  assert(css.split(':root[data-theme="dark"] .btn.secondary,').length - 1 === 2,
-    "The base and hover shared button groups should each occur once.");
+  assert(css.split(':root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{').length - 1 === 1,
+    "The base shared button/action group should occur once.");
+  assert(css.split(':root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{').length - 1 === 1,
+    "The shared button/action hover group should occur once.");
   assert(css.includes("background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;"),
     "The final shared button palette must be retained.");
   assert(css.includes("background:#364764!important;color:#fff!important"),
