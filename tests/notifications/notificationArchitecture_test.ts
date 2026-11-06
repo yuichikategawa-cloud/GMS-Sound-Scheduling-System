@@ -58,3 +58,49 @@ Deno.test("Notifications owns its preference and read-state action workflows", a
   assert(!actions.includes('/App"') && !actions.includes("/App'"),
     "Notifications action hook must not depend on App.");
 });
+
+
+Deno.test("Notifications owns push browser state while App coordinates sign-out ordering", async () => {
+  const [app, pushActions, pushService] = await Promise.all([
+    readRepoFile("src/App.tsx"),
+    readRepoFile("src/features/notifications/hooks/usePushNotificationActions.ts"),
+    readRepoFile("src/features/notifications/services/pushSubscription.ts"),
+  ]);
+
+  assert(app.includes('import { usePushNotificationActions } from "./features/notifications/hooks/usePushNotificationActions";'),
+    "App must compose the push lifecycle through the Notifications feature.");
+  assert(app.includes("const pushActions = usePushNotificationActions({"),
+    "App must provide the current client, user, and shared feedback callback.");
+  for (const handler of [
+    "getPushLifecycleRuntime",
+    "enablePushNotifications",
+    "disablePushNotifications",
+  ]) {
+    assert(!app.includes("function " + handler + "(") &&
+      !app.includes("async function " + handler + "("),
+      "App must not implement Notifications push lifecycle handler " + handler + ".");
+    assert(pushActions.includes("function " + handler + "(") ||
+      pushActions.includes("async function " + handler + "("),
+      "Notifications push hook must own " + handler + ".");
+  }
+  assert(!app.includes("isServingPushSubscriptionEnabled") &&
+    !app.includes("cleanupServingPushSubscriptionForSignOut"),
+    "App must not call push lifecycle services directly.");
+  assert(app.includes("pushActions.cleanupForSignOut(userId)") &&
+    app.indexOf("pushActions.cleanupForSignOut(userId)") < app.indexOf("supabase.auth.signOut"),
+    "App must await Notifications cleanup before authentication sign-out.");
+  for (const operation of [
+    "isServingPushSubscriptionEnabled",
+    "enableServingPushSubscription",
+    "disableServingPushSubscription",
+    "cleanupServingPushSubscriptionForSignOut",
+  ]) {
+    assert(pushActions.includes(operation) && pushService.includes("function " + operation + "("),
+      "Push hook must delegate " + operation + " to the Notifications service.");
+  }
+  assert(app.includes("enabled={pushActions.pushEnabled}") &&
+    app.includes("busy={pushActions.pushBusy}") &&
+    app.includes("onEnable={pushActions.enablePushNotifications}") &&
+    app.includes("onDisable={pushActions.disablePushNotifications}"),
+    "Notification settings UI must use the push hook's state and callbacks.");
+});

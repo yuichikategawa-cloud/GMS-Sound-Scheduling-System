@@ -31,7 +31,7 @@ import { loadServingRequestData } from "./features/requests/services/requestData
 import { loadServingNotificationData } from "./features/notifications/services/notificationData";
 import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
 import { useNotificationActions } from "./features/notifications/hooks/useNotificationActions";
-import { cleanupServingPushSubscriptionForSignOut, disableServingPushSubscription, enableServingPushSubscription, isServingPushSubscriptionEnabled, type PushLifecycleRuntime } from "./features/notifications/services/pushSubscription";
+import { usePushNotificationActions } from "./features/notifications/hooks/usePushNotificationActions";
 import { createServingRequest } from "./features/requests/services/requestPersistence";
 import { useRequestActions } from "./features/requests/hooks/useRequestActions";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
@@ -65,8 +65,6 @@ export default function App() {
   const [servingPreferences,setServingPreferences] = useState<any[]>([]);
   const [installPrompt,setInstallPrompt] = useState<any>(null);
   const [pwaInstalled,setPwaInstalled] = useState(false);
-  const [pushEnabled,setPushEnabled] = useState(false);
-  const [pushBusy,setPushBusy] = useState(false);
   const [isOnline,setIsOnline] = useState(typeof navigator === "undefined" ? true : navigator.onLine);
   const lastForegroundRefresh = useRef(0);
   const [requests,setRequests] = useState<any[]>([]);
@@ -97,6 +95,12 @@ export default function App() {
   const [actionDialogInput,setActionDialogInput] = useState("");
   const actionDialogResolver = useRef<((accepted:boolean)=>void)|null>(null);
   const actionTextResolver = useRef<((value:string|null)=>void)|null>(null);
+
+  const pushActions = usePushNotificationActions({
+    client: supabase,
+    userId: session?.user?.id,
+    setMessage
+  });
   function askAction(title:string,message:string,confirmLabel="Continue",danger=false):Promise<boolean>{
     return new Promise(resolve=>{actionDialogResolver.current=resolve;setActionDialog({title,message,confirmLabel,danger});});
   }
@@ -174,16 +178,6 @@ export default function App() {
     return () => { document.removeEventListener("visibilitychange", refreshWhenVisible); window.removeEventListener("pageshow", refreshWhenVisible); };
   }, [profile?.id, session?.user?.id]);
 
-  useEffect(() => {
-    let cancelled=false;
-    async function checkPush(){
-      if(!session?.user?.id){if(!cancelled)setPushEnabled(false);return;}
-      const enabled=await isServingPushSubscriptionEnabled(supabase!,session.user.id,getPushLifecycleRuntime());
-      if(!cancelled)setPushEnabled(enabled);
-    }
-    void checkPush();return()=>{cancelled=true;};
-  },[session?.user?.id]);
-
   async function loadProfile() {
     if (!supabase || !session) return;
     const {data,error} = await loadMemberAccountProfile(supabase,session.user.id);
@@ -248,60 +242,11 @@ export default function App() {
     await askAction("Install app",message,"Got it",false);
   }
 
-  function getPushLifecycleRuntime():PushLifecycleRuntime {
-    const isIOS=/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-    const isStandalone=window.matchMedia?.("(display-mode: standalone)").matches||(navigator as any).standalone===true;
-    return {
-      serviceWorkerSupported:"serviceWorker" in navigator,
-      pushManagerSupported:"PushManager" in window,
-      notificationSupported:"Notification" in window,
-      isIOS,
-      isStandalone,
-      userAgent:navigator.userAgent,
-      notificationPermission:()=>Notification.permission,
-      requestNotificationPermission:()=>Notification.requestPermission(),
-      serviceWorkerReady:()=>navigator.serviceWorker.ready as unknown as ReturnType<PushLifecycleRuntime["serviceWorkerReady"]>,
-      getServiceWorkerRegistration:(scope)=>navigator.serviceWorker.getRegistration(scope) as unknown as ReturnType<PushLifecycleRuntime["getServiceWorkerRegistration"]>,
-      delay:(milliseconds)=>new Promise<void>(resolve=>window.setTimeout(resolve,milliseconds)),
-      warn:(message,error)=>console.warn(message,error),
-    };
-  }
-
-  async function enablePushNotifications(){
-    if(!supabase||!session?.user?.id)return;
-    let started=false;
-    try{
-      const vapidKey=(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
-      const result=await enableServingPushSubscription(supabase,session.user.id,vapidKey,getPushLifecycleRuntime(),()=>{
-        started=true;setPushBusy(true);setMessage("");
-      });
-      if(result==="missing-vapid-key")setMessage("Push delivery is not configured yet. Set VITE_VAPID_PUBLIC_KEY in Vercel and your local environment, then redeploy.");
-      else if(result==="unsupported-browser")setMessage("This browser does not support web push notifications. You can still use the in-app Inbox.");
-      else if(result==="ios-install-required")setMessage("On iPhone or iPad, install GMS first: open this page in Safari → Share → Add to Home Screen, turn on Open as Web App, then tap Add. Open GMS from the new Home Screen icon and enable push notifications there.");
-      else if(result==="permission-blocked")setMessage("Notifications are blocked for this device. Open iPhone Settings, find the installed Sound Scheduling web app, and allow notifications. In-app Inbox notifications will continue to work.");
-      else if(result==="permission-not-granted")setMessage("Notification permission was not granted. In-app Inbox notifications will continue to work.");
-      else {setPushEnabled(true);setMessage("Push notifications enabled on this device. Your in-app Inbox remains the primary notification history.");}
-    }catch(e){setMessage(errorText(e));}
-    finally{if(started)setPushBusy(false);}
-  }
-
-  async function disablePushNotifications(){
-    if(!supabase||!session?.user?.id||!("serviceWorker" in navigator))return;
-    setPushBusy(true);
-    try{await disableServingPushSubscription(supabase,getPushLifecycleRuntime());setPushEnabled(false);setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");}
-    catch(e){setMessage(errorText(e));}finally{setPushBusy(false);}
-  }
-
   async function signOut(){
     const userId=session?.user?.id;
-    setPushEnabled(false);setTab("schedule");setMobileNav(false);
-
-    // Push cleanup is best-effort and must never block authentication sign-out.
-    // Do not await navigator.serviceWorker.ready: if /sw.js is missing or fails
-    // to install, that promise can remain pending forever and trap the user.
-    if(supabase&&userId&&"serviceWorker" in navigator){
-      await cleanupServingPushSubscriptionForSignOut(supabase,userId,getPushLifecycleRuntime());
-    }
+    const pushCleanup = pushActions.cleanupForSignOut(userId);
+    setTab("schedule");setMobileNav(false);
+    await pushCleanup;
 
     try{
       if(supabase){
@@ -512,7 +457,7 @@ export default function App() {
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
           onConfirmAssignment={confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
-        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
+        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
 }
