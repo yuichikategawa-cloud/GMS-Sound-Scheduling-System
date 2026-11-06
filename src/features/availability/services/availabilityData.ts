@@ -1,4 +1,4 @@
-import { buildVirtualAvailability } from "./recurringAvailability";
+import { buildVirtualAvailability } from "./recurringAvailability.ts";
 
 interface AvailabilityQueryResult {
   data: any;

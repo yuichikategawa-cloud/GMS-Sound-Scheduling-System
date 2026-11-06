@@ -65,20 +65,20 @@ Deno.test("Availability data loading preserves table filters, ordering, and the 
     "servant_serving_preferences",
     "system_settings",
   ], "All Availability reads should execute through the Availability data service.");
-  assertEqual(fake.calls.filter(call => call.table === "servant_availability").map(call => [call.operation, ...call.args]), [
+  assertEqual(fake.calls.filter(call => call.table === "servant_availability" && call.operation !== "from").map(call => [call.operation, ...call.args]), [
     ["select", "*"],
     ["order", "service_date", { ascending: true }],
   ], "Dated availability ordering should remain ascending by service date.");
-  assertEqual(fake.calls.filter(call => call.table === "servant_availability_rules").map(call => [call.operation, ...call.args]), [
+  assertEqual(fake.calls.filter(call => call.table === "servant_availability_rules" && call.operation !== "from").map(call => [call.operation, ...call.args]), [
     ["select", "*"],
     ["order", "created_at", { ascending: false }],
   ], "Recurring rules should remain ordered newest first.");
-  assertEqual(fake.calls.filter(call => call.table === "servant_serving_preferences").map(call => [call.operation, ...call.args]), [
+  assertEqual(fake.calls.filter(call => call.table === "servant_serving_preferences" && call.operation !== "from").map(call => [call.operation, ...call.args]), [
     ["select", "*"],
     ["eq", "active", true],
     ["order", "created_at", { ascending: false }],
   ], "Only active serving preferences should be loaded, newest first.");
-  assertEqual(fake.calls.filter(call => call.table === "system_settings").map(call => [call.operation, ...call.args]), [
+  assertEqual(fake.calls.filter(call => call.table === "system_settings" && call.operation !== "from").map(call => [call.operation, ...call.args]), [
     ["select", "*"],
     ["eq", "key", "availability_deadline"],
     ["maybeSingle"],

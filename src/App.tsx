@@ -387,6 +387,36 @@ export default function App() {
     loadData, setLoading, setMessage, setScheduleError, setAvailabilityDeadline
   });
 
+  async function linkServantAccount(servant:Servant,userId:string,verifiedNij:string):Promise<boolean>{
+    if(!supabase||!isAdmin)return false;
+    const {error}=await linkServantAccountRecord(supabase,{
+      servantId:servant.id,
+      userId,
+      verifiedNij
+    });
+    if(error){setMessage(errorText(error));return false;}
+    await loadData();
+    setMessage(`Account successfully linked to ${servant.full_name}. Identity verification was recorded in the audit trail.`);
+    return true;
+  }
+
+  async function savePerson(e:FormEvent<HTMLFormElement>) {
+    e.preventDefault();if(!supabase||!isAdmin)return;
+    setScheduleError("");
+    const fd=new FormData(e.currentTarget);const name=String(fd.get("full_name")).trim();
+    if(!name)return;
+    setLoading(true);
+    try{
+      const {error}=await createServantRecord(supabase,name);if(error)throw error;
+      setModal(null);await loadData();
+    }catch(e){setScheduleError(errorText(e));setLoading(false);}
+  }
+  async function togglePerson(p:Servant){
+    if(!supabase||!isAdmin)return;
+    const {error}=await setServantActive(supabase,p.id,!p.active);
+    if(error)setMessage(errorText(error));else await loadData();
+  }
+
   async function submitServingRequest(schedule:ScheduleView,kind:"replacement"|"swap"){
     if(kind==="swap"){setSwapDraft(schedule);return;}
     if(!supabase||!myServant)return;
