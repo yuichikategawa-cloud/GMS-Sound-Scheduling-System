@@ -9,17 +9,20 @@ async function readRepoFile(path: string): Promise<string> {
 }
 
 Deno.test("Availability owns its workspace UI, orchestration, and read boundary", async () => {
-  const [app, workspace, actions, data, dashboard] = await Promise.all([
+  const [app, workspace, actions, data, dashboard, dashboardLoader] = await Promise.all([
     readRepoFile("src/App.tsx"),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx"),
     readRepoFile("src/features/availability/hooks/useAvailabilityActions.ts"),
     readRepoFile("src/features/availability/services/availabilityData.ts"),
     readRepoFile("src/app/services/dashboardData.ts"),
+    readRepoFile("src/app/hooks/useDashboardLoader.ts"),
   ]);
   assert(app.includes('import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";'),
     "App should compose the Availability-owned workspace component.");
   assert(app.includes("useAvailabilityActions("), "App should compose Availability actions through the feature hook.");
-  assert(app.includes("loadDashboardData(supabase"), "App should load shared dashboard data through its app-owned composition service.");
+  assert(app.includes('from "./app/hooks/useDashboardLoader"') &&
+    dashboardLoader.includes('from "../services/dashboardData"'),
+    "App should load shared dashboard data through its app-owned loading boundary.");
   assert(dashboard.includes("loadAvailabilityWorkspaceData"), "The app dashboard composition should load Availability through its feature service.");
   assert(!app.includes("function AvailabilityPanel("), "Availability presentation should not remain embedded in App.");
   assert(!app.includes("async function saveAvailability("), "Availability mutation orchestration should not remain embedded in App.");
