@@ -44,6 +44,7 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     { component: "src/features/requests/components/RequestsPanel.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".requests-content-card" },
     { component: "src/features/requests/components/ServantInbox.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".servant-inbox" },
     { component: "src/features/availability/components/AvailabilityWorkspace.tsx", stylesheet: "src/features/availability/components/AvailabilityWorkspace.css", importLine: 'import "./AvailabilityWorkspace.css";', marker: ".availability-form-panel" },
+    { component: "src/features/schedule/components/ScheduleWorkspace.tsx", stylesheet: "src/features/schedule/components/ScheduleWorkspace.css", importLine: 'import "./ScheduleWorkspace.css";', marker: ".schedule-grid" },
   ] as const;
 
   for (const item of ownership) {
@@ -80,7 +81,7 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
   assert(globalCss.includes(':root[data-theme="dark"] .topbar'), "Cross-cutting app-shell dark-mode overrides must remain global and late in the cascade.");
   assert(globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Cross-cutting Inbox dark-mode overrides must remain global and late in the cascade.");
   assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
-  assert(globalCss.includes(".schedule-grid{"), "App-composed Schedule workspace styles remain global pending the Schedule UI extraction.");
+  assert(!globalCss.includes(".schedule-grid{"), "Schedule workspace base presentation must be owned by its colocated stylesheet.");
   assert(!globalCss.includes(".availability-form-panel{"), "Availability workspace base presentation must be owned by its colocated stylesheet.");
 });
 
@@ -162,4 +163,50 @@ Deno.test("app theme persistence and document theme-color behavior remain in the
   assert(app.includes("document.documentElement.dataset.theme=theme"), "The document root must still receive the active data-theme value.");
   assert(app.includes('themeColor?.setAttribute("content",theme==="dark"?"#101727":"#171d35")'), "The browser theme color must still track the selected theme.");
   assert(app.includes("theme={theme}"), "The active theme must still be passed into the app shell.");
+});
+
+
+Deno.test("global stylesheet loads before feature-owned stylesheets", async () => {
+  const entry = await readRepoFile("src/main.tsx");
+  const globalCssImport = entry.indexOf('import "./style.css";');
+  const appImport = entry.indexOf('import App from "./App";');
+  assert(globalCssImport >= 0, "The application entry must import the global stylesheet.");
+  assert(appImport >= 0, "The application entry must import App.");
+  assert(globalCssImport < appImport, "Global CSS must load before App and its feature-owned stylesheets.");
+});
+
+Deno.test("Schedule owns its layout and responsive presentation while dark-mode overrides stay global", async () => {
+  const [globalCss, scheduleCss] = await Promise.all([
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+  ]);
+
+  for (const selector of [
+    ".schedule-grid",
+    ".schedule-card",
+    ".daily-overview",
+    ".daily-card",
+    ".assignment-overview-card",
+    ".bulk-assignment-center",
+    ".generate-panel",
+    ".template-picker",
+    ".my-upcoming-panel",
+    ".swap-modal",
+  ]) {
+    const escaped = selector.split(".").join("\\.");
+    const pattern = new RegExp("(^|[\\n}])\\s*" + escaped + "\\s*\\{");
+    assert(!pattern.test(globalCss), selector + " base presentation must be owned by ScheduleWorkspace.css.");
+  }
+
+  assert(scheduleCss.includes(".schedule-grid{"), "Schedule grid styles must live with the Schedule feature.");
+  assert(scheduleCss.includes(".assignment-overview-card{"), "Assignment overview styles must live with the Schedule feature.");
+  assert(scheduleCss.includes(".bulk-assignment-center{"), "Bulk assignment styles must live with the Schedule feature.");
+  assert(scheduleCss.includes("@media(max-width:1100px)"), "The existing desktop/tablet Schedule breakpoint must be preserved.");
+  assert(scheduleCss.includes("@media(max-width:760px)"), "The existing mobile Schedule breakpoint must be preserved.");
+  assert(scheduleCss.includes("@media(max-width:430px)"), "The existing compact-phone Schedule breakpoint must be preserved.");
+  assert(!scheduleCss.includes(':root[data-theme="dark"]'), "Shared and feature-specific dark-mode overrides remain global in this batch.");
+
+  assert(globalCss.includes(':root[data-theme="dark"] .schedule-workspace-tabs'), "Schedule tab dark-mode overrides must remain global.");
+  assert(globalCss.includes(':root[data-theme="dark"] .daily-location-name'), "Schedule summary dark-mode overrides must remain global.");
+  assert(globalCss.includes(':root[data-theme="dark"] .bulk-assignment-center'), "Bulk assignment dark-mode overrides must remain global.");
 });

@@ -1,4 +1,5 @@
 import { BarChart3, CalendarDays, Users, Plus, Download, Search, ChevronDown } from "lucide-react";
+import "./ScheduleWorkspace.css";
 import type { Location, ScheduleView, Servant } from "../../../types";
 import type { ScheduleWorkspaceState } from "../hooks/useScheduleWorkspace";
 import { AssignmentOverview, BulkAssignmentCenter, ChurchBulkActions, GeneratePanel } from "./ScheduleManagementPanels";
