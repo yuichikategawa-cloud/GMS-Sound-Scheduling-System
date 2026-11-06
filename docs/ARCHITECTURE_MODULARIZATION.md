@@ -11,7 +11,7 @@ This is an incremental refactor, not a rewrite and not a microservices conversio
 - `src/App.tsx` is 420 lines and acts primarily as the application composition root: it owns shared session/theme/navigation state, cross-feature wiring, refresh and dialog orchestration, while feature workflows are delegated to feature hooks and services.
 - `src/style.css` is approximately 90 KB / 1,600 lines and retains shared primitives and cross-cutting dark-mode overrides where cascade order still matters. Design tokens and document resets live in `src/styles`; App shell, Requests/Inbox, and feature workspaces use colocated stylesheets.
 - Feature boundaries now exist under `src/features`, alongside `src/app` and `src/shared`; App remains the composition/orchestration root.
-- The application is still a monolith in transition. Extracting services and screens has reduced coupling, but further boundary and dependency verification is required.
+- The modularization roadmap is complete (56/56 items), and the modular-monolith architecture has been verified: App remains the composition root, while feature workflows, data services, stateful actions, and component stylesheets have explicit ownership boundaries. The M8 dependency-direction and cycle guards are part of the Deno CI suite.
 
 ## Target structure
 
