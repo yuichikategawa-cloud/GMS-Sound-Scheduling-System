@@ -114,6 +114,8 @@ jobs:
         run: deno test --no-lock tests/notifications/pushSubscription_test.ts
       - name: Test serving statistics calculations
         run: deno test --no-lock tests/statistics/servingStatistics_test.ts
+      - name: Test Statistics feature architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/statistics/statisticsArchitecture_test.ts
       - name: Test audit data loading and export
         run: deno test --no-lock tests/audit/auditData_test.ts
       - name: Test Audit workflow architecture boundaries
