@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, FormEvent } from "react";
 import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
-import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
+import { loadDashboardData } from "./app/services/dashboardData";
+import type { Location, Profile, ScheduleView, Servant } from "./types";
 import { fmtDate, errorText } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
 import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
@@ -17,17 +18,17 @@ import MemberProfilePanel from "./features/auth/components/MemberProfilePanel";
 import { useAuthenticationActions } from "./features/auth/hooks/useAuthenticationActions";
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
-import { mapSchedules } from "./features/schedule/services/mapSchedules";
-import { loadScheduleWorkspaceData } from "./features/schedule/services/scheduleData";
+
+
 import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
-import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
+
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
 import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
-import { loadServantRecords } from "./features/servants/services/servantManagement";
+
 import { useServantActions } from "./features/servants/hooks/useServantActions";
-import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
-import { loadServingRequestData } from "./features/requests/services/requestData";
-import { loadServingNotificationData } from "./features/notifications/services/notificationData";
+import { buildServantAccountCandidates } from "./features/servants/services/servantDirectory";
+
+
 import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
 import { useNotificationActions } from "./features/notifications/hooks/useNotificationActions";
 import { usePushNotificationActions } from "./features/notifications/hooks/usePushNotificationActions";
@@ -37,7 +38,7 @@ import ServantInformationPanel from "./features/servants/components/ServantInfor
 import ServantInbox from "./features/requests/components/ServantInbox";
 import RequestsPanel from "./features/requests/components/RequestsPanel";
 import AuditPanel from "./features/audit/components/AuditPanel";
-import { loadRecentAuditLogs } from "./features/audit/services/auditData";
+
 import { useAuditActions } from "./features/audit/hooks/useAuditActions";
 import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
 import { useScheduleExportActions } from "./features/schedule/hooks/useScheduleExportActions";
@@ -197,40 +198,32 @@ export default function App() {
     if (!supabase) return;
     setLoading(true); setMessage("");
     try {
-      const notificationCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const auditCutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-      const [scheduleDataRes,servRes,availabilityDataRes,requestDataRes,notificationDataRes,auditRes,servantDirectoryRes] = await Promise.all([
-        loadScheduleWorkspaceData(supabase),
-        loadServantRecords(supabase),
-        loadAvailabilityWorkspaceData(supabase),
-        loadServingRequestData(supabase),
-        loadServingNotificationData(supabase, notificationCutoff, session?.user?.id??""),
-        loadRecentAuditLogs(supabase, auditCutoff),
-        loadServantDirectoryData(supabase),
-      ]);
-      // Core schedule/servant data is required. Ancillary tables must not blank the whole dashboard
-      // when their RLS policy or migration is not yet configured.
-      for (const r of [scheduleDataRes.locations,servRes,scheduleDataRes.schedules,scheduleDataRes.assignments]) if (r.error) throw r.error;
-      const optionalErrors = [...availabilityDataRes.optionalErrors,...[scheduleDataRes.templates,requestDataRes.requests,requestDataRes.reads,notificationDataRes.notifications,notificationDataRes.preferences,auditRes,servantDirectoryRes.memberProfiles,servantDirectoryRes.accountProfiles]
-        .filter((r:any) => r.error)
-        .map((r:any) => r.error.message)];
-      if (optionalErrors.length) console.warn("Some optional GMS dashboard data could not be loaded:", optionalErrors);
-      const locs=(scheduleDataRes.locations.data??[]) as Location[], people=(servRes.data??[]) as Servant[];
-      const assignments=(scheduleDataRes.assignments.data??[]) as Assignment[];
-      const mapped=mapSchedules((scheduleDataRes.schedules.data??[]) as Schedule[],assignments,locs,people);
-      const safeMemberRows = servantDirectoryRes.memberProfiles.error ? [] : (servantDirectoryRes.memberProfiles.data ?? []);
-      setLocations(locs);setServants(people);setTemplates(scheduleDataRes.templates.error?[]:(scheduleDataRes.templates.data??[]));setSchedules(mapped);
-      setAvailabilityRules(availabilityDataRes.rules);setServingPreferences(availabilityDataRes.preferences);
-      setAvailability(availabilityDataRes.availability);setAvailabilityDeadline(availabilityDataRes.deadline);
-      setRequests(requestDataRes.requests.error?[]:(requestDataRes.requests.data??[]));setRequestReads(requestDataRes.reads.error?[]:(requestDataRes.reads.data??[]));setNotifications(notificationDataRes.notifications.error?[]:(notificationDataRes.notifications.data??[]));
-      setAuditLogs(auditRes.error?[]:(auditRes.data??[]));
-      setMemberDirectory(safeMemberRows);setMemberProfile(safeMemberRows.find((x:any)=>x.user_id===session.user.id)??null);
-      setAccountProfiles(servantDirectoryRes.accountProfiles.error?[]:(servantDirectoryRes.accountProfiles.data??[]));
-      setNotificationPrefs(notificationDataRes.preferences.error||!notificationDataRes.preferences.data?{new_assignments:true,schedule_changes:true,confirmation_reminders:true,availability_deadlines:true,request_updates:true}:notificationDataRes.preferences.data);
-    } catch(e) { setMessage(errorText(e)); }
-    finally { setLoading(false); }
+      const dashboard = await loadDashboardData(supabase, session?.user?.id ?? "");
+      if (dashboard.optionalErrors.length) {
+        console.warn("Some optional GMS dashboard data could not be loaded:", dashboard.optionalErrors);
+      }
+      setLocations(dashboard.locations);
+      setServants(dashboard.servants);
+      setTemplates(dashboard.templates);
+      setSchedules(dashboard.schedules);
+      setAvailabilityRules(dashboard.availabilityRules);
+      setServingPreferences(dashboard.servingPreferences);
+      setAvailability(dashboard.availability);
+      setAvailabilityDeadline(dashboard.availabilityDeadline);
+      setRequests(dashboard.requests);
+      setRequestReads(dashboard.requestReads);
+      setNotifications(dashboard.notifications);
+      setAuditLogs(dashboard.auditLogs);
+      setMemberDirectory(dashboard.memberDirectory);
+      setMemberProfile(dashboard.memberProfile);
+      setAccountProfiles(dashboard.accountProfiles);
+      setNotificationPrefs(dashboard.notificationPrefs);
+    } catch(e) {
+      setMessage(errorText(e));
+    } finally {
+      setLoading(false);
+    }
   }
-
   useEffect(()=>{if(profile) void loadData();},[profile]);
 
   async function installGmsApp(){
