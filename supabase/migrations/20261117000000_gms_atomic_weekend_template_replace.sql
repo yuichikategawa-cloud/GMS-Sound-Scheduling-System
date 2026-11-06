@@ -250,8 +250,8 @@ BEGIN
       ON other_st.schedule_id = other_s.id
     WHERE other_s.service_date = s.service_date
       AND other_s.location_id = s.location_id
-      AND st.start_time < COALESCE(other_st.start_time, other_s.start_time)
-      AND st.end_time > COALESCE(other_st.end_time, other_s.end_time)
+      AND st.start_time < COALESCE(other_st.end_time, other_s.end_time)
+      AND st.end_time > COALESCE(other_st.start_time, other_s.start_time)
   ) THEN
     RAISE EXCEPTION 'A selected servant has an overlapping service at this church';
   END IF;
