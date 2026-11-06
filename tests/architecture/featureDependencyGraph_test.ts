@@ -93,7 +93,7 @@ function resolveKnownModule(
 ): string | null {
   const base = resolveRelativeImport(sourcePath, specifier);
   if (!base) return null;
-  const candidates = /\\.(?:[cm]?tsx?|jsx?)$/.test(base)
+  const candidates = /\.(?:[cm]?tsx?|jsx?)$/.test(base)
     ? [base]
     : [
       base + ".ts",
