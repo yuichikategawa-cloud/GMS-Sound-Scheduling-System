@@ -1,10 +1,26 @@
+import type { NotificationPreferenceState } from "../../../app/services/dashboardData";
+
+export interface ServingNotificationRecord {
+  id: string;
+  recipient_user_id: string;
+  title: string;
+  body: string;
+  created_at: string;
+  is_read: boolean;
+}
+
+export interface NotificationPreferencesRow extends NotificationPreferenceState {
+  user_id?: string;
+  updated_at?: string;
+}
+
 export interface NotificationQueryResponse {
-  data: any[] | null;
+  data: ServingNotificationRecord[] | null;
   error: { message: string } | null;
 }
 
 export interface NotificationPreferenceQueryResponse {
-  data: any | null;
+  data: NotificationPreferencesRow | null;
   error: { message: string } | null;
 }
 

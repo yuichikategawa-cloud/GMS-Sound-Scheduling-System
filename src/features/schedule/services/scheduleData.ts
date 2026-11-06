@@ -1,16 +1,28 @@
-export interface ScheduleDataQueryResponse {
-  data: any[] | null;
+export interface ScheduleDataQueryResponse<T = any> {
+  data: T[] | null;
   error: { message: string } | null;
 }
 
 /** Supabase query-builder generics are intentionally kept behind this feature boundary. */
 export type ScheduleDataClient = any;
 
+import type { Assignment, Location, Schedule } from "../../../types";
+
+export interface ServiceTemplate {
+  id: string;
+  location_id: string;
+  day_of_week: number;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+  active: boolean;
+}
+
 export interface ScheduleWorkspaceData {
-  locations: ScheduleDataQueryResponse;
-  templates: ScheduleDataQueryResponse;
-  schedules: ScheduleDataQueryResponse;
-  assignments: ScheduleDataQueryResponse;
+  locations: ScheduleDataQueryResponse<Location>;
+  templates: ScheduleDataQueryResponse<ServiceTemplate>;
+  schedules: ScheduleDataQueryResponse<Schedule>;
+  assignments: ScheduleDataQueryResponse<Assignment>;
 }
 
 /**
@@ -27,7 +39,12 @@ export async function loadScheduleWorkspaceData(
     client.from("assignments").select("*"),
   ]);
 
-  return { locations, templates, schedules, assignments };
+  return {
+    locations,
+    templates,
+    schedules,
+    assignments,
+  } as ScheduleWorkspaceData;
 }
 
 /** Loads historical Schedule rows for the existing administrator CSV export. */

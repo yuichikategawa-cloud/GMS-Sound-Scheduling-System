@@ -1,5 +1,16 @@
+export interface AuditLogRecord {
+  id?: string;
+  created_at?: string;
+  actor_id?: string | null;
+  action?: string;
+  table_name?: string;
+  record_id?: string | null;
+  old_data?: unknown;
+  new_data?: unknown;
+}
+
 export interface AuditQueryResponse {
-  data: any[] | null;
+  data: AuditLogRecord[] | null;
   error: { message: string } | null;
 }
 
@@ -34,7 +45,7 @@ export async function loadHistoricalAuditLogs(
   client: AuditDataClient,
   cutoff: string,
 ): Promise<AuditQueryResponse> {
-  const data: any[] = [];
+  const data: AuditLogRecord[] = [];
   const pageSize = 1000;
 
   for (let offset = 0; ; offset += pageSize) {
@@ -55,7 +66,7 @@ export async function loadHistoricalAuditLogs(
 }
 
 /** Builds the existing audit CSV representation without browser side effects. */
-export function buildAuditCsv(data: any[]): string {
+export function buildAuditCsv(data: readonly AuditLogRecord[]): string {
   const columns = [
     "created_at",
     "actor_id",
@@ -64,23 +75,22 @@ export function buildAuditCsv(data: any[]): string {
     "record_id",
     "old_data",
     "new_data",
-  ];
+  ] as const satisfies readonly (keyof AuditLogRecord)[];
 
-  const cell = (value: any) =>
+  const cell = (value: unknown) =>
     "\"" + String(
       value === null || value === undefined
         ? ""
         : typeof value === "object"
         ? JSON.stringify(value)
         : value,
-    ).replace(/"/g, "\"\"") + "\"";
+    ).replace(/"/g, "\\"") + "\"";
 
   return [
     columns.join(","),
-    ...data.map((row: any) => columns.map(column => cell(row[column])).join(",")),
-  ].join("\r\n");
+    ...data.map(row => columns.map(column => cell(row[column])).join(",")),
+  ].join("\\r\\n");
 }
-
 
 export type HistoricalAuditExportPreparation =
   | { kind: "error"; error: { message: string } }

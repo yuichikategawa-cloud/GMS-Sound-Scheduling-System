@@ -1,27 +1,58 @@
 import { buildVirtualAvailability } from "./recurringAvailability.ts";
+import type {
+  AvailabilityRecord,
+  RecurringAvailabilityRule,
+} from "./recurringAvailability.ts";
 
-interface AvailabilityQueryResult {
-  data: any;
+export interface ServingPreferenceRecord {
+  id: string;
+  servant_id: string;
+  rule_type: "allowed_time_window" | "allowed_service_scope" | string;
+  days_of_week?: number[] | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  location_id?: string | null;
+  service_names?: string[] | null;
+  notes?: string | null;
+  active: boolean;
+  effective_from?: string | null;
+  effective_until?: string | null;
+}
+
+interface AvailabilityQueryResult<T> {
+  data: T | null;
   error: { message?: string } | null;
+}
+
+export interface AvailabilityWorkspaceData {
+  availability: AvailabilityRecord[];
+  rules: RecurringAvailabilityRule[];
+  preferences: ServingPreferenceRecord[];
+  deadline: string;
+  optionalErrors: string[];
 }
 
 /** Loads Availability-owned reads and materializes the two-year recurring-rule view. */
 export async function loadAvailabilityWorkspaceData(
   client: any,
   now: Date = new Date(),
-): Promise<{
-  availability: any[];
-  rules: any[];
-  preferences: any[];
-  deadline: string;
-  optionalErrors: string[];
-}> {
-  const [availabilityResult, rulesResult, preferencesResult, deadlineResult] = await Promise.all([
+): Promise<AvailabilityWorkspaceData> {
+  const [
+    availabilityResult,
+    rulesResult,
+    preferencesResult,
+    deadlineResult,
+  ] = await Promise.all([
     client.from("servant_availability").select("*").order("service_date", { ascending: true }),
     client.from("servant_availability_rules").select("*").order("created_at", { ascending: false }),
     client.from("servant_serving_preferences").select("*").eq("active", true).order("created_at", { ascending: false }),
     client.from("system_settings").select("*").eq("key", "availability_deadline").maybeSingle(),
-  ]) as AvailabilityQueryResult[];
+  ]) as [
+    AvailabilityQueryResult<AvailabilityRecord[]>,
+    AvailabilityQueryResult<RecurringAvailabilityRule[]>,
+    AvailabilityQueryResult<ServingPreferenceRecord[]>,
+    AvailabilityQueryResult<{ value?: string | null }>,
+  ];
 
   const rules = rulesResult.error ? [] : (rulesResult.data ?? []);
   const horizon = new Date(now);

@@ -4,7 +4,22 @@ import type {
   ServantDirectoryMember,
 } from "../../features/servants/services/servantDirectory";
 import { mapSchedules } from "../../features/schedule/services/mapSchedules";
-import { loadScheduleWorkspaceData, type ScheduleWorkspaceData } from "../../features/schedule/services/scheduleData";
+import {
+  loadScheduleWorkspaceData,
+  type ScheduleWorkspaceData,
+  type ServiceTemplate,
+} from "../../features/schedule/services/scheduleData";
+import type {
+  AvailabilityRecord,
+  RecurringAvailabilityRule,
+} from "../../features/availability/services/recurringAvailability";
+import type { ServingPreferenceRecord } from "../../features/availability/services/availabilityData";
+import type {
+  ServingRequestRecord,
+  ServingRequestReadMarker,
+} from "../../features/requests/services/requestData";
+import type { ServingNotificationRecord } from "../../features/notifications/services/notificationData";
+import type { AuditLogRecord } from "../../features/audit/services/auditData";
 import { loadAvailabilityWorkspaceData } from "../../features/availability/services/availabilityData";
 import { loadServantRecords, type ServantRecordsResponse } from "../../features/servants/services/servantManagement";
 import { loadServantDirectoryData, type ServantDirectoryData } from "../../features/servants/services/servantDirectory";
@@ -33,16 +48,16 @@ export interface NotificationPreferenceState {
 export interface DashboardData {
   locations: Location[];
   servants: Servant[];
-  templates: any[];
+  templates: ServiceTemplate[];
   schedules: ScheduleView[];
-  availabilityRules: any[];
-  servingPreferences: any[];
-  availability: any[];
+  availabilityRules: RecurringAvailabilityRule[];
+  servingPreferences: ServingPreferenceRecord[];
+  availability: AvailabilityRecord[];
   availabilityDeadline: string;
-  requests: any[];
-  requestReads: any[];
-  notifications: any[];
-  auditLogs: any[];
+  requests: ServingRequestRecord[];
+  requestReads: ServingRequestReadMarker[];
+  notifications: ServingNotificationRecord[];
+  auditLogs: AuditLogRecord[];
   memberDirectory: ServantDirectoryMember[];
   memberProfile: ServantDirectoryMember | null;
   accountProfiles: ServantDirectoryAccountProfile[];
@@ -112,8 +127,8 @@ export async function loadDashboardData(
       servantDirectoryRes.memberProfiles,
       servantDirectoryRes.accountProfiles,
     ]
-      .filter((result: any) => result.error)
-      .map((result: any) => result.error.message),
+      .filter(result => result.error)
+      .map(result => result.error!.message),
   ];
 
   const locations = (scheduleDataRes.locations.data ?? []) as Location[];
@@ -145,7 +160,7 @@ export async function loadDashboardData(
       : (notificationDataRes.notifications.data ?? []),
     auditLogs: auditRes.error ? [] : (auditRes.data ?? []),
     memberDirectory,
-    memberProfile: memberDirectory.find((member: any) => member.user_id === userId) ?? null,
+    memberProfile: memberDirectory.find(member => member.user_id === userId) ?? null,
     accountProfiles: servantDirectoryRes.accountProfiles.error
       ? []
       : (servantDirectoryRes.accountProfiles.data ?? []),

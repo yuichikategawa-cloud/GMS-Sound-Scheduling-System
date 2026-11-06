@@ -1,5 +1,5 @@
 export interface RecurringAvailabilityRule {
-  id?: string | number;
+  id?: string;
   servant_id: string;
   effective_from: string;
   effective_until?: string | null;
@@ -11,20 +11,20 @@ export interface RecurringAvailabilityRule {
 }
 
 export interface AvailabilityRecord {
-  id?: string | number;
+  id?: string;
   servant_id: string;
   service_date: string;
   status: string;
   notes?: string | null;
   is_recurring?: boolean;
-  rule_id?: string | number;
+  rule_id?: string;
 }
 
 export interface VirtualAvailabilityRecord extends AvailabilityRecord {
   id: string;
   notes: string;
   is_recurring: true;
-  rule_id: string | number | undefined;
+  rule_id: string | undefined;
 }
 
 export type RecurringAvailabilityRuleValidation =

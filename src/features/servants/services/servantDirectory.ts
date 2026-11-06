@@ -4,12 +4,28 @@ export interface ServantDirectoryMember {
   user_id: string;
   full_name: string;
   email?: string | null;
+  gender?: string | null;
+  date_of_birth?: string | null;
+  nij?: string | null;
+  phone_number?: string | null;
+  domicile_area?: string | null;
+  domicile_other?: string | null;
+  cg_category?: string | null;
+  cg_status?: string | null;
+  cg_number?: string | null;
+  cg_days?: string[] | null;
+  cg_time?: string | null;
+  team_leader_name?: string | null;
+  coach_name?: string | null;
+  cg_leader_name?: string | null;
+  leader_phone_numbers?: string[] | null;
   last_verified_at?: string | null;
 }
 
 export interface ServantDirectoryAccountProfile {
   id: string;
   role: string;
+  display_name?: string | null;
   username?: string | null;
 }
 
@@ -21,23 +37,23 @@ export interface ServantAccountCandidate {
   linked_servant: Servant | null;
 }
 
-export interface ServantDirectoryQueryResponse {
-  data: any[] | null;
+export interface ServantDirectoryQueryResponse<T> {
+  data: T[] | null;
   error: { message: string } | null;
 }
 
 interface ServantDirectorySelectBuilder {
-  select(columns: "*" | "id,role,display_name,username"): PromiseLike<ServantDirectoryQueryResponse>;
+  select(columns: "*"): PromiseLike<ServantDirectoryQueryResponse<ServantDirectoryMember>>;
+  select(columns: "id,role,display_name,username"): PromiseLike<ServantDirectoryQueryResponse<ServantDirectoryAccountProfile>>;
 }
 
 export interface ServantDirectoryDataClient {
-  from(tableName: "member_profiles"): ServantDirectorySelectBuilder;
-  from(tableName: "profiles"): ServantDirectorySelectBuilder;
+  from(tableName: "member_profiles" | "profiles"): ServantDirectorySelectBuilder;
 }
 
 export interface ServantDirectoryData {
-  memberProfiles: ServantDirectoryQueryResponse;
-  accountProfiles: ServantDirectoryQueryResponse;
+  memberProfiles: ServantDirectoryQueryResponse<ServantDirectoryMember>;
+  accountProfiles: ServantDirectoryQueryResponse<ServantDirectoryAccountProfile>;
 }
 
 /**

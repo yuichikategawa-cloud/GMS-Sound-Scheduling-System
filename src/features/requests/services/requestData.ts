@@ -1,5 +1,27 @@
-export interface ServingRequestQueryResponse {
-  data: any[] | null;
+export interface ServingRequestRecord {
+  id: string;
+  schedule_id: string;
+  assignment_id?: string | null;
+  requester_servant_id: string;
+  request_type: "replacement" | "swap";
+  details?: string | null;
+  status: string;
+  created_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  target_schedule_id?: string | null;
+  target_assignment_id?: string | null;
+  target_servant_id?: string | null;
+}
+
+export interface ServingRequestReadMarker {
+  request_id: string;
+  user_id: string;
+  read_at?: string;
+}
+
+export interface ServingRequestQueryResponse<T> {
+  data: T[] | null;
   error: { message: string } | null;
 }
 
@@ -7,7 +29,7 @@ interface ServingRequestsSelectBuilder {
   order(
     column: "created_at",
     options: { ascending: false },
-  ): PromiseLike<ServingRequestQueryResponse>;
+  ): PromiseLike<ServingRequestQueryResponse<ServingRequestRecord>>;
 }
 
 interface ServingRequestsQueryBuilder {
@@ -15,7 +37,7 @@ interface ServingRequestsQueryBuilder {
 }
 
 interface ServingRequestReadsQueryBuilder {
-  select(columns: "*"): PromiseLike<ServingRequestQueryResponse>;
+  select(columns: "*"): PromiseLike<ServingRequestQueryResponse<ServingRequestReadMarker>>;
 }
 
 export interface ServingRequestDataClient {
@@ -24,8 +46,8 @@ export interface ServingRequestDataClient {
 }
 
 export interface ServingRequestData {
-  requests: ServingRequestQueryResponse;
-  reads: ServingRequestQueryResponse;
+  requests: ServingRequestQueryResponse<ServingRequestRecord>;
+  reads: ServingRequestQueryResponse<ServingRequestReadMarker>;
 }
 
 /**
