@@ -38,7 +38,7 @@ export interface VirtualAvailabilityRecord extends AvailabilityRecord {
 
 export type RecurringAvailabilityRuleValidation =
   | { ok: true }
-  | { ok: false; reason: "overlapping_rule" | "availability_conflict"; conflictDate?: string };
+  | { ok: false; reason: "invalid_date_range" | "overlapping_rule" | "availability_conflict"; conflictDate?: string };
 
 /**
  * Keeps the same local-noon date parsing and locale-based date formatting
@@ -117,6 +117,20 @@ export function buildVirtualAvailability(
   return rules.flatMap(rule => expandRecurringAvailabilityRule(rule, horizon));
 }
 
+function isValidDateOnly(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(0);
+  parsed.setUTCHours(0, 0, 0, 0);
+  parsed.setUTCFullYear(year, month - 1, day);
+
+  return parsed.toISOString().slice(0, 10) === value;
+}
+
 function hasOverlappingRule(
   candidate: RecurringAvailabilityRule,
   existingRules: readonly RecurringAvailabilityRule[],
@@ -140,6 +154,15 @@ export function validateRecurringAvailabilityRule(
   availability: readonly AvailabilityRecord[],
   now: Date = new Date(),
 ): RecurringAvailabilityRuleValidation {
+  const hasEndDate = candidate.effective_until !== undefined && candidate.effective_until !== null;
+  if (
+    !isValidDateOnly(candidate.effective_from) ||
+    (hasEndDate && !isValidDateOnly(candidate.effective_until!)) ||
+    (hasEndDate && candidate.effective_until! < candidate.effective_from)
+  ) {
+    return { ok: false, reason: "invalid_date_range" };
+  }
+
   if (hasOverlappingRule(candidate, existingRules)) {
     return { ok: false, reason: "overlapping_rule" };
   }
