@@ -315,9 +315,6 @@
 }
 :root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover{background:#33415d;color:#fff}
 :root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
-:root[data-theme="dark"] .nav-item{color:#c0cbe0}
-:root[data-theme="dark"] .nav-item.active,:root[data-theme="dark"] .nav-item:hover{background:#2c3855;color:#fff}
-:root[data-theme="dark"] .role-tag{background:#292c55;color:#c9c4ff}
 :root[data-theme="dark"] .schedule-workspace-tabs{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .schedule-workspace-tabs button{color:#b7c1d5}
 :root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#393b72;color:#fff}
@@ -351,13 +348,6 @@
 :root[data-theme="dark"] .generate-panel{background:#202644;border-color:#39416c}
 :root[data-theme="dark"] .generate-note{background:#202c42;border-color:#394660;color:#d9e2f2}
 :root[data-theme="dark"] .empty-state{background:#1b2437;border-color:#43516d;color:#a3aec3}
-:root[data-theme="dark"] .mobile-bottom-nav{background:rgba(24,34,56,.97);border-color:#354059;box-shadow:0 -5px 22px rgba(0,0,0,.3)}
-:root[data-theme="dark"] .mobile-nav-item{color:#9caac2}
-:root[data-theme="dark"] .mobile-nav-item.active{background:#34315f;color:#c9c4ff}
-:root[data-theme="dark"] .mobile-more-menu{background:#1b2437;border-color:#354059}
-:root[data-theme="dark"] .mobile-more-menu button{background:#1b2437;color:#e8edf7}
-:root[data-theme="dark"] .mobile-more-menu button:hover{background:#293650}
-:root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{border-color:#354059;color:#ff9ea9}
 :root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
 :root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
 :root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.72)}
@@ -367,7 +357,6 @@
 :root[data-theme="dark"] .servant-account-chip.linked{background:var(--status-success-bg);color:var(--status-success-text)}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:var(--status-warning-bg);color:var(--status-warning-text)}
 :root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
-:root[data-theme="dark"] .mobile-more-backdrop{background:rgba(0,0,0,.56)}
 :root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
 :root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}/* Additional form, overview and admin surfaces included in the dark palette. */
 :root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .availability-guidance,:root[data-theme="dark"] .swap-source,:root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .servant-filter-card{
@@ -509,13 +498,6 @@
 :root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row,:root[data-theme="dark"] .saved-rule-row{border-color:#3b4b65!important}
 :root[data-theme="dark"] .action-dialog{background:#1b263a!important;border-color:#40516d!important;color:#eef3fb!important}
 :root[data-theme="dark"] .action-dialog-input{background:var(--surface-control)!important;border-color:var(--border-strong)!important;color:var(--text-primary)!important}
-:root[data-theme="dark"] .mobile-bottom-nav{background:rgba(24,35,55,.98)!important;border-color:#394963!important}
-:root[data-theme="dark"] .mobile-nav-item{color:#bac7dc!important}
-:root[data-theme="dark"] .mobile-nav-item.active{background:#3b3970!important;color:#e5e1ff!important}
-:root[data-theme="dark"] .mobile-more-menu{background:#1b263a!important;border-color:#40516d!important}
-:root[data-theme="dark"] .mobile-more-menu button{background:#1b263a!important;color:#edf2fa!important}
-:root[data-theme="dark"] .mobile-more-menu button:hover{background:#2a3a54!important}
-:root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{color:#ffb8c0!important;border-color:#40516d!important}
 @media(max-width:760px){
   
   

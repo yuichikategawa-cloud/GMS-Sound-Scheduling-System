@@ -400,3 +400,34 @@ Deno.test("Member profile dark theme does not retain superseded form and fieldse
   assert(!css.includes("color: #dbe5f2 !important;"), "The superseded member weekday label color must be removed.");
   assertBalancedCss(css, "MemberProfilePanel.css");
 });
+
+
+Deno.test("application shell owns its sidebar and mobile-navigation dark theme", async () => {
+  const [layout, globalCss, shellCss] = await Promise.all([
+    readRepoFile("src/app/components/AppLayout.tsx"),
+    readRepoFile("src/style.css"),
+    readRepoFile("src/app/components/AppShell.css"),
+  ]);
+  assert(layout.includes('import "./AppShell.css";'), "AppLayout must own and import its shell presentation.");
+  for (const selector of [
+    ':root[data-theme="dark"] .nav-item{',
+    ':root[data-theme="dark"] .nav-item.active,',
+    ':root[data-theme="dark"] .role-tag{',
+    ':root[data-theme="dark"] .mobile-bottom-nav{',
+    ':root[data-theme="dark"] .mobile-nav-item{',
+    ':root[data-theme="dark"] .mobile-nav-item.active{',
+    ':root[data-theme="dark"] .mobile-more-menu{',
+    ':root[data-theme="dark"] .mobile-more-menu button{',
+    ':root[data-theme="dark"] .mobile-more-menu button:hover{',
+    ':root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{',
+    ':root[data-theme="dark"] .mobile-more-backdrop{',
+  ]) {
+    assert(shellCss.includes(selector), "AppShell.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
+  }
+  assert(shellCss.includes("background:rgba(24,35,55,.98)!important;"), "The effective mobile navigation surface must be retained.");
+  assert(shellCss.includes("background:#1b263a!important;"), "The effective mobile More menu surface must be retained.");
+  assert(shellCss.includes("color:#ffb8c0!important;"), "The effective dark sign-out color must be retained.");
+  assertBalancedCss(shellCss, "AppShell.css");
+  assertBalancedCss(globalCss, "src/style.css");
+});

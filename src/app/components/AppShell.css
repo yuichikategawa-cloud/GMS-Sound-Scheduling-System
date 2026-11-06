@@ -434,3 +434,46 @@ width:36px;height:36px;flex:0 0 auto
 width:34px;height:34px
 }
 }
+
+/* Application-shell dark theme: navigation, header role, and mobile menu surfaces. */
+:root[data-theme="dark"] .nav-item{
+  color:#c0cbe0;
+}
+:root[data-theme="dark"] .nav-item.active,
+:root[data-theme="dark"] .nav-item:hover{
+  background:#2c3855;
+  color:#fff;
+}
+:root[data-theme="dark"] .role-tag{
+  background:#292c55;
+  color:#c9c4ff;
+}
+:root[data-theme="dark"] .mobile-bottom-nav{
+  background:rgba(24,35,55,.98)!important;
+  border-color:#394963!important;
+}
+:root[data-theme="dark"] .mobile-nav-item{
+  color:#bac7dc!important;
+}
+:root[data-theme="dark"] .mobile-nav-item.active{
+  background:#3b3970!important;
+  color:#e5e1ff!important;
+}
+:root[data-theme="dark"] .mobile-more-menu{
+  background:#1b263a!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .mobile-more-menu button{
+  background:#1b263a!important;
+  color:#edf2fa!important;
+}
+:root[data-theme="dark"] .mobile-more-menu button:hover{
+  background:#2a3a54!important;
+}
+:root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{
+  color:#ffb8c0!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .mobile-more-backdrop{
+  background:rgba(0,0,0,.56);
+}
