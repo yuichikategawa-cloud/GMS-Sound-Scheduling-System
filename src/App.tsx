@@ -32,6 +32,7 @@ import PushNotificationSettings from "./features/notifications/components/PushNo
 import { markServingNotificationRead, saveServingNotificationPreferences } from "./features/notifications/services/notificationPersistence";
 import { cleanupServingPushSubscriptionForSignOut, disableServingPushSubscription, enableServingPushSubscription, isServingPushSubscriptionEnabled, type PushLifecycleRuntime } from "./features/notifications/services/pushSubscription";
 import { createServingRequest, executeServingRequestSwap, markServingRequestRead, resolveServingRequestReplacement, updateServingRequestReview } from "./features/requests/services/requestPersistence";
+import { findCrossLocationAssignmentConflict } from "./features/requests/services/swapValidation";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
 import RequestsPanel from "./features/requests/components/RequestsPanel";
@@ -434,10 +435,9 @@ export default function App() {
     if(!own||!targetSchedule||!target){setMessage("Please select a valid servant assignment to swap with.");return;}
     if(target.servant_id===myServant.id){setMessage("You cannot swap with yourself.");return;}
     if(source.id===targetSchedule.id){setMessage("Choose an assignment on a different service date.");return;}
-    const conflicts=(personId:string,date:string,excludeIds:string[])=>schedules.some(s=>s.service_date===date&&s.location_id!== (date===source.service_date?source.location_id:targetSchedule.location_id) && !excludeIds.includes(s.id) && s.assignments.some(a=>a.servant_id===personId));
     // Each servant must be free of another church assignment on the day they would receive.
-    const targetConflict=schedules.some(s=>s.service_date===source.service_date&&s.location_id!==source.location_id&&s.assignments.some(a=>a.servant_id===target.servant_id));
-    const requesterConflict=schedules.some(s=>s.service_date===targetSchedule.service_date&&s.location_id!==targetSchedule.location_id&&s.assignments.some(a=>a.servant_id===myServant.id));
+    const targetConflict=findCrossLocationAssignmentConflict(schedules,target.servant_id,source.service_date,source.location_id);
+    const requesterConflict=findCrossLocationAssignmentConflict(schedules,myServant.id,targetSchedule.service_date,targetSchedule.location_id);
     if(targetConflict||requesterConflict){setMessage(targetConflict?`${target.servant_name} already has an assignment at another church on ${fmtDate(source.service_date)}.`:`You already have an assignment at another church on ${fmtDate(targetSchedule.service_date)}.`);return;}
     const {error}=await createServingRequest(supabase,{schedule_id:source.id,assignment_id:own.id,requester_servant_id:myServant.id,request_type:"swap",details:details.trim(),status:"pending",target_schedule_id:targetSchedule.id,target_assignment_id:target.id,target_servant_id:target.servant_id});
     if(error)setMessage(error.message);else {setSwapDraft(null);setMessage("Your cross-date swap request has been sent for admin approval.");await loadData();}
@@ -456,8 +456,10 @@ export default function App() {
       const sourceAssignment=source?.assignments.find(a=>a.id===request.assignment_id);
       const targetAssignment=targetSchedule?.assignments.find(a=>a.id===request.target_assignment_id);
       if(!source||!targetSchedule||!sourceAssignment||!targetAssignment){setMessage("Swap cannot be approved because one of the assignments no longer exists.");return;}
-      const conflict=(personId:string,date:string,destinationLocationId:string,excludeScheduleIds:string[])=>schedules.some(s=>s.service_date===date&&s.location_id!==destinationLocationId&&!excludeScheduleIds.includes(s.id)&&s.assignments.some(a=>a.servant_id===personId));
-      if(conflict(targetAssignment.servant_id,source.service_date,source.location_id,[source.id,targetSchedule.id])||conflict(sourceAssignment.servant_id,targetSchedule.service_date,targetSchedule.location_id,[source.id,targetSchedule.id])){setMessage("Swap approval blocked: one servant now has another assignment on the destination date. Review the schedule first.");return;}
+      const excludedScheduleIds=[source.id,targetSchedule.id];
+      const targetConflict=findCrossLocationAssignmentConflict(schedules,targetAssignment.servant_id,source.service_date,source.location_id,excludedScheduleIds);
+      const requesterConflict=findCrossLocationAssignmentConflict(schedules,sourceAssignment.servant_id,targetSchedule.service_date,targetSchedule.location_id,excludedScheduleIds);
+      if(targetConflict||requesterConflict){setMessage("Swap approval blocked: one servant now has another assignment on the destination date. Review the schedule first.");return;}
       const {error:swapError}=await executeServingRequestSwap(supabase,request.id);
       if(swapError){setMessage(swapError.message);return;}
       setMessage("Swap approved and assignments exchanged.");await loadData();return;
