@@ -6,17 +6,8 @@ export interface ScheduleDataQueryResponse<T = any> {
 /** Supabase query-builder generics are intentionally kept behind this feature boundary. */
 export type ScheduleDataClient = any;
 
-import type { Assignment, Location, Schedule } from "../../../types";
-
-export interface ServiceTemplate {
-  id: string;
-  location_id: string;
-  day_of_week: number;
-  service_name: string;
-  start_time: string;
-  end_time: string;
-  active: boolean;
-}
+import type { Assignment, Location, Schedule, ServiceTemplate } from "../../../types";
+export type { ServiceTemplate } from "../../../types";
 
 export interface ScheduleWorkspaceData {
   locations: ScheduleDataQueryResponse<Location>;
