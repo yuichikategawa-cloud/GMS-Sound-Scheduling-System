@@ -484,3 +484,33 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   assertBalancedCss(requestsCss, "RequestsInbox.css");
   assertBalancedCss(globalCss, "src/style.css");
 });
+
+
+Deno.test("Requests feature owns its servant inbox dark layout and card treatment", async () => {
+  const [inbox, globalCss, requestsCss] = await Promise.all([
+    readRepoFile("src/features/requests/components/ServantInbox.tsx"),
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+  ]);
+  assert(inbox.includes('import "./RequestsInbox.css";'), "ServantInbox must import RequestsInbox.css.");
+  for (const selector of [
+    ':root[data-theme="dark"] .servant-inbox{',
+    ':root[data-theme="dark"] .inbox-intro{',
+    ':root[data-theme="dark"] .inbox-intro h2{',
+    ':root[data-theme="dark"] .inbox-intro p{',
+    ':root[data-theme="dark"] .inbox-intro > .inbox-unread-count{',
+    ':root[data-theme="dark"] .inbox-item{',
+    ':root[data-theme="dark"] .inbox-item.unread{',
+    ':root[data-theme="dark"] .inbox-item + .inbox-item{',
+  ]) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
+  }
+  assert(requestsCss.includes("background: #202f46 !important;"), "Inbox card surface must be retained.");
+  assert(requestsCss.includes("background: #292744 !important;"), "Unread inbox surface must be retained.");
+  assert(requestsCss.includes("@media (max-width: 760px)"), "Mobile inbox layout overrides must be retained.");
+  assert(!globalCss.includes(":root[data-theme=\"dark\"] .inbox-intro > .inbox-unread-count{\n    flex: 0 0 auto;"),
+    "Mobile inbox count alignment must not remain global.");
+  assertBalancedCss(requestsCss, "RequestsInbox.css");
+  assertBalancedCss(globalCss, "src/style.css");
+});

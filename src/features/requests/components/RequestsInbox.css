@@ -343,3 +343,53 @@ gap:13px
 :root[data-theme="dark"] .requests-content-card .person-row{
   border-color:#394862!important;
 }
+
+/* Dark-mode ownership for the servant request inbox. */
+:root[data-theme="dark"] .servant-inbox{
+  width: 100%;
+  min-width: 0;
+  gap: 18px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .inbox-intro{
+  min-width: 0;
+  width: 100%;
+  gap: 12px;
+  padding: 2px 1px;
+}
+:root[data-theme="dark"] .inbox-intro h2{
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .inbox-intro p{
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
+  background: #34345f !important;
+  color: #e6e2ff !important;
+  border: 1px solid #514d80 !important;
+}
+:root[data-theme="dark"] .inbox-item{
+  background: #202f46 !important;
+  border: 1px solid #3b4d68 !important;
+  border-radius: 13px !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] .inbox-item.unread{
+  background: #292744 !important;
+  border-color: #514b7b !important;
+}
+:root[data-theme="dark"] .inbox-item + .inbox-item{
+  margin-top: 0 !important;
+}
+@media (max-width: 760px){
+  :root[data-theme="dark"] .inbox-intro{
+    align-items: center;
+  }
+  :root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}

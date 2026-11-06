@@ -798,45 +798,6 @@
   max-width: 100% !important;
 }/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
 /* Inbox should read as distinct, neatly spaced sections with subdued separators. */
-:root[data-theme="dark"] .servant-inbox{
-  width: 100%;
-  min-width: 0;
-  gap: 18px;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .inbox-intro{
-  min-width: 0;
-  width: 100%;
-  gap: 12px;
-  padding: 2px 1px;
-}
-:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3{
-  color: #f3f6fc !important;
-}
-:root[data-theme="dark"] .inbox-intro p,:root[data-theme="dark"] .list-heading span{
-  color: #bdcbe0 !important;
-}
-:root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
-  background: #34345f !important;
-  color: #e6e2ff !important;
-  border: 1px solid #514d80 !important;
-}
-:root[data-theme="dark"] .inbox-item{
-  background: #202f46 !important;
-  border: 1px solid #3b4d68 !important;
-  border-radius: 13px !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-}
-:root[data-theme="dark"] .inbox-item.unread{
-  background: #292744 !important;
-  border-color: #514b7b !important;
-}
-:root[data-theme="dark"] .inbox-item + .inbox-item{
-  margin-top: 0 !important;
-}
 :root[data-theme="dark"] .notification-history-list{
   gap: 12px !important;
 }
@@ -847,13 +808,6 @@
 @media (max-width: 760px){
   .recurring-rule-form,.serving-preference-form{
     width: 100%;
-  }
-  :root[data-theme="dark"] .inbox-intro{
-    align-items: center;
-  }
-  :root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
-    flex: 0 0 auto;
-    white-space: nowrap;
   }
 }
 :root[data-theme="dark"] .assignment-field-feedback.blocked{
