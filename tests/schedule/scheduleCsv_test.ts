@@ -4,7 +4,7 @@ import { buildScheduleCsv } from "../../src/features/schedule/services/scheduleC
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (actual !== expected) {
-    throw new Error(message + "\\nExpected: " + String(expected) + "\\nActual: " + String(actual));
+    throw new Error(message + "\nExpected: " + String(expected) + "\nActual: " + String(actual));
   }
 }
 
@@ -38,8 +38,8 @@ Deno.test("Schedule CSV supports both historical relation rows and mapped worksp
 
   assertEqual(
     csv,
-    "date,location,service,start,end,FOH,Monitor,Assistant\\r\\n" +
-      "\"2026-11-08\",\"North, Campus\",\"Sunday \"\"Celebration\"\"\",\"09:00\",\"11:00\",\"Ada \"\"A\"\"\",\"\",\"Chen\"\\r\\n" +
+    "date,location,service,start,end,FOH,Monitor,Assistant\r\n" +
+      "\"2026-11-08\",\"North, Campus\",\"Sunday \"\"Celebration\"\"\",\"09:00\",\"11:00\",\"Ada \"\"A\"\"\",\"\",\"Chen\"\r\n" +
       "\"2026-11-15\",\"South Campus\",\"Sunday Service\",\"16:00\",\"18:00\",\"\",\"Budi\",\"\"",
     "Schedule CSV must preserve column order, time formatting, relation mapping, and quote escaping.",
   );
@@ -63,7 +63,7 @@ Deno.test("Schedule CSV leaves missing assignments and location fields empty", (
 
   assertEqual(
     csv,
-    "date,location,service,start,end,FOH,Monitor,Assistant\\r\\n" +
+    "date,location,service,start,end,FOH,Monitor,Assistant\r\n" +
       "\"2026-11-22\",\"\",\"Prayer\",\"07:00\",\"08:00\",\"\",\"\",\"\"",
     "Missing location and assignment values must serialize as empty CSV cells.",
   );
