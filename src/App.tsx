@@ -9,6 +9,7 @@ import {
 import { CalendarDays, Church, Users, Search, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { useDashboardLoader } from "./app/hooks/useDashboardLoader";
+import { useAssignmentConfirmationActions } from "./app/hooks/useAssignmentConfirmationActions";
 import type { Location, Profile, ScheduleView, Servant } from "./types";
 import { fmtDate, errorText } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
@@ -26,7 +27,6 @@ import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifec
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 
 
-import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
 
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
 import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
@@ -39,7 +39,6 @@ import { buildServantAccountCandidates } from "./features/servants/services/serv
 import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
 import { useNotificationActions } from "./features/notifications/hooks/useNotificationActions";
 import { usePushNotificationActions } from "./features/notifications/hooks/usePushNotificationActions";
-import { createServingRequest } from "./features/requests/services/requestPersistence";
 import { useRequestActions } from "./features/requests/hooks/useRequestActions";
 import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
 import ServantInbox from "./features/requests/components/ServantInbox";
@@ -312,28 +311,17 @@ export default function App() {
     setModal
   });
 
-  async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
-    if(!supabase||!myServant||!session)return;
-    const assignment=schedule.assignments.find(a=>a.servant_id===myServant.id);
-    if(!assignment?.id)return;
-    if(status==="declined"){
-      const reason=await askText("Decline assignment","Please provide a reason for declining (optional).","Reason (optional)");
-      if(reason===null)return;
-      const {error}=await updateAssignmentConfirmation(supabase,assignment.id,"declined");
-      if(error){setMessage(error.message);return;}
-      const existing=requests.find(r=>r.assignment_id===assignment.id&&r.request_type==="replacement"&&r.status==="pending");
-      if(!existing){
-        const {error:requestError}=await createServingRequest(supabase,{schedule_id:schedule.id,assignment_id:assignment.id,requester_servant_id:myServant.id,request_type:"replacement",details:reason.trim()||"Servant declined the assignment and requests a replacement.",status:"pending"});
-        if(requestError){setMessage("Decline saved, but replacement request could not be created: "+requestError.message);await loadData();return;}
-      }
-      setMessage("Assignment declined. A replacement request has been sent to the administrator.");await loadData();return;
-    }
-    const {error}=await updateAssignmentConfirmation(supabase,assignment.id,"confirmed");
-    if(error){setMessage(error.message);return;}
-    const {error:notifyError}=await notifyAdminAssignmentConfirmation(supabase,assignment.id);
-    if(notifyError)console.warn("Confirmation saved but admin notification failed:",notifyError.message);
-    setMessage("Serving assignment confirmed. The administrator has been notified.");await loadData();
-  }
+  const assignmentConfirmationActions = useAssignmentConfirmationActions({
+    client: supabase,
+    sessionUserId: session?.user?.id,
+    myServant,
+    requests,
+    askText,
+    loadData,
+    setMessage,
+  });
+
+
   if(!isSupabaseConfigured)return <SupabaseSetupScreen/>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
   if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/>;
@@ -414,7 +402,7 @@ export default function App() {
           onAddTemplate={scheduleActions.addServiceTemplate}
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={scheduleExportActions.exportCsv} onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}
-          onConfirmAssignment={confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
+          onConfirmAssignment={assignmentConfirmationActions.confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
         />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
