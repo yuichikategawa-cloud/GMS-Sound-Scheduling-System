@@ -14,6 +14,7 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
     "src/features/schedule/components/ScheduleDialogs.tsx",
     "src/features/schedule/services/schedulePersistence.ts",
     "src/features/schedule/services/scheduleData.ts",
+    "src/features/schedule/services/scheduleCsv.ts",
   ];
   const sources = await Promise.all(paths.map(path =>
     Deno.readTextFile(new URL("../../" + path, import.meta.url))

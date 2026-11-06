@@ -18,6 +18,7 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
+import { buildScheduleCsv } from "./features/schedule/services/scheduleCsv";
 import { loadScheduleWorkspaceData, loadHistoricalScheduleData } from "./features/schedule/services/scheduleData";
 import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from "./features/schedule/services/schedulePersistence";
 import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
@@ -517,14 +518,13 @@ export default function App() {
     if(!supabase||!isAdmin)return;
     const {data,error}=await loadHistoricalScheduleData(supabase,today());
     if(error){setMessage(error.message);return;}
-    const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),...(data??[]).map((s:any)=>[s.service_date,s.locations?.name??"",s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments?.find((a:any)=>a.role===r)?.servants?.full_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
-    const blob=new Blob([rows.join("\r\n")],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-schedule-history.csv";a.click();URL.revokeObjectURL(url);
+    const csv=buildScheduleCsv(data??[],ROLES,shortTime);
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-schedule-history.csv";a.click();URL.revokeObjectURL(url);
   }
 
   function exportCsv(){
-    const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),
-      ...scheduleWorkspace.filtered.map(s=>[s.service_date,s.location_name,s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments.find(a=>a.role===r)?.servant_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
-    const blob=new Blob([rows.join("\r\n")],{type:"text/csv;charset=utf-8"});
+    const csv=buildScheduleCsv(scheduleWorkspace.filtered,ROLES,shortTime);
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-serving-schedule.csv";a.click();URL.revokeObjectURL(url);
   }
 
