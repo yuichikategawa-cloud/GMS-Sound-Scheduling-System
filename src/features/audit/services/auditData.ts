@@ -78,18 +78,18 @@ export function buildAuditCsv(data: readonly AuditLogRecord[]): string {
   ] as const satisfies readonly (keyof AuditLogRecord)[];
 
   const cell = (value: unknown) =>
-    "\"" + String(
+    '"' + String(
       value === null || value === undefined
         ? ""
         : typeof value === "object"
         ? JSON.stringify(value)
         : value,
-    ).replace(/"/g, "\\"") + "\"";
+    ).replace(/"/g, '""') + '"';
 
   return [
     columns.join(","),
     ...data.map(row => columns.map(column => cell(row[column])).join(",")),
-  ].join("\\r\\n");
+  ].join("\r\n");
 }
 
 export type HistoricalAuditExportPreparation =
