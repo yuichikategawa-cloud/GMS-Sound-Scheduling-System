@@ -10,6 +10,7 @@ on:
       - "supabase/migrations/**"
       - "supabase/tests/**"
       - "src/**"
+      - "vercel.json"
       - "tests/**"
       - "index.html"
       - "package.json"
@@ -53,6 +54,10 @@ jobs:
         run: deno test --no-lock tests/schedule/weekendGeneration_test.ts
       - name: Test schedule persistence operations
         run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
+      - name: Test Schedule feature architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/schedule/scheduleArchitecture_test.ts
+      - name: Test Vercel branch-specific Preview deployment guard
+        run: deno test --no-lock --allow-read=vercel.json tests/deployment/vercelPreviewGuard_test.ts
       - name: Test recurring availability rules
         run: deno test --no-lock tests/availability/recurringAvailability_test.ts
       - name: Test availability persistence operations

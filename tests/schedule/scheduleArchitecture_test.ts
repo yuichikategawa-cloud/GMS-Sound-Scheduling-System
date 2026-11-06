@@ -1,0 +1,29 @@
+/// <reference lib="deno.ns" />
+
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(message);
+}
+
+Deno.test("Schedule feature owns its workspace, actions, and presentation modules", async () => {
+  const paths = [
+    "src/features/schedule/hooks/useScheduleWorkspace.ts",
+    "src/features/schedule/hooks/useScheduleActions.ts",
+    "src/features/schedule/components/ScheduleWorkspace.tsx",
+    "src/features/schedule/components/ScheduleManagementPanels.tsx",
+    "src/features/schedule/components/ScheduleDisplayComponents.tsx",
+    "src/features/schedule/components/ScheduleDialogs.tsx",
+  ];
+  const sources = await Promise.all(paths.map(path =>
+    Deno.readTextFile(new URL("../../" + path, import.meta.url))
+  ));
+  for (let index = 0; index < paths.length; index++) {
+    assert(!/from\s+["'][^"']*features\/(availability|requests|notifications|auth|statistics|audit|servants)\//.test(sources[index]),
+      paths[index] + " must not import implementation details from another feature.");
+    assert(!/from\s+["'][^"']*\/App["']/.test(sources[index]),
+      paths[index] + " must not depend on the App composition root.");
+  }
+  assert(sources[1].includes("admin_publish_schedules_grouped") && sources[1].includes("admin_bulk_assignments_grouped"),
+    "Schedule actions must keep the existing admin publication and bulk-assignment RPC contracts.");
+  assert(sources[1].includes("validateScheduleAssignment") && sources[1].includes("highWorkload"),
+    "Schedule actions must retain assignment validation and workload safeguards.");
+});

@@ -3,7 +3,7 @@ import type { CSSProperties, FormEvent } from "react";
 import { CalendarDays, Church, Users, Search, Plus, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, ClipboardCheck, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import type { Assignment, Location, Profile, Role, Schedule, ScheduleView, Servant } from "./types";
-import { today, fmtDate, shortTime, dayNameForTemplate, errorText } from "./shared/formatters";
+import { today, fmtDate, shortTime, errorText } from "./shared/formatters";
 import GmsLoader from "./shared/components/GmsLoader";
 import ActionDialog, { type ActionDialogState } from "./shared/components/ActionDialog";
 import Sidebar from "./app/components/Sidebar";
@@ -18,10 +18,6 @@ import { registerAccount, signInWithUsername, sendPasswordResetLink, updateAccou
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile, saveMemberProfile } from "./features/auth/services/memberProfile";
 import { mapSchedules } from "./features/schedule/services/mapSchedules";
-import { DAILY_CATEGORY_TINTS, dailyChurchColor, dailyServiceCategory, dailyTeamTint } from "./features/schedule/services/dailyDisplay";
-import { validateScheduleAssignment } from "./features/schedule/services/assignmentValidation";
-import { buildWeekendScheduleRows } from "./features/schedule/services/weekendGeneration";
-import { deleteScheduleById, saveScheduleWithAssignments, upsertGeneratedSchedules } from "./features/schedule/services/schedulePersistence";
 import { buildVirtualAvailability, validateRecurringAvailabilityRule } from "./features/availability/services/recurringAvailability";
 import { deleteAvailabilityRecordById, deleteAvailabilityRuleById, deleteServingPreferenceById, insertAvailabilityRule, insertServingPreference, upsertAvailabilityDeadline, upsertAvailabilityRecord, upsertAvailabilityRecords } from "./features/availability/services/availabilityPersistence";
 import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
@@ -37,8 +33,11 @@ import RequestsPanel from "./features/requests/components/RequestsPanel";
 import AuditPanel from "./features/audit/components/AuditPanel";
 import { buildAuditCsv, loadHistoricalAuditLogs, loadRecentAuditLogs } from "./features/audit/services/auditData";
 import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
-
-const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
+import { ROLES } from "./features/schedule/constants";
+import { useScheduleActions } from "./features/schedule/hooks/useScheduleActions";
+import { useScheduleWorkspace } from "./features/schedule/hooks/useScheduleWorkspace";
+import ScheduleWorkspace from "./features/schedule/components/ScheduleWorkspace";
+import { DirectSwapModal, ScheduleModal } from "./features/schedule/components/ScheduleDialogs";
 
 
 export default function App() {
@@ -69,17 +68,10 @@ export default function App() {
   const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
   const [auditLogs,setAuditLogs] = useState<any[]>([]);
   const [availabilityDeadline,setAvailabilityDeadline] = useState("");
-  const [calendarView,setCalendarView] = useState<"week"|"month">("week");
-  const [adminScheduleView,setAdminScheduleView] = useState<"overview"|"assignments"|"calendar">("overview");
   const [theme,setTheme] = useState<"light"|"dark">(()=>{
     try { return window.localStorage.getItem("gms-sound-theme")==="dark"?"dark":"light"; }
     catch { return "light"; }
   });
-  const [personFilter,setPersonFilter] = useState("");
-  const [locationFilter,setLocationFilter] = useState("");
-  const [serviceFilter,setServiceFilter] = useState("");
-  const [fromDate,setFromDate] = useState("");
-  const [toDate,setToDate] = useState("");
   const [modal,setModal] = useState<"schedule"|"person"|null>(null);
   const [editing,setEditing] = useState<ScheduleView|null>(null);
   const [authMode,setAuthMode] = useState<AuthMode>("login");
@@ -383,100 +375,14 @@ export default function App() {
     if(requestedTab)window.history.replaceState({},document.title,window.location.pathname);
   },[profile?.id,isAdmin]);
   const myServant=servants.find(p=>p.auth_user_id===session?.user?.id);
-
-  const myPublishedSchedules=useMemo(()=>myServant?schedules.filter(s=>s.status==="published"&&s.assignments.some(a=>a.servant_id===myServant.id)):[],[schedules,myServant?.id]);
-  // Count distinct calendar days, not individual service slots. Two services on one date count as one serving day.
-  const thirtyDaysAgoForMyStats=new Date(Date.now()-30*86400000).toLocaleDateString("en-CA");
-  const myDaysServed=new Set(myPublishedSchedules.filter(s=>s.service_date>=thirtyDaysAgoForMyStats&&s.service_date<today()).map(s=>s.service_date)).size;
-  const nextMySchedule=[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))[0]??null;
-
-  const filtered=useMemo(()=>{
-    const q=personFilter.trim().toLowerCase();
-    return schedules.filter(s=>
-      s.service_date>=today() &&
-      (isAdmin || s.status==="published") &&
-      (!q||s.assignments.some(a=>a.servant_name.toLowerCase().includes(q))) &&
-      (!locationFilter||s.location_id===locationFilter) &&
-      (!serviceFilter||s.service_name===serviceFilter) &&
-      (!fromDate||s.service_date>=fromDate) && (!toDate||s.service_date<=toDate)
-    );
-  },[schedules,personFilter,locationFilter,serviceFilter,fromDate,toDate,isAdmin,myServant?.id]);
-  const dailyGroups=useMemo(()=>{
-    const groups=new Map<string,ScheduleView[]>();
-    for(const item of filtered){const current=groups.get(item.service_date)??[];current.push(item);groups.set(item.service_date,current);}
-    return [...groups.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([date,items])=>({date,items}));
-  },[filtered]);
-  const calendarSections=useMemo(()=>{
-    const buckets=new Map<string,{key:string;label:string;groups:typeof dailyGroups}>();
-    for(const group of dailyGroups){
-      const d=new Date(`${group.date}T12:00:00`);let key:string,label:string;
-      if(calendarView==="month"){key=group.date.slice(0,7);label=d.toLocaleDateString("en-US",{month:"long",year:"numeric"});}
-      else {const monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7));key=monday.toLocaleDateString("en-CA");const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);label=`Week of ${monday.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${sunday.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`;}
-      const existing=buckets.get(key)??{key,label,groups:[]};existing.groups.push(group);buckets.set(key,existing);
-    }
-    return [...buckets.values()];
-  },[dailyGroups,calendarView]);
-
-  async function saveSchedule(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault();if(!supabase||!isAdmin)return;
-    setScheduleError("");
-    const fd=new FormData(e.currentTarget);
-    const payload={service_date:String(fd.get("service_date")),location_id:String(fd.get("location_id")),service_name:String(fd.get("service_name")),start_time:String(fd.get("start_time")),end_time:String(fd.get("end_time"))};
-    const selected:Record<Role,string>={FOH:String(fd.get("FOH")||""),Monitor:String(fd.get("Monitor")||""),Assistant:String(fd.get("Assistant")||"")};
-    const chosen=Object.entries(selected).filter(([,id])=>id).map(([role,id])=>({role,id}));
-    const validation=validateScheduleAssignment({
-      selected:chosen,
-      serviceDate:payload.service_date,
-      locationId:payload.location_id,
-      serviceName:payload.service_name,
-      startTime:payload.start_time,
-      endTime:payload.end_time,
-      schedules,
-      availability,
-      preferences:servingPreferences,
-      editingScheduleId:editing?.id
-    });
-    if(validation.duplicateServantId){setScheduleError("This servant is selected for more than one role in this service. Please choose a different servant.");return;}
-    if(validation.blockedServantIds.length){
-      const names=validation.blockedServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant");
-      setScheduleError(`Serving eligibility restriction: ${names.join(", ")} cannot serve in this time window, location or service based on their saved preferences. Review Availability → Serving preferences.`);
-      return;
-    }
-    const conflicts=validation.crossChurchConflicts;
-    if(conflicts.length){const names=conflicts.map(c=>`${servants.find(p=>p.id===c.servantId)?.full_name??"A servant"} (${c.schedule.location_name} · ${c.schedule.service_name})`);setScheduleError(`Cannot save this schedule. ${names.join(", ")} ${conflicts.length===1?"is":"are"} already assigned at another church location on ${fmtDate(payload.service_date)}. A servant can only serve at one church location per day.`);return;}
-    if(validation.overlappingConflicts.length){setScheduleError(`Cannot save this schedule. ${validation.overlappingConflicts.map(c=>servants.find(p=>p.id===c.servantId)?.full_name??"A servant").join(", ")} ${validation.overlappingConflicts.length===1?"has":"have"} an overlapping service at this location.`);return;}
-    if(validation.unavailableServantIds.length){setScheduleError(`Cannot assign this schedule. ${validation.unavailableServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant").join(", ")} marked unavailable on ${fmtDate(payload.service_date)}.`);return;}
-    if(validation.preferNotServantIds.length&&!await askAction("Availability preference",`${validation.preferNotServantIds.map(id=>servants.find(p=>p.id===id)?.full_name??"A servant").join(", ")} marked “Prefer not to serve” on this date. Do you want to continue with this manual assignment?`,"Assign anyway",true))return;
-    if(validation.highWorkload.length&&!await askAction("High workload warning",`${validation.highWorkload.map(item=>`${servants.find(p=>p.id===item.servantId)?.full_name??"Servant"} (${item.days} days in the previous 30 days)`).join(", ")} already have a high serving frequency. Continue with this manual assignment?`,"Assign anyway",true))return;
-    setLoading(true);setMessage("");
-    try {
-      const {error}=await saveScheduleWithAssignments(supabase,{
-        scheduleId:editing?.id??null,
-        service:payload,
-        assignments:ROLES.filter(role=>selected[role]).map(role=>({role,servant_id:selected[role]}))
-      });
-      if(error)throw error;
-      setScheduleError("");setModal(null);setEditing(null);await loadData();
-    }catch(e){setScheduleError(errorText(e));setLoading(false);}
-  }
-
-  async function generateWeekend(date:string,weeks=1,templateIds:string[]=[],mode:"add"|"replace"="add") {
-    if(!supabase||!isAdmin)return;
-    const generation=buildWeekendScheduleRows({startDate:date,weeks,templateIds,templates});
-    if(!generation.ok){
-      if(generation.reason==="choose_saturday"){setMessage("Choose a Saturday to generate the weekend.");return;}
-      if(generation.reason==="select_template"){setMessage("Select at least one service template to generate.");return;}
-      if(generation.reason==="no_weekend_services"){setScheduleError("The selected templates do not include Saturday or Sunday services.");return;}
-      setScheduleError("Choose a valid Saturday and a positive number of weekends.");
-      return;
-    }
-    setLoading(true);setMessage("");setScheduleError("");
-    try {
-      const {error}=await upsertGeneratedSchedules(supabase,generation.rows,mode);
-      if(error)throw error;
-      await loadData();setMessage(`${generation.weekendCount} weekend(s) generated using ${generation.selectedTemplateCount} selected template(s). ${mode==="replace"?"Matching existing slots were updated; assignments were preserved.":"Existing slots were left unchanged."} New slots are drafts; assign servants and publish when ready.`);
-    }catch(e){setScheduleError(errorText(e));setLoading(false);}
-  }
+  const scheduleActions = useScheduleActions({
+    client: supabase, isAdmin, schedules, locations, servants, availability,
+    servingPreferences, templates, editing, askAction, askText, loadData,
+    setLoading, setMessage, setScheduleError, setModal, setEditing
+  });
+  const scheduleWorkspace = useScheduleWorkspace({
+    schedules, isAdmin, myServantId: myServant?.id
+  });
 
   async function saveAvailability(e:FormEvent<HTMLFormElement>) {
     e.preventDefault();if(!supabase)return;
@@ -577,125 +483,6 @@ export default function App() {
     if(!supabase||!isAdmin)return;
     const {error}=await setServantActive(supabase,p.id,!p.active);
     if(error)setMessage(errorText(error));else await loadData();
-  }
-  async function deleteSchedule(s:ScheduleView){
-    if(!supabase||!isAdmin||!await askAction("Delete service",`Delete ${s.service_name} on ${fmtDate(s.service_date)}? This also removes its assignments.`,"Delete service",true))return;
-    const {error}=await deleteScheduleById(supabase,s.id);
-    if(error)setMessage(errorText(error));else await loadData();
-  }
-  async function publishSchedule(s:ScheduleView){
-    if(!supabase||!isAdmin)return;
-    const nextStatus=s.status==="published"?"draft":"published";
-    if(nextStatus==="published"){
-      const missing=["FOH","Monitor"].filter(role=>!s.assignments.some(a=>a.role===role&&a.servant_id));
-      if(missing.length&&!await askAction("Incomplete service",`${s.service_name} is missing ${missing.join(" and ")}. Publish anyway?`,"Publish anyway",true))return;
-    }
-    const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:null,p_schedule_ids:[s.id],p_status:nextStatus});
-    if(error){setMessage(error.message);return;}
-    setMessage(nextStatus==="published"?"Schedule published. Affected servants receive one grouped notification.":"Schedule moved back to draft.");
-    await loadData();
-  }
-  async function bulkSetLocationStatus(locationId:string,status:"published"|"draft"){
-    if(!supabase||!isAdmin||!locationId)return;
-    const allChurches=locationId==="__all_churches__";
-    const location=locations.find(l=>l.id===locationId);
-    const scopeName=allChurches?"all church locations":location?.name??"this church";
-    const action=status==="published"?"publish":"unpublish";
-    if(status==="published"){
-      const candidates=schedules.filter(s=>(allChurches||s.location_id===locationId)&&s.service_date>=today());
-      const missing=candidates.filter(s=>!["FOH","Monitor"].every(role=>s.assignments.some(a=>a.role===role&&a.servant_id)));
-      const unavailable=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&availability.some(v=>v.servant_id===a.servant_id&&v.service_date===s.service_date&&v.status==="unavailable")).map(a=>`${a.servant_name} · ${s.location_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
-      const conflicts=candidates.flatMap(s=>s.assignments.filter(a=>a.servant_id&&schedules.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))).map(a=>`${a.servant_name} · ${s.location_name} · ${s.service_name} · ${fmtDate(s.service_date)}`));
-      if(missing.length||unavailable.length||conflicts.length){
-        const report=[missing.length?`${missing.length} service(s) missing FOH or Monitor`:null,unavailable.length?`Unavailable servants: ${unavailable.join("; ")}`:null,conflicts.length?`Cross-church conflicts: ${conflicts.join("; ")}`:null].filter(Boolean).join("\n");
-        if(!await askAction("Scheduling validation warning",`There are issues across ${scopeName}:\n${report}\n\nDo you want to publish anyway?`,"Publish anyway",true))return;
-      }
-    }
-    const confirmationDetail=allChurches
-      ? `${action==="publish"?"Publish":"Unpublish"} all service schedules across ${locations.length} church locations? Servants will receive one grouped notification per account.`
-      : `${action==="publish"?"Publish":"Unpublish"} all schedules for ${scopeName}?`;
-    if(!await askAction(`${action==="publish"?"Publish":"Unpublish"} all schedules?`,confirmationDetail,action==="publish"?"Publish all":"Unpublish all",action!=="publish"))return;
-    setLoading(true);setScheduleError("");setMessage("");
-    try{
-      const {error}=await supabase.rpc("admin_publish_schedules_grouped",{p_location_id:allChurches?null:locationId,p_schedule_ids:null,p_status:status});
-      if(error)throw error;
-      await loadData();
-      setMessage(`All schedules across ${scopeName} have been ${status==="published"?"published":"unpublished"}. Each affected servant receives one grouped notification.`);
-    }catch(e){setMessage(`Bulk ${action} failed: ${errorText(e)}`);}
-    finally{setLoading(false);}
-  }
-  async function applyBulkAssignments(rows:any[]){
-    if(!supabase||!isAdmin)return false;
-    setLoading(true);setMessage("");
-    try{
-      const {data,error}=await supabase.rpc("admin_bulk_assignments_grouped",{p_assignments:rows,p_batch_label:"Bulk schedule assignment"});
-      if(error){
-        const detail=errorText(error);
-        if(/admin_bulk_assignments_grouped|schema cache|function .*not found|PGRST202|42883|23505|duplicate key|unique constraint.*assignments/i.test(detail)){
-          throw new Error(`The bulk-assignment database function may be missing or outdated. Run supabase/migrations_20261115_bulk_assignment_commit_fix.sql in Supabase SQL Editor, then retry. Details: ${detail}`);
-        }
-        throw new Error(detail);
-      }
-      await loadData();
-      const changed=typeof data==="number"?data:Number(data??0);
-      setMessage(changed>0?`${changed} assignment change(s) saved. Affected servants receive one consolidated notification.`:"No assignment changes were needed; the saved schedule is already up to date.");
-      return true;
-    }catch(e){setMessage(`Bulk assignment failed: ${errorText(e)}`);return false;}
-    finally{setLoading(false);}
-  }
-  async function deleteAllLocationSchedules(locationId:string){
-    if(!supabase||!isAdmin||!locationId)return;
-    const allChurches=locationId==="__all_churches__";
-    const targetLocations=allChurches?locations:[locations.find(l=>l.id===locationId)].filter(Boolean) as Location[];
-    if(!targetLocations.length){setMessage("No church locations are available to delete.");return;}
-    const targetIds=targetLocations.map(l=>l.id);
-    const targetNames=targetLocations.map(l=>l.name);
-    const targetSchedules=schedules.filter(s=>targetIds.includes(s.location_id));
-    const scopeName=allChurches?`ALL ${targetLocations.length} church locations (${targetNames.join(", ")})`:targetNames[0];
-    if(!targetSchedules.length){setMessage(`There are no schedules to delete for ${scopeName}.`);return;}
-    const confirmation=await askText(
-      "Confirm permanent deletion",
-      `This will permanently delete ALL ${targetSchedules.length} schedules and their assignments for ${scopeName}. This cannot be undone.`,
-      'Type exactly: I do understand',
-      "I do understand"
-    );
-    if(confirmation!=="I do understand"){
-      if(confirmation!==null)setMessage("Delete all cancelled: confirmation text did not match.");
-      return;
-    }
-    if(!await askAction(
-      "Final deletion confirmation",
-      `Permanently delete all ${targetSchedules.length} schedules and assignments for ${scopeName}? This cannot be undone.`,
-      "Delete permanently",
-      true
-    ))return;
-    setLoading(true);setScheduleError("");setMessage("");
-    try{
-      const result=allChurches
-        ? await supabase.from("schedules").delete().in("location_id",targetIds)
-        : await supabase.from("schedules").delete().eq("location_id",targetIds[0]);
-      if(result.error)throw result.error;
-      await loadData();
-      setMessage(`Deleted ${targetSchedules.length} schedules and their assignments for ${scopeName}.`);
-    }catch(e){setMessage(`Delete all failed: ${errorText(e)}`);}
-    finally{setLoading(false);}
-  }
-  async function addLocation(){
-    if(!supabase||!isAdmin)return;
-    const name=await askText("Add church location","Enter the name of the new church location.","Church name");if(!name?.trim())return;
-    const {error}=await supabase.from("locations").insert({name:name.trim()});
-    if(error)setMessage(error.message);else {setMessage("Church location added.");await loadData();}
-  }
-  async function addRecurringTemplate(){
-    if(!supabase||!isAdmin)return;
-    const locationName=await askText("Add recurring service","Enter the exact church location name. Available: "+locations.map(l=>l.name).join(", "),"Church location");if(!locationName)return;
-    const location=locations.find(l=>l.name.toLowerCase()===locationName.trim().toLowerCase());if(!location){setMessage("Location not found. Add the church first.");return;}
-    const day=await askText("Choose service day","Enter 6 for Saturday or 0 for Sunday.","Day of week",undefined,"0");if(day!=="0"&&day!=="6"){setMessage("Recurring templates currently support Saturday (6) and Sunday (0). Add weekday specials as individual services.");return;}
-    const service_name=await askText("Service name","Enter the recurring service name.","Service name");if(!service_name?.trim())return;
-    const start_time=await askText("Start time","Enter the start time in HH:MM format.","Start time",undefined,"09:00");if(!start_time)return;
-    const end_time=await askText("End time","Enter the end time in HH:MM format.","End time",undefined,"11:00");if(!end_time)return;
-    const {error}=await supabase.from("service_templates").upsert({location_id:location.id,day_of_week:Number(day),service_name:service_name.trim(),start_time,end_time,active:true},{onConflict:"location_id,day_of_week,service_name"});
-    if(error)setMessage(error.message);else {setMessage("Recurring service template saved.");await loadData();}
   }
   async function saveDeadline(e:FormEvent<HTMLFormElement>){
     e.preventDefault();if(!supabase||!isAdmin)return;
@@ -811,7 +598,7 @@ export default function App() {
 
   function exportCsv(){
     const rows=[["date","location","service","start","end","FOH","Monitor","Assistant"].join(","),
-      ...filtered.map(s=>[s.service_date,s.location_name,s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments.find(a=>a.role===r)?.servant_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
+      ...scheduleWorkspace.filtered.map(s=>[s.service_date,s.location_name,s.service_name,shortTime(s.start_time),shortTime(s.end_time),...ROLES.map(r=>s.assignments.find(a=>a.role===r)?.servant_name??"")].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","))];
     const blob=new Blob([rows.join("\r\n")],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="gms-serving-schedule.csv";a.click();URL.revokeObjectURL(url);
   }
@@ -869,7 +656,7 @@ export default function App() {
       overlays={
         <>
           {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
-    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={saveSchedule} error={scheduleError}/>}
+    {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={scheduleActions.saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
     {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={submitDirectSwap}/>}
         </>
@@ -877,400 +664,33 @@ export default function App() {
     >
 
         {!isAdmin&&memberProfile&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
-        {tab==="schedule"? <>
-          {!isAdmin&&<MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id??""}/>}
-          {!isAdmin&&<MyUpcomingAssignments items={[...myPublishedSchedules].filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time))} servantId={myServant?.id??""} onConfirm={confirmAssignment} onRequest={submitServingRequest}/>}
-          {isAdmin ? <>
-            <div className="toolbar schedule-page-heading"><div><h2>Serving schedule</h2><p className="subtle">Manage coverage, servant assignments and service calendars across all church locations.</p></div></div>
-            <div className="schedule-workspace-tabs" role="tablist" aria-label="Schedule workspace">
-              <button type="button" role="tab" aria-selected={adminScheduleView==="overview"} className={adminScheduleView==="overview"?"selected":""} onClick={()=>setAdminScheduleView("overview")}><BarChart3 size={16}/> Overview</button>
-              <button type="button" role="tab" aria-selected={adminScheduleView==="assignments"} className={adminScheduleView==="assignments"?"selected":""} onClick={()=>setAdminScheduleView("assignments")}><Users size={16}/> Assignments</button>
-              <button type="button" role="tab" aria-selected={adminScheduleView==="calendar"} className={adminScheduleView==="calendar"?"selected":""} onClick={()=>setAdminScheduleView("calendar")}><CalendarDays size={16}/> Calendar</button>
-            </div>
-
-            <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView!=="overview"}>
-              <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability}/>
-            </section>
-
-            <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView!=="assignments"}>
-              <div className="toolbar assignment-workspace-heading"><div><h2>Assignment management</h2><p className="subtle">Create services, manage church-wide actions and assign servants across multiple services.</p></div><div className="toolbar-actions assignment-management-actions"><button className="btn primary" onClick={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}><Plus size={16}/> Add special service</button><button className="btn secondary" onClick={addLocation}><Plus size={16}/> Add church</button><button className="btn secondary" onClick={addRecurringTemplate}><Plus size={16}/> Add recurring service</button></div></div>
-              <ChurchBulkActions locations={locations} disabled={loading} onPublish={id=>void bulkSetLocationStatus(id,"published")} onUnpublish={id=>void bulkSetLocationStatus(id,"draft")} onDelete={id=>void deleteAllLocationSchedules(id)}/>
-              <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={servingPreferences} disabled={loading} onApply={applyBulkAssignments} onEditSchedule={s=>{setScheduleError("");setEditing(s);setModal("schedule");}} onPublishSchedule={publishSchedule} onDeleteSchedule={deleteSchedule}/>
-              <GeneratePanel templates={templates} locations={locations} onGenerate={generateWeekend} onAddTemplate={async(locationId,day,name,start,end)=>{if(!supabase||!isAdmin)return;const {error}=await supabase.from("service_templates").upsert({location_id:locationId,day_of_week:day,service_name:name,start_time:start,end_time:end,active:true},{onConflict:"location_id,day_of_week,service_name"});if(error)throw error;await loadData();setMessage(`${name} template saved. Select it above to generate future weekends.`);}} onDeleteTemplate={async(template)=>{if(!supabase||!isAdmin)return;const ok=await askAction("Remove service template",`Remove ${template.service_name} (${dayNameForTemplate(template.day_of_week)}) from future recurring generation? Existing schedules already generated from this template will not be deleted.`,`Remove template`,true);if(!ok)return;const {error}=await supabase.from("service_templates").update({active:false}).eq("id",template.id);if(error){setMessage(error.message);return;}await loadData();setMessage(`${template.service_name} was removed from active templates. Existing schedules were preserved.`);}}/>
-            </section>
-
-            <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView!=="calendar"}>
-              <div className="toolbar calendar-workspace-heading"><div><h2>Schedule calendar</h2><p className="subtle">Browse the daily schedule by church. Use Assignments to edit, publish or remove individual services.</p></div><div className="toolbar-actions"><button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button><button className="btn secondary" onClick={()=>void exportScheduleHistory()}><Download size={16}/> History CSV</button></div></div>
-              <div className="calendar-switch"><span>Calendar grouping</span><button className={calendarView==="week"?"selected":""} onClick={()=>setCalendarView("week")}>Weekly</button><button className={calendarView==="month"?"selected":""} onClick={()=>setCalendarView("month")}>Monthly</button></div>
-              <details className="filter-panel filter-panel-collapsible" open><summary className="filter-title"><span><Search size={17}/> <b>Filter schedule</b></span><ChevronDown size={18}/></summary><div className="filters">
-                <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
-                <label><span>Church location</span><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-                <label><span>Service</span><select value={serviceFilter} onChange={e=>setServiceFilter(e.target.value)}><option value="">All services</option>{[...new Set(schedules.map(s=>s.service_name))].sort().map(n=><option key={n}>{n}</option>)}</select></label>
-                <label><span>From</span><input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label>
-                <label><span>To</span><input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label>
-              </div><button className="clear-btn" onClick={()=>{setPersonFilter("");setLocationFilter("");setServiceFilter("");setFromDate("");setToDate("");}}>Clear all filters</button></details>
-              <details className="collapsible-panel">
-                <summary><span><b>{calendarView==="week"?"Weekly calendar":"Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
-                {calendarSections.length>0&&calendarSections.map(section=><section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group=><DailySummary key={group.date} date={group.date} items={group.items} isAdmin={isAdmin}/>)}</div></section>)}
-              </details>
-
-            </section>
-          </> : <>
-            <div className="toolbar"><div><h2>All published schedules</h2><p className="subtle">Browse published serving assignments across all church locations.</p></div><div className="toolbar-actions serving-toolbar-actions"><button className="btn secondary" onClick={exportCsv}><Download size={16}/> Export</button></div></div>
-            <div className="calendar-switch servant-calendar-switch" role="group" aria-label="Calendar grouping"><span>Calendar view</span><button type="button" className={calendarView==="week"?"selected":""} aria-pressed={calendarView==="week"} onClick={()=>setCalendarView("week")}>Weekly</button><button type="button" className={calendarView==="month"?"selected":""} aria-pressed={calendarView==="month"} onClick={()=>setCalendarView("month")}>Monthly</button></div>
-            <details className="filter-panel filter-panel-collapsible" open><summary className="filter-title"><span><Search size={17}/> <b>Filter schedule</b></span><ChevronDown size={18}/></summary><div className="filters">
-              <label className="search-field"><span>Servant name · any role</span><input value={personFilter} onChange={e=>setPersonFilter(e.target.value)} placeholder="Search servant name"/></label>
-              <label><span>Church location</span><select value={locationFilter} onChange={e=>setLocationFilter(e.target.value)}><option value="">All locations</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-              <label><span>Service</span><select value={serviceFilter} onChange={e=>setServiceFilter(e.target.value)}><option value="">All services</option>{[...new Set(schedules.map(s=>s.service_name))].sort().map(n=><option key={n}>{n}</option>)}</select></label>
-              <label><span>From</span><input type="date" value={fromDate} onChange={e=>setFromDate(e.target.value)}/></label>
-              <label><span>To</span><input type="date" value={toDate} onChange={e=>setToDate(e.target.value)}/></label>
-            </div><button className="clear-btn" onClick={()=>{setPersonFilter("");setLocationFilter("");setServiceFilter("");setFromDate("");setToDate("");}}>Clear all filters</button></details>
-            <details className="collapsible-panel">
-              <summary><span><b>{calendarView==="week"?"Weekly calendar":"Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
-              {calendarSections.length>0&&calendarSections.map(section=><section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group=><DailySummary key={group.date} date={group.date} items={group.items} isAdmin={false}/>)}</div></section>)}
-            </details>
-
-          </>}
-        </>:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
+        {tab==="schedule" ? <ScheduleWorkspace
+          workspace={scheduleWorkspace} isAdmin={isAdmin} schedules={schedules}
+          requests={requests} servants={servants} availability={availability}
+          preferences={servingPreferences} locations={locations} templates={templates}
+          loading={loading} myServant={myServant}
+          onOpenNewSchedule={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}
+          onAddLocation={scheduleActions.addLocation}
+          onAddRecurringTemplate={scheduleActions.addRecurringTemplate}
+          onPublishLocation={id=>void scheduleActions.bulkSetLocationStatus(id,"published")}
+          onUnpublishLocation={id=>void scheduleActions.bulkSetLocationStatus(id,"draft")}
+          onDeleteLocationSchedules={id=>void scheduleActions.deleteAllLocationSchedules(id)}
+          onApplyBulkAssignments={scheduleActions.applyBulkAssignments}
+          onEditSchedule={schedule=>{setScheduleError("");setEditing(schedule);setModal("schedule");}}
+          onPublishSchedule={scheduleActions.publishSchedule}
+          onDeleteSchedule={scheduleActions.deleteSchedule}
+          onGenerate={scheduleActions.generateWeekend}
+          onAddTemplate={scheduleActions.addServiceTemplate}
+          onDeleteTemplate={scheduleActions.archiveServiceTemplate}
+          onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
+          onConfirmAssignment={confirmAssignment} onSubmitServingRequest={submitServingRequest}
+        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={reviewRequest} onResolve={resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} onNotificationRead={markNotificationRead} pushEnabled={pushEnabled} pushBusy={pushBusy} onEnablePush={enablePushNotifications} onDisablePush={disablePushNotifications} notificationPrefs={notificationPrefs} onSaveNotificationPreferences={onSaveNotificationPreferences}/>:tab==="availability"?<AvailabilityPanel servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={saveAvailability} onBulkSave={saveBulkAvailability} onSaveRule={saveAvailabilityRule} onSavePreference={saveServingPreference} onDeletePreference={deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await deleteAvailabilityRule(id);}} onDelete={deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
 }
 
 
 
-function AssignmentOverview({schedules,requests,servants,availability}:{schedules:ScheduleView[];requests:any[];servants:Servant[];availability:any[]}){
- const upcoming=schedules.filter(s=>s.service_date>=today());
- const required=upcoming.length*2;
- const filled=upcoming.reduce((n,s)=>n+s.assignments.filter(a=>(a.role==="FOH"||a.role==="Monitor")&&!!a.servant_id).length,0);
- const people=new Set(upcoming.flatMap(s=>s.assignments.filter(a=>a.servant_id).map(a=>a.servant_id)));
- const groups=[...new Map(upcoming.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
- const incomplete=upcoming.filter(s=>!["FOH","Monitor"].every(role=>s.assignments.some(a=>a.role===role&&a.servant_id)));
- const pending=requests.filter(r=>r.status==="pending").length;
- const awaiting=upcoming.reduce((n,s)=>n+s.assignments.filter(a=>a.servant_id&&a.confirmation_status!=="confirmed").length,0);
- const crossChurch=upcoming.filter(s=>s.assignments.some(a=>a.servant_id&&upcoming.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))));
- const unavailable=upcoming.flatMap(s=>s.assignments.filter(a=>a.servant_id&&availability.some(v=>v.servant_id===a.servant_id&&v.service_date===s.service_date&&v.status==="unavailable")).map(a=>({name:a.servant_name,service:s.service_name,date:s.service_date})));
- const validationCount=crossChurch.length+unavailable.length;
- const thirtyDaysAgo=new Date(Date.now()-30*86400000).toLocaleDateString("en-CA");
- const workload=servants.filter(p=>p.active).map(p=>({id:p.id,name:p.full_name,days:new Set(schedules.filter(s=>s.service_date>=thirtyDaysAgo&&s.service_date<=today()&&s.assignments.some(a=>a.servant_id===p.id)).map(s=>s.service_date)).size})).sort((a,b)=>b.days-a.days);
- const high=workload.filter(p=>p.days>=5);
- const coverage=required?Math.round(filled/required*100):100;
- return <section className="assignment-overview-card">
-  <div className="assignment-overview-heading"><div><h2>Assignment overview</h2><p className="subtle">Coverage, confirmations and scheduling health across all church locations.</p></div><span className={`assignment-coverage-pill ${coverage<70?"needs-attention":""}`}>{coverage}% covered</span></div>
-  <div className="assignment-overview-stats">
-   <div><small>Upcoming services</small><b>{upcoming.length}</b></div>
-   <div><small>Required roles filled</small><b>{filled} / {required}</b></div>
-   <div><small>Unassigned required roles</small><b>{Math.max(0,required-filled)}</b></div>
-   <div><small>Servants assigned</small><b>{people.size}</b></div>
-  </div>
-  <div className="assignment-overview-locations">{groups.map(g=>{const services=upcoming.filter(s=>s.location_id===g.id);const count=services.reduce((n,s)=>n+s.assignments.filter(a=>(a.role==="FOH"||a.role==="Monitor")&&!!a.servant_id).length,0);return <div key={g.id}><span>{g.name}</span><b>{count}/{services.length*2} required roles</b></div>;})}</div>
-  <div className="assignment-overview-ops">
-   <div><small>Incomplete services</small><b className={incomplete.length?"attention-number":""}>{incomplete.length}</b></div>
-   <div><small>Pending requests</small><b>{pending}</b></div>
-   <div><small>Awaiting confirmation</small><b>{awaiting}</b></div>
-   <div><small>Validation flags</small><b className={validationCount?"attention-number":""}>{validationCount}</b></div>
-  </div>
-  {(incomplete.length>0||crossChurch.length>0||unavailable.length>0)&&<div className="assignment-overview-alerts">
-   {incomplete.length>0&&<div className="control-center-alert"><AlertTriangle size={15}/><span>{incomplete.length} service(s) need FOH or Monitor coverage.</span></div>}
-   {crossChurch.length>0&&<div className="control-center-alert"><AlertTriangle size={15}/><span>{crossChurch.length} service(s) have a servant assigned at another church on the same day.</span></div>}
-   {unavailable.length>0&&<div className="control-center-alert"><AlertTriangle size={15}/><span>{unavailable.length} assignment(s) conflict with submitted unavailability: {unavailable.slice(0,4).map(x=>`${x.name} · ${x.service} · ${fmtDate(x.date)}`).join("; ")}{unavailable.length>4?` and ${unavailable.length-4} more`:""}.</span></div>}
-  </div>}
-  <details className="assignment-workload-detail"><summary><span><b>Fair workload · last 30 days</b><small>Calendar days served per active servant; multiple services on the same day count once.</small></span><span className="workload-detail-status">{high.length?`${high.length} need review`:"No workload warnings"}</span><ChevronDown size={17}/></summary>
-   {high.length===0?<p className="workload-status">No servants currently exceed the 5-day workload warning threshold.</p>:<div className="workload-list">{high.slice(0,8).map(p=><div className="workload-row" key={p.id}><span>{p.name}</span><b>{p.days} days</b><em>High frequency</em></div>)}</div>}
-  </details>
- </section>;
-}
-
-function BulkAssignmentCenter({schedules,servants,availability,preferences,disabled,onApply,onEditSchedule,onPublishSchedule,onDeleteSchedule}:{schedules:ScheduleView[];servants:Servant[];availability:any[];preferences:any[];disabled:boolean;onApply:(rows:any[])=>Promise<boolean>;onEditSchedule:(schedule:ScheduleView)=>void;onPublishSchedule:(schedule:ScheduleView)=>void;onDeleteSchedule:(schedule:ScheduleView)=>void}){
- const upcoming=schedules.filter(s=>s.service_date>=today()).sort((a,b)=>a.service_date.localeCompare(b.service_date)||a.start_time.localeCompare(b.start_time));
- const [selected,setSelected]=useState<string[]>([]);
- const [draft,setDraft]=useState<Record<string,Record<string,string>>>({});
- const [sourceDate,setSourceDate]=useState("");
- const [targetDate,setTargetDate]=useState("");
- const [preview,setPreview]=useState(false);
- const [acceptWorkload,setAcceptWorkload]=useState(false);
- useEffect(()=>{
-  // Rehydrate draft values whenever the persisted schedule data is refreshed.
-  // This prevents a servant removed through the bulk editor from reappearing
-  // in stale local dropdown state after the database save succeeds.
-  setDraft(Object.fromEntries(upcoming.map(s=>[
-   s.id,
-   Object.fromEntries(ROLES.map(role=>[role,s.assignments.find(a=>a.role===role)?.servant_id??""]))
-  ])));
-  setSelected(current=>current.filter(id=>upcoming.some(s=>s.id===id)));
- },[schedules]);
- const toggle=(id:string)=>{setAcceptWorkload(false);setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);};
- const setRole=(scheduleId:string,role:string,servantId:string)=>{setAcceptWorkload(false);setDraft(v=>({...v,[scheduleId]:{...(v[scheduleId]??{}),[role]:servantId}}));};
- const hasPendingRowChanges=(schedule:ScheduleView)=>ROLES.some(role=>(draft[schedule.id]?.[role]??"")!==(schedule.assignments.find(a=>a.role===role)?.servant_id??""));
- const scheduleWithDraftAssignments=(schedule:ScheduleView):ScheduleView=>({
-  ...schedule,
-  assignments:ROLES.flatMap(role=>{
-   const servantId=draft[schedule.id]?.[role]??"";
-   if(!servantId)return [];
-   const existing=schedule.assignments.find(a=>a.role===role);
-   const person=servants.find(p=>p.id===servantId);
-   return [{...(existing??{}),role,servant_id:servantId,servant_name:person?.full_name??existing?.servant_name??"Unknown servant"}];
-  })
- });
- const handleRowPublish=async(schedule:ScheduleView)=>{
-  if(!hasPendingRowChanges(schedule)){await onPublishSchedule(schedule);return;}
-  const blocking=ROLES.flatMap(role=>{
-   const servantId=draft[schedule.id]?.[role]??"";
-   return servantId?assignmentFeedback(schedule,role,servantId).blockers:[];
-  });
-  const caution=ROLES.flatMap(role=>{
-   const servantId=draft[schedule.id]?.[role]??"";
-   return servantId?assignmentFeedback(schedule,role,servantId).warnings:[];
-  });
-  if(blocking.length||(caution.length&&!acceptWorkload)){
-   setSelected(current=>current.includes(schedule.id)?current:[...current,schedule.id]);
-   setPreview(true);
-   return;
-  }
-  const serviceRows=ROLES.map(role=>({schedule_id:schedule.id,role,servant_id:draft[schedule.id]?.[role]||null}));
-  const saved=await onApply(serviceRows);
-  if(!saved)return;
-  // Pass the staged assignments to the publisher so required-role checks use
-  // the just-saved values rather than the stale pre-edit schedule snapshot.
-  await onPublishSchedule(scheduleWithDraftAssignments(schedule));
- };
- const assignmentFeedback=(schedule:ScheduleView,role:string,servantId:string)=>{
-  const blockers:string[]=[];const warnings:string[]=[];
-  const person=servants.find(p=>p.id===servantId);
-  const status=availability.find(a=>a.servant_id===servantId&&a.service_date===schedule.service_date)?.status;
-  if(status==="unavailable")blockers.push("Marked unavailable on this date");
-  else if(status==="prefer_not")warnings.push("Prefers not to serve on this date");
-  if(ROLES.some(other=>other!==role&&draft[schedule.id]?.[other]===servantId))blockers.push("Already selected for another role in this service");
-  const otherHasServant=(other:ScheduleView)=>ROLES.some(otherRole=>{
-   const staged=draft[other.id]?.[otherRole];
-   const original=other.assignments.find(a=>a.role===otherRole)?.servant_id??"";
-   return (staged??original)===servantId;
-  });
-  const otherChurch=upcoming.find(other=>other.id!==schedule.id&&other.service_date===schedule.service_date&&other.location_id!==schedule.location_id&&otherHasServant(other));
-  if(otherChurch)blockers.push(`Already assigned at ${otherChurch.location_name} on this date`);
-  const toMinutes=(time:string)=>Number(String(time).slice(0,2))*60+Number(String(time).slice(3,5));
-  const sameChurchSameDay=upcoming.filter(other=>other.id!==schedule.id&&other.service_date===schedule.service_date&&other.location_id===schedule.location_id&&otherHasServant(other));
-  const overlap=sameChurchSameDay.find(other=>toMinutes(schedule.start_time)<toMinutes(other.end_time)&&toMinutes(schedule.end_time)>toMinutes(other.start_time));
-  if(overlap)blockers.push(`Overlaps ${overlap.service_name} at this church`);
-  const prefs=preferences.filter(rule=>rule.servant_id===servantId&&rule.active!==false&&(!rule.effective_from||rule.effective_from<=schedule.service_date)&&(!rule.effective_until||rule.effective_until>=schedule.service_date));
-  const dow=new Date(`${schedule.service_date}T12:00:00`).getDay();
-  const timeRules=prefs.filter(rule=>rule.rule_type==="allowed_time_window");
-  const scopeRules=prefs.filter(rule=>rule.rule_type==="allowed_service_scope");
-  if(timeRules.length&&!timeRules.some(rule=>(!rule.days_of_week?.length||rule.days_of_week.includes(dow))&&shortTime(schedule.start_time)>=String(rule.start_time).slice(0,5)&&shortTime(schedule.end_time)<=String(rule.end_time).slice(0,5)))blockers.push("Outside saved serving day/time restrictions");
-  if(scopeRules.length&&!scopeRules.some(rule=>rule.location_id===schedule.location_id&&(!rule.service_names?.length||rule.service_names.includes(schedule.service_name))))blockers.push("Outside saved church/service restrictions");
-  const from=new Date(`${schedule.service_date}T12:00:00`);from.setDate(from.getDate()-30);const fromDate=from.toLocaleDateString("en-CA");
-  const days=new Set(schedules.filter(item=>item.service_date>=fromDate&&item.service_date<schedule.service_date&&item.assignments.some(a=>a.servant_id===servantId)).map(item=>item.service_date)).size;
-  if(days>=5)warnings.push(`High workload: ${days} serving days in the previous 30 days`);
-  return {personName:person?.full_name??"Servant",blockers,warnings,status};
- };
- const copyPrevious=()=>{
-  if(!sourceDate||!targetDate)return;
-  const source=upcoming.filter(s=>s.service_date===sourceDate);
-  const target=upcoming.filter(s=>s.service_date===targetDate);
-  let copied=0;
-  setDraft(current=>{
-   const next={...current};
-   for(const targetService of target){
-    const sourceService=source.find(x=>x.location_id===targetService.location_id&&x.service_name===targetService.service_name);
-    if(!sourceService)continue;
-    next[targetService.id]={...(next[targetService.id]??{}),...Object.fromEntries(ROLES.map(role=>[role,sourceService.assignments.find(a=>a.role===role)?.servant_id??""]))};
-    copied++;
-   }
-   return next;
-  });
-  setSelected(current=>[...new Set([...current,...target.filter(t=>source.some(x=>x.location_id===t.location_id&&x.service_name===t.service_name)).map(t=>t.id)])]);
-  setPreview(false);
- };
- const rows=selected.flatMap(id=>ROLES.map(role=>({schedule_id:id,role,servant_id:draft[id]?.[role]||null})));
- const conflicts=selected.flatMap(id=>{
-  const schedule=upcoming.find(s=>s.id===id);if(!schedule)return [];
-  return ROLES.flatMap(role=>{
-   const servantId=draft[id]?.[role];if(!servantId)return [];
-   const person=servants.find(x=>x.id===servantId);
-   const unavailable=availability.some(a=>a.servant_id===servantId&&a.service_date===schedule.service_date&&a.status==="unavailable");
-   const duplicate=ROLES.some(other=>other!==role&&draft[id]?.[other]===servantId);
-   const otherHasServant=(other:ScheduleView)=>ROLES.some(otherRole=>(draft[other.id]?.[otherRole]??other.assignments.find(a=>a.role===otherRole)?.servant_id??"")===servantId);
-   const cross=upcoming.some(other=>other.id!==id&&other.service_date===schedule.service_date&&other.location_id!==schedule.location_id&&otherHasServant(other));
-   const prefs=preferences.filter(p=>p.servant_id===servantId&&p.active!==false&&(!p.effective_from||p.effective_from<=schedule.service_date)&&(!p.effective_until||p.effective_until>=schedule.service_date));
-   const dow=new Date(`${schedule.service_date}T12:00:00`).getDay();
-   const timeRules=prefs.filter(p=>p.rule_type==="allowed_time_window");
-   const scopeRules=prefs.filter(p=>p.rule_type==="allowed_service_scope");
-   const timeBlocked=timeRules.length>0&&!timeRules.some(p=>(!p.days_of_week?.length||p.days_of_week.includes(dow))&&shortTime(schedule.start_time)>=String(p.start_time).slice(0,5)&&shortTime(schedule.end_time)<=String(p.end_time).slice(0,5));
-   const scopeBlocked=scopeRules.length>0&&!scopeRules.some(p=>p.location_id===schedule.location_id&&(!p.service_names?.length||p.service_names.includes(schedule.service_name)));
-   const overlapping=upcoming.some(other=>other.id!==id&&other.service_date===schedule.service_date&&other.location_id===schedule.location_id&&otherHasServant(other)&&Number(schedule.start_time.slice(0,2))*60+Number(schedule.start_time.slice(3,5))<Number(other.end_time.slice(0,2))*60+Number(other.end_time.slice(3,5))&&Number(schedule.end_time.slice(0,2))*60+Number(schedule.end_time.slice(3,5))>Number(other.start_time.slice(0,2))*60+Number(other.start_time.slice(3,5)));
-   const reason=unavailable?"Unavailable":duplicate?"Duplicate role":cross?"Other church assignment":overlapping?"Overlapping service":timeBlocked?"Time-window restriction":scopeBlocked?"Service/location restriction":"";
-   return reason?[`${person?.full_name??"Servant"} · ${schedule.service_name} · ${reason}`]:[];
-  });
- });
- const workloadWarnings=selected.flatMap(id=>{
-  const schedule=upcoming.find(s=>s.id===id);if(!schedule)return [];
-  return ROLES.flatMap(role=>{
-   const servantId=draft[id]?.[role];if(!servantId)return [];
-   const from=new Date(`${schedule.service_date}T12:00:00`);from.setDate(from.getDate()-30);const fromDate=from.toLocaleDateString("en-CA");
-   const days=new Set(schedules.filter(x=>x.service_date>=fromDate&&x.service_date<schedule.service_date&&x.assignments.some(a=>a.servant_id===servantId)).map(x=>x.service_date)).size;
-   const personName=servants.find(x=>x.id===servantId)?.full_name??"Servant";
-   const warnings:string[]=[];
-   if(days>=5)warnings.push(`${personName} already served ${days} days in the previous 30 days`);
-   if(availability.some(a=>a.servant_id===servantId&&a.service_date===schedule.service_date&&a.status==="prefer_not"))warnings.push(`${personName} prefers not to serve on ${fmtDate(schedule.service_date)}`);
-   return warnings;
-  });
- });
- const churchGroups=[...new Map(upcoming.slice(0,60).map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
- const commit=async()=>{if(!selected.length)return;const ok=await onApply(rows);if(ok){setSelected([]);setPreview(false);}};
- return <details className="bulk-assignment-center bulk-assignment-collapsible">
-  <summary className="bulk-assignment-summary"><div className="bulk-assignment-heading"><div><h2>Bulk Assignment Center</h2><p className="subtle">Edit multiple service assignments, copy a previous weekend and review conflicts before applying.</p></div><span className="bulk-selected-count">{selected.length} selected</span></div><ChevronDown size={19}/></summary><div className="bulk-assignment-content">
-  <div className="bulk-copy-panel"><div><b>Copy previous weekend</b><small>Copy matching church and service names into another weekend. Review every copied assignment before applying.</small></div><div className="bulk-copy-controls"><label>From Saturday<input type="date" value={sourceDate} onChange={e=>setSourceDate(e.target.value)}/></label><label>To Saturday<input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)}/></label><button className="btn secondary" disabled={!sourceDate||!targetDate||disabled} onClick={copyPrevious}>Copy assignments</button></div></div>
-  <div className="bulk-matrix-toolbar"><div className="bulk-matrix-heading-copy"><b>Assignment distribution matrix</b><small>Use the actions at the end of each row to edit, publish or delete an individual service.</small></div><div><button className="link-btn" onClick={()=>setSelected(upcoming.slice(0,60).map(s=>s.id))}>Select all listed</button><button className="link-btn" onClick={()=>setSelected([])}>Clear selection</button></div></div>
-  <div className="bulk-church-groups">{churchGroups.map(group=>{const services=upcoming.filter(s=>s.location_id===group.id).slice(0,60);const selectedHere=services.filter(s=>selected.includes(s.id)).length;return <details className="bulk-church-group" key={group.id}><summary><span><b>{group.name}</b><small>{services.length} services · {selectedHere} selected</small></span><div className="bulk-group-selection-actions"><button type="button" className="link-btn" onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(v=>[...new Set([...v,...services.map(service=>service.id)])]);}}>Select all</button><button type="button" className="link-btn" disabled={selectedHere===0} onClick={e=>{e.preventDefault();e.stopPropagation();setSelected(v=>v.filter(id=>!services.some(service=>service.id===id)));}}>Clear selection</button></div><ChevronDown size={17}/></summary><div className="bulk-matrix-wrap"><table className="bulk-matrix"><thead><tr><th>Select</th><th>Service</th><th>Date / time</th><th>FOH</th><th>Monitor</th><th>Assistant</th><th>Actions</th></tr></thead><tbody>{services.map(s=><tr key={s.id}><td><input aria-label={`Select ${s.location_name} ${s.service_name}`} type="checkbox" checked={selected.includes(s.id)} onChange={()=>toggle(s.id)}/></td><td><b>{s.service_name}</b><small className={`bulk-matrix-status ${s.status==="published"?"is-published":"is-draft"}`}>{s.status==="published"?"Published":"Draft"}</small>{hasPendingRowChanges(s)&&<small className="bulk-matrix-pending">Unsaved assignment edits</small>}</td><td>{fmtDate(s.service_date)}<small>{shortTime(s.start_time)}–{shortTime(s.end_time)}</small></td>{ROLES.map(role=>{const servantId=draft[s.id]?.[role]??"";const feedback=servantId?assignmentFeedback(s,role,servantId):null;return <td key={role}><div className="bulk-assignment-cell"><select aria-label={`${role} for ${s.location_name} ${s.service_name}`} value={servantId} onChange={e=>setRole(s.id,role,e.target.value)}><option value="">Unassigned</option>{servants.filter(p=>p.active).map(p=>{const status=availability.find(a=>a.servant_id===p.id&&a.service_date===s.service_date)?.status;const marker=status==="unavailable"?" · UNAVAILABLE":status==="prefer_not"?" · PREFER NOT":status==="available"?" · Available":"";return <option key={p.id} value={p.id}>{p.full_name}{marker}</option>;})}</select>{feedback?.blockers.length?<small className="assignment-field-feedback blocked"><AlertTriangle size={12}/><span>{feedback.blockers.join(" · ")}</span></small>:feedback?.warnings.length?<small className="assignment-field-feedback warning"><Info size={12}/><span>{feedback.warnings.join(" · ")}</span></small>:feedback?.status==="available"?<small className="assignment-field-feedback clear"><CheckCircle2 size={12}/><span>Available on this date</span></small>:null}</div></td>;})}<td><div className="bulk-row-actions"><button type="button" className="bulk-row-action" title="Edit service" aria-label={`Edit ${s.service_name}`} onClick={()=>onEditSchedule(s)}><Pencil size={14}/></button><button type="button" className="bulk-row-action" disabled={disabled} title={hasPendingRowChanges(s)?`${s.status==="published"?"Save changes and unpublish":"Save changes and publish"} service`:(s.status==="published"?"Unpublish service":"Publish service")} aria-label={`${hasPendingRowChanges(s)?"Save changes and ": ""}${s.status==="published"?"Unpublish":"Publish"} ${s.service_name}`} onClick={()=>void handleRowPublish(s)}>{s.status==="published"?<EyeOff size={14}/>:<Send size={14}/>}</button><button type="button" className="bulk-row-action danger" title="Delete service" aria-label={`Delete ${s.service_name}`} onClick={()=>onDeleteSchedule(s)}><Trash2 size={14}/></button></div></td></tr>)}</tbody></table></div></details>;})}</div>
-  {upcoming.length>60&&<p className="subtle">Showing the first 60 upcoming services. Use the schedule filters to narrow the list.</p>}
-  <div className="bulk-apply-footer"><span>{selected.length} services · {rows.length} role slots in the update</span><button className="btn primary" disabled={!selected.length||disabled} onClick={()=>setPreview(true)}>Review assignments</button></div>
-  {preview&&<div className="bulk-preview-panel"><div className="bulk-preview-heading"><div><h3>Review bulk assignments</h3><p className="subtle">No assignments are changed until you confirm.</p></div><button className="icon-btn" onClick={()=>setPreview(false)}><X size={17}/></button></div><div className="bulk-preview-stats"><span><b>{selected.length}</b> services</span><span><b>{rows.filter(r=>r.servant_id).length}</b> assigned roles</span><span><b>{conflicts.length}</b> blocking conflicts</span><span><b>{workloadWarnings.length}</b> workload warnings</span></div>{conflicts.length>0?<div className="control-center-alert"><AlertTriangle size={16}/><span>{conflicts.slice(0,12).join("; ")}. Correct conflicts before applying.</span></div>:<p className="workload-status">No blocking availability, preference or scheduling conflicts detected. Database checks run again when saving.</p>}{workloadWarnings.length>0&&<div className="workload-warning"><b>Fairness warnings</b><p>{workloadWarnings.slice(0,8).join("; ")}</p><label><input type="checkbox" checked={acceptWorkload} onChange={e=>setAcceptWorkload(e.target.checked)}/> I reviewed these workload warnings and want to continue.</label></div>}<button className="btn primary" disabled={disabled||conflicts.length>0||(workloadWarnings.length>0&&!acceptWorkload)} onClick={()=>void commit()}>Confirm and apply assignments</button></div>}
- </div>
-  </details>;
-}
-function ChurchBulkActions({locations,disabled,onPublish,onUnpublish,onDelete}:{locations:Location[];disabled:boolean;onPublish:(id:string)=>void;onUnpublish:(id:string)=>void;onDelete:(id:string)=>void}){
- const [locationId,setLocationId]=useState("__all_churches__");
- useEffect(()=>{if(locationId!=="__all_churches__"&&locationId&&!locations.some(l=>l.id===locationId))setLocationId("__all_churches__");},[locations,locationId]);
- const allChurches=locationId==="__all_churches__";
- return <section className="church-bulk-actions"><div><b>Church-wide schedule actions</b><p className="subtle">Publish, unpublish or permanently delete schedules across one church or all church locations.</p></div><div className="church-bulk-controls"><label className="church-location-picker"><span>Church location</span><select value={locationId} onChange={e=>setLocationId(e.target.value)} disabled={!locations.length||disabled}><option value="__all_churches__">All churches</option>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label><button className="btn primary" disabled={!locations.length||disabled} onClick={()=>onPublish(locationId)}>Publish all</button><button className="btn secondary" disabled={!locations.length||disabled} onClick={()=>onUnpublish(locationId)}>Unpublish all</button><button className="btn danger" disabled={!locations.length||disabled} title={allChurches?"Delete all schedules across every church":"Delete all schedules for this church"} onClick={()=>onDelete(locationId)}><Trash2 size={14}/> Delete all</button></div>{allChurches&&<small className="church-bulk-safety-note">All-church deletion requires typing “I do understand” and a second confirmation.</small>}</section>;
-}
-function MyUpcomingAssignments({items,servantId,onConfirm,onRequest}:{items:ScheduleView[];servantId:string;onConfirm:(s:ScheduleView,status:"confirmed"|"declined")=>void;onRequest:(s:ScheduleView,kind:"replacement"|"swap")=>void}){
- const grouped=[...new Map(items.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
- return <section className="my-upcoming-panel"><div className="my-upcoming-panel-head"><div><h3>My upcoming serving assignments</h3><p className="subtle">Confirm your upcoming service or request a replacement or swap.</p></div><span>{items.length} upcoming</span></div>{!items.length?<p className="my-upcoming-empty">You have no upcoming published assignments.</p>:grouped.map(location=><div className="my-upcoming-location" key={location.id}><h4>{location.name}</h4><div className="my-upcoming-list">{items.filter(s=>s.location_id===location.id).map(s=>{const own=s.assignments.find(a=>a.servant_id===servantId);return <article className="my-upcoming-item" key={s.id}><div className="my-upcoming-info"><b>{fmtDate(s.service_date)} · {s.service_name}</b><span>{shortTime(s.start_time)}–{shortTime(s.end_time)} · Your role: {own?.role??"Assigned"}</span><small>Confirmation: {own?.confirmation_status??"pending"}</small></div><div className="my-upcoming-actions"><button className="btn tiny primary" onClick={()=>onConfirm(s,"confirmed")}>Accept</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"swap")}>Request swap</button><button className="btn tiny secondary" onClick={()=>onRequest(s,"replacement")}>Request replacement</button></div></article>;})}</div></div>)}</section>;
-}
-
-function DirectSwapModal({source,schedules,servantId,onClose,onSubmit}:{source:ScheduleView;schedules:ScheduleView[];servantId:string;onClose:()=>void;onSubmit:(scheduleId:string,assignmentId:string,details:string)=>void}){
- const candidates=schedules.filter(s=>s.status==="published"&&s.id!==source.id&&s.service_date!==source.service_date&&s.assignments.some(a=>a.servant_id&&a.servant_id!==servantId));
- const [targetId,setTargetId]=useState("");const [assignmentId,setAssignmentId]=useState("");const [details,setDetails]=useState("");
- const selected=candidates.find(s=>s.id===targetId);const eligible=selected?.assignments.filter(a=>a.servant_id&&a.servant_id!==servantId)??[];
- return <div className="modal-backdrop"><section className="modal-card swap-modal"><div className="modal-head"><div><h2>Request a schedule swap</h2><p className="subtle">Choose another servant's published assignment, even on a different date.</p></div><button className="icon-btn" onClick={onClose}><X/></button></div><div className="swap-source"><b>Your assignment</b><span>{fmtDate(source.service_date)} · {source.location_name} · {source.service_name}</span></div><label>Swap with service<select value={targetId} onChange={e=>{setTargetId(e.target.value);setAssignmentId("");}}><option value="">Select another date and service</option>{candidates.map(s=><option key={s.id} value={s.id}>{fmtDate(s.service_date)} · {s.location_name} · {s.service_name}</option>)}</select></label><label>Servant assignment<select value={assignmentId} onChange={e=>setAssignmentId(e.target.value)} disabled={!selected}><option value="">Select servant</option>{eligible.map(a=><option key={a.id} value={a.id}>{a.servant_name} · {a.role}</option>)}</select></label><label>Note (optional)<textarea value={details} onChange={e=>setDetails(e.target.value)} placeholder="Add a note for the administrator"/></label><div className="modal-actions"><button className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary" disabled={!targetId||!assignmentId} onClick={()=>onSubmit(targetId,assignmentId,details)}>Submit swap request</button></div></section></div>;
-}
-function MyScheduleSummary({daysServed,upcoming,servantId}:{daysServed:number;upcoming:ScheduleView|null;servantId:string}){
- const myRole=upcoming?.assignments.find(a=>a.servant_id===servantId)?.role;
- return <section className="my-schedule-summary">
-  <div className="my-days-card"><span className="my-schedule-label">YOUR SERVING DAYS</span><strong>{daysServed}</strong><small>Unique days served in the last 30 days</small></div>
-  <div className="my-next-card"><div className="my-next-heading"><CalendarDays size={17}/><b>My next serving schedule</b></div>
-   {upcoming?<><div className="my-next-date">{fmtDate(upcoming.service_date)}</div><div className="my-next-detail"><b>{upcoming.location_name}</b><span>{upcoming.service_name} · {shortTime(upcoming.start_time)}–{shortTime(upcoming.end_time)}</span><span>Your role: <b>{myRole??"Assigned"}</b></span></div></>:<p className="my-next-empty">No upcoming published assignment.</p>}
-  </div>
- </section>;
-}
-
-
-
-function DailySummary({date,items,isAdmin=true}:{date:string;items:ScheduleView[];isAdmin?:boolean}){
- const locations=[...new Map(items.map(item=>[item.location_id,{id:item.location_id,name:item.location_name}])).values()];
- const assigned=items.reduce((n,item)=>n+item.assignments.filter(a=>a.servant_id&&a.role!=="Assistant").length,0);
- const required=items.length*2;
- const servantLocations=new Map<string,Set<string>>();
- for(const item of items)for(const assignment of item.assignments){if(!assignment.servant_id)continue;const set=servantLocations.get(assignment.servant_id)??new Set<string>();set.add(item.location_id);servantLocations.set(assignment.servant_id,set);}
- const crossLocationConflicts=[...servantLocations.entries()].filter(([,ids])=>ids.size>1).map(([id])=>items.flatMap(i=>i.assignments.filter(a=>a.servant_id===id).map(a=>a.servant_name))[0]);
- const dayDate=new Date(`${date}T12:00:00`);
- const dayLabel=dayDate.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
- const compactDayLabel=dayDate.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
- return <details className="daily-card" open>
-  <summary className="daily-head"><div className="daily-head-copy"><div className="daily-date"><span className="daily-date-full">{dayLabel}</span><span className="daily-date-compact">{compactDayLabel}</span></div><div className="daily-subtitle">{items.length} services · {locations.length} {locations.length===1?"location":"locations"}</div></div><div className="daily-head-right">{isAdmin&&<div className={`coverage-pill ${assigned>=required?"complete":"pending"}`}>{assigned}/{required} required roles filled</div>}<ChevronDown size={19}/></div></summary>
-  {crossLocationConflicts.length>0&&<div className="day-conflict-warning"><AlertTriangle size={16}/><span><b>Cross-location conflict:</b> {crossLocationConflicts.join(", ")} assigned at more than one church location on this date.</span></div>}
-  <div className="daily-locations">{locations.map(location=>{
-   const services=items.filter(item=>item.location_id===location.id).sort((a,b)=>a.start_time.localeCompare(b.start_time));
-   const showAssistant=services.some(item=>item.status!=="published"||item.assignments.some(a=>a.role==="Assistant"));
-   const roles:Role[]=showAssistant?["FOH","Monitor","Assistant"]:["FOH","Monitor"];
-   const columns=`minmax(150px,1.15fr) repeat(${roles.length},minmax(0,1fr))`;
-   return <section className="daily-location" key={location.id}>
-    <div className="daily-location-name" style={{"--church-band":dailyChurchColor(location.name)} as CSSProperties}><b>{location.name}</b><span>{services.length} {services.length===1?"service":"services"}</span></div>
-    <div className="daily-service-table">
-     <div className="daily-service-table-head" style={{gridTemplateColumns:columns}}><span>Service / time</span>{roles.map(role=><span key={role}>{role}</span>)}</div>
-     {services.map(item=>{const category=dailyServiceCategory(item.service_name);const foh=item.assignments.find(a=>a.role==="FOH");return <div className={`daily-service-row role-count-${roles.length} category-${category}`} key={item.id} style={{gridTemplateColumns:columns,"--service-category-tint":category==="vss"?DAILY_CATEGORY_TINTS.vss:category==="aog"?DAILY_CATEGORY_TINTS.aog:"transparent","--foh-team-tint":dailyTeamTint(foh?.servant_id,foh?.servant_name)??"transparent"} as CSSProperties}>
-      <div className="daily-service-identity"><b>{item.service_name}</b><small>{shortTime(item.start_time)}–{shortTime(item.end_time)}</small></div>
-      <div className={`daily-role-cells role-count-${roles.length}`}>
-       {roles.map(role=>{const assignment=item.assignments.find(a=>a.role===role);const missing=!assignment&&role!=="Assistant";const teamTint=dailyTeamTint(assignment?.servant_id,assignment?.servant_name);return <div className={`daily-assignee-cell ${missing?"missing":role==="Assistant"&&!assignment?"optional":""}`} key={role} style={teamTint?{"--role-team-tint":teamTint} as CSSProperties:undefined}><small>{role}</small><span>{assignment?.servant_name??(role==="Assistant"?"Optional":"Unassigned")}</span></div>;})}
-      </div>
-     </div>;})}
-    </div>
-   </section>;
-  })}</div>
- </details>;
-}
-
-function ScheduleCard({item,isAdmin,onEdit,onDelete,onPublish,myServantId,onConfirm,onRequest}:{item:ScheduleView;isAdmin:boolean;onEdit:()=>void;onDelete:()=>void;onPublish:()=>void;myServantId:string;onConfirm:(status:"confirmed"|"declined")=>void;onRequest:(kind:"replacement"|"swap")=>void}){
- const own=item.assignments.find(a=>a.servant_id===myServantId);
- return <details className="schedule-card" open><summary className="schedule-card-summary"><div><div className="date-text">{fmtDate(item.service_date)} {isAdmin&&<span className={`status-chip ${item.status||"draft"}`}>{item.status||"draft"}</span>}</div><div className="location-text">{item.location_name}</div><div className="service-title">{item.service_name}</div><div className="time-text">{shortTime(item.start_time)} – {shortTime(item.end_time)}</div></div><ChevronDown size={19}/></summary>
-  <div className="role-grid">{(item.status==="published"&&!item.assignments.some(a=>a.role==="Assistant")?["FOH","Monitor"]:ROLES).map(r=>{const a=item.assignments.find(x=>x.role===r);return <div className={`role-box ${r==="Assistant"?"optional":""}`} key={r}><small>{r}{r==="Assistant"?" · optional":""}</small><b>{a?.servant_name??"Unassigned"}</b></div>;})}</div>
-  {!isAdmin&&!!own&&<div className="servant-card-actions"><div className="confirmation-line">Your confirmation: <b>{own?.confirmation_status||"pending"}</b></div><button className="btn tiny primary" onClick={()=>onConfirm("confirmed")}>Confirm</button><button className="btn tiny secondary" onClick={()=>onConfirm("declined")}>Decline</button><button className="btn tiny secondary" onClick={()=>onRequest("replacement")}>Request replacement</button><button className="btn tiny secondary" onClick={()=>onRequest("swap")}>Request swap</button></div>}
-  {isAdmin&&<div className="card-actions"><button className="btn tiny secondary" onClick={onEdit}><Pencil size={13}/> Edit</button><button className="btn tiny secondary" onClick={onPublish}>{item.status==="published"?"Unpublish":"Publish"}</button><button className="btn tiny danger" onClick={onDelete}><Trash2 size={13}/> Delete</button></div>}
- </details>;
-}
-
-function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDeleteTemplate}:{templates:any[];locations:Location[];onGenerate:(date:string,weeks:number,templateIds:string[],mode:"add"|"replace")=>void;onAddTemplate:(locationId:string,day:number,name:string,start:string,end:string)=>Promise<void>;onDeleteTemplate:(template:any)=>Promise<void>}){
- const [date,setDate]=useState(()=>{const d=new Date();d.setDate(d.getDate()+((6-d.getDay()+7)%7));return d.toLocaleDateString("en-CA");});
- const [weeks,setWeeks]=useState(1); const [mode,setMode]=useState<"add"|"replace">("add");
- const [showNewTemplate,setShowNewTemplate]=useState(false);
- const [newLocation,setNewLocation]=useState(locations[0]?.id??"");
- const [newDay,setNewDay]=useState(0); const [newName,setNewName]=useState("");
- const [newStart,setNewStart]=useState("09:00"); const [newEnd,setNewEnd]=useState("11:00");
- const [savingTemplate,setSavingTemplate]=useState(false); const [formError,setFormError]=useState("");
- const [selected,setSelected]=useState<string[]>(()=>templates.filter(t=>t.active!==false).map(t=>String(t.id)));
- useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
- const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
- const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
- return <details className="generate-panel generate-panel-collapsible"><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
-  <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select all</button><button type="button" className="clear-btn" onClick={()=>setSelected([])} disabled={selected.length===0}>Clear selection</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
-   {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);setFormError("");try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){setFormError(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
-    <label>Church location<select value={newLocation} onChange={e=>setNewLocation(e.target.value)} required>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-    <label>Service day<select value={newDay} onChange={e=>setNewDay(Number(e.target.value))}><option value={6}>Saturday</option><option value={0}>Sunday</option></select></label>
-    <label>Service name<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Service 4" required/></label>
-    <label>Start time<input type="time" value={newStart} onChange={e=>setNewStart(e.target.value)} required/></label>
-    <label>End time<input type="time" value={newEnd} onChange={e=>setNewEnd(e.target.value)} required/></label>
-    <button className="btn primary" type="submit" disabled={savingTemplate||!newName.trim()||newStart>=newEnd}>{savingTemplate?"Saving…":"Save service template"}</button>
-    {formError&&<p className="schedule-error" role="alert">{formError}</p>}
-    <p className="new-template-help">The new service will be added to this church’s template list and can be selected for future weekend generation.</p>
-   </form>}
-   {locations.map(location=>{const items=templates.filter(t=>t.location_id===location.id&&t.active!==false);return items.length?<div className="template-location" key={location.id}><b>{location.name}</b><div className="template-options">{items.map(t=><div className="template-option-row" key={t.id}><label><input type="checkbox" checked={selected.includes(String(t.id))} onChange={()=>toggle(String(t.id))}/><span>{dayName(t.day_of_week)} · {t.service_name} ({shortTime(t.start_time)}–{shortTime(t.end_time)})</span></label><button type="button" className="template-delete-btn" title="Remove template from future generation" aria-label={`Delete ${t.service_name} template`} onClick={()=>void onDeleteTemplate(t)}><Trash2 size={14}/></button></div>)}</div></div>:null;})}
-   {templates.filter(t=>t.active!==false).length===0&&<p className="subtle">No active templates. Add recurring services first.</p>}
-  </div>
-  <div className="generate-footer"><label>Start Saturday<input type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Duration<select value={weeks} onChange={e=>setWeeks(Number(e.target.value))}><option value={1}>1 weekend</option><option value={2}>2 weekends</option><option value={4}>4 weekends</option><option value={8}>8 weekends</option><option value={12}>12 weekends</option></select></label><label>Existing matching slots<select value={mode} onChange={e=>setMode(e.target.value as "add"|"replace")}><option value="add">Add missing only</option><option value="replace">Replace times from template</option></select></label><button className="btn primary" disabled={!selected.length||!templates.length} onClick={()=>onGenerate(date,weeks,selected,mode)}><CalendarDays size={16}/> Generate</button></div>
-  <div className="generate-note"><div className="generate-note-title"><Info size={16}/><b>How generation handles existing services</b></div><p><b>Add missing only</b><span>Leaves existing matching slots unchanged.</span></p><p><b>Replace times from template</b><span>Updates matching service times while preserving existing assignments. Other services are not deleted.</span></p></div>
- </div></details>;
-}
-function ScheduleModal({locations,servants,availability,preferences,schedules,editing,onClose,onSave,error}:{locations:Location[];servants:Servant[];availability:any[];preferences:any[];schedules:ScheduleView[];editing:ScheduleView|null;onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void;error:string}){
- const [serviceDate,setServiceDate]=useState(editing?.service_date??today());
- const [locationId,setLocationId]=useState(editing?.location_id??locations[0]?.id??"");
- const [serviceName,setServiceName]=useState(editing?.service_name??"");
- const [startTime,setStartTime]=useState(shortTime(editing?.start_time??"09:00"));
- const [endTime,setEndTime]=useState(shortTime(editing?.end_time??"11:00"));
- const [roleSelections,setRoleSelections]=useState<Record<Role,string>>(()=>Object.fromEntries(ROLES.map(role=>[role,editing?.assignments.find(a=>a.role===role)?.servant_id??""])) as Record<Role,string>);
- const existing=(role:Role)=>editing?.assignments.find(a=>a.role===role)?.servant_id??"";
- const workloadDays=(servantId:string)=>new Set(schedules.filter(s=>s.service_date<serviceDate&&s.service_date>=new Date(new Date(`${serviceDate}T12:00:00`).getTime()-30*86400000).toLocaleDateString("en-CA")&&s.assignments.some(a=>a.servant_id===servantId)).map(s=>s.service_date)).size;
- const availabilityStatus=(servantId:string)=>availability.find(a=>a.servant_id===servantId&&a.service_date===serviceDate)?.status??"not submitted";
- const eligibilityNote=(servantId:string)=>{const prefs=preferences.filter(r=>r.servant_id===servantId&&r.active!==false&&(!r.effective_from||r.effective_from<=serviceDate)&&(!r.effective_until||r.effective_until>=serviceDate));const dow=new Date(`${serviceDate}T12:00:00`).getDay();const timeRules=prefs.filter(r=>r.rule_type==="allowed_time_window");const serviceRules=prefs.filter(r=>r.rule_type==="allowed_service_scope");const timeOk=!timeRules.length||timeRules.some(r=>(!r.days_of_week?.length||r.days_of_week.includes(dow))&&startTime>=String(r.start_time).slice(0,5)&&endTime<=String(r.end_time).slice(0,5));const serviceOk=!serviceRules.length||serviceRules.some(r=>r.location_id===locationId&&(!r.service_names?.length||r.service_names.includes(serviceName)));return !timeOk?" · OUTSIDE ALLOWED TIME":!serviceOk?" · SERVICE NOT ALLOWED":"";};
- const roleFeedback=(role:Role,servantId:string)=>{
-  if(!servantId)return null;
-  const blockers:string[]=[];const warnings:string[]=[];
-  const status=availabilityStatus(servantId);
-  if(status==="unavailable")blockers.push("Marked unavailable on this date");
-  else if(status==="prefer_not")warnings.push("Prefers not to serve on this date");
-  if(ROLES.some(other=>other!==role&&roleSelections[other]===servantId))blockers.push("Already selected for another role in this service");
-  const toMinutes=(value:string)=>Number(value.slice(0,2))*60+Number(value.slice(3,5));
-  const otherChurch=schedules.find(item=>item.id!==editing?.id&&item.service_date===serviceDate&&item.location_id!==locationId&&item.assignments.some(a=>a.servant_id===servantId));
-  if(otherChurch)blockers.push(`Already assigned at ${otherChurch.location_name} on this date`);
-  const sameChurchSameDay=schedules.filter(item=>item.id!==editing?.id&&item.service_date===serviceDate&&item.location_id===locationId&&item.assignments.some(a=>a.servant_id===servantId));
-  const overlap=sameChurchSameDay.find(item=>toMinutes(startTime)<toMinutes(item.end_time)&&toMinutes(endTime)>toMinutes(item.start_time));
-  if(overlap)blockers.push(`Overlaps ${overlap.service_name} at this church`);
-  const prefs=preferences.filter(rule=>rule.servant_id===servantId&&rule.active!==false&&(!rule.effective_from||rule.effective_from<=serviceDate)&&(!rule.effective_until||rule.effective_until>=serviceDate));
-  const dow=new Date(`${serviceDate}T12:00:00`).getDay();
-  const timeRules=prefs.filter(rule=>rule.rule_type==="allowed_time_window");
-  const scopeRules=prefs.filter(rule=>rule.rule_type==="allowed_service_scope");
-  if(timeRules.length&&!timeRules.some(rule=>(!rule.days_of_week?.length||rule.days_of_week.includes(dow))&&startTime>=String(rule.start_time).slice(0,5)&&endTime<=String(rule.end_time).slice(0,5)))blockers.push("Outside saved serving day/time restrictions");
-  if(scopeRules.length&&!scopeRules.some(rule=>rule.location_id===locationId&&(!rule.service_names?.length||rule.service_names.includes(serviceName))))blockers.push("Outside saved church/service restrictions");
-  const days=workloadDays(servantId);
-  if(days>=5)warnings.push(`High workload: ${days} serving days in the previous 30 days`);
-  return {blockers,warnings,status};
- };
- return <div className="modal-backdrop"><form className="modal-card" onSubmit={onSave}><div className="modal-head"><div><h2>{editing?"Edit service assignment":"Add service assignment"}</h2><p className="subtle">Add a regular or special service on any date, including weekdays. FOH and Monitor are required; Assistant is optional.</p></div><button type="button" className="icon-btn" onClick={onClose}><X/></button></div>
-  <div className="form-grid"><label>Date<input name="service_date" type="date" required value={serviceDate} onChange={e=>setServiceDate(e.target.value)}/></label><label>Location<select name="location_id" required value={locationId} onChange={e=>setLocationId(e.target.value)}>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
-   <label className="wide">Service name<input name="service_name" required value={serviceName} onChange={e=>setServiceName(e.target.value)} placeholder="e.g. Special Service, Christmas, Prayer Meeting"/></label><label>Start time<input name="start_time" type="time" required value={startTime} onChange={e=>setStartTime(e.target.value)}/></label><label>End time<input name="end_time" type="time" required value={endTime} onChange={e=>setEndTime(e.target.value)}/></label>
-   {ROLES.map(r=>{const selectedId=roleSelections[r]??"";const feedback=roleFeedback(r,selectedId);return <label className="wide role-assignment-field" key={r}>{r}{r==="Assistant"?" (optional)":" (required)"}<select name={r} required={r!=="Assistant"} value={selectedId} onChange={e=>setRoleSelections(current=>({...current,[r]:e.target.value}))}><option value="">{r==="Assistant"?"Not assigned":"Select servant"}</option>{servants.map(p=>{const av=availabilityStatus(p.id);const days=workloadDays(p.id);const label=av==="unavailable"?" · UNAVAILABLE":av==="prefer_not"?" · PREFER NOT TO SERVE":av==="available"?" · Available":"";const eligibility=eligibilityNote(p.id);return <option key={p.id} value={p.id}>{p.full_name}{label}{eligibility} · {days} days served in prior 30d</option>;})}</select>{feedback?.blockers.length?<small className="assignment-field-feedback blocked"><AlertTriangle size={13}/><span>{feedback.blockers.join(" · ")}</span></small>:feedback?.warnings.length?<small className="assignment-field-feedback warning"><Info size={13}/><span>{feedback.warnings.join(" · ")}</span></small>:feedback?.status==="available"?<small className="assignment-field-feedback clear"><CheckCircle2 size={13}/><span>Available on this date</span></small>:null}</label>;})}
-  </div><div className="availability-guidance"><div className="availability-guidance-title"><ShieldCheck size={17}/><b>Assignment guidance</b></div><p>Servant options show their availability and workload over the previous 30 days.</p><p>Unavailable servants and high-workload selections are checked again before saving.</p></div>{error&&<div className="schedule-error" role="alert"><AlertTriangle size={18}/><span>{error}</span></div>}<div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Save assignment</button></div>
- </form></div>;
-}
 function PersonModal({onClose,onSave}:{onClose:()=>void;onSave:(e:FormEvent<HTMLFormElement>)=>void}){
  return <div className="modal-backdrop"><form className="modal-card compact" onSubmit={onSave}><div className="modal-head"><h2>Add servant</h2><button type="button" className="icon-btn" onClick={onClose}><X/></button></div><label>Full name<input name="full_name" required autoFocus placeholder="Servant's full name"/></label><div className="modal-actions"><button type="button" className="btn secondary" onClick={onClose}>Cancel</button><button className="btn primary">Add person</button></div></form></div>;
 }

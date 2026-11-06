@@ -4,6 +4,12 @@ import {
   deleteScheduleById,
   saveScheduleWithAssignments,
   upsertGeneratedSchedules,
+  updateSchedulePublication,
+  saveBulkScheduleAssignments,
+  deleteLocationSchedules,
+  createScheduleLocation,
+  upsertScheduleServiceTemplate,
+  archiveScheduleServiceTemplate,
   type SchedulePersistenceClient,
   type SchedulePersistenceResponse,
   type SchedulePersistenceRow,
@@ -181,4 +187,78 @@ Deno.test("schedule persistence returns database errors unchanged for RPC, upser
   assertSame(rpcResult.error, databaseError, "RPC database errors must be returned unchanged.");
   assertSame(upsertResult.error, databaseError, "Upsert database errors must be returned unchanged.");
   assertSame(deleteResult.error, databaseError, "Delete database errors must be returned unchanged.");
+});
+
+
+Deno.test("schedule publication preserves the grouped admin RPC arguments", async () => {
+  const calls: Array<{ name: string; args: unknown }> = [];
+  const client = {
+    rpc: async (name: string, args: unknown) => {
+      calls.push({ name, args });
+      return { error: null };
+    },
+  };
+  await updateSchedulePublication(client as any, {
+    locationId: null, scheduleIds: ["schedule-1"], status: "published",
+  });
+  await updateSchedulePublication(client as any, {
+    locationId: "location-2", scheduleIds: null, status: "draft",
+  });
+  assertEqual(calls, [
+    { name: "admin_publish_schedules_grouped", args: { p_location_id: null, p_schedule_ids: ["schedule-1"], p_status: "published" } },
+    { name: "admin_publish_schedules_grouped", args: { p_location_id: "location-2", p_schedule_ids: null, p_status: "draft" } },
+  ], "Schedule publication must preserve the existing admin RPC argument shape.");
+});
+
+Deno.test("bulk schedule assignment preserves its grouped admin RPC payload and response", async () => {
+  const response = { data: 2, error: null };
+  let call: unknown;
+  const client = { rpc: async (name: string, args: unknown) => { call = { name, args }; return response; } };
+  const rows = [{ schedule_id: "s1", role: "FOH", servant_id: "p1" }];
+  const result = await saveBulkScheduleAssignments(client as any, rows);
+  assertEqual(call, {
+    name: "admin_bulk_assignments_grouped",
+    args: { p_assignments: rows, p_batch_label: "Bulk schedule assignment" },
+  }, "Bulk assignment must retain its RPC name and exact payload.");
+  assertSame(result, response, "The bulk RPC response must pass through unchanged.");
+});
+
+Deno.test("schedule location deletion preserves all-church and single-location filters", async () => {
+  const calls: unknown[] = [];
+  const client = {
+    from: (table: string) => ({
+      delete: () => ({
+        in: (column: string, ids: string[]) => { calls.push({ table, method: "in", column, ids }); return Promise.resolve({ error: null }); },
+        eq: (column: string, id: string) => { calls.push({ table, method: "eq", column, id }); return Promise.resolve({ error: null }); },
+      }),
+    }),
+  };
+  await deleteLocationSchedules(client as any, ["a", "b", "c"], true);
+  await deleteLocationSchedules(client as any, ["b"], false);
+  assertEqual(calls, [
+    { table: "schedules", method: "in", column: "location_id", ids: ["a", "b", "c"] },
+    { table: "schedules", method: "eq", column: "location_id", id: "b" },
+  ], "Deleting location schedules must keep the original single/all-location filters.");
+});
+
+Deno.test("schedule location and service-template writes preserve existing table contracts", async () => {
+  const calls: unknown[] = [];
+  const client = {
+    from: (table: string) => ({
+      insert: (values: unknown) => { calls.push({ table, method: "insert", values }); return Promise.resolve({ error: null }); },
+      upsert: (values: unknown, options: unknown) => { calls.push({ table, method: "upsert", values, options }); return Promise.resolve({ error: null }); },
+      update: (values: unknown) => ({
+        eq: (column: string, value: string | number) => { calls.push({ table, method: "update", values, column, value }); return Promise.resolve({ error: null }); },
+      }),
+    }),
+  };
+  await createScheduleLocation(client as any, "West Campus");
+  const template = { location_id: "loc-1", day_of_week: 6, service_name: "Saturday", start_time: "09:00", end_time: "11:00", active: true };
+  await upsertScheduleServiceTemplate(client as any, template);
+  await archiveScheduleServiceTemplate(client as any, "template-3");
+  assertEqual(calls, [
+    { table: "locations", method: "insert", values: { name: "West Campus" } },
+    { table: "service_templates", method: "upsert", values: template, options: { onConflict: "location_id,day_of_week,service_name" } },
+    { table: "service_templates", method: "update", values: { active: false }, column: "id", value: "template-3" },
+  ], "Location and template operations must preserve existing table payloads and filters.");
 });
