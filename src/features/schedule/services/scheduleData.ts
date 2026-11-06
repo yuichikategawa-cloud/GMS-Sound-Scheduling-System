@@ -1,20 +1,21 @@
-import type { Assignment, Location, Schedule } from "../../../types";
-
 export interface ScheduleDataQueryResponse {
   data: any[] | null;
   error: { message: string } | null;
 }
 
 export interface ScheduleDataQueryBuilder extends PromiseLike<ScheduleDataQueryResponse> {
-  select(columns: string): ScheduleDataQueryBuilder;
   order(column: string, options?: { ascending?: boolean }): ScheduleDataQueryBuilder;
   eq(column: string, value: unknown): ScheduleDataQueryBuilder;
   lt(column: string, value: string): ScheduleDataQueryBuilder;
 }
 
+export interface ScheduleDataFromBuilder {
+  select(columns: string): ScheduleDataQueryBuilder;
+}
+
 /** Minimal query boundary for Schedule-owned dashboard reads. */
 export interface ScheduleDataClient {
-  from(tableName: "locations" | "service_templates" | "schedules" | "assignments"): ScheduleDataQueryBuilder;
+  from(tableName: "locations" | "service_templates" | "schedules" | "assignments"): ScheduleDataFromBuilder;
 }
 
 export interface ScheduleWorkspaceData {

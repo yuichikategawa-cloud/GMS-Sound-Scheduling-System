@@ -4,7 +4,7 @@ import {
   loadHistoricalScheduleData,
   loadScheduleWorkspaceData,
   type ScheduleDataClient,
-  type ScheduleDataQueryBuilder,
+  type ScheduleDataFromBuilder,
   type ScheduleDataQueryResponse,
 } from "../../src/features/schedule/services/scheduleData.ts";
 
@@ -58,7 +58,7 @@ function createClient(responses: Record<string, ScheduleDataQueryResponse>): {
           return Promise.resolve(responses[table]).then(onfulfilled, onrejected);
         },
       };
-      return builder as ScheduleDataQueryBuilder;
+      return builder as unknown as ScheduleDataFromBuilder;
     },
   };
   return { client: client as ScheduleDataClient, calls };
