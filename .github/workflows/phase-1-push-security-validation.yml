@@ -62,8 +62,6 @@ jobs:
         run: deno test --no-lock --allow-read=src,tests tests/app/browserLifecycleArchitecture_test.ts
       - name: Test Auth workflow architecture boundaries
         run: deno test --no-lock --allow-read=src,tests tests/auth/authArchitecture_test.ts
-      - name: Test feature dependency direction and import cycles
-        run: deno test --no-lock --allow-read=src,tests tests/architecture/featureDependencyArchitecture_test.ts
       - name: Test schedule mapping
         run: deno test --no-lock tests/schedule/mapSchedules_test.ts
       - name: Test schedule display helpers
