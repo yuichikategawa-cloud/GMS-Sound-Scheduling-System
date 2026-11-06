@@ -208,3 +208,8 @@ The exact names can be adjusted to fit the existing code, but feature ownership 
 - [x] M8 architecture verification: latest branch CI run [#42272480378](https://github.com/yuichikategawa-cloud/GMS-Sound-Scheduling-System/actions/runs/42272480378) passed Deno (including all feature architecture tests and the dependency/cycle guard), frontend TypeScript/Vite build, and staging SQL regression checks. Architecture checks confirm feature-to-feature imports are absent, feature modules do not import App implementation, shared modules do not import features/App, and app/feature/shared imports are acyclic.
 
 Status: **modular monolith architecture verified on the latest working branch**. The roadmap checklist is complete (56/56 items). `App.tsx` remains the application composition root; feature workflows, data services, stateful actions, and component stylesheets have explicit ownership boundaries. The remaining product safeguard is separate from modularization: weekend-template Replace mode remains deliberately unavailable until it can revalidate assignments and require servant reconfirmation safely. No `main` merge or Vercel deployment was performed.
+
+
+## Post-modularization safety work
+
+- [ ] Weekend-template Replace mode: a staging-only transactional RPC is prepared to validate the entire final batch, preserve assignment IDs, reset confirmations on changed time windows, and roll back the complete replacement if any servant eligibility or conflict check fails. The UI and action-hook guards remain in place; do not enable Replace or apply this migration to production until staging validation and separate production rollout approval are complete.

@@ -90,6 +90,30 @@ export function upsertGeneratedSchedules(
   });
 }
 
+
+export interface WeekendReplacementResponse {
+  data: number | null;
+  error: unknown | null;
+}
+
+export interface WeekendReplacementClient {
+  rpc(
+    functionName: "admin_replace_weekend_schedules_atomic",
+    args: { p_rows: SchedulePersistenceRow[] },
+  ): PromiseLike<WeekendReplacementResponse>;
+}
+
+/**
+ * Executes the database-side transactional replacement. The UI remains
+ * disabled until this RPC migration has an explicitly approved production rollout.
+ */
+export function replaceGeneratedSchedulesAtomically(
+  client: WeekendReplacementClient,
+  rows: SchedulePersistenceRow[],
+): PromiseLike<WeekendReplacementResponse> {
+  return client.rpc("admin_replace_weekend_schedules_atomic", { p_rows: rows });
+}
+
 /** Deletes one schedule by ID; the database retains assignment cascade behavior. */
 export function deleteScheduleById(
   client: SchedulePersistenceClient,

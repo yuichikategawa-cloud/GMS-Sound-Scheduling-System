@@ -12,6 +12,7 @@ import {
   archiveScheduleServiceTemplate,
   updateAssignmentConfirmation,
   notifyAdminAssignmentConfirmation,
+  replaceGeneratedSchedulesAtomically,
   type SchedulePersistenceClient,
   type SchedulePersistenceResponse,
   type SchedulePersistenceRow,
@@ -150,6 +151,28 @@ Deno.test("schedule generation add mode ignores rows that match the conflict key
       ignoreDuplicates: true,
     },
   }], "Add mode must preserve the original conflict key and ignore-duplicates behavior.");
+});
+
+
+Deno.test("atomic weekend replacement uses one database RPC for the complete batch", async () => {
+  const calls: unknown[] = [];
+  const databaseResponse = { data: 3, error: null };
+  const client = {
+    rpc: async (name: string, args: unknown) => {
+      calls.push({ name, args });
+      return databaseResponse;
+    },
+  };
+  const rows = [
+    { ...service },
+    { ...service, service_date: "2026-11-14", service_name: "Next Saturday" },
+  ];
+  const result = await replaceGeneratedSchedulesAtomically(client, rows);
+  assertEqual(calls, [{
+    name: "admin_replace_weekend_schedules_atomic",
+    args: { p_rows: rows },
+  }], "All template rows must be sent together in one atomic database call.");
+  assertSame(result, databaseResponse, "The replacement RPC response must pass through unchanged.");
 });
 
 Deno.test("schedule generation replace mode is blocked from bypassing the atomic admin save", async () => {
