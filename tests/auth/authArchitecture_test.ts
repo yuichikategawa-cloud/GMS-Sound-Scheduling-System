@@ -56,7 +56,7 @@ Deno.test("Authentication form workflows are owned by the Auth feature hook", as
     memberProfileActions.includes("saveMemberProfile(client, userId, payload, currentEmail)") &&
     memberProfileActions.includes("await loadData()"),
     "The Auth profile hook must own save, feedback, and refresh orchestration.");
-  assert(!/client\\.(?:rpc|from)\\(/.test(memberProfileActions),
+  assert(!memberProfileActions.includes("client.from(") && !memberProfileActions.includes("client.rpc("),
     "The Auth profile action hook must delegate persistence to its service.");
   assert(memberProfileService.includes('from("member_profiles")') &&
     memberProfileService.includes('from("profiles")') &&
