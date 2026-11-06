@@ -24,7 +24,8 @@ import { updateAssignmentConfirmation, notifyAdminAssignmentConfirmation } from 
 import { loadAvailabilityWorkspaceData } from "./features/availability/services/availabilityData";
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
 import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
-import { createServantRecord, linkServantAccountRecord, loadServantRecords, setServantActive } from "./features/servants/services/servantManagement";
+import { loadServantRecords } from "./features/servants/services/servantManagement";
+import { useServantActions } from "./features/servants/hooks/useServantActions";
 import { buildServantAccountCandidates, loadServantDirectoryData } from "./features/servants/services/servantDirectory";
 import { loadServingRequestData } from "./features/requests/services/requestData";
 import { loadServingNotificationData } from "./features/notifications/services/notificationData";
@@ -414,36 +415,15 @@ export default function App() {
     availability, availabilityRules, servingPreferences, schedules, deadline: availabilityDeadline,
     loadData, setLoading, setMessage, setScheduleError, setAvailabilityDeadline
   });
-
-  async function linkServantAccount(servant:Servant,userId:string,verifiedNij:string):Promise<boolean>{
-    if(!supabase||!isAdmin)return false;
-    const {error}=await linkServantAccountRecord(supabase,{
-      servantId:servant.id,
-      userId,
-      verifiedNij
-    });
-    if(error){setMessage(errorText(error));return false;}
-    await loadData();
-    setMessage(`Account successfully linked to ${servant.full_name}. Identity verification was recorded in the audit trail.`);
-    return true;
-  }
-
-  async function savePerson(e:FormEvent<HTMLFormElement>) {
-    e.preventDefault();if(!supabase||!isAdmin)return;
-    setScheduleError("");
-    const fd=new FormData(e.currentTarget);const name=String(fd.get("full_name")).trim();
-    if(!name)return;
-    setLoading(true);
-    try{
-      const {error}=await createServantRecord(supabase,name);if(error)throw error;
-      setModal(null);await loadData();
-    }catch(e){setScheduleError(errorText(e));setLoading(false);}
-  }
-  async function togglePerson(p:Servant){
-    if(!supabase||!isAdmin)return;
-    const {error}=await setServantActive(supabase,p.id,!p.active);
-    if(error)setMessage(errorText(error));else await loadData();
-  }
+  const servantActions = useServantActions({
+    client: supabase,
+    isAdmin,
+    loadData,
+    setLoading,
+    setMessage,
+    setScheduleError,
+    setModal
+  });
 
   async function confirmAssignment(schedule:ScheduleView,status:"confirmed"|"declined"){
     if(!supabase||!myServant||!session)return;
@@ -535,7 +515,7 @@ export default function App() {
         <>
           {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={scheduleActions.saveSchedule} error={scheduleError}/>}
-    {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={savePerson}/>}
+    {modal==="person"&&<PersonModal onClose={()=>setModal(null)} onSave={servantActions.savePerson}/>}
     {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={requestActions.submitDirectSwap}/>}
         </>
       }
@@ -562,7 +542,7 @@ export default function App() {
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={exportCsv} onExportScheduleHistory={exportScheduleHistory}
           onConfirmAssignment={confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
-        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={togglePerson} onLink={linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
+        />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushEnabled} busy={pushBusy} onEnable={enablePushNotifications} onDisable={disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={async(payload)=>{if(!supabase)return;try{await saveMemberProfile(supabase,session.user.id,payload,memberProfile?.email);setMessage("Profile updated and verification date refreshed.");await loadData();}catch(error){setMessage(errorText(error));}}}/>:null}
       </AppLayout>
   );
 }
