@@ -88,6 +88,8 @@ jobs:
         run: deno test --no-lock tests/notifications/notificationData_test.ts
       - name: Test notification persistence operations
         run: deno test --no-lock tests/notifications/notificationPersistence_test.ts
+      - name: Test Notifications workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/notifications/notificationArchitecture_test.ts
       - name: Test push subscription lifecycle
         run: deno test --no-lock tests/notifications/pushSubscription_test.ts
       - name: Test serving statistics calculations
