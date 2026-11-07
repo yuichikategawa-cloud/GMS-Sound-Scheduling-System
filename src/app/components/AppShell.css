@@ -74,3 +74,22 @@ padding:22px 15px calc(92px + env(safe-area-inset-bottom))
   align-self:center;
   margin:0;
 }
+
+/* App shell descendants must be allowed to shrink inside narrow mobile viewports. */
+.app-shell,.main-area,.content{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+@media(max-width:760px){
+  .app-shell{
+    width:100%;
+    max-width:100%;
+    overflow-x:clip;
+  }
+  .main-area,.content{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+}
