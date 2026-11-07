@@ -129,6 +129,7 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     { component: "src/features/auth/components/AuthScreen.tsx", stylesheet: "src/features/auth/components/AuthScreens.css", importLine: 'import "./AuthScreens.css";', marker: ".auth-page" },
     { component: "src/features/auth/components/PasswordRecoveryScreen.tsx", stylesheet: "src/features/auth/components/AuthScreens.css", importLine: 'import "./AuthScreens.css";', marker: ".stack{" },
     { component: "src/features/auth/components/MemberProfilePanel.tsx", stylesheet: "src/features/auth/components/MemberProfilePanel.css", importLine: 'import "./MemberProfilePanel.css";', marker: ".profile-edit-grid" },
+    { component: "src/App.tsx", stylesheet: "src/App.css", importLine: 'import "./App.css";', marker: ".center-screen{" },
     { component: "src/app/components/AppLayout.tsx", stylesheet: "src/app/components/AppShell.css", importLine: 'import "./AppShell.css";', marker: ".app-shell" },
     { component: "src/app/components/Sidebar.tsx", stylesheet: "src/app/components/Sidebar.css", importLine: 'import "./Sidebar.css";', marker: ".sidebar" },
     { component: "src/app/components/AppHeader.tsx", stylesheet: "src/app/components/AppHeader.css", importLine: 'import "./AppHeader.css";', marker: ".topbar" },
@@ -1175,7 +1176,7 @@ Deno.test("Schedule owns the card actions rendered by ScheduleDisplayComponents"
 
 Deno.test("shared component primitives keep one canonical base rule", async () => {
   const css = await readRepoFile("src/styles/shared-components.css");
-  for (const selector of [".brand-mark{", ".center-screen{", ".modal-actions{"]) {
+  for (const selector of [".brand-mark{", ".modal-actions{"]) {
     assert(css.split(selector).length - 1 === 1,
       "Shared primitive must have one canonical base rule: " + selector);
   }
@@ -1187,8 +1188,6 @@ Deno.test("shared component primitives keep one canonical base rule", async () =
     "Filter panel sizing must not remain as a duplicate override.");
   assert(css.includes(".modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"),
     "Modal actions must retain wrapping in their canonical base rule.");
-  assert(css.includes(".center-screen{min-height:100vh;display:flex;gap:10px;color:#64748b;"),
-    "Center screen must preserve its final flex layout and text color.");
   assert(css.includes("font-size:12px;display:block;line-height:1.55;overflow-wrap:anywhere}"),
     "Message banner must retain its final base layout and wrapping behavior.");
   assert(css.split("@keyframes spin{").length - 1 === 1,
@@ -1260,4 +1259,33 @@ Deno.test("Auth owns the form stack used by sign-in and password recovery", asyn
   assertBalancedCss(authCss, "AuthScreens.css");
   assertBalancedCss(sharedCss, "shared-components.css");
   assertBalancedCss(darkCss, "dark-theme.css");
+});
+
+Deno.test("App owns the startup and profile centering wrapper", async () => {
+  const [app, appCss, sharedCss, darkCss, loaderCss] = await Promise.all([
+    readRepoFile("src/App.tsx"),
+    readRepoFile("src/App.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+    readRepoFile("src/shared/components/GmsLoader.css"),
+  ]);
+
+  assert(app.includes('import "./App.css";'),
+    "App.tsx must load the stylesheet that owns its centering wrapper.");
+  assert((app.match(/className="center-screen"/g) || []).length === 3,
+    "App must retain its startup, profile-error and profile-loading wrappers.");
+  assert(appCss.includes(".center-screen{"),
+    "App.css must own the centering wrapper base layout.");
+  assert(appCss.includes(':root[data-theme="dark"] .center-screen{'),
+    "App.css must own the centering wrapper dark background.");
+  assert(!sharedCss.includes(".center-screen"),
+    "Shared CSS must not retain App-only centering styles.");
+  assert(!darkCss.includes(".center-screen"),
+    "Global dark-theme CSS must not retain App-only centering styles.");
+  assert(loaderCss.includes(".center-screen:has(.gms-loader-screen)"),
+    "GmsLoader.css must retain its more specific loading-state override.");
+  assertBalancedCss(appCss, "App.css");
+  assertBalancedCss(sharedCss, "shared-components.css");
+  assertBalancedCss(darkCss, "dark-theme.css");
+  assertBalancedCss(loaderCss, "GmsLoader.css");
 });
