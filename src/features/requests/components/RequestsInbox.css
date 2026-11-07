@@ -298,6 +298,11 @@ font-size:11px;color:var(--muted)
 display:grid;gap:10px
 }
 
+:root[data-theme="dark"] .notification-history-list
+{
+gap:12px!important
+}
+
 .requests-empty-note
 {
 padding:14px 2px;color:var(--muted);font-size:13px;line-height:1.5
