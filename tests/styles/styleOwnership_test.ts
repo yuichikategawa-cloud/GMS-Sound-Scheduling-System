@@ -465,10 +465,10 @@ Deno.test("Servant Information owns its account chips and status action theme", 
   assert(component.includes("servant-status-toggle"), "Servant Information must continue to render its record state action.");
   assert(servantCss.includes(".servant-account-chip{"), "Servant Information must own the status chip base styling.");
   assert(servantCss.includes("@media(max-width:600px)"), "Servant Information must retain the compact chip size on mobile.");
+  assert(servantCss.includes(':root[data-theme="dark"] .servant-account-chip.linked'), "Servant Information must own its linked dark status.");
   assert(servantCss.includes(':root[data-theme="dark"] .servant-account-chip.unlinked'), "Servant Information must own its unlinked dark status.");
-  assert(servantCss.includes(":root[data-theme=\\"dark\\"] .servant-account-chip.unlinked"), "Servant Information must own its unlinked dark status.");
+  assert(servantCss.includes(".servant-status-toggle.danger"), "Servant Information must own its destructive status action styling.");
   assert(servantCss.includes(':root[data-theme="dark"] .servant-status-toggle.danger'), "Servant Information must own its destructive dark status action.");
-  assert(servantCss.includes(":root[data-theme=\\"dark\\"] .servant-status-toggle.danger"), "Servant Information must own its destructive dark status action.");
   assert(!sharedCss.includes(".servant-account-chip"), "Shared CSS must not retain Servant Information status chip rules.");
   assert(!darkCss.includes(".servant-account-chip"), "Global dark CSS must not retain Servant Information status chip rules.");
   assert(!darkCss.includes(".servant-status-toggle"), "Global dark CSS must not retain Servant Information status action rules.");
