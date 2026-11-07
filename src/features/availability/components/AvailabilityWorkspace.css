@@ -996,3 +996,118 @@
 .availability-form-panel input[aria-invalid="true"] {
   border-color: #c45a45 !important;
 }
+
+/* Consolidated overview keeps each saved availability data type discoverable. */
+.availability-overview {
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.availability-overview-heading h2 {
+  margin: 0;
+}
+.availability-overview-heading p {
+  margin: 6px 0 0;
+}
+.availability-overview-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.availability-overview-counts > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface-muted);
+}
+.availability-overview-counts b {
+  color: var(--text-primary);
+  font-size: 22px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.availability-overview-counts span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.availability-overview-group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.availability-overview-group + .availability-overview-group {
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.availability-overview-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.availability-overview-group-heading h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+.availability-overview-group-heading > span {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.availability-overview-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed var(--border-subtle);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.availability-overview .saved-rules-list,
+.availability-overview .people-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.availability-overview .saved-rule-row,
+.availability-overview .availability-row {
+  min-width: 0;
+}
+.availability-overview .saved-rule-row small,
+.availability-overview .availability-person small {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .availability-overview {
+    gap: 16px;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+  .availability-overview-counts {
+    gap: 7px;
+  }
+  .availability-overview-counts > div {
+    padding: 10px 8px;
+  }
+  .availability-overview-counts b {
+    font-size: 19px;
+  }
+  .availability-overview-counts span {
+    font-size: 11px;
+  }
+  .availability-overview-group-heading h3 {
+    font-size: 15px;
+  }
+}
