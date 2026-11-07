@@ -31,14 +31,15 @@ export type ServingStatistics = {
 };
 
 /**
- * Derives the statistics shown for the currently selected schedule range.
+ * Derives statistics for the supplied schedule set.
  *
- * Statistics are scoped to the supplied (already filtered) schedules:
- * - servant rows include active servants with at least one assignment in that set;
- * - workload/fairness metrics compare only servants represented in that set;
+ * The Statistics page supplies all upcoming published schedules, independently
+ * of Schedule-page filters. Metrics remain scoped to that statistics dataset:
+ * - servant rows include active servants with at least one assignment in the set;
+ * - workload/fairness metrics compare only servants represented in the set;
  * - notScheduled compares that assigned set with the full active directory;
  * - required-role, confirmation, declined, and location metrics use every
- *   assignment row in the selected schedules.
+ *   assignment row in the supplied schedules.
  */
 export function calculateServingStatistics(
   schedules: ScheduleView[],
