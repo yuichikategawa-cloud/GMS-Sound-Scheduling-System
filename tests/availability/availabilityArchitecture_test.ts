@@ -75,17 +75,17 @@ Deno.test("Availability overview presents date records, recurring restrictions, 
   assert(workspace.includes('aria-labelledby="availability-overview-title"'),
     "The consolidated overview should have an accessible heading.");
   assert(workspace.includes("<h3>Date-specific records</h3>") &&
-    workspace.includes("<h3>Recurring restrictions</h3>") &&
+    workspace.includes('dateFilter?"Recurring restrictions on "+fmtDate(dateFilter):"Recurring restrictions"') &&
     workspace.includes("<h3>Serving preferences & eligibility</h3>"),
     "The overview must show all three availability data categories separately.");
-  assert(workspace.includes("{rows.length}") && workspace.includes("{ownRules.length}") &&
+  assert(workspace.includes("{rows.length}") && workspace.includes("{visibleRules.length}") &&
     workspace.includes("{visiblePreferences.length}"),
     "The overview must show independent counts for all three categories.");
   assert(workspace.includes("No date-specific submissions yet.") &&
     workspace.includes("No recurring restrictions saved.") &&
     workspace.includes("No serving preferences saved."),
     "Each category must have its own accurate empty state.");
-  assert(workspace.includes("ownRules.map(rule=>") && workspace.includes("visiblePreferences.map(rule=>"),
+  assert(workspace.includes("visibleRules.map(rule=>") && workspace.includes("visiblePreferences.map(rule=>"),
     "Saved recurring restrictions and preferences must be rendered from their existing loaded data.");
   assert(styles.includes(".availability-overview-counts") &&
     styles.includes("@media (max-width: 600px)"),
