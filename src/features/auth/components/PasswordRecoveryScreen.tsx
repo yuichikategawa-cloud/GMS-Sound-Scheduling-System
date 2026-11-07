@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import "./AuthScreens.css";
 
 type PasswordRecoveryScreenProps = {
   loading: boolean;
