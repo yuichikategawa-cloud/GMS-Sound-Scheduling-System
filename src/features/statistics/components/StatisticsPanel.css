@@ -13,13 +13,13 @@
 .stat-card b{font-size:19px}
 .stat-card span{letter-spacing:0}}
 .stats-grid-wide{grid-template-columns:repeat(4,1fr)}
-.location-stat-list{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.location-stat{display:flex;justify-content:space-between;align-items:center;background:#f7f8fb;padding:13px;border-radius:9px;gap:10px;font-size:13px}
-.location-stat b{font-size:18px}
+.location-stat-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.location-stat{display:flex;justify-content:space-between;align-items:center;min-width:0;min-height:64px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#f8f9fc;gap:10px;font-size:13px;overflow-wrap:anywhere}
+.location-stat b{flex:0 0 auto;font-size:18px}
 @media(max-width:1050px){
 .stats-grid-wide{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){
-.location-stat-list{grid-template-columns:1fr}
+.location-stat-list{grid-template-columns:minmax(0,1fr)}
 .stats-grid-wide{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .fairness-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .fairness-metrics>div{background:#f7f8fb;border-radius:9px;padding:12px}
@@ -74,26 +74,10 @@
 :root[data-theme="dark"] .fairness-metrics b{
   color: #ffffff !important;
 }
-/* Church statistics use the same restrained metric-card treatment as the Fairness checker. */
-.location-stat-list{
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.location-stat{
-  min-width: 0;
-  min-height: 64px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #f8f9fc;
-  overflow-wrap: anywhere;
-}
+/* Church location labels can wrap without pushing the metric outside its card. */
 .location-stat span{
   min-width: 0;
   line-height: 1.35;
-}
-.location-stat b{
-  flex: 0 0 auto;
-  font-size: 18px;
 }
 :root[data-theme="dark"] .location-stat{
   background: #26364f !important;
@@ -107,10 +91,6 @@
   color: #ffffff !important;
 }
 
-@media (max-width: 760px) {
-.location-stat-list{
-    grid-template-columns: minmax(0, 1fr);
-  }}
 /* GMS mobile statistics: keep servant metric tiles dark and readable. */
 :root[data-theme="dark"] .stats-servant-metrics > div{
   background: #273a55 !important;
