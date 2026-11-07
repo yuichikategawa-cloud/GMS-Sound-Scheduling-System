@@ -124,20 +124,22 @@
 /* Use a normal fieldset with a separate options grid.
    Fieldset grid layout is inconsistent across mobile browsers and caused
    the legend/options rows to overlap the following CG-time field. */
-.auth-registration .days-field{
+.auth-registration .signup-days-field{
   box-sizing:border-box;
   display:block !important;
+  flex:0 0 auto;
+  align-self:stretch;
   width:100%;
   max-width:100%;
   min-width:0;
   min-inline-size:0;
   height:auto !important;
-  min-height:0;
+  min-height:max-content;
   margin:0;
   padding:12px 14px 14px;
   overflow:visible !important;
 }
-.auth-registration .days-field legend{
+.auth-registration .signup-days-field legend{
   display:inline-block;
   max-width:100%;
   padding:0 7px;
@@ -147,7 +149,7 @@
   line-height:1.4;
   font-weight:750;
 }
-.auth-registration .days-options{
+.auth-registration .signup-days-options{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
   align-items:center;
@@ -156,7 +158,7 @@
   max-width:100%;
   min-width:0;
 }
-.auth-registration .days-options label{
+.auth-registration .signup-days-options label{
   display:flex !important;
   flex-direction:row !important;
   align-items:center !important;
@@ -171,7 +173,7 @@
   white-space:normal;
   overflow-wrap:anywhere;
 }
-.auth-registration .days-options label input[type="checkbox"]{
+.auth-registration .signup-days-options label input[type="checkbox"]{
   flex:0 0 18px;
   width:18px;
   min-width:18px;
@@ -181,7 +183,7 @@
   accent-color:var(--accent-primary);
 }
 @media(max-width:360px){
-  .auth-registration .days-options{grid-template-columns:minmax(0,1fr)}
+  .auth-registration .signup-days-options{grid-template-columns:minmax(0,1fr)}
 }
 /* The registration form is the intentional scroll region on compact screens.
    Keep this exception more specific than the broad dark-mode .stack overflow reset. */
