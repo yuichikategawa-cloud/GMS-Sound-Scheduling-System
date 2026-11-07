@@ -29,17 +29,9 @@
 .church-group-count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:20px;background:#e9eaff;color:#4544b8;font-size:12px;font-weight:850}
 
 .inbox-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#8060c5;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}/* Phase 1-4 workflow enhancements */
-.admin-control-center{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;margin:16px 0;box-shadow:var(--shadow)}
-.control-center-head h2{margin:0;font-size:18px}.control-center-head p{margin:4px 0 0}
-.control-center-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
-.control-center-grid>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#fbfcff}
-.control-center-grid small{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-.control-center-grid b{font-size:25px;color:var(--ink)}.control-center-grid span{font-size:11px;color:var(--muted)}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 
 
-@media(max-width:850px){.control-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:540px){.control-center-grid{grid-template-columns:1fr 1fr}}
 .filters select{min-height:40px;border:1px solid var(--line);border-radius:9px;padding:9px 34px 9px 11px;background-color:#fff;color:var(--ink);font:inherit;font-size:12px;box-shadow:0 1px 2px rgba(16,24,40,.04);cursor:pointer}
 .filters select:focus{border-color:var(--focus-border);outline:none;box-shadow:0 0 0 3px var(--focus-ring)}/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
 /* FOH and Monitor use matching full-width assignment cards on phones. */
@@ -199,7 +191,7 @@
 .bulk-servant-list label,.bulk-weekdays label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
 .bulk-servant-picker>small{color:var(--muted);font-size:10px}
 .bulk-weekdays{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px}
-.bulk-conflict-warning{display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid #fecaca;background:#fff7f7;color:var(--status-danger-text);border-radius:9px;font-size:11px}.bulk-conflict-warning small{color:#7f1d1d}
+
 .recurring-rule-panel>p{margin:-5px 0 15px;line-height:1.55}.recurring-rule-form{max-width:760px}.rule-inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.saved-rules-list{display:grid;gap:8px;margin-top:15px}.saved-rule-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcff}.saved-rule-row b,.saved-rule-row small{display:block}.saved-rule-row b{font-size:12px}.saved-rule-row small{font-size:10px;color:var(--muted);margin-top:4px}
 .bulk-form-grid input[type=date],.recurring-rule-form input[type=date],.availability-form input[type=date],.availability-filter input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
 .bulk-form-grid input[type=date]::-webkit-date-and-time-value,.recurring-rule-form input[type=date]::-webkit-date-and-time-value,.availability-form input[type=date]::-webkit-date-and-time-value,.availability-filter input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
