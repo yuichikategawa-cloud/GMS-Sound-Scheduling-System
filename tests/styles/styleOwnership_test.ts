@@ -929,14 +929,14 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   ]);
   assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import the shared Requests feature stylesheet.");
   assert(inbox.includes('import "./RequestsInbox.css";'), "ServantInbox must import the shared Requests feature stylesheet.");
-  assert(requestsCss.includes(".status-chip{"), "RequestsInbox.css must own the status chip base presentation.");
+  assert(globalCss.includes(".status-chip{"), "Global shared styles must own the status chip base presentation.");
   for (const selector of [".status-chip.published", ".status-chip.approved", ".status-chip.confirmed", ".status-chip.pending", ".status-chip.declined"]) {
-    assert(requestsCss.includes(selector), "RequestsInbox.css must retain the status chip variant " + selector + ".");
+    assert(globalCss.includes(selector), "Global shared styles must retain the status chip variant " + selector + ".");
   }
   for (const selector of [':root[data-theme="dark"] .status-chip{', ':root[data-theme="dark"] .status-chip.published,', ':root[data-theme="dark"] .status-chip.draft,', ':root[data-theme="dark"] .status-chip.declined{']) {
-    assert(requestsCss.includes(selector), "RequestsInbox.css must own dark status chip selector " + selector);
+    assert(globalCss.includes(selector), "Global dark theme must own shared status chip selector " + selector);
   }
-  assert(!globalCss.includes(".status-chip"), "Global styles must not retain Requests-owned status chip selectors.");
+  assert(!requestsCss.includes(".status-chip"), "RequestsInbox.css must not duplicate status chip styles shared with Schedule.");
   for (const selector of [
     ':root[data-theme="dark"] .requests-content-card{',
     ':root[data-theme="dark"] .requests-content-heading{',
