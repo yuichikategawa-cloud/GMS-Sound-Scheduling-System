@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { getInclusiveDateCount, validateServingPreferenceInput } from "../services/availabilityInputValidation";
-import { ClipboardCheck, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import "./AvailabilityWorkspace.css";
 import { fmtDate, localDateKey, today } from "../../../shared/formatters";
 import type { Location, ScheduleView, Servant, ServiceTemplate } from "../../../types";
