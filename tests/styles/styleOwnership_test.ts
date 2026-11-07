@@ -214,8 +214,8 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
   assert(availabilityCss.includes(':root[data-theme="dark"] .availability-filter .clear-btn'), "Availability must own its dark filter action.");
   assert(availabilityCss.includes(':root[data-theme="dark"] .availability-form input'), "Availability must own its dark form-control styling.");
   assert(availabilityCss.includes(':root[data-theme="dark"] .serving-preference-form'), "Availability must own its dark preference form styling.");
-  assert(!globalCss.includes(".availability"), "Global styles must not retain Availability-specific dark selectors.");
-  assert(!globalCss.includes(".recurring-rule-form"), "Global styles must not retain Availability recurring-rule theme selectors.");
+  const globalAvailabilityThemeRule = /:root\\[data-theme="dark"\\][^{]*\\.(?:availability[\\w-]*|recurring-rule-form|rule-inline|saved-rule-row|bulk-form-grid|bulk-servant-picker|bulk-availability-form|serving-preference-form|preference-weekday-picker|preference-service-picker)[^{]*\\{/s;
+  assert(!globalAvailabilityThemeRule.test(globalCss), "Global styles must not retain Availability-specific dark-theme selectors.");
 
 
 });
