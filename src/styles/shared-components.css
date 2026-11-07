@@ -17,7 +17,7 @@
 @media(max-width:760px){.collapsible-panel>summary b{font-size:16px}}
 .status-chip{display:inline-flex;vertical-align:middle;margin-left:5px;border-radius:20px;padding:3px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;background:#f1f5f9;color:#475569}.status-chip.published,.status-chip.approved,.status-chip.confirmed{background:var(--status-success-bg);color:var(--status-success-text)}.status-chip.draft,.status-chip.pending{background:#fef3c7;color:#92400e}.status-chip.declined{background:var(--status-danger-bg);color:var(--status-danger-text)}/* v4 registration, member profile and mobile touch targets */
 
-.field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}/* v5: branded loading state */
+/* v5: branded loading state */
 .gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
 
