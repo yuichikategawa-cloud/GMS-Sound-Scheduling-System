@@ -843,3 +843,23 @@
   background: transparent !important;
   border-color: #405571 !important;
 }
+
+/* Bulk conflict preview is specific to the Availability workflow. */
+.bulk-conflict-warning{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:10px;
+  border:1px solid #fecaca;
+  background:#fff7f7;
+  color:var(--status-danger-text);
+  border-radius:9px;
+  font-size:11px;
+}
+.bulk-conflict-warning small{color:#7f1d1d}
+:root[data-theme="dark"] .bulk-conflict-warning{
+  background:#3b282f!important;
+  border-color:#72414d!important;
+  color:#ffc0c8!important;
+}
+:root[data-theme="dark"] .bulk-conflict-warning small{color:#ffc0c8!important}
