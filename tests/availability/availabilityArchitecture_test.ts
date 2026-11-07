@@ -109,3 +109,25 @@ Deno.test("Availability date filter scopes date submissions and recurring rules 
     styles.includes("grid-column: 1 / -1"),
     "Deadline validation must occupy a full-width row below the form controls.");
 });
+
+Deno.test("Availability workspace cannot expand the mobile document beyond the viewport", async () => {
+  const [workspace, styles, shellStyles] = await Promise.all([
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx"),
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
+    readRepoFile("src/app/components/AppShell.css"),
+  ]);
+  assert(workspace.includes('return <div className="availability-workspace">') &&
+    workspace.includes(" </div>;"),
+    "Availability must have a dedicated width-constrained root container.");
+  assert(styles.includes(".availability-workspace {") &&
+    styles.includes("width: 100%;") &&
+    styles.includes("max-width: 100%;") &&
+    styles.includes("overflow-x: clip;"),
+    "The Availability feature root must clip horizontal overflow within the viewport.");
+  assert(styles.includes(".availability-workspace .availability-row {") &&
+    styles.includes("grid-template-columns: minmax(0, 1fr) auto;") &&
+    styles.includes(".availability-workspace .availability-date"),
+    "Mobile availability records must use shrinkable columns instead of percentage minimum widths.");
+  assert(shellStyles.includes("overflow-x:clip;"),
+    "The application shell must continue to prevent document-level horizontal scrolling.");
+});
