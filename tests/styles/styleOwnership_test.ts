@@ -63,7 +63,7 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     previous = index;
   }
 
-  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".status-chip{"]) {
+  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{"]) {
     assert(sharedCss.includes(selector), "Shared stylesheet must retain reusable primitive " + selector);
   }
   for (const selector of [".filters{", ".collapsible-panel{"]) {
@@ -72,6 +72,8 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
   for (const obsolete of [".gms-v3-loader{", ".gms-loader-progress", ".church-group-count{", ".loader{"]) {
     assert(!sharedCss.includes(obsolete), "Unused legacy selector must be removed from shared-components.css: " + obsolete);
   }
+  assert(!sharedCss.includes(".status-chip"), "Requests-owned status chips must not remain in shared-components.css.");
+  assert(!darkCss.includes(".status-chip"), "Requests-owned status chip dark overrides must not remain in dark-theme.css.");
   assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
   assert(!sharedCss.includes(':root[data-theme="dark"]'), "Dark-theme overrides must not leak into the shared light/base module.");
   assertBalancedCss(entryCss, "src/style.css");
@@ -347,6 +349,8 @@ Deno.test("Schedule owns its layout, responsive presentation and dark-mode overr
   }
   assert(!globalCss.includes(".filters"), "Global styles must not retain Schedule-owned filter selectors.");
   assert(!globalCss.includes(".collapsible-panel"), "Global styles must not retain Schedule-owned disclosure selectors.");
+  assert(!globalCss.includes(".toolbar.serving-toolbar .toolbar-actions"), "Global styles must not retain Schedule-only toolbar sizing.");
+  assert(scheduleCss.includes(".toolbar.serving-toolbar .toolbar-actions"), "ScheduleWorkspace.css must own tablet toolbar action sizing.");
 
   assert(scheduleCss.includes(".filters{display:grid;"), "Schedule filter grid styles must live with the Schedule feature.");
   assert(scheduleCss.includes("@media(max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr));}"), "Schedule tablet filter layout must remain feature-owned.");
@@ -925,6 +929,14 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   ]);
   assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import the shared Requests feature stylesheet.");
   assert(inbox.includes('import "./RequestsInbox.css";'), "ServantInbox must import the shared Requests feature stylesheet.");
+  assert(requestsCss.includes(".status-chip{"), "RequestsInbox.css must own the status chip base presentation.");
+  for (const selector of [".status-chip.published", ".status-chip.approved", ".status-chip.confirmed", ".status-chip.pending", ".status-chip.declined"]) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must retain the status chip variant " + selector + ".");
+  }
+  for (const selector of [':root[data-theme="dark"] .status-chip{', ':root[data-theme="dark"] .status-chip.published,', ':root[data-theme="dark"] .status-chip.draft,', ':root[data-theme="dark"] .status-chip.declined{']) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must own dark status chip selector " + selector);
+  }
+  assert(!globalCss.includes(".status-chip"), "Global styles must not retain Requests-owned status chip selectors.");
   for (const selector of [
     ':root[data-theme="dark"] .requests-content-card{',
     ':root[data-theme="dark"] .requests-content-heading{',
