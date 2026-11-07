@@ -49,3 +49,18 @@ Deno.test("Statistics feature owns presentation and pure calculation", async () 
   assert(stylesheet.includes(".stats-grid"),
     "StatisticsPanel.css must contain the feature-owned statistics presentation.");
 });
+
+Deno.test("Statistics servant breakdown and fairness are scoped to servants assigned in the filtered schedule set", async () => {
+  const service = await readRepoFile("src/features/statistics/services/servingStatistics.ts");
+  const panel = await readRepoFile("src/features/statistics/components/StatisticsPanel.tsx");
+  assert(service.includes('servant.active && (counts.get(servant.id)?.total ?? 0) > 0'),
+    "Servant rows must exclude active servants who have no assignments in the selected schedule filters.");
+  assert(service.includes('activeServants - rows.filter(row => row.total > 0).length'),
+    "The not-scheduled metric must still compare filtered assignments with the full active servant directory.");
+  assert(service.includes('const highestWorkload = rows[0]?.total ?? 0') &&
+    service.includes('Math.min(...rows.map(row => row.total))'),
+    "Fairness metrics must compare only the assigned servants in the filtered schedule set.");
+  assert(panel.includes("No servants are assigned within the selected filters.") &&
+    panel.includes("No assignments match the selected schedule filters."),
+    "Statistics must explain when the selected filters return no assignment data.");
+});
