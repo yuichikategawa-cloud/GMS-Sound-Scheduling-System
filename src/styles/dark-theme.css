@@ -31,9 +31,7 @@
 :root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
 :root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
 :root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.72)}
-:root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}
-:root[data-theme="dark"] .servant-account-chip.linked{background:var(--status-success-bg);color:var(--status-success-text)}
-:root[data-theme="dark"] .servant-account-chip.unlinked{background:var(--status-warning-bg);color:var(--status-warning-text)}/* Additional form, overview and admin surfaces included in the dark palette. */
+:root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}/* Additional form, overview and admin surfaces included in the dark palette. */
 :root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .servant-filter-card{
   background:#1b2437!important;
   border-color:#354059!important;
@@ -107,8 +105,6 @@
 :root[data-theme="dark"] .control-center-alert,:root[data-theme="dark"] .schedule-error,:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
   background:#443625!important;border-color:#705638!important;color:#ffe0ad!important;
 }
-:root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
-:root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .person-row{border-color:#3b4b65!important}
 
 
@@ -194,29 +190,6 @@
   .bulk-servant-list{
     grid-template-columns: minmax(0, 1fr);
   }
-}/* Destructive servant state action is deliberately red and easy to hit. */
-.servant-status-toggle{
-  min-width: 176px;
-  min-height: 36px;
-  justify-content: center;
-  font-weight: 800;
-}
-.servant-status-toggle.danger,.btn.danger.servant-status-toggle{
-  background: #fff0f0 !important;
-  color: #b42332 !important;
-  border: 1px solid #f0b8bd !important;
-}
-.servant-status-toggle.danger:hover{
-  background: #ffe1e3 !important;
-  border-color: #dc7b85 !important;
-}
-:root[data-theme="dark"] .servant-status-toggle.danger,:root[data-theme="dark"] .btn.danger.servant-status-toggle{
-  background: #4b2932 !important;
-  color: #ffc3c9 !important;
-  border-color: #8e4a58 !important;
-}
-:root[data-theme="dark"] .servant-status-toggle.danger:hover{
-  background: #60313c !important;
 }/* Fix the clipped/faint left edge of the login password input and focus ring. */
 /* More obvious calendar headings and compact matrix-like service rows on phones. */
 @media (max-width: 760px){
@@ -306,7 +279,6 @@
 :root[data-theme="dark"] .bulk-group-selection-actions .link-btn:disabled{
   color: #9eabc0 !important;
 }
-.servant-status-toggle{ min-width: 190px; }
 
 .app-shell[data-theme="dark"] .daily-location-name{
   background: #087985 !important;

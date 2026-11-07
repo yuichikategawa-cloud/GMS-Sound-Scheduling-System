@@ -342,3 +342,35 @@
     .servant-link-dialog{max-height:min(86dvh,760px)}
   }
 }
+
+/* Servant account-link status chips and record state action. */
+.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}@media(max-width:600px){.servant-account-chip{font-size:9px}}
+
+:root[data-theme="dark"] .servant-account-chip.linked{background:var(--status-success-bg);color:var(--status-success-text)}
+:root[data-theme="dark"] .servant-account-chip.unlinked{background:var(--status-warning-bg);color:var(--status-warning-text)}
+:root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
+:root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}/* Destructive servant state action is deliberately red and easy to hit. */
+.servant-status-toggle{
+  min-width: 176px;
+  min-height: 36px;
+  justify-content: center;
+  font-weight: 800;
+}
+.servant-status-toggle.danger,.btn.danger.servant-status-toggle{
+  background: #fff0f0 !important;
+  color: #b42332 !important;
+  border: 1px solid #f0b8bd !important;
+}
+.servant-status-toggle.danger:hover{
+  background: #ffe1e3 !important;
+  border-color: #dc7b85 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger,:root[data-theme="dark"] .btn.danger.servant-status-toggle{
+  background: #4b2932 !important;
+  color: #ffc3c9 !important;
+  border-color: #8e4a58 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger:hover{
+  background: #60313c !important;
+}
+.servant-status-toggle{ min-width: 190px; }
