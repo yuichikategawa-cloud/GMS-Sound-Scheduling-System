@@ -308,11 +308,11 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
 });
 
 
-Deno.test("dark recurring-generation guidance has readable semantic contrast", async () => {
-  const globalCss = await readGlobalStyles();
-  assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note-title'), "The document dark theme must explicitly style the generation guidance title.");
-  assert(globalCss.includes("color: var(--text-primary) !important;"), "The generation guidance title must use the dark theme's primary text token.");
-  assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note p span'), "Generation guidance descriptions must use a dark-theme secondary text rule.");
+Deno.test("Schedule recurring-generation guidance retains readable semantic contrast", async () => {
+  const scheduleCss = await readRepoFile("src/features/schedule/components/ScheduleWorkspace.css");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .generate-panel .generate-note-title'), "Schedule must explicitly style the generation guidance title in dark mode.");
+  assert(scheduleCss.includes("color: var(--text-primary) !important;"), "The generation guidance title must use the dark theme's primary text token.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .generate-panel .generate-note p span'), "Generation guidance descriptions must use a dark-theme secondary text rule.");
 });
 
 Deno.test("signup form remains scroll-contained in dark mode and authentication screens omit church marks", async () => {
@@ -537,7 +537,10 @@ Deno.test("application shell owns its sidebar and mobile-navigation dark theme",
 
 
 Deno.test("shared dark secondary buttons and action controls have one effective rule", async () => {
-  const css = await readGlobalStyles();
+  const [css, scheduleCss] = await Promise.all([
+    readGlobalStyles(),
+    readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+  ]);
   assert(css.split(':root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{').length - 1 === 1,
     "The base shared button/action group should occur once.");
   assert(css.split(':root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{').length - 1 === 1,
@@ -550,8 +553,8 @@ Deno.test("shared dark secondary buttons and action controls have one effective 
     "The superseded bulk-row action palette must be removed.");
   assert(css.split(':root[data-theme="dark"] .bulk-row-action.danger{').length - 1 === 1,
     "The explicit dangerous action treatment must remain unique.");
-  assert(css.includes(":root[data-theme=\"dark\"] .generate-toggle-hint{"),
-    "The generation hint must keep its separate dark-mode treatment.");
+  assert(scheduleCss.includes(":root[data-theme=\"dark\"] .generate-toggle-hint{"),
+    "Schedule must keep the generation hint's separate dark-mode treatment.");
   assert(!css.includes(".action-dialog .btn.secondary{"),
     "The superseded action-dialog secondary button override must be removed.");
   assert(!css.includes(".schedule-overview-shortcuts .btn.secondary{"),
