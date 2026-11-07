@@ -74,6 +74,43 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
 });
 
 
+Deno.test("shared dark theme keeps one canonical rule per reusable surface", async () => {
+  const css = await readRepoFile("src/styles/dark-theme.css");
+  for (const selector of [
+    ':root[data-theme="dark"] .filter-panel{',
+    ':root[data-theme="dark"] .modal-card{',
+    ':root[data-theme="dark"] .empty-state{',
+    ':root[data-theme="dark"] .message-banner,',
+    ':root[data-theme="dark"] .center-screen{',
+    ':root[data-theme="dark"] .loader{',
+    ':root[data-theme="dark"] .clear-btn,',
+    ':root[data-theme="dark"] .subtle,',
+  ]) {
+    assert(css.split(selector).length - 1 === 1,
+      "Shared dark theme must define one canonical rule for " + selector + ".");
+  }
+  assert(css.includes("background:#202f46!important;"),
+    "Shared filter and modal surfaces must retain their final dark background.");
+  assert(css.includes("border-color:#40516d!important;"),
+    "Shared filter and modal surfaces must retain their final dark border.");
+  assert(css.includes("color:#b9c6da!important;"),
+    "Shared secondary text must retain its final contrast.");
+  assert(css.includes("background:#443625!important;"),
+    "Shared status banners must retain their final dark surface.");
+  for (const superseded of [
+    "background:#1b2437!important;",
+    "background:#1b263a!important;",
+    "color:#a3aec3!important;",
+    "border-color:#704744!important;",
+    "color:#a9a4ff",
+  ]) {
+    assert(!css.includes(superseded),
+      "Superseded shared dark-theme declaration must be removed: " + superseded);
+  }
+  assertBalancedCss(css, "dark-theme.css");
+});
+
+
 Deno.test("extracted presentation stylesheets are imported by their owning components", async () => {
   const ownership = [
     { component: "src/shared/components/GmsLoader.tsx", stylesheet: "src/shared/components/GmsLoader.css", importLine: 'import "./GmsLoader.css";', marker: ".gms-loader-screen" },
