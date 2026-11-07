@@ -21,6 +21,11 @@
   color:#ecf1fa!important;
   box-shadow:0 4px 18px rgba(0,0,0,.16);
 }
+:root[data-theme="dark"] .people-list{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+}
 :root[data-theme="dark"] .empty-state{
   background:#202f46!important;
   border-color:#40516d!important;
