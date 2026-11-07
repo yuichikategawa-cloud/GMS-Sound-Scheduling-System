@@ -477,3 +477,23 @@ width:34px;height:34px
 :root[data-theme="dark"] .mobile-more-backdrop{
   background:rgba(0,0,0,.56);
 }
+
+/* App shell root, content area, topbar, and overflow menu theme. */
+
+:root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
+:root[data-theme="dark"] .main-area{background:#101727}
+:root[data-theme="dark"] .content{color:#e8edf7}:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .mobile-more-menu{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .topbar h1{
+  color:#edf2fb!important;
+}
+:root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
+:root[data-theme="dark"] .content input,:root[data-theme="dark"] .content select,:root[data-theme="dark"] .content textarea{
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
+}
+:root[data-theme="dark"] .content input[type="checkbox"],:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}

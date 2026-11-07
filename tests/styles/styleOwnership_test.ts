@@ -139,7 +139,7 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
     assert(!pattern.test(globalCss), selector + " must be owned by its colocated stylesheet, not a bare global rule.");
   }
 
-  assert(globalCss.includes(':root[data-theme="dark"] .topbar'), "Cross-cutting app-shell dark-mode overrides must remain global and late in the cascade.");
+  assert(shellCss.includes(':root[data-theme="dark"] .topbar'), "AppShell must own the topbar dark appearance.");
   assert(!globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Inbox feature dark-mode presentation must remain with RequestsInbox.css.");
   assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
   assert(!globalCss.includes(".schedule-grid{"), "Schedule workspace base presentation must be owned by its colocated stylesheet.");
@@ -512,6 +512,15 @@ Deno.test("application shell owns its sidebar and mobile-navigation dark theme",
     readRepoFile("src/app/components/AppShell.css"),
   ]);
   assert(layout.includes('import "./AppShell.css";'), "AppLayout must own and import its shell presentation.");
+  for (const selector of [
+    ':root[data-theme="dark"] .app-shell{',
+    ':root[data-theme="dark"] .main-area{',
+    ':root[data-theme="dark"] .content{',
+    ':root[data-theme="dark"] .topbar{',
+  ]) {
+    assert(shellCss.includes(selector), "AppShell.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global dark-theme CSS must not retain " + selector);
+  }
   for (const selector of [
     ':root[data-theme="dark"] .nav-item{',
     ':root[data-theme="dark"] .nav-item.active,',
