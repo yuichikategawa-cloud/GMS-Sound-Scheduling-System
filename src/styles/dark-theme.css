@@ -62,11 +62,6 @@
   background:#3a2d2c;
   color:#ffd2c7;
 }
-:root[data-theme="dark"] .center-screen{
-  background:linear-gradient(140deg,#101727,#151f33 55%,#101727);
-  overflow:visible!important;
-  min-width:0;
-}
 :root[data-theme="dark"] .modal-backdrop{
   background:rgba(0,0,0,.72);
 }
