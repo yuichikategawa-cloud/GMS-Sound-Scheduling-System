@@ -39,7 +39,7 @@
 :root[data-theme="dark"] .new-template-help{color:#a3aec3}
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
 
-:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .profile-card{
+:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
   color:#edf2fa!important;
@@ -61,7 +61,7 @@
 :root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text{
   color:#b9c6da!important;
 }
-:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2{
+:root[data-theme="dark"] .list-heading h3{
   color:#f2f5fc!important;
 }/* Calendar view, filters, forms and nested cards use the same dark palette. */
 :root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .inbox-settings-card{
@@ -118,9 +118,6 @@
 
 /* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
 /* Inbox should read as distinct, neatly spaced sections with subdued separators. */
-:root[data-theme="dark"] .notification-history-list{
-  gap: 12px !important;
-}
 
 
 
@@ -156,7 +153,3 @@
 
 
 
-/* Notification history heading color remains shared until its component CSS is moved. */
-:root[data-theme="dark"] .notification-history-section .list-heading h3{
-  color: #f1f5fb !important;
-}
