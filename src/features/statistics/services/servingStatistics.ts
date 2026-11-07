@@ -33,9 +33,10 @@ export type ServingStatistics = {
 /**
  * Derives the statistics shown for the currently selected schedule range.
  *
- * Preserve the existing dashboard semantics:
- * - servant rows include active servants only;
- * - displayed total assignments are summed from those active-servant rows;
+ * Statistics are scoped to the supplied (already filtered) schedules:
+ * - servant rows include active servants with at least one assignment in that set;
+ * - workload/fairness metrics compare only servants represented in that set;
+ * - notScheduled compares that assigned set with the full active directory;
  * - required-role, confirmation, declined, and location metrics use every
  *   assignment row in the selected schedules.
  */
@@ -60,14 +61,9 @@ export function calculateServingStatistics(
   }
 
   const rows = servants
-    .filter(servant => servant.active)
+    .filter(servant => servant.active && (counts.get(servant.id)?.total ?? 0) > 0)
     .map(servant => {
-      const count = counts.get(servant.id) ?? {
-        total: 0,
-        FOH: 0,
-        Monitor: 0,
-        Assistant: 0,
-      };
+      const count = counts.get(servant.id)!;
       return { id: servant.id, name: servant.full_name, ...count };
     })
     .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
