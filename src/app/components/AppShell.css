@@ -34,3 +34,25 @@ padding:22px 15px calc(92px + env(safe-area-inset-bottom))
   border-color:var(--border-strong)!important;
 }
 :root[data-theme="dark"] .content input[type="checkbox"],:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}
+
+/* App-level offline state banner rendered inside AppLayout content. */
+.offline-status-banner{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:0 0 16px;
+  padding:11px 13px;
+  border:1px solid #f2d7a2;
+  border-radius:11px;
+  background:#fff9eb;
+  color:#80530b;
+  font-size:12px;
+  font-weight:650;
+  line-height:1.45;
+}
+.offline-status-banner svg{flex:0 0 auto}
+:root[data-theme="dark"] .offline-status-banner{
+  background:#443625!important;
+  border-color:#705638!important;
+  color:#ffe0ad!important;
+}
