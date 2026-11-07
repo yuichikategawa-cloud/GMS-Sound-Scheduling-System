@@ -666,6 +666,13 @@ Deno.test("People, Servant Information and Member Profile own their presentation
 
   assert(requestsPanel.includes('className="people-list"'), "The Requests panel must continue rendering its people list.");
   assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import its feature stylesheet.");
+  for (const selector of [
+    ".people-list{", ".person-row{", ".person-row:last-child{",
+    ".person-name{", ".person-name b,.person-name small{", ".person-name b{", ".person-name small{",
+  ]) {
+    assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
+    assert(!sharedComponentsCss.includes(selector), "Shared CSS must not retain Requests-owned selector " + selector);
+  }
   assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .people-list'), "RequestsInbox.css must own the dark people-list surface.");
   assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .person-row'), "RequestsInbox.css must own its scoped person-row compatibility styling.");
 
