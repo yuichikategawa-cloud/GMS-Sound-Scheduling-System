@@ -1,4 +1,4 @@
-/* Availability workspace presentation. Feature-owned light, responsive and dark-mode rules live here.
+/* Availability workspace presentation. Feature-owned light, responsive and dark-mode rules live here. */
 
 /* Availability-owned base form styles extracted from shared-components.css.
    Scoped layout, responsive, and dark-mode refinements remain below. */
@@ -42,7 +42,7 @@
   .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{font-size:16px;min-height:46px}
 }
 
-   Shared primitives and controls remain in src/styles/*.css. */
+/* Shared primitives and controls remain in src/styles/*.css. */
 
 .availability-form-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
 
@@ -890,3 +890,84 @@
 }
 :root[data-theme="dark"] .bulk-conflict-warning small{color:#ffc0c8!important}
 
+
+
+/* Final mobile spacing and theme-surface contract.
+   Keep adjacent admin sections visually distinct without changing form behavior. */
+.availability-form-panel{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  padding:20px;
+  margin:0 0 24px;
+}
+.toolbar + .availability-form-panel{margin-top:20px}
+.availability-form-panel + .availability-form-panel{margin-top:24px}
+.availability-form-panel h3{
+  margin:0 0 18px;
+  line-height:1.35;
+}
+.availability-form-panel .availability-mode-switch{
+  margin-top:2px;
+  margin-bottom:18px;
+}
+@media(max-width:760px){
+  .availability-form-panel{
+    padding:16px;
+    margin-bottom:20px;
+  }
+  .toolbar + .availability-form-panel{margin-top:16px}
+  .availability-form-panel + .availability-form-panel{margin-top:20px}
+  .availability-form-panel h3{margin-bottom:16px}
+  .availability-form-panel .availability-mode-switch{
+    margin-bottom:16px;
+  }
+}
+
+/* Dark mode uses the same semantic surfaces as the rest of the design system.
+   Panels share one surface; nested selectors and identity chips use the muted surface;
+   fields remain on the dedicated control surface. */
+:root[data-theme="dark"] .availability-form-panel,
+:root[data-theme="dark"] .availability-row{
+  background:var(--surface)!important;
+  border-color:var(--border-subtle)!important;
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .saved-rule-row{
+  background:var(--surface-muted)!important;
+  border-color:var(--border-subtle)!important;
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .availability-form-panel .availability-mode-switch,
+:root[data-theme="dark"] .availability-form-panel .availability-self-name,
+:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
+  background:var(--surface-muted)!important;
+  border-color:var(--border-subtle)!important;
+}
+:root[data-theme="dark"] .availability-form-panel .bulk-availability-form,
+:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,
+:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,
+:root[data-theme="dark"] .availability-form-panel .serving-preference-form{
+  background:transparent!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .availability-form-panel .availability-mode-switch button{
+  color:var(--text-secondary)!important;
+}
+:root[data-theme="dark"] .availability-form-panel .availability-mode-switch button.active{
+  background:var(--accent-soft)!important;
+  color:var(--accent-primary)!important;
+}
+:root[data-theme="dark"] .availability-form-panel input:not([type="checkbox"]),
+:root[data-theme="dark"] .availability-form-panel select,
+:root[data-theme="dark"] .availability-form-panel textarea{
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
+}
+:root[data-theme="dark"] .availability-form-panel label,
+:root[data-theme="dark"] .availability-form-panel .availability-self-name span,
+:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker>small{
+  color:var(--text-secondary)!important;
+}

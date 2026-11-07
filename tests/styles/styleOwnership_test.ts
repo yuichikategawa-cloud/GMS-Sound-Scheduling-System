@@ -1365,3 +1365,34 @@ Deno.test("Availability recurring-form CSS has one responsive rule set", async (
     "The recurring form must retain its mobile single-column breakpoint.");
   assertBalancedCss(css, "AvailabilityWorkspace.css");
 });
+
+
+Deno.test("Mobile auth viewport and availability surfaces remain consistent", async () => {
+  const [authCss, availabilityCss, tokens] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
+    readRepoFile("src/styles/tokens.css"),
+  ]);
+
+  assert(authCss.includes("min-height:100svh;min-height:100dvh;"),
+    "Auth must use the mobile-safe and dynamic viewport heights.");
+  assert(authCss.includes("env(safe-area-inset-top)") &&
+    authCss.includes("env(safe-area-inset-bottom)"),
+    "Auth card spacing must respect the mobile safe areas.");
+  assert(availabilityCss.startsWith("/* Availability workspace presentation. Feature-owned light, responsive and dark-mode rules live here. */"),
+    "Availability feature stylesheet header comment must close before feature rules.");
+  assert(availabilityCss.includes(".availability-form-panel + .availability-form-panel{margin-top:24px}"),
+    "Adjacent availability sections must have a deliberate desktop gap.");
+  assert(availabilityCss.includes(".availability-form-panel + .availability-form-panel{margin-top:20px}"),
+    "Adjacent availability sections must retain a comfortable mobile gap.");
+  assert(availabilityCss.includes("background:var(--surface)!important;") &&
+    availabilityCss.includes("background:var(--surface-muted)!important;") &&
+    availabilityCss.includes("background:var(--surface-control)!important;"),
+    "Availability dark mode must use the semantic surface, muted and control tokens.");
+  assert(tokens.includes("--surface: #1b263a;") &&
+    tokens.includes("--surface-muted: #202f46;") &&
+    tokens.includes("--surface-control: #111c2e;"),
+    "The semantic dark palette must remain centrally defined in tokens.css.");
+  assertBalancedCss(authCss, "AuthScreens.css");
+  assertBalancedCss(availabilityCss, "AvailabilityWorkspace.css");
+});
