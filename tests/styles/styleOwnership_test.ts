@@ -688,7 +688,7 @@ Deno.test("People, Servant Information and Member Profile own their presentation
     "The people-list base surface must remain shared by Requests and Availability.");
   assert(requestsCss.includes(":root[data-theme=\"dark\"] .requests-content-card .people-list{"),
     "Requests must retain its transparent people-list surface inside the request card.");
-  assert(!/(^|\\n)\\.people-list\\s*\\{/.test(requestsCss),
+  assert(!/(^|\n)\.people-list\s*\{/.test(requestsCss),
     "RequestsInbox.css must not duplicate the shared people-list base surface.");
   for (const selector of [
     ".person-row{", ".person-row:last-child{",
