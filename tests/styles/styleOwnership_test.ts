@@ -1191,6 +1191,8 @@ Deno.test("shared component primitives keep one canonical base rule", async () =
     "Center screen must preserve its final flex layout and text color.");
   assert(css.includes("font-size:12px;display:block;line-height:1.55;overflow-wrap:anywhere}"),
     "Message banner must retain its final base layout and wrapping behavior.");
+  assert(css.split("@keyframes spin{").length - 1 === 1,
+    "The shared spin keyframes must have one canonical definition.");
   assert(!css.includes("display:flex;justify-content:space-between;align-items:center}.message{"),
     "Superseded message-banner flex declarations must be removed.");
   assertBalancedCss(css, "shared-components.css");
