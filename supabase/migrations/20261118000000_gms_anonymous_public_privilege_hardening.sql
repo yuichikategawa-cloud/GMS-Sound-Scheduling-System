@@ -7,14 +7,12 @@ REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon;
 
 -- Prevent default ACLs from restoring anonymous table/sequence grants on
--- objects created by either migration owner used by the project environments.
+-- objects created by the postgres role that applies the repository migrations.
+-- The platform-managed supabase_admin default ACL cannot be changed by this
+-- migration role; application schema changes must continue through migrations.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE ALL ON TABLES FROM anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
-  REVOKE ALL ON TABLES FROM anon;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE ALL ON SEQUENCES FROM anon;
-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin IN SCHEMA public
   REVOKE ALL ON SEQUENCES FROM anon;
 
 -- Reassert the member/admin read boundaries. These match the current policies

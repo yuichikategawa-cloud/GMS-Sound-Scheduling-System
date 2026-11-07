@@ -44,9 +44,6 @@ BEGIN
     SELECT 1
     FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
-    WHERE d.defaclnamespace = 'public'::regnamespace
-      AND d.defaclobjtype IN ('r', 'S')
-      AND acl.grantee = 'anon'::regrole
   ) THEN
     RAISE EXCEPTION 'Anonymous table/sequence privileges remain in public-schema default ACLs';
   END IF;
