@@ -44,6 +44,8 @@ jobs:
         run: deno test --no-lock tests/auth/registration_test.ts
       - name: Test authentication session lifecycle
         run: deno test --no-lock tests/auth/sessionLifecycle_test.ts
+      - name: Test profile request sequence guard
+        run: deno test --no-lock tests/app/profileLoadGuard_test.ts
       - name: Test App dashboard data composition
         run: deno test --no-lock tests/app/dashboardData_test.ts
       - name: Test App dashboard loading lifecycle
@@ -54,6 +56,8 @@ jobs:
         run: deno test --no-lock tests/app/dashboardState_test.ts
       - name: Test App dashboard state architecture boundaries
         run: deno test --no-lock --allow-read=src,tests tests/app/dashboardStateArchitecture_test.ts
+      - name: Test mobile navigation keyboard accessibility
+        run: deno test --no-lock --allow-read=src,tests tests/app/mobileNavigation_test.ts
       - name: Test repository-wide feature dependency direction
         run: deno test --no-lock --allow-read=src,tests tests/architecture/featureDependencyGraph_test.ts
       - name: Test App browser lifecycle behavior
@@ -86,6 +90,8 @@ jobs:
         run: deno test --no-lock --allow-read=vercel.json tests/deployment/vercelPreviewGuard_test.ts
       - name: Test recurring availability rules
         run: deno test --no-lock tests/availability/recurringAvailability_test.ts
+      - name: Test Availability form validation and bulk date range limits
+        run: deno test --no-lock tests/availability/availabilityInputValidation_test.ts
       - name: Test availability persistence operations
         run: deno test --no-lock tests/availability/availabilityPersistence_test.ts
       - name: Test Availability data loading

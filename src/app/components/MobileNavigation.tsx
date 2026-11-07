@@ -76,7 +76,10 @@ export default function MobileNavigation({
       }
     };
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (trigger?.isConnected) trigger.focus();
+    };
   }, [open]);
 
   const selectTab = (tab: SidebarTab) => {
