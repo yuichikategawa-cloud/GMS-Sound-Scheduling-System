@@ -66,7 +66,7 @@ Deno.test("Statistics servant breakdown and fairness are scoped to servants assi
   assert(service.includes('const highestWorkload = rows[0]?.total ?? 0') &&
     service.includes('Math.min(...rows.map(row => row.total))'),
     "Fairness metrics must compare only the assigned servants in the Statistics dataset.");
-  assert(panel.includes("No servants are assigned within the Statistics dataset.") &&
+  assert(panel.includes("No servants are assigned to upcoming published schedules.") &&
     panel.includes("No assignments are present in upcoming published schedules."),
     "Statistics must explain when the selected filters return no assignment data.");
 });
