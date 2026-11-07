@@ -534,6 +534,70 @@ Deno.test("Servant Information owns its account chips and status action theme", 
   assertBalancedCss(servantCss, "ServantInformationPanel.css");
 });
 
+Deno.test("People, Servant Information and Member Profile own their presentation", async () => {
+  const [
+    globalDark,
+    requestsPanel,
+    requestsCss,
+    servantPanel,
+    servantCss,
+    memberPanel,
+    memberCss,
+  ] = await Promise.all([
+    readRepoFile("src/styles/dark-theme.css"),
+    readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+    readRepoFile("src/features/servants/components/ServantInformationPanel.tsx"),
+    readRepoFile("src/features/servants/components/ServantInformationPanel.css"),
+    readRepoFile("src/features/auth/components/MemberProfilePanel.tsx"),
+    readRepoFile("src/features/auth/components/MemberProfilePanel.css"),
+  ]);
+
+  for (const legacySelector of [
+    ".people-list",
+    ".person-row",
+    ".people-toolbar",
+    ".person-name",
+    ".servant-profile-card",
+    ".servant-filter-card",
+    ".servant-preference-form",
+    ".servant-info-filters",
+    ".servant-summary-metric",
+    ".servant-metric-card",
+    ".member-verification-warning",
+    ".days-field",
+  ]) {
+    assert(!globalDark.includes(legacySelector), "Legacy feature selector " + legacySelector + " must not remain in the global dark theme.");
+  }
+
+  assert(requestsPanel.includes('className="people-list"'), "The Requests panel must continue rendering its people list.");
+  assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import its feature stylesheet.");
+  assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .people-list'), "RequestsInbox.css must own the dark people-list surface.");
+  assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .person-row'), "RequestsInbox.css must own its scoped person-row compatibility styling.");
+
+  assert(servantPanel.includes('import "./ServantInformationPanel.css";'), "Servant Information must import its feature stylesheet.");
+  for (const selector of [
+    ':root[data-theme="dark"] .servant-directory-block',
+    ':root[data-theme="dark"] .servant-record',
+    ':root[data-theme="dark"] .servant-summary-section',
+    ':root[data-theme="dark"] .servant-kpi',
+  ]) {
+    assert(servantCss.includes(selector), "ServantInformationPanel.css must own " + selector);
+    assert(!globalDark.includes(selector), "Global dark theme must not own " + selector);
+  }
+
+  assert(memberPanel.includes('import "./MemberProfilePanel.css";'), "Member Profile must import its feature stylesheet.");
+  assert(memberPanel.includes('className="days-field"'), "Member Profile must continue rendering the CG days field.");
+  assert(memberCss.includes(".profile-edit-grid .days-field"), "MemberProfilePanel.css must own the CG days field layout.");
+  assert(memberCss.includes(".profile-edit-grid .days-field label"), "MemberProfilePanel.css must own the CG days option layout.");
+  assert(memberCss.includes("@media (max-width: 760px)"), "Member Profile must retain its responsive field layout.");
+  assertBalancedCss(requestsCss, "RequestsInbox.css");
+  assertBalancedCss(servantCss, "ServantInformationPanel.css");
+  assertBalancedCss(memberCss, "MemberProfilePanel.css");
+  assertBalancedCss(globalDark, "dark-theme.css");
+});
+
+
 Deno.test("Servant Information has no dead inline link panel or competing dark record overrides", async () => {
   const styles = await readRepoFile("src/features/servants/components/ServantInformationPanel.css");
   assert(!styles.includes(".servant-link-panel"), "The old inline account-link panel styles must be removed.");
