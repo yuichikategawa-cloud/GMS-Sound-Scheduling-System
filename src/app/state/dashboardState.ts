@@ -89,17 +89,9 @@ export function dashboardStateReducer(
       };
     }
     case "clear-member-data":
-      return {
-        ...state,
-        memberProfile: null,
-        memberDirectory: [],
-        notifications: [],
-        requests: [],
-        requestReads: [],
-        availability: [],
-        availabilityRules: [],
-        servingPreferences: [],
-      };
+      // Session identity changes invalidate every dataset hydrated for the
+      // previous account, not only the member-facing collections.
+      return createInitialDashboardState();
     case "set-notifications":
       return {
         ...state,

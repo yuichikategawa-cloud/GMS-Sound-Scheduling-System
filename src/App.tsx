@@ -9,6 +9,7 @@ import {
 import { CalendarDays, Church, Users, Search, LogOut, Pencil, Trash2, Download, RefreshCw, ShieldCheck, X, Menu, ChevronDown, BarChart3, AlertTriangle, Inbox as InboxIcon, UserRound, MoreHorizontal, Info, Bell, Smartphone, Clock3, MapPin, WifiOff, Moon, Sun, EyeOff, Send, CheckCircle2 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { useDashboardLoader } from "./app/hooks/useDashboardLoader";
+import { createProfileLoadGuard } from "./app/services/profileLoadGuard";
 import { useAssignmentConfirmationActions } from "./app/hooks/useAssignmentConfirmationActions";
 import type { Location, Profile, ScheduleView, Servant } from "./types";
 import { fmtDate, errorText } from "./shared/formatters";
@@ -58,6 +59,8 @@ import { DirectSwapModal, ScheduleModal } from "./features/schedule/components/S
 export default function App() {
   const [session,setSession] = useState<any>(null);
   const [profile,setProfile] = useState<Profile|null>(null);
+  const [profileError,setProfileError] = useState("");
+  const profileLoadGuard = useMemo(() => createProfileLoadGuard(), []);
   const [authLoading,setAuthLoading] = useState(true);
   const [loading,setLoading] = useState(false);
   const [message,setMessage] = useState("");
@@ -165,9 +168,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    setTab("schedule");setMobileNav(false);
-    if (!session || !supabase) { setProfile(null); return; }
-    void loadProfile();
+    const userId = session?.user?.id as string | undefined;
+    const requestId = profileLoadGuard.begin();
+    setTab("schedule");
+    setMobileNav(false);
+    setProfile(null);
+    setProfileError("");
+    dispatchDashboardState({ type: "clear-member-data" });
+    if (!userId || !supabase) return;
+    void loadProfile(userId, requestId);
+    return () => {
+      if (profileLoadGuard.isCurrent(requestId)) profileLoadGuard.invalidate();
+    };
   },[session?.user?.id]);
 
   useEffect(()=>{
@@ -179,11 +191,24 @@ export default function App() {
 
   const toggleTheme=()=>setTheme(current=>current==="dark"?"light":"dark");
 
-  async function loadProfile() {
-    if (!supabase || !session) return;
-    const {data,error} = await loadMemberAccountProfile(supabase,session.user.id);
-    if (error) setMessage(error.message);
-    else setProfile(data as Profile|null);
+  async function loadProfile(userId: string, requestId: number) {
+    if (!supabase) return;
+    try {
+      const {data,error} = await loadMemberAccountProfile(supabase,userId);
+      if (!profileLoadGuard.isCurrent(requestId)) return;
+      if (error) {
+        setProfileError(errorText(error));
+        return;
+      }
+      if (!data) {
+        setProfileError("Your GMS account profile could not be found. Please retry or sign out and contact an administrator.");
+        return;
+      }
+      setProfileError("");
+      setProfile(data as Profile);
+    } catch (error) {
+      if (profileLoadGuard.isCurrent(requestId)) setProfileError(errorText(error));
+    }
   }
 
   const memberProfileActions = useMemberProfileActions({
@@ -335,7 +360,19 @@ export default function App() {
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
   if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/>;
   if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={authenticationActions.submitAuth} onSendPasswordReset={authenticationActions.sendPasswordReset}/>;
-  if(!profile)return <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
+  if(!profile)return profileError
+    ? <div className="center-screen"><section className="auth-card" role="alert" aria-live="polite">
+        <h2>We couldn't load your profile</h2><p className="subtle">{profileError}</p>
+        <div className="toolbar-actions">
+          <button className="btn primary" onClick={() => {
+            const requestId = profileLoadGuard.begin();
+            setProfileError("");
+            void loadProfile(session.user.id, requestId);
+          }}>Retry</button>
+          <button className="btn secondary" onClick={() => void signOut()}>Sign out</button>
+        </div>
+      </section></div>
+    : <div className="center-screen"><GmsLoader label="Loading your profile…"/></div>;
 
   return (
     <AppLayout

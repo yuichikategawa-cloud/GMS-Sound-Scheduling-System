@@ -57,3 +57,19 @@ Deno.test("dashboard state contracts include typed member-directory and notifica
     }
   }
 });
+
+Deno.test("profile reads are guarded against stale account responses and profile errors are recoverable", async () => {
+  const profileGuard = await Deno.readTextFile("src/app/services/profileLoadGuard.ts");
+  if (!profileGuard.includes("isCurrent") || !profileGuard.includes("invalidate")) {
+    throw new Error("Profile loading must have explicit stale-response invalidation.");
+  }
+  if (!app.includes("profileLoadGuard.begin()") || !app.includes("profileLoadGuard.isCurrent(requestId)")) {
+    throw new Error("App profile reads must use the sequence guard for every authenticated identity.");
+  }
+  if (!app.includes("setProfile(null)") || !app.includes('type: "clear-member-data"')) {
+    throw new Error("Changing identities must clear the prior profile and dashboard state before loading.");
+  }
+  if (!app.includes("Retry</button>") || !app.includes("We couldn't load your profile")) {
+    throw new Error("A failed profile lookup must offer a visible retry path.");
+  }
+});

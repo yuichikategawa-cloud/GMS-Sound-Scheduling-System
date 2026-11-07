@@ -142,7 +142,7 @@ Deno.test("targeted collection updates support functional updates against the la
     "Notification preference updates should preserve unmodified fields.");
 });
 
-Deno.test("sign-out clears member-specific dashboard data and preserves unrelated dashboard state", () => {
+Deno.test("session identity reset clears every previous account dashboard dataset", () => {
   const hydrated = dashboardStateReducer(createInitialDashboardState(), {
     type: "hydrate",
     data: {
@@ -173,8 +173,12 @@ Deno.test("sign-out clears member-specific dashboard data and preserves unrelate
   assertEqual(cleared.availability, [], "Sign-out should clear Availability rows.");
   assertEqual(cleared.requests, [], "Sign-out should clear Requests rows.");
   assertEqual(cleared.notifications, [], "Sign-out should clear notifications.");
-  assertEqual(cleared.schedules, hydrated.schedules,
-    "The refactor should preserve existing behavior for non-member dashboard collections.");
-  assertEqual(cleared.locations, hydrated.locations,
-    "The refactor should preserve loaded church location data.");
+  assertEqual(cleared.schedules, [], "Schedule rows from the previous account must not survive an identity change.");
+  assertEqual(cleared.locations, [], "Church data must be rehydrated for the next account.");
+  assertEqual(cleared.servants, [], "Servant rows from the previous account must be cleared.");
+  assertEqual(cleared.templates, [], "Templates must be rehydrated for the next account.");
+  assertEqual(cleared.auditLogs, [], "Audit data from the previous account must be cleared.");
+  assertEqual(cleared.accountProfiles, [], "Account lookup data from the previous account must be cleared.");
+  assertEqual(cleared.availabilityDeadline, "", "The previous account's deadline state must be reset.");
+  assertEqual(cleared.notificationPrefs, defaultNotificationPreferences, "Notification preferences must return to defaults before the new account loads.");
 });
