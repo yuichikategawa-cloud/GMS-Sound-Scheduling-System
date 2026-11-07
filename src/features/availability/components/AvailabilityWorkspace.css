@@ -1111,3 +1111,17 @@
     font-size: 15px;
   }
 }
+
+/* Deadline validation gets its own full-width row below the date field and button. */
+.availability-form .availability-deadline-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  width: 100%;
+}
+.availability-filter .availability-filter-note {
+  grid-column: 1 / -1;
+  max-width: 72ch;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
