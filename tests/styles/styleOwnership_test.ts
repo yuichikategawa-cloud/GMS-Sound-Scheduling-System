@@ -254,6 +254,8 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
   }
 
   assert(availabilityCss.includes(".availability-form-panel{"), "Availability's workspace card styles must live with the component.");
+  assert(component.includes('className="people-list"'), "Availability records must continue using the shared people-list primitive.");
+  assert(globalCss.includes(':root[data-theme="dark"] .people-list{'), "Availability must receive the shared people-list dark surface.");
   for (const selector of [
     ".bulk-availability-form{", ".bulk-form-grid>label", ".bulk-form-grid input:not([type=checkbox])",
     ".bulk-servant-picker{", ".bulk-weekdays{", ".recurring-rule-panel>p{",
@@ -648,7 +650,6 @@ Deno.test("People, Servant Information and Member Profile own their presentation
   ]);
 
   for (const legacySelector of [
-    ".people-list",
     ".person-row",
     ".people-toolbar",
     ".person-name",
@@ -666,14 +667,23 @@ Deno.test("People, Servant Information and Member Profile own their presentation
 
   assert(requestsPanel.includes('className="people-list"'), "The Requests panel must continue rendering its people list.");
   assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import its feature stylesheet.");
+  assert(sharedComponentsCss.includes(".people-list{"),
+    "The people-list base surface must remain shared by Requests and Availability.");
+  assert(requestsCss.includes(":root[data-theme=\"dark\"] .requests-content-card .people-list{"),
+    "Requests must retain its transparent people-list surface inside the request card.");
+  assert(!requestsCss.includes(".people-list{"),
+    "RequestsInbox.css must not duplicate the shared people-list base surface.");
   for (const selector of [
-    ".people-list{", ".person-row{", ".person-row:last-child{",
+    ".person-row{", ".person-row:last-child{",
     ".person-name{", ".person-name b,.person-name small{", ".person-name b{", ".person-name small{",
   ]) {
     assert(requestsCss.includes(selector), "RequestsInbox.css must own " + selector);
     assert(!sharedComponentsCss.includes(selector), "Shared CSS must not retain Requests-owned selector " + selector);
   }
-  assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .people-list'), "RequestsInbox.css must own the dark people-list surface.");
+  assert(globalDark.includes(':root[data-theme="dark"] .people-list{'),
+    "The reusable people-list primitive must have a shared dark surface for Availability as well.");
+  assert(!globalDark.includes(':root[data-theme="dark"] .person-row{'),
+    "Requests-specific row dark styling must remain feature-owned.");
   assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card .person-row'), "RequestsInbox.css must own its scoped person-row compatibility styling.");
 
   assert(servantPanel.includes('import "./ServantInformationPanel.css";'), "Servant Information must import its feature stylesheet.");
