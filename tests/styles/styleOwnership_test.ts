@@ -536,3 +536,44 @@ Deno.test("Requests feature owns its servant inbox dark layout and card treatmen
   assertBalancedCss(requestsCss, "RequestsInbox.css");
   assertBalancedCss(globalCss, "src/style.css");
 });
+
+
+Deno.test("Statistics owns its table layout and light/dark presentation", async () => {
+  const [component, globalCss, statisticsCss] = await Promise.all([
+    readRepoFile("src/features/statistics/components/StatisticsPanel.tsx"),
+    readRepoFile("src/style.css"),
+    readRepoFile("src/features/statistics/components/StatisticsPanel.css"),
+  ]);
+
+  assert(component.includes('import "./StatisticsPanel.css";'),
+    "StatisticsPanel must import its feature-owned table stylesheet.");
+  assert(!globalCss.includes(".stats-table"),
+    "Global CSS must not retain Statistics table layout or theme overrides.");
+
+  for (const selector of [
+    ".stats-table-wrap{",
+    ".stats-table{",
+    ".stats-table th,.stats-table td{",
+    ".stats-table th{",
+    ".stats-table td:not(:first-child),.stats-table th:not(:first-child){",
+    ".stats-table tbody tr:last-child td{",
+    ".stats-table td{",
+    ':root[data-theme="dark"] .stats-table-wrap{',
+    ':root[data-theme="dark"] .stats-table th{',
+    ':root[data-theme="dark"] .stats-table td{',
+  ]) {
+    assert(statisticsCss.includes(selector),
+      "StatisticsPanel.css must own " + selector + ".");
+  }
+
+  assert(statisticsCss.includes("min-width:520px"),
+    "The desktop table minimum width and horizontal scroll behavior must be preserved.");
+  assert(statisticsCss.includes("background:#202f46!important;"),
+    "The final dark Statistics table surface must be retained.");
+  assert(statisticsCss.includes("background:#293951!important;"),
+    "The final dark Statistics table header surface must be retained.");
+  assert(statisticsCss.includes("color:#e2e9f4!important;"),
+    "Dark table body text contrast must be retained.");
+  assertBalancedCss(statisticsCss, "StatisticsPanel.css");
+  assertBalancedCss(globalCss, "src/style.css");
+});

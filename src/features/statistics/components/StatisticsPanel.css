@@ -148,3 +148,30 @@
   font-size: 17px !important;
   font-weight: 850 !important;
 }
+
+
+/* Statistics-owned responsive table. Keep the existing desktop scroll surface. */
+.stats-table-wrap{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:auto;border-color:#354059}
+.stats-table{width:100%;border-collapse:collapse;min-width:520px}
+.stats-table th,.stats-table td{text-align:left;padding:13px 16px;border-bottom:1px solid #edf0f5;font-size:13px}
+.stats-table th{font-size:11px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.05em;background:#f8f9fc}
+.stats-table td:not(:first-child),.stats-table th:not(:first-child){text-align:center}
+.stats-table tbody tr:last-child td{border-bottom:0}
+.stats-table td{border-color:#354059!important}
+
+/* Final dark-mode table values, previously supplied by late global overrides. */
+:root[data-theme="dark"] .stats-table-wrap{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+:root[data-theme="dark"] .stats-table th{
+  background:#293951!important;
+  color:#d4deed!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .stats-table td{
+  color:#e2e9f4!important;
+  border-color:#3a4a64!important;
+}
