@@ -91,91 +91,8 @@
   }
   input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
   input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}
-}/* Requested desktop-only recurring generation guidance layout.
-   Mobile keeps its existing stacked presentation unchanged. */
-@media (min-width: 701px){
-  .generate-note{
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 24px;
-    row-gap: 9px;
-    align-items: start;
-  }
-  .generate-note-title{
-    grid-column: 1 / -1;
-  }
-  .generate-note p{
-    display: grid;
-    gap: 4px;
-    align-content: start;
-    min-width: 0;
-    margin: 0;
-  }
 }/* 2026-11-03 visual refinement: compact sidebar identity and coordinated template actions. */
 
-/* Desktop: make the template heading and its actions read as one toolbar. */
-@media (min-width: 761px){
-  .template-picker-head{
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 9px;
-    min-height: 38px;
-    font-size: 12px;
-  }
-  .template-picker-head > b{
-    margin-right: 2px;
-    white-space: nowrap;
-  }
-  .template-picker-head > span{
-    margin-right: 8px;
-    padding: 5px 9px;
-    border: 1px solid #e5e7f2;
-    border-radius: 999px;
-    background: #f7f8fc;
-    color: #667085;
-    font-size: 11px;
-    white-space: nowrap;
-  }
-  .template-picker-head > .clear-btn{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 34px;
-    margin: 0;
-    padding: 0 11px;
-    border: 1px solid #e1e5f0;
-    border-radius: 8px;
-    background: #fff;
-    color: #4d54c8;
-    font-size: 11px;
-    font-weight: 750;
-    line-height: 1;
-    white-space: nowrap;
-    transition: background .15s ease, border-color .15s ease, transform .15s ease;
-  }
-  .template-picker-head > .clear-btn:hover:not(:disabled){
-    background: #f5f5ff;
-    border-color: #c9caff;
-  }
-  .template-picker-head > .clear-btn:active:not(:disabled){
-    transform: translateY(1px);
-  }
-  .template-picker-head > .clear-btn:disabled{
-    opacity: .45;
-    cursor: not-allowed;
-  }
-  .template-picker-head > .template-add-btn{
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 36px;
-    margin-left: auto;
-    padding: 0 13px;
-    border-radius: 9px;
-    white-space: nowrap;
-  }
-}
 .bulk-servant-list{max-height:190px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .bulk-servant-list label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
 
@@ -188,11 +105,4 @@
   input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
   input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
   input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
-}/* Inbox readability: status badges remain compact and request sections have clear separation. */
-
-
-.bulk-apply-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;color:#68748d;font-size:12px}
-@media(max-width:700px){
- .bulk-apply-footer{align-items:stretch;flex-direction:column}
- .bulk-apply-footer .btn{width:100%}
 }/* Availability sections: remove internal explanations and give form fields breathing room below headings. */
