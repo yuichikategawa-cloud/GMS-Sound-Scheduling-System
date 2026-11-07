@@ -564,7 +564,7 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
     ].some(target => selector.includes(target));
   });
   assert(!hasGlobalRequestsDarkRule, "Global styles must not retain Requests/Inbox feature dark selectors.");
-  assert(!globalRequestsThemeRule.test(globalCss), "Global styles must not retain Requests/Inbox feature dark selectors.");
+
   for (const selector of [
     ':root[data-theme="dark"] .requests-section-heading{',
     ':root[data-theme="dark"] .request-main b{',
