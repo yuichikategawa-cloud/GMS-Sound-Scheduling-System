@@ -1458,3 +1458,30 @@ Deno.test("Mobile Auth vertically centers sign-in while keeping signup top-align
     "The former selector must not top-align the mobile sign-in page.");
   assertBalancedCss(authCss, "AuthScreens.css");
 });
+
+Deno.test("Mobile app header and shell stay within the viewport without losing the install action", async () => {
+  const [headerCss, shellCss, header, mobileNavCss, mobileNav] = await Promise.all([
+    readRepoFile("src/app/components/AppHeader.css"),
+    readRepoFile("src/app/components/AppShell.css"),
+    readRepoFile("src/app/components/AppHeader.tsx"),
+    readRepoFile("src/app/components/MobileNavigation.css"),
+    readRepoFile("src/app/components/MobileNavigation.tsx"),
+  ]);
+  assert(headerCss.includes(".topbar .pwa-install-button{\n    display:none!important;"),
+    "The wide header install button must be hidden on mobile to prevent header overflow.");
+  assert(headerCss.includes(".topbar > div:first-child{") &&
+    headerCss.includes("min-width:0;") &&
+    headerCss.includes("overflow-wrap:anywhere;"),
+    "The mobile page title must be allowed to shrink and wrap inside the header.");
+  assert(shellCss.includes(".app-shell,.main-area,.content{") &&
+    shellCss.includes("overflow-x:clip;") &&
+    shellCss.includes("width:100%;"),
+    "The app shell and content must be constrained to the mobile viewport.");
+  assert(header.includes('className="pwa-install-button"') &&
+    mobileNav.includes('className="mobile-more-menu"') &&
+    mobileNav.includes("onInstallApp"),
+    "Hiding the header install action must preserve the install action in the More menu.");
+  assertBalancedCss(headerCss, "AppHeader.css");
+  assertBalancedCss(shellCss, "AppShell.css");
+  assertBalancedCss(mobileNavCss, "MobileNavigation.css");
+});
