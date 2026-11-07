@@ -127,6 +127,7 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     { component: "src/features/statistics/components/StatisticsPanel.tsx", stylesheet: "src/features/statistics/components/StatisticsPanel.css", importLine: 'import "./StatisticsPanel.css";', marker: ".stats-grid" },
     { component: "src/features/servants/components/ServantInformationPanel.tsx", stylesheet: "src/features/servants/components/ServantInformationPanel.css", importLine: 'import "./ServantInformationPanel.css";', marker: ".servant-info-page" },
     { component: "src/features/auth/components/AuthScreen.tsx", stylesheet: "src/features/auth/components/AuthScreens.css", importLine: 'import "./AuthScreens.css";', marker: ".auth-page" },
+    { component: "src/features/auth/components/PasswordRecoveryScreen.tsx", stylesheet: "src/features/auth/components/AuthScreens.css", importLine: 'import "./AuthScreens.css";', marker: ".stack{" },
     { component: "src/features/auth/components/MemberProfilePanel.tsx", stylesheet: "src/features/auth/components/MemberProfilePanel.css", importLine: 'import "./MemberProfilePanel.css";', marker: ".profile-edit-grid" },
     { component: "src/app/components/AppLayout.tsx", stylesheet: "src/app/components/AppShell.css", importLine: 'import "./AppShell.css";', marker: ".app-shell" },
     { component: "src/app/components/Sidebar.tsx", stylesheet: "src/app/components/Sidebar.css", importLine: 'import "./Sidebar.css";', marker: ".sidebar" },
@@ -283,8 +284,8 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
   }
   assert(sharedCss.includes(".bulk-servant-list{"),
     "The bulk servant list base remains shared by Schedule and Availability.");
-  assert(sharedCss.includes(".offline-status-banner{"),
-    "The offline status banner remains a shared application surface.");
+  assert(!sharedCss.includes(".offline-status-banner"),
+    "The app-level offline status banner must not remain in shared CSS.");
   assert(availabilityCss.includes("@media(max-width:1050px)"), "The existing tablet form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:760px)"), "The existing mobile form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:600px)"), "The existing filter breakpoint must be preserved.");
@@ -465,7 +466,6 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
 
   for (const selector of [
     ':root[data-theme="dark"] .message-banner',
-    ':root[data-theme="dark"] .offline-status-banner',
     ':root[data-theme="dark"] .bulk-row-action',
   ]) {
     assert(globalRules.includes(selector), "Shared dark-theme presentation must remain global: " + selector);
@@ -1194,4 +1194,68 @@ Deno.test("shared component primitives keep one canonical base rule", async () =
   assert(!css.includes("display:flex;justify-content:space-between;align-items:center}.message{"),
     "Superseded message-banner flex declarations must be removed.");
   assertBalancedCss(css, "shared-components.css");
+});
+
+Deno.test("App Shell owns its app-level offline status banner", async () => {
+  const [app, layout, appShellCss, sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/App.tsx"),
+    readRepoFile("src/app/components/AppLayout.tsx"),
+    readRepoFile("src/app/components/AppShell.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+
+  assert(app.includes('className="offline-status-banner"'),
+    "App must continue to render the offline status message.");
+  assert(layout.includes('import "./AppShell.css";'),
+    "AppLayout must load the stylesheet that owns the app-level banner.");
+  assert(layout.includes('<main className="content">{children}</main>'),
+    "The offline status banner must remain inside the App Shell content region.");
+  assert(appShellCss.includes(".offline-status-banner{"),
+    "AppShell.css must own the offline status banner base layout.");
+  assert(appShellCss.includes(".offline-status-banner svg{"),
+    "AppShell.css must own the offline icon alignment.");
+  assert(appShellCss.includes(':root[data-theme="dark"] .offline-status-banner{'),
+    "AppShell.css must own the offline status banner dark surface.");
+  assert(!sharedCss.includes(".offline-status-banner"),
+    "Shared CSS must not retain the App Shell offline banner.");
+  assert(!darkCss.includes(".offline-status-banner"),
+    "Global dark-theme CSS must not retain the App Shell offline banner.");
+  assertBalancedCss(appShellCss, "AppShell.css");
+  assertBalancedCss(sharedCss, "shared-components.css");
+  assertBalancedCss(darkCss, "dark-theme.css");
+});
+
+Deno.test("Auth owns the form stack used by sign-in and password recovery", async () => {
+  const [authScreen, recovery, authCss, sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreen.tsx"),
+    readRepoFile("src/features/auth/components/PasswordRecoveryScreen.tsx"),
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+
+  assert(authScreen.includes('import "./AuthScreens.css";'),
+    "AuthScreen must import AuthScreens.css.");
+  assert(recovery.includes('import "./AuthScreens.css";'),
+    "PasswordRecoveryScreen must import AuthScreens.css.");
+  assert(authScreen.includes('className="stack auth-registration"'),
+    "The registration form must retain the shared Auth stack layout.");
+  assert(recovery.includes('className="stack"'),
+    "Password recovery must retain the Auth stack layout.");
+  assert(authCss.includes(".stack{display:flex;flex-direction:column;gap:13px}"),
+    "AuthScreens.css must own the form stack layout.");
+  assert(authCss.includes(".stack label{"),
+    "AuthScreens.css must own form stack label layout.");
+  assert(authCss.includes(".stack input{"),
+    "AuthScreens.css must own form stack input defaults.");
+  assert(authCss.includes(':root[data-theme="dark"] .auth-card .stack label{'),
+    "AuthScreens.css must own Auth stack label contrast in dark mode.");
+  assert(!sharedCss.includes(".stack"),
+    "Shared CSS must not retain Auth-only form stack selectors.");
+  assert(!darkCss.includes(".stack"),
+    "Global dark-theme CSS must not retain Auth-only form stack selectors.");
+  assertBalancedCss(authCss, "AuthScreens.css");
+  assertBalancedCss(sharedCss, "shared-components.css");
+  assertBalancedCss(darkCss, "dark-theme.css");
 });
