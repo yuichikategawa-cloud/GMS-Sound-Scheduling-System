@@ -81,7 +81,7 @@ Deno.test("Availability overview presents date records, recurring restrictions, 
   assert(workspace.includes("{rows.length}") && workspace.includes("{visibleRules.length}") &&
     workspace.includes("{visiblePreferences.length}"),
     "The overview must show independent counts for all three categories.");
-  assert(workspace.includes('dateFilter?"No date-specific submissions for "+fmtDate(dateFilter):"No upcoming date-specific submissions yet."') &&
+  assert(workspace.includes('dateFilter?"No date-specific submissions for "+fmtDate(dateFilter)+".":"No upcoming date-specific submissions yet."') &&
     workspace.includes("No recurring restrictions saved.") &&
     workspace.includes("No serving preferences saved."),
     "Each category must have its own accurate empty state.");
