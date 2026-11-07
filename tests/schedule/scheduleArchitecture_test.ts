@@ -91,3 +91,33 @@ Deno.test("weekend-template Replace remains gated until its production rollout i
   assert(panels.includes('<option value="replace" disabled>'),
     "The Replace option must remain disabled in the Schedule generation UI before rollout approval.");
 });
+
+Deno.test("Published calendar excludes drafts and explains empty published results", async () => {
+  const [workspaceHook, workspaceUi] = await Promise.all([
+    Deno.readTextFile(new URL("../../src/features/schedule/hooks/useScheduleWorkspace.ts", import.meta.url)),
+    Deno.readTextFile(new URL("../../src/features/schedule/components/ScheduleWorkspace.tsx", import.meta.url)),
+  ]);
+  assert(workspaceHook.includes("schedule.status === \"published\""),
+    "The schedule calendar must contain published services only, including for administrators.");
+  assert(!workspaceHook.includes("(isAdmin || schedule.status === \"published\")"),
+    "Administrator calendar access must not reintroduce unpublished drafts.");
+  assert(workspaceUi.includes("No published schedules match these filters.") &&
+    workspaceUi.includes("Draft and unpublished schedules remain available in Assignment management."),
+    "An empty published calendar must explain where draft schedules remain available.");
+});
+
+Deno.test("Bulk assignment review explains empty selection and church-wide deletion instructions apply to every scope", async () => {
+  const [panels, actions] = await Promise.all([
+    Deno.readTextFile(new URL("../../src/features/schedule/components/ScheduleManagementPanels.tsx", import.meta.url)),
+    Deno.readTextFile(new URL("../../src/features/schedule/hooks/useScheduleActions.ts", import.meta.url)),
+  ]);
+  assert(panels.includes('const [selectionError,setSelectionError]=useState("");') &&
+    panels.includes("Select at least one service before reviewing assignments.") &&
+    panels.includes('disabled={disabled} onClick={()=>{if(!selected.length)'),
+    "Review assignments must remain actionable when empty and show an explicit selection message.");
+  assert(panels.includes("Permanent deletion for one church or all churches requires typing") &&
+    !panels.includes("{allChurches&&<small className=\"church-bulk-safety-note\""),
+    "The deletion safety instruction must be visible for both single-church and all-church deletion.");
+  assert(actions.includes("To change a service's publication status, use its Publish/Unpublish action."),
+    "A no-op bulk assignment save must clarify that publication status is managed separately.");
+});
