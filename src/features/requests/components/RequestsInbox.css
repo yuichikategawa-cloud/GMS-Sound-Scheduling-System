@@ -1,5 +1,15 @@
 /* Requests and Inbox presentation. Shared primitives and dark-mode theme overrides remain in src/style.css. */
 
+/* Requests-owned people directory presentation moved out of shared-components.css. */
+.people-list{background:white;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.person-row{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid #f0f1f4}
+.person-row:last-child{border-bottom:0}
+.person-name{flex:1}
+.person-name b,.person-name small{display:block}
+.person-name b{font-size:13px}
+.person-name small{font-size:10px;color:var(--muted);margin-top:2px}
+
+
 .request-row
 {
 display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 16px;border-bottom:1px solid #edf0f5
