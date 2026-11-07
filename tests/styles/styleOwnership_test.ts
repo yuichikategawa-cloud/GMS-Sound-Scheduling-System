@@ -63,7 +63,7 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     previous = index;
   }
 
-  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{"]) {
+  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".status-chip{"]) {
     assert(sharedCss.includes(selector), "Shared stylesheet must retain reusable primitive " + selector);
   }
   for (const selector of [".filters{", ".collapsible-panel{"]) {
@@ -73,8 +73,7 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     assert(!sharedCss.includes(obsolete), "Unused legacy selector must be removed from shared-components.css: " + obsolete);
   }
   assert(!darkCss.includes(".card-actions"), "Unused card action dark override must not remain in dark-theme.css.");
-  assert(!sharedCss.includes(".status-chip"), "Requests-owned status chips must not remain in shared-components.css.");
-  assert(!darkCss.includes(".status-chip"), "Requests-owned status chip dark overrides must not remain in dark-theme.css.");
+  assert(darkCss.includes(':root[data-theme="dark"] .status-chip{'), "Shared status chip dark variants must remain in dark-theme.css.");
   assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
   assert(!sharedCss.includes(':root[data-theme="dark"]'), "Dark-theme overrides must not leak into the shared light/base module.");
   assertBalancedCss(entryCss, "src/style.css");
@@ -1128,4 +1127,71 @@ Deno.test("Unrendered legacy control-center surfaces are absent from shared and 
   }
   assertBalancedCss(sharedCss, "shared-components.css");
   assertBalancedCss(darkCss, "dark-theme.css");
+});
+
+Deno.test("status chips remain shared by Schedule and Requests", async () => {
+  const [schedule, requests, sharedCss, darkCss, requestsCss] = await Promise.all([
+    readRepoFile("src/features/schedule/components/ScheduleDisplayComponents.tsx"),
+    readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+  ]);
+
+  assert(schedule.includes("status-chip"), "Schedule must retain its published/draft status chip.");
+  assert(requests.includes("status-chip"), "Requests must retain its approval status chip.");
+  assert(sharedCss.includes(".status-chip{"), "The status chip base must remain in shared-components.css.");
+  assert(darkCss.includes(':root[data-theme="dark"] .status-chip{'),
+    "The shared dark status palette must remain in dark-theme.css.");
+  assert(!requestsCss.includes(".status-chip{"),
+    "RequestsInbox.css must not duplicate the status-chip base shared with Schedule.");
+  assert(!requestsCss.includes(':root[data-theme="dark"] .status-chip'),
+    "RequestsInbox.css must not duplicate the shared dark status variants.");
+  assertBalancedCss(sharedCss, "shared-components.css");
+  assertBalancedCss(darkCss, "dark-theme.css");
+  assertBalancedCss(requestsCss, "RequestsInbox.css");
+});
+
+Deno.test("Schedule owns the card actions rendered by ScheduleDisplayComponents", async () => {
+  const [component, scheduleCss, sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/features/schedule/components/ScheduleDisplayComponents.tsx"),
+    readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+
+  assert(component.includes('className="card-actions"'),
+    "ScheduleDisplayComponents must keep rendering the administrator card actions.");
+  assert(scheduleCss.includes(".card-actions{display:flex;justify-content:flex-end;gap:7px;"),
+    "ScheduleWorkspace.css must own the card action base layout.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .card-actions{'),
+    "ScheduleWorkspace.css must own the card action dark divider.");
+  assert(!sharedCss.includes(".card-actions{"),
+    "The Schedule-only card action base must not remain in shared-components.css.");
+  assert(!darkCss.includes(".card-actions"),
+    "The Schedule-only card action dark override must not remain in dark-theme.css.");
+  assertBalancedCss(scheduleCss, "ScheduleWorkspace.css");
+});
+
+Deno.test("shared component primitives keep one canonical base rule", async () => {
+  const css = await readRepoFile("src/styles/shared-components.css");
+  for (const selector of [".brand-mark{", ".center-screen{", ".modal-actions{"]) {
+    assert(css.split(selector).length - 1 === 1,
+      "Shared primitive must have one canonical base rule: " + selector);
+  }
+  assert(css.includes(".brand-mark{width:42px;height:42px;flex:0 0 42px;"),
+    "Brand mark must retain its fixed flex basis in the canonical rule.");
+  assert(css.includes(".filter-panel{box-sizing:border-box;max-width:100%;"),
+    "Filter panel sizing must remain in the canonical base rule.");
+  assert(!css.includes(".filter-panel{box-sizing:border-box;max-width:100%;}"),
+    "Filter panel sizing must not remain as a duplicate override.");
+  assert(css.includes(".modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;"),
+    "Modal actions must retain wrapping in their canonical base rule.");
+  assert(css.includes(".center-screen{min-height:100vh;display:flex;gap:10px;color:#64748b;"),
+    "Center screen must preserve its final flex layout and text color.");
+  assert(css.includes("font-size:12px;display:block;line-height:1.55;overflow-wrap:anywhere}"),
+    "Message banner must retain its final base layout and wrapping behavior.");
+  assert(!css.includes("display:flex;justify-content:space-between;align-items:center}.message{"),
+    "Superseded message-banner flex declarations must be removed.");
+  assertBalancedCss(css, "shared-components.css");
 });
