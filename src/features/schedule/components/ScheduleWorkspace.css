@@ -1407,3 +1407,23 @@
 .daily-service-row .daily-assignee-cell:not(.missing){
   background: var(--role-team-tint, transparent) !important;
 }
+/* Bulk assignment pagination: keep the count and next-page action clear on desktop and phones. */
+.bulk-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:12px 0;
+}
+.bulk-pagination .btn{
+  min-height:38px;
+}
+@media(max-width:520px){
+  .bulk-pagination{
+    align-items:stretch;
+  }
+  .bulk-pagination .btn{
+    width:100%;
+  }
+}

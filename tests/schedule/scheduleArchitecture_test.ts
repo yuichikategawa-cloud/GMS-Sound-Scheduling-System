@@ -28,10 +28,12 @@ Deno.test("Schedule feature owns its workspace, actions, and presentation module
       paths[index] + " must not depend on the App composition root.");
   }
 
-  assert(sources[3].includes("const listedUpcoming = upcoming.slice(0, 60);") &&
+  assert(sources[3].includes("const listedUpcoming = upcoming.slice(0, visibleLimit);") &&
     sources[3].includes("setSelected(listedUpcoming.map(s=>s.id))") &&
-    sources[3].includes("const services=listedUpcoming.filter(s=>s.location_id===group.id)"),
-    "Bulk Assignment Center must use the same first-60 upcoming service set for displayed rows and selection actions.");
+    sources[3].includes("const services=listedUpcoming.filter(s=>s.location_id===group.id)") &&
+    sources[3].includes("current+60") &&
+    sources[3].includes("Showing {listedUpcoming.length} of {upcoming.length} upcoming services."),
+    "Bulk Assignment Center must expose incremental pagination and keep row selection aligned with the visible service set.");
   assert(sources[6].includes("admin_publish_schedules_grouped") && sources[6].includes("admin_bulk_assignments_grouped"),
     "Schedule persistence must keep the existing admin publication and bulk-assignment RPC contracts.");
   assert(sources[1].includes("validateScheduleAssignment") && sources[1].includes("highWorkload"),
