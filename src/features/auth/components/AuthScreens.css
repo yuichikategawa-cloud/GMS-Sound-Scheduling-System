@@ -238,7 +238,7 @@
   .auth-card form.auth-registration{max-height:min(68dvh, 620px)}
 }
 @media(max-width:600px){
-  .auth-page:has(form.auth-registration){
+  .auth-page.auth-page-signup{
     place-items:start center;
     padding-top:max(16px, env(safe-area-inset-top));
     padding-bottom:max(20px, env(safe-area-inset-bottom));

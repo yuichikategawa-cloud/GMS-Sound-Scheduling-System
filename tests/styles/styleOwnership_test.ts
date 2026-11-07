@@ -1396,3 +1396,57 @@ Deno.test("Mobile auth viewport and availability surfaces remain consistent", as
   assertBalancedCss(authCss, "AuthScreens.css");
   assertBalancedCss(availabilityCss, "AvailabilityWorkspace.css");
 });
+
+
+Deno.test("Availability deadline form is synchronized and blocks empty or unchanged submissions", async () => {
+  const [workspace, actions] = await Promise.all([
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx"),
+    readRepoFile("src/features/availability/hooks/useAvailabilityActions.ts"),
+  ]);
+
+  assert(workspace.includes("const [deadlineInput,setDeadlineInput]=useState(deadline);"),
+    "The deadline input must initialize from the current deadline.");
+  assert(workspace.includes("useEffect(()=>setDeadlineInput(deadline),[deadline]);"),
+    "The deadline input must synchronize when the asynchronously loaded deadline changes.");
+  assert(workspace.includes('required value={deadlineInput} onChange={event=>setDeadlineInput(event.target.value)}'),
+    "The deadline field must be required and controlled.");
+  assert(workspace.includes("disabled={!deadlineInput || deadlineInput === deadline}"),
+    "Saving must stay disabled until a non-empty, changed deadline is selected.");
+  assert(actions.includes('if (!value) {') && actions.includes('if (value === deadline) return;'),
+    "The action handler must reject empty deadlines and ignore no-op submissions.");
+});
+
+Deno.test("App messages remain inline and transient messages clear when the signed-in identity changes", async () => {
+  const [app, appShellCss] = await Promise.all([
+    readRepoFile("src/App.tsx"),
+    readRepoFile("src/app/components/AppShell.css"),
+  ]);
+
+  assert(app.includes('className="message-banner app-message-banner"'),
+    "The app-level message must use its dedicated layout class.");
+  assert(app.includes('aria-label="Dismiss message"'),
+    "The message dismiss control must be accessible.");
+  assert(app.includes("const previousSessionUserId = useRef<string | undefined>(undefined);"),
+    "App must retain the previous authenticated identity for transition detection.");
+  assert(app.includes("if (previousSessionUserId.current !== currentUserId) {") && app.includes("setMessage("");"),
+    "Transient messages must clear when the authenticated identity changes.");
+  assert(appShellCss.includes(".app-message-banner{") && appShellCss.includes("display:flex!important;") &&
+    appShellCss.includes(".app-message-banner>.icon-btn{"),
+    "AppShell.css must keep the dismiss button inline with the message.");
+  assertBalancedCss(appShellCss, "AppShell.css");
+});
+
+Deno.test("Mobile Auth vertically centers sign-in while keeping signup top-aligned", async () => {
+  const [authScreen, authCss] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreen.tsx"),
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+  ]);
+
+  assert(authScreen.includes('mode === "signup" ? "auth-page auth-page-signup" : "auth-page"'),
+    "AuthScreen must distinguish long signup forms from sign-in and reset forms.");
+  assert(authCss.includes(".auth-page.auth-page-signup{") && authCss.includes("place-items:start center;"),
+    "Only signup should use top alignment on compact screens.");
+  assert(!authCss.includes(".auth-page:has(form.auth-registration)"),
+    "The former selector must not top-align the mobile sign-in page.");
+  assertBalancedCss(authCss, "AuthScreens.css");
+});

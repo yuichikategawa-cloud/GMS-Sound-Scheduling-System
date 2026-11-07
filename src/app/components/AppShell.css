@@ -56,3 +56,21 @@ padding:22px 15px calc(92px + env(safe-area-inset-bottom))
   border-color:#705638!important;
   color:#ffe0ad!important;
 }
+
+
+/* Keep transient app messages and their dismiss control on one row. */
+.app-message-banner{
+  display:flex!important;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.app-message-banner>span{
+  flex:1 1 auto;
+  min-width:0;
+}
+.app-message-banner>.icon-btn{
+  flex:0 0 auto;
+  align-self:center;
+  margin:0;
+}

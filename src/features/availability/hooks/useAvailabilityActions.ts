@@ -206,6 +206,11 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       setScheduleError("");
       const formData = new FormData(event.currentTarget);
       const value = String(formData.get("deadline") || "");
+      if (!value) {
+        setMessage("Choose a submission deadline before saving.");
+        return;
+      }
+      if (value === deadline) return;
       const { error } = await upsertAvailabilityDeadline(client, value, sessionUserId);
       if (error) setMessage(errorText(error));
       else {

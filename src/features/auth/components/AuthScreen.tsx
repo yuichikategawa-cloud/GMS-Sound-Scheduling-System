@@ -29,7 +29,7 @@ export default function AuthScreen({
   onSendPasswordReset
 }: AuthScreenProps) {
   return (
-    <div className="auth-page">
+    <div className={mode === "signup" ? "auth-page auth-page-signup" : "auth-page"}>
       <div className="auth-card">
         <p className="eyebrow">GMS SOUND SCHEDULING SYSTEM</p>
         <h1 className={mode === "login" ? "welcome-home-script" : ""}>

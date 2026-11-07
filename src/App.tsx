@@ -65,6 +65,7 @@ export default function App() {
   const [authLoading,setAuthLoading] = useState(true);
   const [loading,setLoading] = useState(false);
   const [message,setMessage] = useState("");
+  const previousSessionUserId = useRef<string | undefined>(undefined);
   const [scheduleError,setScheduleError] = useState("");
   const [dashboardState, dispatchDashboardState] = useReducer(
     dashboardStateReducer,
@@ -167,6 +168,14 @@ export default function App() {
     });
     return () => lifecycle.stop();
   }, []);
+
+  useEffect(() => {
+    const currentUserId = session?.user?.id as string | undefined;
+    if (previousSessionUserId.current !== currentUserId) {
+      setMessage("");
+      previousSessionUserId.current = currentUserId;
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     const userId = session?.user?.id as string | undefined;
@@ -428,7 +437,7 @@ export default function App() {
       }
     >
 
-        {!isAdmin&&memberProfile?.last_verified_at&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner"><span>{message}</span><button className="icon-btn" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
+        {!isAdmin&&memberProfile?.last_verified_at&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner app-message-banner" role="status" aria-live="polite"><span>{message}</span><button className="icon-btn" aria-label="Dismiss message" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         {tab==="schedule" ? <ScheduleWorkspace
           workspace={scheduleWorkspace} isAdmin={isAdmin} schedules={schedules}
           requests={requests} servants={servants} availability={availability}
