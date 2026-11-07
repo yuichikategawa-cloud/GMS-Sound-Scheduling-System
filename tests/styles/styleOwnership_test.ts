@@ -659,6 +659,16 @@ Deno.test("Statistics dark cards retain final metric surfaces without duplicate 
   assert(css.includes("background:#222f46!important;"), "The effective standard statistic card surface must be preserved.");
   assert(css.includes("background: #26364f !important;"), "The final location metric surface must be preserved.");
   assert(css.includes("background: #1d2a40 !important;"), "The app-shell-specific servant metric surface must be preserved.");
+  assert(css.includes(".location-stat-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}"),
+    "Location metrics must have one consolidated three-column base layout.");
+  assert(css.includes(".location-stat{display:flex;justify-content:space-between;align-items:center;min-width:0;min-height:64px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#f8f9fc;gap:10px;font-size:13px;overflow-wrap:anywhere}"),
+    "Location metric cards must retain their final responsive, bordered light surface in one base rule.");
+  assert(css.split(".location-stat-list{").length - 1 === 2,
+    "Location metrics must have exactly one base rule and one mobile override.");
+  assert(css.split(".location-stat span{").length - 1 === 1,
+    "Location metric labels must have one wrapping rule.");
+  assert(!css.includes("background:#f7f8fb;padding:13px;border-radius:9px"),
+    "The superseded location metric card surface must be removed.");
   assertBalancedCss(css, "StatisticsPanel.css");
 });
 
@@ -908,12 +918,14 @@ Deno.test("Statistics owns its table layout and light/dark presentation", async 
 
 
 Deno.test("Notification history belongs to Requests and obsolete global surfaces are removed", async () => {
-  const [requestsPanel, requestsCss, globalCss, statisticsPanel, statisticsCss] = await Promise.all([
+  const [requestsPanel, requestsCss, globalCss, statisticsPanel, statisticsCss, pushSettings, pushSettingsCss] = await Promise.all([
     readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
     readRepoFile("src/features/requests/components/RequestsInbox.css"),
     readGlobalStyles(),
     readRepoFile("src/features/statistics/components/StatisticsPanel.tsx"),
     readRepoFile("src/features/statistics/components/StatisticsPanel.css"),
+    readRepoFile("src/features/notifications/components/PushNotificationSettings.tsx"),
+    readRepoFile("src/features/notifications/components/PushNotificationSettings.css"),
   ]);
 
   assert(requestsPanel.includes('className="requests-content-card notification-history-section"'),
@@ -939,6 +951,17 @@ Deno.test("Notification history belongs to Requests and obsolete global surfaces
     "Global styles must not retain notification history list overrides.");
   assert(!globalCss.includes(".statistics-panel"),
     "Global styles must not retain the unused legacy Statistics panel selector.");
+  for (const selector of [
+    ".stats-grid", ".stat-card", ".location-stat", ".fairness-metrics",
+    ".push-settings-card", ".notification-preference-grid",
+  ]) {
+    assert(!globalCss.includes(selector),
+      "Global styles must not retain feature-owned Notifications/Statistics selector " + selector + ".");
+  }
+  assert(pushSettings.includes('import "./PushNotificationSettings.css";'),
+    "PushNotificationSettings must import its feature-owned stylesheet.");
+  assert(pushSettingsCss.includes(':root[data-theme="dark"] .push-settings-card{'),
+    "PushNotificationSettings.css must own its dark card surface.");
 
   assert(statisticsPanel.includes('className="stats-grid stats-grid-wide"'),
     "StatisticsPanel must continue to render its feature-owned metric grid.");
