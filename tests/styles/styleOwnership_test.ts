@@ -69,9 +69,10 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
   for (const selector of [".filters{", ".collapsible-panel{"]) {
     assert(!sharedCss.includes(selector), "Schedule-owned selector must not remain in shared-components.css: " + selector);
   }
-  for (const obsolete of [".gms-v3-loader{", ".gms-loader-progress", ".church-group-count{", ".loader{"]) {
+  for (const obsolete of [".gms-v3-loader{", ".gms-loader-progress", ".church-group-count{", ".loader{", ".day-pill{", ".card-head{", ".card-actions{"]) {
     assert(!sharedCss.includes(obsolete), "Unused legacy selector must be removed from shared-components.css: " + obsolete);
   }
+  assert(!darkCss.includes(".card-actions"), "Unused card action dark override must not remain in dark-theme.css.");
   assert(!sharedCss.includes(".status-chip"), "Requests-owned status chips must not remain in shared-components.css.");
   assert(!darkCss.includes(".status-chip"), "Requests-owned status chip dark overrides must not remain in dark-theme.css.");
   assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
