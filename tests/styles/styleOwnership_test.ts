@@ -798,10 +798,10 @@ Deno.test("Statistics dark cards retain final metric surfaces without duplicate 
     "Location metric cards must retain their final responsive, bordered light surface in one base rule.");
   assert(css.split(".location-stat-list{").length - 1 === 2,
     "Location metrics must have exactly one base rule and one mobile override.");
-  const baseLocationLabelRules = css.match(/(?:^|})\\s*\\.location-stat span\\s*\\{/g) ?? [];
+  const baseLocationLabelRules = css.match(/(?:^|})\s*\.location-stat span\s*\{/g) ?? [];
   assert(baseLocationLabelRules.length === 1,
     "Location metric labels must have one base wrapping rule.");
-  assert(css.split(":root[data-theme=\\"dark\\"] .location-stat span{").length - 1 === 1,
+  assert(css.split(':root[data-theme="dark"] .location-stat span{').length - 1 === 1,
     "Location metric labels must have one dark-mode color rule.");
   assert(!css.includes("background:#f7f8fb;padding:13px;border-radius:9px"),
     "The superseded location metric card surface must be removed.");
@@ -906,7 +906,7 @@ Deno.test("shared dark secondary buttons and action controls have one effective 
     readGlobalStyles(),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
   ]);
-  const normalizedCss = css.replace(/\\s+/g, "");
+  const normalizedCss = css.replace(/\s+/g, "");
   assert(normalizedCss.split(':root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{').length - 1 === 1,
     "The base shared button/action group should occur once.");
   assert(normalizedCss.split(':root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{').length - 1 === 1,
