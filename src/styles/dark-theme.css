@@ -66,8 +66,6 @@
 :root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
 :root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
 :root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.72)}
-:root[data-theme="dark"] .action-dialog{background:#1b2437;border-color:#354059}
-:root[data-theme="dark"] .action-dialog-input{color:#e8edf7}
 :root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}
 :root[data-theme="dark"] .servant-account-chip.linked{background:var(--status-success-bg);color:var(--status-success-text)}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:var(--status-warning-bg);color:var(--status-warning-text)}
@@ -204,14 +202,7 @@
 :root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row,:root[data-theme="dark"] .saved-rule-row{border-color:#3b4b65!important}
-:root[data-theme="dark"] .action-dialog{background:#1b263a!important;border-color:#40516d!important;color:#eef3fb!important}
-:root[data-theme="dark"] .action-dialog-input{background:var(--surface-control)!important;border-color:var(--border-strong)!important;color:var(--text-primary)!important}
-@media(max-width:760px){
-  
-  
-  
-  
-}
+
 
 :root[data-theme="dark"] .status-chip{background:#293951!important;color:#d4deed!important}
 :root[data-theme="dark"] .status-chip.published,:root[data-theme="dark"] .status-chip.approved,:root[data-theme="dark"] .status-chip.confirmed{background:#194b39!important;color:#a7ecc9!important}
@@ -322,67 +313,8 @@
 :root[data-theme="dark"] .center-screen{
   overflow: visible !important;
   min-width: 0;
-}/* Text-entry confirmation dialogs: prevent labels, help text and fields spilling sideways. */
-.action-dialog{
-  box-sizing: border-box;
-  min-width: 0;
-  max-width: calc(100vw - 32px);
-  overflow-x: hidden;
 }
-.action-dialog .modal-head,.action-dialog .modal-head > div{
-  min-width: 0;
-  max-width: 100%;
-}
-.action-dialog .modal-head > div{
-  flex: 1 1 auto;
-}
-.action-dialog-message{
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-.action-dialog-input{
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 7px;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  line-height: 1.4;
-}
-.action-dialog-input input{
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-:root[data-theme="dark"] .action-dialog-input{
-  color: #e5edf8 !important;
-}
-:root[data-theme="dark"] .action-dialog-input input{
-  background: #111c2e !important;
-  color: #f3f6fc !important;
-  border-color: #4a5c78 !important;
-}
-@media (max-width: 600px){
-  .action-dialog{
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
-    padding: 18px;
-  }
-  .action-dialog .modal-head{
-    gap: 10px;
-  }
-  .action-dialog .modal-actions{
-    width: 100%;
-    min-width: 0;
-  }
-  .action-dialog .modal-actions .btn{
-    min-width: 0;
-    white-space: normal;
-  }
-}/* 2026-11-03 comprehensive dark-mode correction pass.
+/* 2026-11-03 comprehensive dark-mode correction pass.
    These rules intentionally target the exact components shown in the latest review screenshots. */
 :root[data-theme="dark"] .bulk-church-group > summary small{
   color: #d0dced !important;
@@ -436,45 +368,6 @@
 }
 :root[data-theme="dark"] .filter-panel-collapsible[open] > .filter-title{
   border-bottom: 0 !important;
-}/* Dialog input labels are text, not a dark rectangular input-like block. */
-:root[data-theme="dark"] .action-dialog-input{
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  gap: 9px !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: transparent !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  color: #edf3fb !important;
-  font-size: 12px !important;
-  font-weight: 750 !important;
-  line-height: 1.4 !important;
-}
-:root[data-theme="dark"] .action-dialog-input input{
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  min-height: 44px;
-  box-sizing: border-box !important;
-  padding: 11px 12px !important;
-  background: #111c2e !important;
-  border: 1px solid #465773 !important;
-  border-radius: 9px !important;
-  color: #f4f7fc !important;
-}
-:root[data-theme="dark"] .action-dialog-input input:focus{
-  outline: 2px solid #9289ff !important;
-  outline-offset: 2px !important;
-  border-color: #a49cff !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .action-dialog-message{
-  color: #c5d1e2 !important;
 }/* Availability labels and the linked servant name must remain readable. */
 :root[data-theme="dark"] .availability-filter label,:root[data-theme="dark"] .availability-filter label span,:root[data-theme="dark"] .availability-filter label > span,:root[data-theme="dark"] .availability-self-name span,:root[data-theme="dark"] .bulk-form-grid > label,:root[data-theme="dark"] .recurring-rule-form > label,:root[data-theme="dark"] .rule-inline label,:root[data-theme="dark"] .serving-preference-form > label,:root[data-theme="dark"] .preference-weekday-picker > b,:root[data-theme="dark"] .preference-service-picker > b{
   color: #dce5f2 !important;

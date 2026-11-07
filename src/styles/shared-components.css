@@ -82,32 +82,9 @@
   
 }/* Mobile Option B: fixed bottom navigation with a More sheet */
 
-@media(max-width:760px){
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-}
-.action-dialog-backdrop{z-index:1000}
-.action-dialog{width:min(480px,calc(100vw - 32px));padding:22px}
-.action-dialog .modal-head{align-items:flex-start}
-.action-dialog-message{white-space:pre-line;line-height:1.6;margin-top:8px;max-width:56ch}
-.action-dialog .modal-actions{margin-top:22px}
-.action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}
-@media(max-width:600px){.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}
+
+
 .modal-backdrop{z-index:100!important}
-.action-dialog-backdrop{z-index:110!important}
 @media(max-width:760px){
   .modal-backdrop{padding:10px;place-items:center}
   .modal-card{width:min(100%,590px);max-height:calc(100dvh - 20px);overflow-y:auto}
@@ -261,10 +238,7 @@
   input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 }/* Inbox readability: status badges remain compact and request sections have clear separation. */
 
-@media(max-width:640px){
-  
-  
-}
+
 .bulk-apply-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;color:#68748d;font-size:12px}
 @media(max-width:700px){
  .bulk-apply-footer{align-items:stretch;flex-direction:column}

@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import "./ActionDialog.css";
 
 export type ActionDialogState = {
   title: string;

@@ -75,6 +75,7 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
 Deno.test("extracted presentation stylesheets are imported by their owning components", async () => {
   const ownership = [
     { component: "src/shared/components/GmsLoader.tsx", stylesheet: "src/shared/components/GmsLoader.css", importLine: 'import "./GmsLoader.css";', marker: ".gms-loader-screen" },
+    { component: "src/shared/components/ActionDialog.tsx", stylesheet: "src/shared/components/ActionDialog.css", importLine: 'import "./ActionDialog.css";', marker: ".action-dialog" },
     { component: "src/features/audit/components/AuditPanel.tsx", stylesheet: "src/features/audit/components/AuditPanel.css", importLine: 'import "./AuditPanel.css";', marker: ".audit-row" },
     { component: "src/features/notifications/components/PushNotificationSettings.tsx", stylesheet: "src/features/notifications/components/PushNotificationSettings.css", importLine: 'import "./PushNotificationSettings.css";', marker: ".push-settings-card" },
     { component: "src/features/statistics/components/StatisticsPanel.tsx", stylesheet: "src/features/statistics/components/StatisticsPanel.css", importLine: 'import "./StatisticsPanel.css";', marker: ".stats-grid" },
@@ -97,6 +98,25 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     assert(stylesheet.includes(item.marker), item.stylesheet + " must contain its owned selector " + item.marker + ".");
     assertBalancedCss(stylesheet, item.stylesheet);
   }
+});
+
+
+Deno.test("ActionDialog owns its base, responsive and dark-mode presentation", async () => {
+  const [component, dialogCss, sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/shared/components/ActionDialog.tsx"),
+    readRepoFile("src/shared/components/ActionDialog.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+
+  assert(component.includes('import "./ActionDialog.css";'), "ActionDialog must import its colocated stylesheet.");
+  assert(dialogCss.includes(".action-dialog-backdrop"), "ActionDialog must own its dialog backdrop layer.");
+  assert(dialogCss.includes(".action-dialog-input input"), "ActionDialog must own its confirmation input.");
+  assert(dialogCss.includes(':root[data-theme="dark"] .action-dialog'), "ActionDialog must own its dark surface styling.");
+  assert(dialogCss.includes("@media(max-width:600px)") || dialogCss.includes("@media (max-width: 600px)"), "ActionDialog must retain its compact-screen layout.");
+  assert(!sharedCss.includes(".action-dialog"), "Shared component CSS must not retain ActionDialog-specific selectors.");
+  assert(!darkCss.includes(".action-dialog"), "Global dark-theme CSS must not retain ActionDialog-specific selectors.");
+  assertBalancedCss(dialogCss, "ActionDialog.css");
 });
 
 Deno.test("app-shell and requests presentation no longer live as light-mode global rules", async () => {

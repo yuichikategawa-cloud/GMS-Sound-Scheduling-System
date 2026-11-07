@@ -1,0 +1,110 @@
+
+.action-dialog-backdrop{z-index:1000}
+.action-dialog{width:min(480px,calc(100vw - 32px));padding:22px}
+.action-dialog .modal-head{align-items:flex-start}
+.action-dialog-message{white-space:pre-line;line-height:1.6;margin-top:8px;max-width:56ch}
+.action-dialog .modal-actions{margin-top:22px}
+.action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}@media(max-width:600px){.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}
+.action-dialog-backdrop{z-index:110!important}
+
+:root[data-theme="dark"] .action-dialog{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .action-dialog-input{color:#e8edf7}
+:root[data-theme="dark"] .action-dialog{background:#1b263a!important;border-color:#40516d!important;color:#eef3fb!important}
+:root[data-theme="dark"] .action-dialog-input{background:var(--surface-control)!important;border-color:var(--border-strong)!important;color:var(--text-primary)!important}/* Text-entry confirmation dialogs: prevent labels, help text and fields spilling sideways. */
+.action-dialog{
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: calc(100vw - 32px);
+  overflow-x: hidden;
+}
+.action-dialog .modal-head,.action-dialog .modal-head > div{
+  min-width: 0;
+  max-width: 100%;
+}
+.action-dialog .modal-head > div{
+  flex: 1 1 auto;
+}
+.action-dialog-message{
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.action-dialog-input{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 1.4;
+}
+.action-dialog-input input{
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+:root[data-theme="dark"] .action-dialog-input{
+  color: #e5edf8 !important;
+}
+:root[data-theme="dark"] .action-dialog-input input{
+  background: #111c2e !important;
+  color: #f3f6fc !important;
+  border-color: #4a5c78 !important;
+}@media (max-width: 600px){
+  .action-dialog{
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+  }
+  .action-dialog .modal-head{
+    gap: 10px;
+  }
+  .action-dialog .modal-actions{
+    width: 100%;
+    min-width: 0;
+  }
+  .action-dialog .modal-actions .btn{
+    min-width: 0;
+    white-space: normal;
+  }}/* Dialog input labels are text, not a dark rectangular input-like block. */
+:root[data-theme="dark"] .action-dialog-input{
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 9px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: #edf3fb !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+}
+:root[data-theme="dark"] .action-dialog-input input{
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 44px;
+  box-sizing: border-box !important;
+  padding: 11px 12px !important;
+  background: #111c2e !important;
+  border: 1px solid #465773 !important;
+  border-radius: 9px !important;
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .action-dialog-input input:focus{
+  outline: 2px solid #9289ff !important;
+  outline-offset: 2px !important;
+  border-color: #a49cff !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .action-dialog-message{
+  color: #c5d1e2 !important;
+}
