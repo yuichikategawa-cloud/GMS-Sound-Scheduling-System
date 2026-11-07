@@ -1,3 +1,4 @@
+import "./Sidebar.css";
 import {
   AudioLines,
   BarChart3,
