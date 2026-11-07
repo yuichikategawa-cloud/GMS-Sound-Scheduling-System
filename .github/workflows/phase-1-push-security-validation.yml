@@ -148,12 +148,16 @@ jobs:
         run: test -n "$STAGING_DATABASE_URL" || (echo "STAGING_DATABASE_URL is required and must point only to staging" && exit 1)
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Apply assignment-confirmation notification idempotency migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql
       - name: Apply bulk-assignment pending-request guard migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261116000000_gms_bulk_assignment_pending_request_guard.sql
       - name: Apply atomic weekend-template replacement migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_schedule_replace.sql
       - name: Apply anonymous public privilege hardening migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261118000000_gms_anonymous_public_privilege_hardening.sql
+      - name: Run rollback-only assignment-confirmation notification idempotency regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/bulk_assignment_pending_request_guard.sql
       - name: Run rollback-only push registration SQL regression
