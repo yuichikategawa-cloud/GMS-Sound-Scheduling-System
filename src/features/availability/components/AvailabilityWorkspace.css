@@ -424,20 +424,14 @@
   gap: 13px 14px !important;
 }
 
-.availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{
-  grid-column: auto !important;
-}
+
 
 .availability-form-panel .recurring-rule-form > .rule-field-status,.availability-form-panel .recurring-rule-form > .rule-field-dates,.availability-form-panel .recurring-rule-form > .rule-field-notes,.availability-form-panel .recurring-rule-form > .rule-field-occurrence,.availability-form-panel .recurring-rule-form > .rule-save{
   grid-column: 1 / -1 !important;
   width: 100% !important;
 }
 
-.availability-form-panel .recurring-rule-form > .rule-field-dates{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 13px !important;
-}
+
 
 .availability-form-panel .bulk-form-grid input:not([type="checkbox"]),.availability-form-panel .bulk-form-grid select,.availability-form-panel .recurring-rule-form input,.availability-form-panel .recurring-rule-form select{
   width: 100% !important;
@@ -446,23 +440,11 @@
   box-sizing: border-box !important;
 }
 
-@media (max-width: 760px) {
-.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
 
-@media (max-width: 760px) {
-.availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{
-    grid-column: 1 / -1 !important;
-  }
-}
 
-@media (max-width: 760px) {
-.availability-form-panel .recurring-rule-form > .rule-field-dates{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
+
+
+
 
 /* Availability mode switch: preserve one card width and horizontal geometry
    while the form height naturally follows the selected mode's fields. */
