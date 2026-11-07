@@ -49,7 +49,6 @@
 :root[data-theme="dark"] .filter-title{
   color:#b9c6da!important;
 }
-:root[data-theme="dark"] .filters label,
 :root[data-theme="dark"] .form-grid label,
 :root[data-theme="dark"] .modal-card>label,
 :root[data-theme="dark"] .stack label{
@@ -70,10 +69,6 @@
   overflow:visible!important;
   min-width:0;
 }
-:root[data-theme="dark"] .loader{
-  border-color:#46516b;
-  border-top-color:#8980ff;
-}
 :root[data-theme="dark"] .modal-backdrop{
   background:rgba(0,0,0,.72);
 }
@@ -87,8 +82,6 @@
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] select,
 :root[data-theme="dark"] textarea,
-:root[data-theme="dark"] .filters input,
-:root[data-theme="dark"] .filters select,
 :root[data-theme="dark"] .form-grid input,
 :root[data-theme="dark"] .form-grid select,
 :root[data-theme="dark"] .modal-card input,
