@@ -1319,3 +1319,30 @@ Deno.test("Auth loading indicators have feature-owned spinner styles", async () 
     "The shared spin keyframe must have one canonical definition.");
   assertBalancedCss(authCss, "AuthScreens.css");
 });
+
+
+Deno.test("Mobile navigation uses the bottom bar and More sheet", async () => {
+  const [header, headerCss, app, mobileNav, mobileCss] = await Promise.all([
+    readRepoFile("src/app/components/AppHeader.tsx"),
+    readRepoFile("src/app/components/AppHeader.css"),
+    readRepoFile("src/App.tsx"),
+    readRepoFile("src/app/components/MobileNavigation.tsx"),
+    readRepoFile("src/app/components/MobileNavigation.css"),
+  ]);
+
+  assert(!header.includes("mobile-menu") && !header.includes("onToggleMobileMenu"),
+    "AppHeader must not retain the unreachable hamburger control or callback.");
+  assert(!headerCss.includes("mobile-menu"),
+    "AppHeader.css must not retain selectors for the removed hamburger control.");
+  assert(!app.includes("onToggleMobileMenu"),
+    "App must not pass the obsolete header-menu callback.");
+  assert(app.includes('onToggleMenu={() => setMobileNav(value => !value)}'),
+    "App must keep the More-sheet toggle wired to MobileNavigation.");
+  assert(mobileNav.includes('className="mobile-bottom-nav"') &&
+    mobileNav.includes('className="mobile-more-menu"'),
+    "MobileNavigation must retain its bottom bar and accessible More sheet.");
+  assert(mobileCss.includes(".mobile-bottom-nav{") && mobileCss.includes(".mobile-more-menu{"),
+    "MobileNavigation.css must continue to own the bottom bar and More sheet.");
+  assertBalancedCss(headerCss, "AppHeader.css");
+  assertBalancedCss(mobileCss, "MobileNavigation.css");
+});
