@@ -1346,3 +1346,22 @@ Deno.test("Mobile navigation uses the bottom bar and More sheet", async () => {
   assertBalancedCss(headerCss, "AppHeader.css");
   assertBalancedCss(mobileCss, "MobileNavigation.css");
 });
+
+Deno.test("Availability recurring-form CSS has one responsive rule set", async () => {
+  const css = await readRepoFile("src/features/availability/components/AvailabilityWorkspace.css");
+  const uniqueRules = [
+    ".availability-form-panel .recurring-rule-form > .rule-field-servant,.availability-form-panel .recurring-rule-form > .rule-field-pattern{\n  grid-column: auto !important;\n}",
+    ".availability-form-panel .recurring-rule-form > .rule-field-dates{\n  display: grid !important;\n  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;\n  gap: 13px !important;\n}",
+    "@media (max-width: 760px) {\n.availability-form-panel .bulk-form-grid.is-person,.availability-form-panel .bulk-form-grid.is-day,.availability-form-panel .recurring-rule-form{\n    grid-template-columns: minmax(0, 1fr) !important;\n  }\n}",
+    "@media (max-width: 760px) {\n.availability-form-panel .bulk-form-grid.is-person > *,.availability-form-panel .bulk-form-grid.is-day > *,.availability-form-panel .recurring-rule-form > *{\n    grid-column: 1 / -1 !important;\n  }\n}",
+    "@media (max-width: 760px) {\n.availability-form-panel .recurring-rule-form > .rule-field-dates{\n    grid-template-columns: minmax(0, 1fr) !important;\n  }\n}",
+  ];
+
+  for (const rule of uniqueRules) {
+    assert(css.split(rule).length - 1 === 1,
+      "Availability recurring-form rules must be defined once per responsive context.");
+  }
+  assert(css.includes("@media (max-width: 760px)"),
+    "The recurring form must retain its mobile single-column breakpoint.");
+  assertBalancedCss(css, "AvailabilityWorkspace.css");
+});
