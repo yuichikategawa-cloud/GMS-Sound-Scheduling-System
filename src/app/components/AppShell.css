@@ -16,29 +16,13 @@ max-width:1320px;padding:30px 36px 60px;margin:0 auto
 .main-area{
 margin-left:0
 }
-}
 
-@media(max-width:760px){
 .content{
-padding:22px 15px 45px
+padding:22px 15px calc(92px + env(safe-area-inset-bottom))
 }
 }
 
-@media(max-width:760px){
-.main-area{
-margin-left:0
-}
-}
-
-@media(max-width:760px){
-.content{
-padding-bottom:calc(92px + env(safe-area-inset-bottom))
-}
-}
-
-/* Application-shell dark theme: navigation, header role, and mobile menu surfaces. */
-
-/* App shell root, content area, topbar, and overflow menu theme. */
+/* Dark-mode application frame and content-control surfaces. */
 
 :root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
 :root[data-theme="dark"] .main-area{background:#101727}
