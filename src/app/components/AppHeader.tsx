@@ -1,6 +1,5 @@
 import "./AppHeader.css";
 import {
-  Menu,
   Moon,
   RefreshCw,
   ShieldCheck,
@@ -14,7 +13,6 @@ type AppHeaderProps = {
   isAdmin: boolean;
   pwaInstalled: boolean;
   theme: "light" | "dark";
-  onToggleMobileMenu: () => void;
   onInstallApp: () => void;
   onToggleTheme: () => void;
   onRefresh: () => void;
@@ -37,16 +35,12 @@ export default function AppHeader({
   isAdmin,
   pwaInstalled,
   theme,
-  onToggleMobileMenu,
   onInstallApp,
   onToggleTheme,
   onRefresh
 }: AppHeaderProps) {
   return (
     <header className="topbar">
-      <button className="mobile-menu icon-btn" onClick={onToggleMobileMenu}>
-        <Menu />
-      </button>
       <div>
         <div className="eyebrow">GMS • CHURCH SERVING</div>
         <h1>{PAGE_TITLES[activeTab]}</h1>
