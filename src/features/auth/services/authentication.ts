@@ -15,7 +15,18 @@ export async function signInWithUsername(client: SupabaseClient, username: strin
   const { data, error } = await client.functions.invoke("username-login", {
     body: { username: username.trim(), password }
   });
-  if (error) throw new Error("Username login is not configured yet. Deploy the username-login Edge Function and try again.");
+  if (error) {
+    // Supabase returns a FunctionsHttpError for HTTP 4xx/5xx responses.
+    // Wrong credentials (401/403) must not be mistaken for a missing function.
+    const response = "context" in error && error.context instanceof Response ? error.context : null;
+    if (response?.status === 401 || response?.status === 403) {
+      throw new Error("Invalid username or password.");
+    }
+    if (response?.status === 404) {
+      throw new Error("Username login is unavailable. Please contact the administrator.");
+    }
+    throw new Error("Unable to sign in right now. Please try again or contact the administrator.");
+  }
   if (!data?.access_token || !data?.refresh_token) throw new Error(data?.error || "Invalid username or password.");
   const { error: sessionError } = await client.auth.setSession({
     access_token: data.access_token,
