@@ -400,7 +400,6 @@ export default function App() {
       isAdmin={isAdmin}
       pwaInstalled={pwaInstalled}
       theme={theme}
-      onToggleMobileMenu={() => setMobileNav(value => !value)}
       onInstallApp={installGmsApp}
       onToggleTheme={toggleTheme}
       onRefresh={loadData}
