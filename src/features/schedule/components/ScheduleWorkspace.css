@@ -1611,3 +1611,210 @@
 }:root[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity{
   background: var(--foh-team-tint, transparent) !important;
 }
+/* Schedule workspace, assignment management, and personal schedule dark theme. */
+:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .my-upcoming-panel,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .assignment-overview,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-schedule-summary>div{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .schedule-workspace-tabs,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .bulk-matrix th{
+  background:#202c42!important;
+  border-color:#394660!important;
+  color:#e8edf7;
+}:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4,:root[data-theme="dark"] .assignment-workload-detail b,:root[data-theme="dark"] .bulk-assignment-heading h2,:root[data-theme="dark"] .bulk-preview-heading h3,:root[data-theme="dark"] .bulk-copy-panel b,:root[data-theme="dark"] .bulk-matrix td b{
+  color:#edf2fb!important;
+}:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status{
+  color:#a3aec3!important;
+}
+
+
+:root[data-theme="dark"] .generate-toggle-hint{
+  background:#26324a;
+  color:#e0e7f6;
+  border-color:#3b4862;
+}
+:root[data-theme="dark"] .schedule-workspace-tabs{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .schedule-workspace-tabs button{color:#b7c1d5}
+:root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#393b72;color:#fff}
+:root[data-theme="dark"] .my-upcoming-item{
+  background:#202c42!important;
+  border-color:#394660!important;
+}:root[data-theme="dark"] .workload-warning{
+  background:#3a2d2c!important;
+  border-color:#704744!important;
+  color:#ffd2c7!important;
+}
+:root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
+:root[data-theme="dark"] .bulk-church-group>summary{background:#202c42;color:#edf2fb}
+:root[data-theme="dark"] .generate-panel{background:#202644;border-color:#39416c}
+:root[data-theme="dark"] .generate-note{background:#202c42;border-color:#394660;color:#d9e2f2}
+:root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
+:root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
+:root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .swap-source{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7!important;
+}:root[data-theme="dark"] .assignment-overview-locations>div,:root[data-theme="dark"] .bulk-preview-list>div{
+  background:#202c42!important;
+  border-color:#394660!important;
+  color:#e8edf7!important;
+}
+:root[data-theme="dark"] .template-delete-btn{background:#43282e;border-color:#684049;color:#ffb6c1}:root[data-theme="dark"] .generate-note p span{color:#a3aec3}
+:root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .bulk-assignment-center{
+  background:#1b263a!important;
+  border-color:#3a4963!important;
+  color:#edf2fa!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .assignment-overview-stats>div,:root[data-theme="dark"] .assignment-overview-ops>div,:root[data-theme="dark"] .assignment-overview-locations>div{
+  background:#222f46!important;
+  border-color:#40516d!important;
+  color:#edf2fa!important;
+}:root[data-theme="dark"] .assignment-overview-stats small,:root[data-theme="dark"] .assignment-overview-ops small,:root[data-theme="dark"] .assignment-overview-locations span,:root[data-theme="dark"] .assignment-overview-ops span,:root[data-theme="dark"] .assignment-overview-heading .subtle,:root[data-theme="dark"] .assignment-workload-detail>summary small,:root[data-theme="dark"] .assignment-workload-detail .workload-status,:root[data-theme="dark"] .assignment-overview-card .subtle,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status,:root[data-theme="dark"] .workload-row,:root[data-theme="dark"] .bulk-preview-stats,:root[data-theme="dark"] .bulk-copy-controls label,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small{
+  color:#c0cbe0!important;
+}:root[data-theme="dark"] .assignment-overview-stats b,:root[data-theme="dark"] .assignment-overview-ops b,:root[data-theme="dark"] .assignment-overview-locations b,:root[data-theme="dark"] .assignment-workload-detail>summary b,:root[data-theme="dark"] .bulk-preview-stats b{
+  color:#f4f6fc!important;
+}
+:root[data-theme="dark"] .assignment-overview-ops>div,:root[data-theme="dark"] .assignment-overview-locations>div{
+  background:#222f46!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .assignment-overview-locations span{color:#d2dced!important}
+:root[data-theme="dark"] .assignment-overview-locations b{color:#f4f6fc!important}
+:root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label{
+  color:#b9c6da!important;
+}:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+}
+:root[data-theme="dark"] .schedule-workspace-tabs button{color:#cbd6e8!important}
+:root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#484582!important;color:#fff!important;border-color:#8982e9!important}:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4{
+  color:#f0f4fb!important;
+}:root[data-theme="dark"] .bulk-copy-controls input,:root[data-theme="dark"] .bulk-matrix select,:root[data-theme="dark"] .generate-footer input,:root[data-theme="dark"] .generate-footer select{
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
+}
+:root[data-theme="dark"] .bulk-matrix th{background:#293951!important;color:#d4deed!important;border-color:#40516d!important}
+:root[data-theme="dark"] .bulk-matrix td{color:#e2e9f4!important;border-color:#3a4a64!important}
+:root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202f46!important}
+:root[data-theme="dark"] .bulk-matrix-status.is-published{color:#8be0b5!important}
+:root[data-theme="dark"] .bulk-matrix-status.is-draft{color:#ffd38c!important}
+:root[data-theme="dark"] .bulk-assignment-summary>svg,:root[data-theme="dark"] .bulk-church-group>summary>svg,:root[data-theme="dark"] .assignment-workload-detail>summary>svg{color:#c3cfe1!important}:root[data-theme="dark"] .assignment-overview-alerts .control-center-alert,:root[data-theme="dark"] .workload-warning{
+  background:#443625!important;border-color:#705638!important;color:#ffe0ad!important;
+}/* The calendar workspace should not render as a full-width light/dark strip.
+   Keep the weekly/monthly selector as a compact segmented control. */
+:root[data-theme="dark"] .calendar-workspace-heading{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}:root[data-theme="dark"] .calendar-workspace-heading h2,:root[data-theme="dark"] .calendar-workspace-heading b{
+  color: #f3f6fc !important;
+}:root[data-theme="dark"] .calendar-workspace-heading .subtle{
+  color: #bdcbe0 !important;
+}
+/* 2026-11-03 comprehensive dark-mode correction pass.
+   These rules intentionally target the exact components shown in the latest review screenshots. */
+:root[data-theme="dark"] .bulk-church-group > summary small{
+  color: #d0dced !important;
+  font-size: 12px !important;
+  line-height: 1.45;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary b{
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn{
+  color: #c4bcff !important;
+}/* Template selection actions must look like the rest of the dark secondary controls. */
+:root[data-theme="dark"] .template-picker-head > .clear-btn{
+  background: #283750 !important;
+  color: #e7edf7 !important;
+  border: 1px solid #465873 !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+  text-decoration: none;
+}
+:root[data-theme="dark"] .template-picker-head > .clear-btn:hover:not(:disabled){
+  background: #354762 !important;
+  border-color: #7485a2 !important;
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .template-picker-head > .clear-btn:disabled{
+  background: #222f45 !important;
+  color: #9eacc2 !important;
+  border-color: #3b4b63 !important;
+  opacity: .72 !important;
+}/* Servant's upcoming assignment heading was retaining its light-theme purple. */
+:root[data-theme="dark"] .my-next-heading,:root[data-theme="dark"] .my-next-heading b{
+  color: #f0f4fb !important;
+}
+:root[data-theme="dark"] .my-next-heading svg{
+  color: #bdb5ff !important;
+  stroke: currentColor;
+}
+:root[data-theme="dark"] .my-next-card .my-next-date{
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .bulk-assignment-cell > select{
+  background: #111c2e !important;
+  border-color: #465873 !important;
+  color: #f0f4fb !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn{
+  background: #283750 !important;
+  color: #e8e5ff !important;
+  border-color: #465873 !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn:hover{
+  background: #354764 !important;
+}
+:root[data-theme="dark"] .bulk-matrix th,:root[data-theme="dark"] .bulk-matrix th:last-child{
+  background: #293951 !important;
+  color: #d4deed !important;
+  border-color: #40516d !important;
+}
+
+
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn{
+  background: #33435d !important;
+  color: #f1f5fb !important;
+  border-color: #60718c !important;
+}
+:root[data-theme="dark"] .bulk-church-group > summary .link-btn:hover{
+  background: #405371 !important;
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .bulk-matrix th,:root[data-theme="dark"] .bulk-matrix th:last-child{
+  background: #33445f !important;
+  color: #f4f7fc !important;
+  border-color: #5b6d88 !important;
+  font-weight: 850 !important;
+}
+:root[data-theme="dark"] .bulk-matrix th{
+  background: #293951 !important;
+  color: #edf3fc !important;
+  border-color: #4c607d !important;
+  font-weight: 850 !important;
+}
+:root[data-theme="dark"] .bulk-matrix-pending{
+  color: #ffd08a !important;
+}/* Registration CG day group: keep the legend on its own row and let options wrap naturally. */
+/* Keep recurring-generation guidance readable in dark mode whether the theme
+   is applied at the document root or directly to the application shell. */
+:root[data-theme="dark"] .generate-panel .generate-note-title,
+.app-shell[data-theme="dark"] .generate-panel .generate-note-title{
+  color: var(--text-primary) !important;
+}
+:root[data-theme="dark"] .generate-panel .generate-note-title svg,
+.app-shell[data-theme="dark"] .generate-panel .generate-note-title svg{
+  color: var(--accent-primary) !important;
+}
+:root[data-theme="dark"] .generate-panel .generate-note p b,
+.app-shell[data-theme="dark"] .generate-panel .generate-note p b{
+  color: var(--text-primary) !important;
+}
+:root[data-theme="dark"] .generate-panel .generate-note p span,
+.app-shell[data-theme="dark"] .generate-panel .generate-note p span{
+  color: var(--text-secondary) !important;
+}

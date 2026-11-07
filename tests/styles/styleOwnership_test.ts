@@ -273,7 +273,7 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
   assert(scheduleCss.includes(':root[data-theme="dark"] .calendar-switch span'), "Schedule must own its calendar switch label contrast.");
   assert(!globalCss.includes(".calendar-switch"), "Global styles must not retain Schedule calendar switch selectors.");
 
-  assert(globalCss.includes(':root[data-theme="dark"] .schedule-workspace-tabs'), "Schedule tab dark-mode overrides must remain global.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .schedule-workspace-tabs'), "Schedule tabs must own their dark-mode presentation.");
   assert(scheduleCss.includes(".church-schedule-heading{"), "Church schedule heading base styling must live with the Schedule feature.");
   assert(scheduleCss.includes(".church-schedule-group{"), "Church schedule group base styling must live with the Schedule feature.");
   assert(!globalCss.includes(".church-schedule-heading{"), "Global styles must not retain the Schedule church heading base selector.");
@@ -289,7 +289,22 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
     ].some(target => selector.includes(target));
   });
   assert(!hasGlobalScheduleDailyThemeRule, "Global styles must not retain Schedule daily-overview dark selectors.");
-  assert(globalCss.includes(':root[data-theme="dark"] .bulk-assignment-center'), "Bulk assignment dark-mode overrides must remain global.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .bulk-assignment-center'), "Schedule bulk assignment must own its dark-mode presentation.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .assignment-overview-card'), "Schedule assignment overview cards must own their dark-mode presentation.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .my-upcoming-item'), "Personal upcoming schedule cards must own their dark-mode presentation.");
+  const scheduleAssignmentTargets = [
+    ".schedule-workspace-tabs", ".church-bulk-actions", ".assignment-overview",
+    ".assignment-workload-detail", ".bulk-assignment", ".bulk-church-group",
+    ".bulk-copy", ".bulk-preview", ".bulk-matrix", ".workload-", ".generate-",
+    ".template-", ".swap-source", ".my-upcoming", ".my-days-card", ".my-next-",
+    ".my-schedule-summary", ".calendar-workspace-heading",
+  ];
+  const hasGlobalScheduleAssignmentThemeRule = globalCss.split("{").some(rule => {
+    const selector = rule.slice(rule.lastIndexOf("}") + 1);
+    const themed = selector.includes(':root[data-theme="dark"]') || selector.includes('.app-shell[data-theme="dark"]');
+    return themed && scheduleAssignmentTargets.some(target => selector.includes(target));
+  });
+  assert(!hasGlobalScheduleAssignmentThemeRule, "Global styles must not retain Schedule assignment-management dark selectors.");
 });
 
 
