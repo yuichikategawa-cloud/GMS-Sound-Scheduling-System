@@ -7,7 +7,6 @@ export type AdminScheduleView = "overview" | "assignments" | "calendar";
 
 export function useScheduleWorkspace({
   schedules,
-  isAdmin,
   myServantId
 }: {
   schedules: ScheduleView[];
@@ -48,14 +47,14 @@ export function useScheduleWorkspace({
     const query = personFilter.trim().toLowerCase();
     return schedules.filter(schedule =>
       schedule.service_date >= today() &&
-      (isAdmin || schedule.status === "published") &&
+      schedule.status === "published" &&
       (!query || schedule.assignments.some(assignment => assignment.servant_name.toLowerCase().includes(query))) &&
       (!locationFilter || schedule.location_id === locationFilter) &&
       (!serviceFilter || schedule.service_name === serviceFilter) &&
       (!fromDate || schedule.service_date >= fromDate) &&
       (!toDate || schedule.service_date <= toDate)
     );
-  }, [schedules, personFilter, locationFilter, serviceFilter, fromDate, toDate, isAdmin]);
+  }, [schedules, personFilter, locationFilter, serviceFilter, fromDate, toDate]);
 
   const dailyGroups = useMemo(() => {
     const groups = new Map<string, ScheduleView[]>();
