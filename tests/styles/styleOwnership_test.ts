@@ -1428,7 +1428,7 @@ Deno.test("App messages remain inline and transient messages clear when the sign
     "The message dismiss control must be accessible.");
   assert(app.includes("const previousSessionUserId = useRef<string | undefined>(undefined);"),
     "App must retain the previous authenticated identity for transition detection.");
-  assert(app.includes("if (previousSessionUserId.current !== currentUserId) {") && app.includes("setMessage("");"),
+  assert(app.includes("if (previousSessionUserId.current !== currentUserId) {") && app.includes('setMessage("");'),
     "Transient messages must clear when the authenticated identity changes.");
   assert(appShellCss.includes(".app-message-banner{") && appShellCss.includes("display:flex!important;") &&
     appShellCss.includes(".app-message-banner>.icon-btn{"),
