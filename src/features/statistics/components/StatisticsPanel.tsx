@@ -57,6 +57,6 @@ export default function StatisticsPanel({
         <div><small>Monitor</small><strong>{row.Monitor}</strong></div>
         <div><small>Assistant</small><strong>{row.Assistant}</strong></div>
       </div>
-    </article>):<p className="subtle stats-empty-state">No servants are assigned within the selected filters.</p>}</div>
+    </article>):<p className="subtle stats-empty-state">No servants are assigned to upcoming published schedules.</p>}</div>
   </>;
 }
