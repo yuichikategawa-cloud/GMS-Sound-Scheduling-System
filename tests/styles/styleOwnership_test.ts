@@ -83,6 +83,9 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
     { component: "src/features/auth/components/AuthScreen.tsx", stylesheet: "src/features/auth/components/AuthScreens.css", importLine: 'import "./AuthScreens.css";', marker: ".auth-page" },
     { component: "src/features/auth/components/MemberProfilePanel.tsx", stylesheet: "src/features/auth/components/MemberProfilePanel.css", importLine: 'import "./MemberProfilePanel.css";', marker: ".profile-edit-grid" },
     { component: "src/app/components/AppLayout.tsx", stylesheet: "src/app/components/AppShell.css", importLine: 'import "./AppShell.css";', marker: ".app-shell" },
+    { component: "src/app/components/Sidebar.tsx", stylesheet: "src/app/components/Sidebar.css", importLine: 'import "./Sidebar.css";', marker: ".sidebar" },
+    { component: "src/app/components/AppHeader.tsx", stylesheet: "src/app/components/AppHeader.css", importLine: 'import "./AppHeader.css";', marker: ".topbar" },
+    { component: "src/app/components/MobileNavigation.tsx", stylesheet: "src/app/components/MobileNavigation.css", importLine: 'import "./MobileNavigation.css";', marker: ".mobile-bottom-nav" },
     { component: "src/features/requests/components/RequestsPanel.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".requests-content-card" },
     { component: "src/features/requests/components/ServantInbox.tsx", stylesheet: "src/features/requests/components/RequestsInbox.css", importLine: 'import "./RequestsInbox.css";', marker: ".servant-inbox" },
     { component: "src/features/availability/components/AvailabilityWorkspace.tsx", stylesheet: "src/features/availability/components/AvailabilityWorkspace.css", importLine: 'import "./AvailabilityWorkspace.css";', marker: ".availability-form-panel" },
@@ -649,43 +652,80 @@ Deno.test("Member profile dark theme does not retain superseded form and fieldse
 });
 
 
-Deno.test("application shell owns its sidebar and mobile-navigation dark theme", async () => {
-  const [layout, globalCss, shellCss] = await Promise.all([
+
+Deno.test("App shell, sidebar, header and mobile navigation own their presentation", async () => {
+  const [
+    layout, globalCss, shellCss,
+    sidebarComponent, sidebarCss,
+    headerComponent, headerCss,
+    mobileComponent, mobileCss,
+  ] = await Promise.all([
     readRepoFile("src/app/components/AppLayout.tsx"),
     readGlobalStyles(),
     readRepoFile("src/app/components/AppShell.css"),
+    readRepoFile("src/app/components/Sidebar.tsx"),
+    readRepoFile("src/app/components/Sidebar.css"),
+    readRepoFile("src/app/components/AppHeader.tsx"),
+    readRepoFile("src/app/components/AppHeader.css"),
+    readRepoFile("src/app/components/MobileNavigation.tsx"),
+    readRepoFile("src/app/components/MobileNavigation.css"),
   ]);
-  assert(layout.includes('import "./AppShell.css";'), "AppLayout must own and import its shell presentation.");
+  assert(layout.includes('import "./AppShell.css";'), "AppLayout must import its shell frame stylesheet.");
+  assert(sidebarComponent.includes('import "./Sidebar.css";'), "Sidebar must import its feature stylesheet.");
+  assert(headerComponent.includes('import "./AppHeader.css";'), "AppHeader must import its feature stylesheet.");
+  assert(mobileComponent.includes('import "./MobileNavigation.css";'), "MobileNavigation must import its feature stylesheet.");
+
   for (const selector of [
     ':root[data-theme="dark"] .app-shell{',
     ':root[data-theme="dark"] .main-area{',
     ':root[data-theme="dark"] .content{',
-    ':root[data-theme="dark"] .topbar{',
   ]) {
     assert(shellCss.includes(selector), "AppShell.css must own " + selector);
     assert(!globalCss.includes(selector), "Global dark-theme CSS must not retain " + selector);
   }
+
   for (const selector of [
+    ".sidebar{", ".nav-item{", ".sidebar .brand-sound-identity{",
     ':root[data-theme="dark"] .nav-item{',
     ':root[data-theme="dark"] .nav-item.active,',
+    ".user-chip{",
+  ]) {
+    assert(sidebarCss.includes(selector), "Sidebar.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global CSS must not retain Sidebar selector " + selector);
+  }
+
+  for (const selector of [
+    ".topbar{", ".topbar h1{", ".top-actions{", ".role-tag{", ".theme-toggle{",
     ':root[data-theme="dark"] .role-tag{',
+  ]) {
+    assert(headerCss.includes(selector), "AppHeader.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global CSS must not retain AppHeader selector " + selector);
+  }
+
+  for (const selector of [
+    ".mobile-bottom-nav{", ".mobile-nav-item{", ".mobile-nav-badge{",
+    ".mobile-more-backdrop{", ".mobile-more-menu{", ".mobile-more-heading{",
     ':root[data-theme="dark"] .mobile-bottom-nav{',
     ':root[data-theme="dark"] .mobile-nav-item{',
-    ':root[data-theme="dark"] .mobile-nav-item.active{',
-    ':root[data-theme="dark"] .mobile-more-menu{',
     ':root[data-theme="dark"] .mobile-more-menu button{',
-    ':root[data-theme="dark"] .mobile-more-menu button:hover{',
     ':root[data-theme="dark"] .mobile-more-menu .mobile-more-signout{',
-    ':root[data-theme="dark"] .mobile-more-backdrop{',
   ]) {
-    assert(shellCss.includes(selector), "AppShell.css must own " + selector);
-    assert(!globalCss.includes(selector), "Global style.css must not retain " + selector);
+    assert(mobileCss.includes(selector), "MobileNavigation.css must own " + selector);
+    assert(!globalCss.includes(selector), "Global CSS must not retain MobileNavigation selector " + selector);
   }
-  assert(shellCss.includes("background:rgba(24,35,55,.98)!important;"), "The effective mobile navigation surface must be retained.");
-  assert(shellCss.includes("background:#1b263a!important;"), "The effective mobile More menu surface must be retained.");
-  assert(shellCss.includes("color:#ffb8c0!important;"), "The effective dark sign-out color must be retained.");
-  assertBalancedCss(shellCss, "AppShell.css");
-  assertBalancedCss(globalCss, "src/style.css");
+
+  assert(mobileCss.includes("background:rgba(24,35,55,.98)!important;"), "The effective mobile navigation surface must be retained.");
+  assert(mobileCss.includes("background:#1b2437!important;"), "The final dark More-menu surface must be retained.");
+  assert(mobileCss.includes("color:#ffb8c0!important;"), "The effective dark sign-out color must be retained.");
+  assert(headerCss.includes("background:#182238!important;"), "The effective dark topbar surface must be retained.");
+
+  for (const [css, name] of [
+    [shellCss, "AppShell.css"],
+    [sidebarCss, "Sidebar.css"],
+    [headerCss, "AppHeader.css"],
+    [mobileCss, "MobileNavigation.css"],
+  ] as const) assertBalancedCss(css, name);
+  assertBalancedCss(globalCss, "global styles");
 });
 
 
