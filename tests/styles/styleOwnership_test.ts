@@ -274,7 +274,21 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
   assert(!globalCss.includes(".calendar-switch"), "Global styles must not retain Schedule calendar switch selectors.");
 
   assert(globalCss.includes(':root[data-theme="dark"] .schedule-workspace-tabs'), "Schedule tab dark-mode overrides must remain global.");
-  assert(globalCss.includes(':root[data-theme="dark"] .daily-location-name'), "Schedule summary dark-mode overrides must remain global.");
+  assert(scheduleCss.includes(".church-schedule-heading{"), "Church schedule heading base styling must live with the Schedule feature.");
+  assert(scheduleCss.includes(".church-schedule-group{"), "Church schedule group base styling must live with the Schedule feature.");
+  assert(!globalCss.includes(".church-schedule-heading{"), "Global styles must not retain the Schedule church heading base selector.");
+  assert(!globalCss.includes(".church-schedule-group{"), "Global styles must not retain the Schedule church group base selector.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .daily-location-name'), "Schedule daily location labels must use feature-owned dark styling.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .daily-assignee-cell'), "Schedule daily assignment cells must use feature-owned dark styling.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .role-box'), "Schedule role boxes must use feature-owned dark styling.");
+  const hasGlobalScheduleDailyThemeRule = globalCss.split("{").some(rule => {
+    const selector = rule.slice(rule.lastIndexOf("}") + 1);
+    return selector.includes(':root[data-theme="dark"]') && [
+      ".daily-", ".schedule-card", ".schedule-location-group", ".church-schedule-",
+      ".role-box", ".role-missing", ".coverage-pill", ".service-title",
+    ].some(target => selector.includes(target));
+  });
+  assert(!hasGlobalScheduleDailyThemeRule, "Global styles must not retain Schedule daily-overview dark selectors.");
   assert(globalCss.includes(':root[data-theme="dark"] .bulk-assignment-center'), "Bulk assignment dark-mode overrides must remain global.");
 });
 

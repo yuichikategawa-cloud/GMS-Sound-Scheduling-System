@@ -1473,3 +1473,141 @@
 :root[data-theme="dark"] .calendar-switch span{
   color: #c7d3e6 !important;
 }
+/* Daily schedule base and church grouping styles moved from the shared module. */
+/* Service detail hierarchy: church first, then its dated service cards. */
+.church-schedule-groups{display:flex;flex-direction:column;gap:18px;padding-top:14px}
+.church-schedule-group{background:#f8f9fc;border:1px solid var(--line);border-radius:15px;padding:15px}
+.church-schedule-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:2px 2px 12px;border-bottom:1px solid #e5e9f0}
+.church-schedule-heading h3{font:800 20px Manrope,'DM Sans',sans-serif;letter-spacing:-.025em;color:#202b40;margin:0}
+.church-schedule-heading p{font-size:11px;color:var(--muted);margin:4px 0 0}@media(max-width:760px){.church-schedule-group{padding:11px}.church-schedule-heading h3{font-size:18px}}@media(max-width:600px){
+  .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
+  .schedule-card .role-box{width:100%;min-width:0;box-sizing:border-box;padding:11px 13px!important;}
+  .schedule-card .role-box:last-child{grid-column:auto!important}}
+/* Daily schedule dark-mode presentation. */
+:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .church-schedule-group{
+  background:#202c42!important;
+  border-color:#394660!important;
+  color:#e8edf7;
+}:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-role-row b,:root[data-theme="dark"] .daily-role-row span,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .church-schedule-heading h3,:root[data-theme="dark"] .daily-service-top b{
+  color:#edf2fb!important;
+}:root[data-theme="dark"] .daily-subtitle{
+  color:#a3aec3!important;
+}
+:root[data-theme="dark"] .daily-location-name{background:#2c3156;color:#d2ceff}:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .schedule-location-group{
+  background:#202c42!important;
+  border-color:#394660!important;
+}:root[data-theme="dark"] .daily-role-row.role-missing,:root[data-theme="dark"] .role-missing{
+  background:#3a2d2c!important;
+  border-color:#704744!important;
+  color:#ffd2c7!important;
+}
+:root[data-theme="dark"] .coverage-pill.complete{background:var(--status-success-bg);color:#8fe0b7}
+:root[data-theme="dark"] .coverage-pill.pending{background:#49351f;color:var(--status-warning-text)}:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small{
+  color:#b9c6da!important;
+}:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+}
+:root[data-theme="dark"] .daily-location-name{background:#34345f!important;color:#e0dcff!important}:root[data-theme="dark"] .daily-head,:root[data-theme="dark"] .daily-date-divider{
+  border-color:#3b4b65!important;
+}:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-roles b,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .service-title{
+  color:#f0f4fb!important;
+}
+:root[data-theme="dark"] .coverage-pill.complete{background:#194b39!important;color:#a7ecc9!important}
+:root[data-theme="dark"] .coverage-pill.pending{background:#594022!important;color:#ffe0a5!important}
+:root[data-theme="dark"] .daily-card > .daily-head{
+  background: #202f46 !important;
+}
+:root[data-theme="dark"] .daily-card[open] > .daily-head{
+  border-bottom-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-date{
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .daily-subtitle{
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .daily-location{
+  background: #1b263a !important;
+  border-color: #465a77 !important;
+}
+:root[data-theme="dark"] .daily-location-name{
+  background: #30415c !important;
+  color: #f2f6fc !important;
+  border-bottom-color: #4b5d79 !important;
+}
+:root[data-theme="dark"] .daily-location-name span{
+  color: #d1dced !important;
+}
+:root[data-theme="dark"] .daily-service-table-head{
+  background: #293a54 !important;
+  color: #e9eff8 !important;
+  border-bottom-color: #465a77 !important;
+}
+:root[data-theme="dark"] .daily-service-table-head > span + span,:root[data-theme="dark"] .daily-assignee-cell{
+  border-left-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-service-row{
+  background: #202f46 !important;
+  border-bottom-color: #40516d !important;
+}
+:root[data-theme="dark"] .daily-service-identity b{
+  color: #f1f5fc !important;
+}
+:root[data-theme="dark"] .daily-service-identity small{
+  color: #becbe0 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell{
+  background: #202f46 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell > span{
+  color: #e8eef8 !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.missing{
+  background: #3a302b !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.missing > span{
+  color: #ffd09a !important;
+}
+:root[data-theme="dark"] .daily-assignee-cell.optional > span{
+  color: #aab7cb !important;
+}@media (max-width: 760px){
+  :root[data-theme="dark"] .daily-assignee-cell{
+    border-color: #465a77 !important;
+  }
+  :root[data-theme="dark"] .daily-assignee-cell > small{
+    color: #c0cce0 !important;
+  }}:root[data-theme="dark"] .daily-location-name{
+  background: #087985 !important;
+  color: #ffffff !important;
+  border-bottom-color: #31a9af !important;
+}:root[data-theme="dark"] .daily-location-name b,:root[data-theme="dark"] .daily-location-name span{
+  color: #ffffff !important;
+}@media (max-width: 760px){:root[data-theme="dark"] .daily-service-row .daily-assignee-cell{
+    background: #263a55 !important;
+    border-color: #506887 !important;
+  }:root[data-theme="dark"] .daily-service-row .daily-assignee-cell > small{
+    color: #dce9f8 !important;
+  }:root[data-theme="dark"] .daily-service-row .daily-assignee-cell > span{
+    color: #ffffff !important;
+  }:root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing{
+    background: #493724 !important;
+    border-color: #b27b3f !important;
+  }:root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > small,:root[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > span{
+    color: #ffe0ad !important;
+  }}:root[data-theme="dark"] .daily-location-name{
+  background: var(--church-band, #405a78) !important;
+  color: #f8fbff !important;
+}:root[data-theme="dark"] .daily-service-row .daily-assignee-cell:not(.missing){
+  background: var(--role-team-tint, transparent) !important;
+}:root[data-theme="dark"] .daily-service-row .daily-service-identity{
+  background: var(--service-category-tint, var(--foh-team-tint, transparent)) !important;
+}:root[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity{
+  background: var(--foh-team-tint, transparent) !important;
+}

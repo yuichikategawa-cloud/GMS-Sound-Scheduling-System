@@ -25,14 +25,9 @@
 .gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}
 @media(max-width:600px){.servant-account-chip{font-size:9px}}
 
-.gms-loader-progress span{width:100%}/* Service detail hierarchy: church first, then its dated service cards. */
-.church-schedule-groups{display:flex;flex-direction:column;gap:18px;padding-top:14px}
-.church-schedule-group{background:#f8f9fc;border:1px solid var(--line);border-radius:15px;padding:15px}
-.church-schedule-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:2px 2px 12px;border-bottom:1px solid #e5e9f0}
-.church-schedule-heading h3{font:800 20px Manrope,'DM Sans',sans-serif;letter-spacing:-.025em;color:#202b40;margin:0}
-.church-schedule-heading p{font-size:11px;color:var(--muted);margin:4px 0 0}
+.gms-loader-progress span{width:100%}
 .church-group-count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:20px;background:#e9eaff;color:#4544b8;font-size:12px;font-weight:850}
-@media(max-width:760px){.church-schedule-group{padding:11px}.church-schedule-heading h3{font-size:18px}}
+
 .inbox-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#8060c5;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}/* Phase 1-4 workflow enhancements */
 .admin-control-center{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;margin:16px 0;box-shadow:var(--shadow)}
 .control-center-head h2{margin:0;font-size:18px}.control-center-head p{margin:4px 0 0}
@@ -48,11 +43,7 @@
 .filters select{min-height:40px;border:1px solid var(--line);border-radius:9px;padding:9px 34px 9px 11px;background-color:#fff;color:var(--ink);font:inherit;font-size:12px;box-shadow:0 1px 2px rgba(16,24,40,.04);cursor:pointer}
 .filters select:focus{border-color:var(--focus-border);outline:none;box-shadow:0 0 0 3px var(--focus-ring)}/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
 /* FOH and Monitor use matching full-width assignment cards on phones. */
-@media(max-width:600px){
-  .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
-  .schedule-card .role-box{width:100%;min-width:0;box-sizing:border-box;padding:11px 13px!important;}
-  .schedule-card .role-box:last-child{grid-column:auto!important}
-}/* Keep every schedule filter inside its card on narrow mobile screens. */
+/* Keep every schedule filter inside its card on narrow mobile screens. */
 .filters{grid-template-columns:repeat(5,minmax(0,1fr));min-width:0;}
 .filters>label{min-width:0;width:100%;}
 .filters input,.filters select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
