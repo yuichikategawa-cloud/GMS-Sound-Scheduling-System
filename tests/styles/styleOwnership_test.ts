@@ -603,6 +603,7 @@ Deno.test("People, Servant Information and Member Profile own their presentation
     servantCss,
     memberPanel,
     memberCss,
+    sharedComponentsCss,
   ] = await Promise.all([
     readRepoFile("src/styles/dark-theme.css"),
     readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
@@ -611,6 +612,7 @@ Deno.test("People, Servant Information and Member Profile own their presentation
     readRepoFile("src/features/servants/components/ServantInformationPanel.css"),
     readRepoFile("src/features/auth/components/MemberProfilePanel.tsx"),
     readRepoFile("src/features/auth/components/MemberProfilePanel.css"),
+    readRepoFile("src/styles/shared-components.css"),
   ]);
 
   for (const legacySelector of [
@@ -648,6 +650,11 @@ Deno.test("People, Servant Information and Member Profile own their presentation
 
   assert(memberPanel.includes('import "./MemberProfilePanel.css";'), "Member Profile must import its feature stylesheet.");
   assert(memberPanel.includes('className="days-field"'), "Member Profile must continue rendering the CG days field.");
+  assert(memberCss.includes(".days-field{"), "MemberProfilePanel.css must own the CG days field base surface.");
+  assert(memberCss.includes(".days-field legend{"), "MemberProfilePanel.css must own the CG days legend base style.");
+  assert(memberCss.includes(".days-field label{"), "MemberProfilePanel.css must own the CG days option base style.");
+  assert(memberCss.includes(".days-field input{"), "MemberProfilePanel.css must own the CG days checkbox base style.");
+  assert(!sharedComponentsCss.includes(".days-field{"), "Shared CSS must not retain the Member Profile fieldset base rules.");
   assert(memberCss.includes(".profile-edit-grid .days-field"), "MemberProfilePanel.css must own the CG days field layout.");
   assert(memberCss.includes(".profile-edit-grid .days-field label"), "MemberProfilePanel.css must own the CG days option layout.");
   assert(memberCss.includes("@media (max-width: 760px)"), "Member Profile must retain its responsive field layout.");
