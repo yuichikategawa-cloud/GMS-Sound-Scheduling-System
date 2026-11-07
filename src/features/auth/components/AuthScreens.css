@@ -1,5 +1,29 @@
 /* Authentication feature styles. Shared controls, typography primitives, and form helpers remain global. */
 
+/* Shared Auth form layout primitives used by login, signup and password recovery. */
+.stack{display:flex;flex-direction:column;gap:13px}
+.stack label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-size:12px;
+  font-weight:750;
+  color:var(--text-subtle);
+}
+.stack input{
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  padding:11px 10px;
+  color:#293448;
+  background:white;
+  min-width:0;
+  font-size:13px;
+  outline:none;
+}
+:root[data-theme="dark"] .auth-card .stack label{color:#d5deed!important}
+
+
+
 .field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}
 
 .auth-page{box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:100vh;display:grid;place-items:center;overflow-x:clip;padding:20px max(12px,env(safe-area-inset-right)) 20px max(12px,env(safe-area-inset-left));background:linear-gradient(140deg,#f2f4ff,#f7f8fb 55%,#edf1f8)}.auth-card{box-sizing:border-box;width:min(420px,100%);max-width:100%;min-width:0;background:white;padding:32px;border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 55px #1a254014}.auth-card h1{font-size:26px;margin:0 0 7px}.auth-card>.subtle{line-height:1.6;margin-bottom:23px}.auth-card .link-btn{display:block;margin:12px auto 0}.setup-card ol{padding-left:20px;font-size:13px;line-height:1.8;color:#475569}.setup-card code{background:#f1f3f8;padding:2px 4px;border-radius:4px;font-size:11px}
