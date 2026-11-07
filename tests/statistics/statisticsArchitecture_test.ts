@@ -62,11 +62,11 @@ Deno.test("Statistics servant breakdown and fairness are scoped to servants assi
   assert(service.includes('servant.active && (counts.get(servant.id)?.total ?? 0) > 0'),
     "Servant rows must exclude active servants who have no assignments in the Statistics dataset.");
   assert(service.includes('activeServants - rows.filter(row => row.total > 0).length'),
-    "The not-scheduled metric must still compare filtered assignments with the full active servant directory.");
+    "The not-scheduled metric must still compare the Statistics dataset with the full active servant directory.");
   assert(service.includes('const highestWorkload = rows[0]?.total ?? 0') &&
     service.includes('Math.min(...rows.map(row => row.total))'),
     "Fairness metrics must compare only the assigned servants in the Statistics dataset.");
   assert(panel.includes("No servants are assigned within the Statistics dataset.") &&
-    panel.includes("No assignments match the selected schedule filters."),
+    panel.includes("No assignments are present in upcoming published schedules."),
     "Statistics must explain when the selected filters return no assignment data.");
 });
