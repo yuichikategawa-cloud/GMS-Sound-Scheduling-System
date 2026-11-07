@@ -22,6 +22,10 @@
 }
 :root[data-theme="dark"] .auth-card .stack label{color:#d5deed!important}
 
+/* Shared loading indicator for sign-in and password recovery. */
+.button-spinner{display:inline-block;width:12px;height:12px;flex:0 0 12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;vertical-align:-2px}
+@media(prefers-reduced-motion:reduce){.button-spinner{animation:none;border-right-color:currentColor;opacity:.72}}
+
 
 
 .field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}
