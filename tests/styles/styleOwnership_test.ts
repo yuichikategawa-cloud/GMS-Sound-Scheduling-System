@@ -1289,3 +1289,29 @@ Deno.test("App owns the startup and profile centering wrapper", async () => {
   assertBalancedCss(darkCss, "dark-theme.css");
   assertBalancedCss(loaderCss, "GmsLoader.css");
 });
+
+
+Deno.test("Auth loading indicators have feature-owned spinner styles", async () => {
+  const [authScreen, recovery, authCss, sharedCss] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreen.tsx"),
+    readRepoFile("src/features/auth/components/PasswordRecoveryScreen.tsx"),
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/styles/shared-components.css"),
+  ]);
+
+  assert(authScreen.includes('className="button-spinner"'),
+    "AuthScreen must retain the loading indicator in its pending state.");
+  assert(recovery.includes('className="button-spinner"'),
+    "PasswordRecoveryScreen must retain the loading indicator in its pending state.");
+  assert(authCss.includes(".button-spinner{display:inline-block;"),
+    "AuthScreens.css must own the shared authentication loading indicator.");
+  assert(authCss.includes("animation:spin .8s linear infinite"),
+    "The authentication loading indicator must use the shared spin animation.");
+  assert(authCss.includes("@media(prefers-reduced-motion:reduce){.button-spinner{animation:none;"),
+    "The authentication loading indicator must respect reduced-motion preferences.");
+  assert(!sharedCss.includes(".button-spinner"),
+    "The feature-specific loading indicator must not leak into shared component CSS.");
+  assert(sharedCss.split("@keyframes spin{").length - 1 === 1,
+    "The shared spin keyframe must have one canonical definition.");
+  assertBalancedCss(authCss, "AuthScreens.css");
+});
