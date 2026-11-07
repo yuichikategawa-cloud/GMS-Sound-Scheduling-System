@@ -63,7 +63,7 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     previous = index;
   }
 
-  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".status-chip{"]) {
+  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".status-chip{"]) {
     assert(sharedCss.includes(selector), "Shared stylesheet must retain reusable primitive " + selector);
   }
   for (const selector of [".filters{", ".collapsible-panel{"]) {
@@ -171,7 +171,10 @@ Deno.test("ActionDialog owns its base, responsive and dark-mode presentation", a
 });
 
 Deno.test("app-shell and requests presentation no longer live as light-mode global rules", async () => {
-  const globalCss = await readGlobalStyles();
+  const [globalCss, sidebarCss] = await Promise.all([
+    readGlobalStyles(),
+    readRepoFile("src/app/components/Sidebar.css"),
+  ]);
   const movedSelectors = [
     ".app-shell",
     ".sidebar",
@@ -192,7 +195,8 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
 
 
   assert(!globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Inbox feature dark-mode presentation must remain with RequestsInbox.css.");
-  assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
+  assert(sidebarCss.includes(".inbox-count{"), "Sidebar.css must own the Inbox badge used by Sidebar navigation.");
+  assert(!globalCss.includes(".inbox-count{"), "Global CSS must not retain the Sidebar-only Inbox badge.");
   assert(!globalCss.includes(".schedule-grid{"), "Schedule workspace base presentation must be owned by its colocated stylesheet.");
   assert(!globalCss.includes(".availability-form-panel{"), "Availability workspace base presentation must be owned by its colocated stylesheet.");
 });
