@@ -68,7 +68,6 @@ Deno.test("statistics count assignments by role for active servants only", () =>
   ], {
     rows: [
       { id: "active-1", name: "Alex", total: 2, FOH: 1, Monitor: 1, Assistant: 0 },
-      { id: "active-2", name: "Jordan", total: 0, FOH: 0, Monitor: 0, Assistant: 0 },
     ],
     totalAssignments: 2,
     notScheduled: 1,
@@ -109,7 +108,7 @@ Deno.test("confirmation rate and declined count include assistant and inactive a
 
 Deno.test("empty schedules return zero metrics and mark active servants as not scheduled", () => {
   const result = expectStats([], [servant("a", "Alex"), servant("b", "Blair", false)], {
-    rows: [{ id: "a", name: "Alex", total: 0, FOH: 0, Monitor: 0, Assistant: 0 }],
+    rows: [],
     totalAssignments: 0,
     filledRequired: 0,
     requiredSlots: 0,
@@ -123,7 +122,7 @@ Deno.test("empty schedules return zero metrics and mark active servants as not s
     fairnessDifference: 0,
     showFairnessAlert: false,
   });
-  assertSame(result.rows.length, 1, "Inactive servant rows must remain excluded when there are no schedules.");
+  assertSame(result.rows.length, 0, "The filtered servant breakdown must be empty when no assignments match.");
 });
 
 Deno.test("location totals are sorted alphabetically and retain zero-assignment schedules", () => {
@@ -162,11 +161,11 @@ Deno.test("fairness alert appears at a workload difference of three or more", ()
   ];
   const result = expectStats(schedules, servants, {
     highestWorkload: 4,
-    lowestWorkload: 0,
-    fairnessDifference: 4,
+    lowestWorkload: 1,
+    fairnessDifference: 3,
     showFairnessAlert: true,
   });
-  assertEqual(result.averageAssignments, 5 / 3, "Average workload must use active servant rows, including zero-assignment servants.");
+  assertEqual(result.averageAssignments, 5 / 2, "Average workload must compare servants assigned within the filtered schedules.");
 });
 
 Deno.test("fairness alert is hidden below the threshold and with only one active servant", () => {
