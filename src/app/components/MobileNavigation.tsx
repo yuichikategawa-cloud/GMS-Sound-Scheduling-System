@@ -1,3 +1,4 @@
+import "./MobileNavigation.css";
 import { useEffect, useRef } from "react";
 import {
   BarChart3,
