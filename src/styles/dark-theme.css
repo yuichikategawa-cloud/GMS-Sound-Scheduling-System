@@ -3,132 +3,140 @@
   background:var(--page-bg);
   color:#e8edf7;
 }
-:root[data-theme="dark"] body{background:var(--page-bg);color:#e8edf7}
-:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .modal-card{
-  background:#1b2437!important;
-  border-color:#354059!important;
+:root[data-theme="dark"] body{
+  background:var(--page-bg);
   color:#e8edf7;
-  box-shadow:0 4px 18px rgba(0,0,0,.16);
-}
-:root[data-theme="dark"] .toolbar h2,:root[data-theme="dark"] .list-heading h2,:root[data-theme="dark"] .empty-state b,:root[data-theme="dark"] .modal-head h2{
-  color:#edf2fb!important;
-}
-:root[data-theme="dark"] .subtle{
-  color:#a3aec3!important;
-}
-:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
-  background:#3a2d2c!important;
-  border-color:#704744!important;
-  color:#ffd2c7!important;
 }
 
-:root[data-theme="dark"] .empty-state{background:#1b2437;border-color:#43516d;color:#a3aec3}
-:root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
-:root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
-:root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.72)}
-:root[data-theme="dark"] .clear-btn,:root[data-theme="dark"] .link-btn{color:#a9a4ff}/* Additional form, overview and admin surfaces included in the dark palette. */
-
-
-
-:root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
-
+/* Shared surfaces use one final dark palette. Feature-owned cards stay local. */
 :root[data-theme="dark"] .filter-panel{
-  background:#1b263a!important;
-  border-color:#3a4963!important;
-  color:#edf2fa!important;
-  box-shadow:0 5px 18px rgba(0,0,0,.16);
-}
-
-/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label{
-  color:#b9c6da!important;
-}
-:root[data-theme="dark"] .list-heading h3{
-  color:#f2f5fc!important;
-}/* Calendar view, filters, forms and nested cards use the same dark palette. */
-:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card{
   background:#202f46!important;
   border-color:#40516d!important;
   color:#ecf1fa!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.16);
+}
+:root[data-theme="dark"] .modal-card{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+:root[data-theme="dark"] .empty-state{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#c2cee0!important;
+}
+:root[data-theme="dark"] .empty-state b{
+  color:#f0f4fb!important;
+}
+:root[data-theme="dark"] .toolbar h2,
+:root[data-theme="dark"] .list-heading h2,
+:root[data-theme="dark"] .modal-head h2{
+  color:#edf2fb!important;
+}
+:root[data-theme="dark"] .list-heading h3{
+  color:#f2f5fc!important;
+}
+:root[data-theme="dark"] .subtle,
+:root[data-theme="dark"] .eyebrow,
+:root[data-theme="dark"] .list-heading span,
+:root[data-theme="dark"] .toolbar .subtle,
+:root[data-theme="dark"] .filter-title{
+  color:#b9c6da!important;
+}
+:root[data-theme="dark"] .filters label,
+:root[data-theme="dark"] .form-grid label,
+:root[data-theme="dark"] .modal-card>label,
+:root[data-theme="dark"] .stack label{
+  color:#d5deed!important;
+}
+:root[data-theme="dark"] .message-banner,
+:root[data-theme="dark"] .offline-status-banner{
+  background:#443625!important;
+  border-color:#705638!important;
+  color:#ffe0ad!important;
+}
+:root[data-theme="dark"] .message{
+  background:#3a2d2c;
+  color:#ffd2c7;
+}
+:root[data-theme="dark"] .center-screen{
+  background:linear-gradient(140deg,#101727,#151f33 55%,#101727);
+  overflow:visible!important;
+  min-width:0;
+}
+:root[data-theme="dark"] .loader{
+  border-color:#46516b;
+  border-top-color:#8980ff;
+}
+:root[data-theme="dark"] .modal-backdrop{
+  background:rgba(0,0,0,.72);
+}
+:root[data-theme="dark"] .clear-btn,
+:root[data-theme="dark"] .link-btn{
+  color:#b8afff!important;
 }
 :root[data-theme="dark"] .card-actions{
   border-color:#3b4b65!important;
 }
-:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label{
-  color:#d5deed!important;
-}
-:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select,:root[data-theme="dark"] .form-grid input,:root[data-theme="dark"] .form-grid select,:root[data-theme="dark"] .modal-card input,:root[data-theme="dark"] .modal-card select,:root[data-theme="dark"] .modal-card textarea{
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .filters input,
+:root[data-theme="dark"] .filters select,
+:root[data-theme="dark"] .form-grid input,
+:root[data-theme="dark"] .form-grid select,
+:root[data-theme="dark"] .modal-card input,
+:root[data-theme="dark"] .modal-card select,
+:root[data-theme="dark"] .modal-card textarea{
   background:var(--surface-control)!important;
   color:var(--text-primary)!important;
   border-color:var(--border-strong)!important;
 }
-:root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:var(--text-secondary)!important;opacity:1}
-:root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{
-  background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;
-}
-:root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{background:#364764!important;color:#fff!important}
-:root[data-theme="dark"] .bulk-row-action.danger{background:#482d38!important;border-color:#734653!important;color:#ffc1ca!important}
-:root[data-theme="dark"] .bulk-row-action.danger:hover{background:#5b3542!important}
-
-:root[data-theme="dark"] .link-btn,:root[data-theme="dark"] .clear-btn{color:#b8afff!important}
-:root[data-theme="dark"] .empty-state{color:#c2cee0!important}
-:root[data-theme="dark"] .empty-state b{color:#f0f4fb!important}
-:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
-  background:#443625!important;border-color:#705638!important;color:#ffe0ad!important;
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder{
+  color:var(--text-secondary)!important;
+  opacity:1;
 }
 
-
-
-:root[data-theme="dark"] .status-chip{background:#293951!important;color:#d4deed!important}
-:root[data-theme="dark"] .status-chip.published,:root[data-theme="dark"] .status-chip.approved,:root[data-theme="dark"] .status-chip.confirmed{background:#194b39!important;color:#a7ecc9!important}
-:root[data-theme="dark"] .status-chip.draft,:root[data-theme="dark"] .status-chip.pending{background:#514024!important;color:#ffe0a2!important}
-:root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
-/* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
-   and readable servant dashboard labels. Child cards retain their own surfaces. */
-/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
-
-
-/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
-:root[data-theme="dark"] .center-screen{
-  overflow: visible !important;
-  min-width: 0;
-}/* Filter schedule is one continuous card: remove the bright light-theme divider on expand. */
-
-
-/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
-/* Inbox should read as distinct, neatly spaced sections with subdued separators. */
-
-
-
-
-
-
-
-
-
-
-
-
-/* Fix the clipped/faint left edge of the login password input and focus ring. */
-
-
-/* Final pass: field controls stay inside their card at every breakpoint. */
-/* Login focus uses an inset ring so its left edge is never clipped by the card. */
-/* Profile CG days: checkbox, label and weekday stay together and wrap naturally. */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Shared secondary actions and status chips. */
+:root[data-theme="dark"] .btn.secondary,
+:root[data-theme="dark"] .icon-btn,
+:root[data-theme="dark"] .bulk-row-action{
+  background:#283750!important;
+  color:#e5ebf6!important;
+  border-color:#465670!important;
+}
+:root[data-theme="dark"] .btn.secondary:hover,
+:root[data-theme="dark"] .icon-btn:hover,
+:root[data-theme="dark"] .bulk-row-action:hover{
+  background:#364764!important;
+  color:#fff!important;
+}
+:root[data-theme="dark"] .bulk-row-action.danger{
+  background:#482d38!important;
+  border-color:#734653!important;
+  color:#ffc1ca!important;
+}
+:root[data-theme="dark"] .bulk-row-action.danger:hover{
+  background:#5b3542!important;
+}
+:root[data-theme="dark"] .status-chip{
+  background:#293951!important;
+  color:#d4deed!important;
+}
+:root[data-theme="dark"] .status-chip.published,
+:root[data-theme="dark"] .status-chip.approved,
+:root[data-theme="dark"] .status-chip.confirmed{
+  background:#194b39!important;
+  color:#a7ecc9!important;
+}
+:root[data-theme="dark"] .status-chip.draft,
+:root[data-theme="dark"] .status-chip.pending{
+  background:#514024!important;
+  color:#ffe0a2!important;
+}
+:root[data-theme="dark"] .status-chip.declined{
+  background:#512b34!important;
+  color:#ffc0c6!important;
+}
