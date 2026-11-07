@@ -309,11 +309,14 @@ Deno.test("Schedule owns its layout, responsive presentation and dark-mode overr
 
 
 Deno.test("Schedule owns its remaining dark-theme and responsive presentation rules", async () => {
-  const [globalCss, scheduleCss] = await Promise.all([
+  const [globalCss, scheduleCss, sharedCss, darkThemeCss] = await Promise.all([
     readGlobalStyles(),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
   ]);
   const globalRules = globalCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  const darkThemeRules = darkThemeCss.replace(/\/\*[\s\S]*?\*\//g, "");
   const ownedSelectors = [
     ':root[data-theme="dark"] .schedule-workspace-panel',
     ':root[data-theme="dark"] .assignment-workspace-heading h2',
@@ -327,7 +330,6 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
     ':root[data-theme="dark"] .assignment-field-feedback.warning',
     ':root[data-theme="dark"] .assignment-field-feedback.clear',
     ':root[data-theme="dark"] .role-assignment-field',
-    '.bulk-servant-list',
     '.daily-card > .daily-head',
     '.daily-service-row.role-count-3',
     '.daily-service-row.role-count-2',
@@ -341,6 +343,12 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
     assert(scheduleCss.includes(selector), "ScheduleWorkspace.css must own " + selector);
     assert(!globalRules.includes(selector), "Global dark-theme CSS must not retain Schedule-owned selector " + selector);
   }
+
+  assert(scheduleCss.includes(".bulk-servant-list{"), "Schedule must own its two-column bulk servant selector.");
+  assert(scheduleCss.includes("@media (max-width: 760px){.bulk-servant-list{"), "Schedule must own its tablet-width bulk servant layout.");
+  assert(scheduleCss.includes("@media (max-width: 430px){.bulk-servant-list{"), "Schedule must own its compact-phone bulk servant layout.");
+  assert(sharedCss.includes(".bulk-servant-list{"), "The reusable bulk servant list base surface must remain in shared CSS.");
+  assert(!darkThemeRules.includes(".bulk-servant-list"), "The global dark-theme module must not own Schedule's bulk servant layout.");
 
   for (const selector of [
     ':root[data-theme="dark"] .control-center-alert',
