@@ -2351,3 +2351,24 @@
 
 /* Schedule-only card action surface and dark-mode divider. */
 :root[data-theme="dark"] .card-actions{border-color:#3b4b65!important;}
+
+/* Mobile daily overview: role cards already contain their own labels.
+   Keep the desktop table heading out of the phone layout and align surfaces. */
+@media (max-width: 760px) {
+  .daily-service-table > .daily-service-table-head {
+    display: none !important;
+  }
+  .daily-service-row,
+  :root[data-theme="dark"] .daily-service-row {
+    background: var(--surface) !important;
+  }
+  .daily-service-row .daily-service-identity,
+  :root[data-theme="dark"] .daily-service-row .daily-service-identity {
+    background: var(--surface-muted) !important;
+    border-radius: 8px;
+  }
+  .daily-service-row .daily-role-cells,
+  :root[data-theme="dark"] .daily-service-row .daily-role-cells {
+    background: transparent !important;
+  }
+}
