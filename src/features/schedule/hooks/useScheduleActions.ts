@@ -163,7 +163,7 @@ export function useScheduleActions({
       }
       await loadData();
       const changed=typeof data==="number"?data:Number(data??0);
-      setMessage(changed>0?`${changed} assignment change(s) saved. Affected servants receive one consolidated notification.`:"No assignment changes were needed; the saved schedule is already up to date.");
+      setMessage(changed>0?`${changed} assignment change(s) saved. Affected servants receive one consolidated notification.`:"Assignments are already up to date. To change a service's publication status, use its Publish/Unpublish action.");
       return true;
     }catch(e){setMessage(`Bulk assignment failed: ${errorText(e)}`);return false;}
     finally{setLoading(false);}
