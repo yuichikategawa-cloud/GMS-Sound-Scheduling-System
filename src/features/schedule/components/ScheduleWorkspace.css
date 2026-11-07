@@ -1,4 +1,102 @@
 /* Schedule workspace presentation. Feature-owned layout, responsive and dark-mode rules live here.
+
+/* Schedule-owned generation guidance, template controls and bulk action footer.
+   Extracted from shared-components.css; later Schedule rules preserve the established cascade. */
+/* Requested desktop-only recurring generation guidance layout.
+   Mobile keeps its existing stacked presentation unchanged. */
+@media (min-width: 701px){
+  .generate-note{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 9px;
+    align-items: start;
+  }
+  .generate-note-title{
+    grid-column: 1 / -1;
+  }
+  .generate-note p{
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+/* Desktop: make the template heading and its actions read as one toolbar. */
+@media (min-width: 761px){
+  .template-picker-head{
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 9px;
+    min-height: 38px;
+    font-size: 12px;
+  }
+  .template-picker-head > b{
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+  .template-picker-head > span{
+    margin-right: 8px;
+    padding: 5px 9px;
+    border: 1px solid #e5e7f2;
+    border-radius: 999px;
+    background: #f7f8fc;
+    color: #667085;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .template-picker-head > .clear-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 11px;
+    border: 1px solid #e1e5f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #4d54c8;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .template-picker-head > .clear-btn:hover:not(:disabled){
+    background: #f5f5ff;
+    border-color: #c9caff;
+  }
+  .template-picker-head > .clear-btn:active:not(:disabled){
+    transform: translateY(1px);
+  }
+  .template-picker-head > .clear-btn:disabled{
+    opacity: .45;
+    cursor: not-allowed;
+  }
+  .template-picker-head > .template-add-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-left: auto;
+    padding: 0 13px;
+    border-radius: 9px;
+    white-space: nowrap;
+  }
+}
+
+/* Inbox readability: status badges remain compact and request sections have clear separation. */
+
+
+.bulk-apply-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;color:#68748d;font-size:12px}
+@media(max-width:700px){
+ .bulk-apply-footer{align-items:stretch;flex-direction:column}
+ .bulk-apply-footer .btn{width:100%}
+}
+
    Application-wide theme tokens and shared controls remain in src/styles/*.css. */
 
 /* Schedule-owned theme and responsive overrides extracted from dark-theme.css. */
