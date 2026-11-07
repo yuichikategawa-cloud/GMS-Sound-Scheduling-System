@@ -63,7 +63,9 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     previous = index;
   }
 
-  assert(sharedCss.length > 20_000, "Shared presentation rules must be retained in their dedicated module.");
+  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".collapsible-panel{", ".status-chip{"]) {
+    assert(sharedCss.includes(selector), "Shared stylesheet must retain reusable primitive " + selector);
+  }
   assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
   assert(!sharedCss.includes(':root[data-theme="dark"]'), "Dark-theme overrides must not leak into the shared light/base module.");
   assertBalancedCss(entryCss, "src/style.css");
@@ -190,8 +192,10 @@ Deno.test("semantic theme tokens cover both schemes and retain legacy aliases", 
 });
 
 Deno.test("Availability owns its component and dark-mode rules", async () => {
-  const [globalCss, availabilityCss] = await Promise.all([
+  const [component, globalCss, sharedCss, availabilityCss] = await Promise.all([
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx"),
     readGlobalStyles(),
+    readRepoFile("src/styles/shared-components.css"),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
   ]);
 
@@ -217,6 +221,12 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
   assert(availabilityCss.includes(':root[data-theme="dark"] .availability-filter .clear-btn'), "Availability must own its dark filter action.");
   assert(availabilityCss.includes(':root[data-theme="dark"] .availability-form input'), "Availability must own its dark form-control styling.");
   assert(availabilityCss.includes(':root[data-theme="dark"] .serving-preference-form'), "Availability must own its dark preference form styling.");
+  assert(component.includes('className="bulk-conflict-warning"'), "Availability must render its bulk conflict preview surface.");
+  assert(availabilityCss.includes(".bulk-conflict-warning{"), "AvailabilityWorkspace.css must own the bulk conflict preview base style.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .bulk-conflict-warning{'), "AvailabilityWorkspace.css must own the bulk conflict preview dark surface.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .bulk-conflict-warning small{'), "Conflict preview detail text must remain readable in dark mode.");
+  assert(!sharedCss.includes(".bulk-conflict-warning"), "Shared CSS must not own Availability's bulk conflict preview.");
+  assert(!globalCss.includes(".bulk-conflict-warning"), "Global CSS must not retain Availability's bulk conflict preview.");
   const globalAvailabilityThemeRule = /:root\[data-theme="dark"\][^{]*\.(?:availability[\w-]*|recurring-rule-form|rule-inline|saved-rule-row|bulk-form-grid|bulk-servant-picker|bulk-availability-form|serving-preference-form|preference-weekday-picker|preference-service-picker)[^{]*\{/s;
   assert(!globalAvailabilityThemeRule.test(globalCss), "Global styles must not retain Availability-specific dark-theme selectors.");
 
@@ -341,6 +351,14 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
     '.bulk-group-selection-actions .link-btn',
     '.bulk-church-group > summary',
     ':root[data-theme="dark"] .bulk-apply-footer',
+    ':root[data-theme="dark"] .new-template-form',
+    ':root[data-theme="dark"] .new-template-form input',
+    ':root[data-theme="dark"] .new-template-form select',
+    ':root[data-theme="dark"] .new-template-help',
+    ':root[data-theme="dark"] .control-center-alert',
+    ':root[data-theme="dark"] .location-text',
+    ':root[data-theme="dark"] .time-text',
+    ':root[data-theme="dark"] .date-text',
   ];
   for (const selector of ownedSelectors) {
     assert(scheduleCss.includes(selector), "ScheduleWorkspace.css must own " + selector);
@@ -354,7 +372,6 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
   assert(!darkThemeRules.includes(".bulk-servant-list"), "The global dark-theme module must not own Schedule's bulk servant layout.");
 
   for (const selector of [
-    ':root[data-theme="dark"] .control-center-alert',
     ':root[data-theme="dark"] .message-banner',
     ':root[data-theme="dark"] .offline-status-banner',
     ':root[data-theme="dark"] .bulk-row-action',
@@ -927,4 +944,25 @@ Deno.test("Notification history belongs to Requests and obsolete global surfaces
   assertBalancedCss(requestsCss, "RequestsInbox.css");
   assertBalancedCss(statisticsCss, "StatisticsPanel.css");
   assertBalancedCss(globalCss, "global styles");
+});
+
+
+Deno.test("Unrendered legacy control-center surfaces are absent from shared and dark styles", async () => {
+  const [sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+  for (const selector of [
+    ".admin-control-center",
+    ".control-center-head",
+    ".control-center-grid",
+    ".profile-card",
+    ".inbox-settings-card",
+    ".location-stat-card",
+  ]) {
+    assert(!sharedCss.includes(selector), "Shared CSS must not retain unused legacy surface " + selector);
+    assert(!darkCss.includes(selector), "Dark-theme CSS must not retain unused legacy surface " + selector);
+  }
+  assertBalancedCss(sharedCss, "shared-components.css");
+  assertBalancedCss(darkCss, "dark-theme.css");
 });
