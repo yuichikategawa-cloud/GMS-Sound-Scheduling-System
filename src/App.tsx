@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import "./App.css";
 import { useBrowserLifecycle } from "./app/hooks/useBrowserLifecycle";
 import {
   createInitialDashboardState,
