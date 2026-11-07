@@ -239,7 +239,7 @@ Deno.test("global stylesheet loads before feature-owned stylesheets", async () =
   assert(globalCssImport < appImport, "Global CSS must load before App and its feature-owned stylesheets.");
 });
 
-Deno.test("Schedule owns its layout and responsive presentation while dark-mode overrides stay global", async () => {
+Deno.test("Schedule owns its layout, responsive presentation and dark-mode overrides", async () => {
   const [globalCss, scheduleCss] = await Promise.all([
     readGlobalStyles(),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
@@ -305,6 +305,55 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
     return themed && scheduleAssignmentTargets.some(target => selector.includes(target));
   });
   assert(!hasGlobalScheduleAssignmentThemeRule, "Global styles must not retain Schedule assignment-management dark selectors.");
+});
+
+
+Deno.test("Schedule owns its remaining dark-theme and responsive presentation rules", async () => {
+  const [globalCss, scheduleCss] = await Promise.all([
+    readGlobalStyles(),
+    readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+  ]);
+  const globalRules = globalCss.replace(/\/\*[\s\S]*?\*\//g, "");
+  const ownedSelectors = [
+    ':root[data-theme="dark"] .schedule-workspace-panel',
+    ':root[data-theme="dark"] .assignment-workspace-heading h2',
+    ':root[data-theme="dark"] .assignment-workspace-heading .subtle',
+    ':root[data-theme="dark"] .calendar-period',
+    ':root[data-theme="dark"] .filter-panel-collapsible > .filter-title',
+    ':root[data-theme="dark"] .assignment-coverage-pill',
+    ':root[data-theme="dark"] .bulk-selected-count',
+    ':root[data-theme="dark"] .schedule-error',
+    ':root[data-theme="dark"] .assignment-field-feedback.blocked',
+    ':root[data-theme="dark"] .assignment-field-feedback.warning',
+    ':root[data-theme="dark"] .assignment-field-feedback.clear',
+    ':root[data-theme="dark"] .role-assignment-field',
+    '.bulk-servant-list',
+    '.daily-card > .daily-head',
+    '.daily-service-row.role-count-3',
+    '.daily-service-row.role-count-2',
+    '.app-shell[data-theme="dark"] .daily-location-name',
+    '.app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell',
+    '.bulk-group-selection-actions .link-btn',
+    '.bulk-church-group > summary',
+    ':root[data-theme="dark"] .bulk-apply-footer',
+  ];
+  for (const selector of ownedSelectors) {
+    assert(scheduleCss.includes(selector), "ScheduleWorkspace.css must own " + selector);
+    assert(!globalRules.includes(selector), "Global dark-theme CSS must not retain Schedule-owned selector " + selector);
+  }
+
+  for (const selector of [
+    ':root[data-theme="dark"] .control-center-alert',
+    ':root[data-theme="dark"] .message-banner',
+    ':root[data-theme="dark"] .offline-status-banner',
+    ':root[data-theme="dark"] .bulk-row-action',
+  ]) {
+    assert(globalRules.includes(selector), "Shared dark-theme presentation must remain global: " + selector);
+  }
+  assert(scheduleCss.includes("@media (max-width: 760px)"), "Schedule mobile overrides must retain the 760px breakpoint.");
+  assert(scheduleCss.includes("@media (max-width: 430px)"), "Schedule compact-phone overrides must retain the 430px breakpoint.");
+  assertBalancedCss(scheduleCss, "ScheduleWorkspace.css");
+  assertBalancedCss(globalCss, "src/styles/dark-theme.css");
 });
 
 
