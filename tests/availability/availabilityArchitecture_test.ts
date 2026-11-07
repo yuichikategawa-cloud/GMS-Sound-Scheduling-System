@@ -91,3 +91,21 @@ Deno.test("Availability overview presents date records, recurring restrictions, 
     styles.includes("@media (max-width: 600px)"),
     "The consolidated overview must have responsive count and mobile layouts.");
 });
+
+Deno.test("Availability date filter scopes date submissions and recurring rules while showing deadline errors below the form controls", async () => {
+  const [workspace, styles] = await Promise.all([
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx"),
+    readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
+  ]);
+  assert(workspace.includes('a.is_recurring&&a.service_date===dateFilter') &&
+    workspace.includes('const visibleRules=ownRules.filter(rule=>!dateFilter'),
+    "A selected date must filter recurring restrictions to rules that apply on that date.");
+  assert(workspace.includes('dateFilter?a.service_date===dateFilter:a.service_date>=today()'),
+    "A selected date must show exact-date submissions, including past dates.");
+  assert(workspace.includes("Serving preferences remain visible as general eligibility rules."),
+    "The date filter must explain why general serving preferences remain visible.");
+  assert(workspace.includes("availability-deadline-error") &&
+    styles.includes(".availability-form .availability-deadline-error") &&
+    styles.includes("grid-column: 1 / -1"),
+    "Deadline validation must occupy a full-width row below the form controls.");
+});
