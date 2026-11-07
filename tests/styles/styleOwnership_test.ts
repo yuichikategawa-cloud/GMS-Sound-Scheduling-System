@@ -236,6 +236,9 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
   ]);
 
+  assert(component.includes('import "./AvailabilityWorkspace.css";'),
+    "AvailabilityWorkspace must import its feature-owned stylesheet.");
+
   for (const selector of [
     ".availability-form-panel",
     ".availability-form",
@@ -251,6 +254,28 @@ Deno.test("Availability owns its component and dark-mode rules", async () => {
   }
 
   assert(availabilityCss.includes(".availability-form-panel{"), "Availability's workspace card styles must live with the component.");
+  for (const selector of [
+    ".bulk-availability-form{", ".bulk-form-grid>label", ".bulk-form-grid input:not([type=checkbox])",
+    ".bulk-servant-picker{", ".bulk-weekdays{", ".recurring-rule-panel>p{",
+    ".rule-inline{", ".saved-rules-list{", ".saved-rule-row{",
+    ".serving-preference-form{", ".preference-weekday-picker", ".preference-service-picker{",
+  ]) {
+    assert(availabilityCss.includes(selector),
+      "AvailabilityWorkspace.css must own its form base style " + selector + ".");
+  }
+  for (const selector of [
+    ".bulk-availability-form{", ".bulk-form-grid{", ".bulk-servant-picker{",
+    ".bulk-weekdays{", ".recurring-rule-panel>p{", ".rule-inline{",
+    ".saved-rules-list{", ".saved-rule-row{", ".serving-preference-form{",
+    ".preference-service-picker{",
+  ]) {
+    assert(!sharedCss.includes(selector),
+      "Shared CSS must not retain Availability-owned selector " + selector + ".");
+  }
+  assert(sharedCss.includes(".bulk-servant-list{"),
+    "The bulk servant list base remains shared by Schedule and Availability.");
+  assert(sharedCss.includes(".offline-status-banner{"),
+    "The offline status banner remains a shared application surface.");
   assert(availabilityCss.includes("@media(max-width:1050px)"), "The existing tablet form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:760px)"), "The existing mobile form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:600px)"), "The existing filter breakpoint must be preserved.");
