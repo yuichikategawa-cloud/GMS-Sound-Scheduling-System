@@ -2341,3 +2341,8 @@
 :root[data-theme="dark"] .collapsible-panel>summary small{
   color:#a3aec3!important;
 }
+
+/* Tablet-only sizing for the Schedule toolbar action group. */
+@media(min-width:761px) and (max-width:1100px){
+  .toolbar.serving-toolbar .toolbar-actions{min-width:0}
+}
