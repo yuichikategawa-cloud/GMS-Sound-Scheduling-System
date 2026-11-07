@@ -186,7 +186,7 @@ Deno.test("semantic theme tokens cover both schemes and retain legacy aliases", 
   }
 });
 
-Deno.test("Availability owns its component rules while mixed dark-mode overrides stay global", async () => {
+Deno.test("Availability owns its component and dark-mode rules", async () => {
   const [globalCss, availabilityCss] = await Promise.all([
     readGlobalStyles(),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
@@ -210,11 +210,14 @@ Deno.test("Availability owns its component rules while mixed dark-mode overrides
   assert(availabilityCss.includes("@media(max-width:1050px)"), "The existing tablet form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:760px)"), "The existing mobile form breakpoint must be preserved.");
   assert(availabilityCss.includes("@media(max-width:600px)"), "The existing filter breakpoint must be preserved.");
-  assert(!availabilityCss.includes(':root[data-theme="dark"]'), "Dark-mode overrides remain global until the shared cascade is decomposed.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .availability-status.available'), "Availability must own its dark success status.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .availability-filter .clear-btn'), "Availability must own its dark filter action.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .availability-form input'), "Availability must own its dark form-control styling.");
+  assert(availabilityCss.includes(':root[data-theme="dark"] .serving-preference-form'), "Availability must own its dark preference form styling.");
+  assert(!globalCss.includes(".availability"), "Global styles must not retain Availability-specific dark selectors.");
+  assert(!globalCss.includes(".recurring-rule-form"), "Global styles must not retain Availability recurring-rule theme selectors.");
 
-  assert(globalCss.includes(':root[data-theme="dark"] .availability-status.available'), "Availability status dark-mode overrides must remain global.");
-  assert(globalCss.includes(':root[data-theme="dark"] .availability-filter .clear-btn'), "Availability filter dark-mode overrides must remain global.");
-  assert(/:root\[data-theme="dark"\][^{]*\.availability-form input[^{]*\{/.test(globalCss), "Mixed dark-mode form-control overrides must remain global.");
+
 });
 
 Deno.test("app theme persistence and document theme-color behavior remain in the app shell", async () => {

@@ -7,21 +7,21 @@
 :root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
 :root[data-theme="dark"] .main-area{background:#101727}
 :root[data-theme="dark"] .content{color:#e8edf7}
-:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .my-upcoming-panel,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .assignment-overview,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .mobile-more-menu,:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .requests-panel,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .availability-row,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-schedule-summary>div,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .my-upcoming-panel,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .assignment-overview,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .mobile-more-menu,:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .requests-panel,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-schedule-summary>div,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b2437!important;
   border-color:#354059!important;
   color:#e8edf7;
   box-shadow:0 4px 18px rgba(0,0,0,.16);
 }
-:root[data-theme="dark"] .collapsible-panel>summary,:root[data-theme="dark"] .schedule-workspace-tabs,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .availability-self-name,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .bulk-matrix th{
+:root[data-theme="dark"] .collapsible-panel>summary,:root[data-theme="dark"] .schedule-workspace-tabs,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .bulk-matrix th{
   background:#202c42!important;
   border-color:#394660!important;
   color:#e8edf7;
 }
-:root[data-theme="dark"] .collapsible-panel>summary b,:root[data-theme="dark"] .toolbar h2,:root[data-theme="dark"] .list-heading h2,:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-role-row b,:root[data-theme="dark"] .daily-role-row span,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4,:root[data-theme="dark"] .assignment-workload-detail b,:root[data-theme="dark"] .church-schedule-heading h3,:root[data-theme="dark"] .bulk-assignment-heading h2,:root[data-theme="dark"] .bulk-preview-heading h3,:root[data-theme="dark"] .bulk-copy-panel b,:root[data-theme="dark"] .bulk-matrix td b,:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .empty-state b,:root[data-theme="dark"] .modal-head h2,:root[data-theme="dark"] .availability-form-panel h3,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .topbar h1{
+:root[data-theme="dark"] .collapsible-panel>summary b,:root[data-theme="dark"] .toolbar h2,:root[data-theme="dark"] .list-heading h2,:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-role-row b,:root[data-theme="dark"] .daily-role-row span,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4,:root[data-theme="dark"] .assignment-workload-detail b,:root[data-theme="dark"] .church-schedule-heading h3,:root[data-theme="dark"] .bulk-assignment-heading h2,:root[data-theme="dark"] .bulk-preview-heading h3,:root[data-theme="dark"] .bulk-copy-panel b,:root[data-theme="dark"] .bulk-matrix td b,:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .empty-state b,:root[data-theme="dark"] .modal-head h2,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .topbar h1{
   color:#edf2fb!important;
 }
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status,:root[data-theme="dark"] .availability-note,:root[data-theme="dark"] .availability-person small{
+:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status{
   color:#a3aec3!important;
 }
 
@@ -36,7 +36,7 @@
 :root[data-theme="dark"] .schedule-workspace-tabs button{color:#b7c1d5}
 :root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#393b72;color:#fff}
 :root[data-theme="dark"] .daily-location-name{background:#2c3156;color:#d2ceff}
-:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .availability-self-name,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .my-upcoming-item{
+:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .my-upcoming-item{
   background:#202c42!important;
   border-color:#394660!important;
 }
@@ -69,12 +69,12 @@
 :root[data-theme="dark"] .my-days-card strong,:root[data-theme="dark"] .my-next-date{color:#e4e7ff}
 :root[data-theme="dark"] .bulk-matrix th:last-child,:root[data-theme="dark"] .bulk-matrix td:last-child{background:#202c42!important;box-shadow:-5px 0 8px rgba(0,0,0,.22)}
 :root[data-theme="dark"] .bulk-matrix-heading-copy small{color:#a3aec3}/* Additional form, overview and admin surfaces included in the dark palette. */
-:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .availability-guidance,:root[data-theme="dark"] .swap-source,:root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .servant-filter-card{
+:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-preview-list,:root[data-theme="dark"] .swap-source,:root[data-theme="dark"] .servant-profile-card,:root[data-theme="dark"] .servant-filter-card{
   background:#1b2437!important;
   border-color:#354059!important;
   color:#e8edf7!important;
 }
-:root[data-theme="dark"] .assignment-overview-locations>div,:root[data-theme="dark"] .bulk-form-grid,:root[data-theme="dark"] .recurring-rule-form,:root[data-theme="dark"] .availability-mode-switch,:root[data-theme="dark"] .bulk-preview-list>div,:root[data-theme="dark"] .servant-preference-form,:root[data-theme="dark"] .servant-info-filters{
+:root[data-theme="dark"] .assignment-overview-locations>div,:root[data-theme="dark"] .bulk-preview-list>div,:root[data-theme="dark"] .servant-preference-form,:root[data-theme="dark"] .servant-info-filters{
   background:#202c42!important;
   border-color:#394660!important;
   color:#e8edf7!important;
@@ -85,19 +85,14 @@
   border-color:var(--border-strong)!important;
 }
 :root[data-theme="dark"] .content input[type="checkbox"],:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}
-:root[data-theme="dark"] .availability-mode-switch button{color:#b9c4d8}
-:root[data-theme="dark"] .availability-mode-switch button.active{background:#393b72!important;color:#fff!important}
 :root[data-theme="dark"] .servant-profile-card .member-verification-warning{background:#3d3322!important;border-color:#6a5831!important;color:#f7d995!important}
 :root[data-theme="dark"] .bulk-conflict-warning,:root[data-theme="dark"] .schedule-error{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
 :root[data-theme="dark"] .template-delete-btn{background:#43282e;border-color:#684049;color:#ffb6c1}
 :root[data-theme="dark"] .generate-note p span,:root[data-theme="dark"] .new-template-help{color:#a3aec3}
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}
-:root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}
-:root[data-theme="dark"] .availability-status.available{background:var(--status-success-bg);color:var(--status-success-text)}
-:root[data-theme="dark"] .availability-status.unavailable{background:#492727;color:#ffb8b2}
-:root[data-theme="dark"] .availability-status.prefer_not{background:var(--status-warning-bg);color:var(--status-warning-text)}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
+:root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
 
-:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
   color:#edf2fa!important;
@@ -123,11 +118,8 @@
 :root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
 :root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}
 :root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .availability-form label,:root[data-theme="dark"] .availability-form-panel label,:root[data-theme="dark"] .serving-preference-form>label,:root[data-theme="dark"] .preference-weekday-picker,:root[data-theme="dark"] .preference-service-picker,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label,:root[data-theme="dark"] .availability-person small,:root[data-theme="dark"] .saved-rule-row small{
+:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label{
   color:#b9c6da!important;
-}
-:root[data-theme="dark"] .preference-weekday-picker input,:root[data-theme="dark"] .preference-service-picker input{
-  accent-color:#a99fff;
 }
 :root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2,:root[data-theme="dark"] .servant-requests-section h2{
   color:#f2f5fc!important;
@@ -145,7 +137,7 @@
 :root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
 :root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}/* Calendar view, filters, forms and nested cards use the same dark palette. */
-:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .saved-rule-row,:root[data-theme="dark"] .availability-row,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
+:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
   background:#202f46!important;
   border-color:#40516d!important;
   color:#ecf1fa!important;
@@ -159,20 +151,15 @@
 :root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-roles b,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .service-title,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4{
   color:#f0f4fb!important;
 }
-:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .availability-form label,:root[data-theme="dark"] .availability-form-panel label,:root[data-theme="dark"] .serving-preference-form>label,:root[data-theme="dark"] .preference-weekday-picker,:root[data-theme="dark"] .preference-service-picker{
+:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label{
   color:#d5deed!important;
 }
-:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select,:root[data-theme="dark"] .form-grid input,:root[data-theme="dark"] .form-grid select,:root[data-theme="dark"] .modal-card input,:root[data-theme="dark"] .modal-card select,:root[data-theme="dark"] .modal-card textarea,:root[data-theme="dark"] .availability-form input,:root[data-theme="dark"] .availability-form select,:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-copy-controls input,:root[data-theme="dark"] .bulk-matrix select,:root[data-theme="dark"] .new-template-form input,:root[data-theme="dark"] .new-template-form select,:root[data-theme="dark"] .generate-footer input,:root[data-theme="dark"] .generate-footer select,:root[data-theme="dark"] .serving-preference-form input:not([type=checkbox]),:root[data-theme="dark"] .serving-preference-form select{
+:root[data-theme="dark"] input,:root[data-theme="dark"] select,:root[data-theme="dark"] textarea,:root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select,:root[data-theme="dark"] .form-grid input,:root[data-theme="dark"] .form-grid select,:root[data-theme="dark"] .modal-card input,:root[data-theme="dark"] .modal-card select,:root[data-theme="dark"] .modal-card textarea,:root[data-theme="dark"] .bulk-copy-controls input,:root[data-theme="dark"] .bulk-matrix select,:root[data-theme="dark"] .new-template-form input,:root[data-theme="dark"] .new-template-form select,:root[data-theme="dark"] .generate-footer input,:root[data-theme="dark"] .generate-footer select{
   background:var(--surface-control)!important;
   color:var(--text-primary)!important;
   border-color:var(--border-strong)!important;
 }
 :root[data-theme="dark"] input::placeholder,:root[data-theme="dark"] textarea::placeholder{color:var(--text-secondary)!important;opacity:1}
-:root[data-theme="dark"] .preference-weekday-picker label,:root[data-theme="dark"] .preference-service-picker label{
-  background:#26354d!important;border-color:#43536d!important;color:#e0e7f2!important;
-}
-:root[data-theme="dark"] .saved-rule-row{background:#202f46!important;border-color:#40516d!important}
-:root[data-theme="dark"] .saved-rule-row b{color:#f1f5fb!important}
 :root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{
   background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;
 }
@@ -196,7 +183,7 @@
 :root[data-theme="dark"] .coverage-pill.pending{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
-:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row,:root[data-theme="dark"] .saved-rule-row{border-color:#3b4b65!important}
+:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row{border-color:#3b4b65!important}
 
 
 :root[data-theme="dark"] .status-chip{background:#293951!important;color:#d4deed!important}
@@ -247,30 +234,6 @@
 }
 :root[data-theme="dark"] .calendar-period,:root[data-theme="dark"] .calendar-period>h3,:root[data-theme="dark"] .calendar-period .subtle{
   color: #d2deee !important;
-}/* Dark mode follow-up: restore legibility in guidance, fairness metrics and utility controls. */
-:root[data-theme="dark"] .availability-guidance-title{
-  color: #f1f5fb !important;
-}
-:root[data-theme="dark"] .availability-guidance-title b{
-  color: #f1f5fb !important;
-}
-:root[data-theme="dark"] .availability-guidance-title svg{
-  color: #a9a2ff !important;
-}
-:root[data-theme="dark"] .availability-guidance p{
-  color: #c4d0e2 !important;
-}
-
-:root[data-theme="dark"] .availability-filter .clear-btn{
-  background: #26354d !important;
-  border: 1px solid #4a5d7b !important;
-  color: #e8e5ff !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .availability-filter .clear-btn:hover{
-  background: #354762 !important;
-  border-color: #7c75d8 !important;
-  color: #ffffff !important;
 }/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
 :root[data-theme="dark"] .center-screen{
   overflow: visible !important;
@@ -330,45 +293,6 @@
 }
 :root[data-theme="dark"] .filter-panel-collapsible[open] > .filter-title{
   border-bottom: 0 !important;
-}/* Availability labels and the linked servant name must remain readable. */
-:root[data-theme="dark"] .availability-filter label,:root[data-theme="dark"] .availability-filter label span,:root[data-theme="dark"] .availability-filter label > span,:root[data-theme="dark"] .availability-self-name span,:root[data-theme="dark"] .bulk-form-grid > label,:root[data-theme="dark"] .recurring-rule-form > label,:root[data-theme="dark"] .rule-inline label,:root[data-theme="dark"] .serving-preference-form > label,:root[data-theme="dark"] .preference-weekday-picker > b,:root[data-theme="dark"] .preference-service-picker > b{
-  color: #dce5f2 !important;
-  opacity: 1 !important;
-}
-:root[data-theme="dark"] .availability-self-name b{
-  color: #f4f7fc !important;
-}
-:root[data-theme="dark"] .availability-filter{
-  min-width: 0;
-  width: 100%;
-}
-:root[data-theme="dark"] .availability-filter label{
-  min-width: 0;
-  width: 100%;
-}
-:root[data-theme="dark"] .availability-filter input,:root[data-theme="dark"] .bulk-form-grid input:not([type="checkbox"]),:root[data-theme="dark"] .bulk-form-grid select,:root[data-theme="dark"] .recurring-rule-form input,:root[data-theme="dark"] .recurring-rule-form select,:root[data-theme="dark"] .serving-preference-form input:not([type="checkbox"]),:root[data-theme="dark"] .serving-preference-form select{
-  box-sizing: border-box !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  background: #111c2e !important;
-  color: #f0f4fb !important;
-  border-color: #465773 !important;
-}/* Use the whole availability card width consistently instead of ending forms mid-panel. */
-.recurring-rule-form,.serving-preference-form{
-  width: 100%;
-  max-width: none !important;
-  min-width: 0;
-}
-.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > label{
-  min-width: 0;
-  max-width: 100%;
-}
-.recurring-rule-form input[type="date"],.recurring-rule-form input[type="time"],.bulk-form-grid input[type="date"],.bulk-form-grid input[type="time"]{
-  box-sizing: border-box !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
 }/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
 /* Inbox should read as distinct, neatly spaced sections with subdued separators. */
 :root[data-theme="dark"] .notification-history-list{
@@ -378,11 +302,7 @@
 
 
 
-@media (max-width: 760px){
-  .recurring-rule-form,.serving-preference-form{
-    width: 100%;
-  }
-}
+
 :root[data-theme="dark"] .assignment-field-feedback.blocked{
   background: #492b36 !important;
   border-color: #784452 !important;
@@ -405,54 +325,6 @@
   background: #111c2e !important;
   border-color: #465873 !important;
   color: #f0f4fb !important;
-}/* Keep recurring restrictions readable: paired fields on desktop and one column on phones. */
-.recurring-rule-form{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: end;
-  gap: 14px;
-  width: 100%;
-  max-width: 840px !important;
-  min-width: 0;
-}
-.recurring-rule-form > label,.recurring-rule-form > .rule-inline,.recurring-rule-form > button{
-  min-width: 0;
-  max-width: 100%;
-}
-.recurring-rule-form > .rule-inline{
-  grid-column: 1 / -1;
-  width: 100%;
-}
-.recurring-rule-form > label:last-of-type,.recurring-rule-form > button{
-  grid-column: 1 / -1;
-  width: 100%;
-}
-.recurring-rule-form input,.recurring-rule-form select,.rule-inline > label input,.rule-inline > label select{
-  box-sizing: border-box !important;
-  display: block;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-.serving-preference-form{
-  width: 100%;
-  max-width: 840px !important;
-  min-width: 0;
-}
-.serving-preference-form > *{
-  min-width: 0;
-  max-width: 100%;
-}
-
-:root[data-theme="dark"] .availability-form > .availability-self-name,:root[data-theme="dark"] .bulk-form-grid > .availability-self-name{
-  background: #26364f !important;
-  border-color: #465873 !important;
-}
-:root[data-theme="dark"] .availability-form > .availability-self-name span,:root[data-theme="dark"] .bulk-form-grid > .availability-self-name span{
-  color: #b9c7dc !important;
-}
-:root[data-theme="dark"] .availability-form > .availability-self-name b,:root[data-theme="dark"] .bulk-form-grid > .availability-self-name b{
-  color: #f3f6fc !important;
 }
 :root[data-theme="dark"] .bulk-church-group > summary .link-btn{
   background: #283750 !important;
@@ -467,22 +339,8 @@
   color: #d4deed !important;
   border-color: #40516d !important;
 }
-:root[data-theme="dark"] .availability-filter .clear-btn{
-  background: #26354d !important;
-  border-color: #4a5d7b !important;
-  color: #e8e5ff !important;
-}
 
-@media (max-width: 760px){
-  .recurring-rule-form{
-    grid-template-columns: minmax(0, 1fr) !important;
-    max-width: 100% !important;
-  }
-  .recurring-rule-form > .rule-inline,.recurring-rule-form > label:last-of-type,.recurring-rule-form > button{
-    grid-column: 1 !important;
-  }
-  .serving-preference-form{ max-width: 100% !important; }
-}
+
 :root[data-theme="dark"] .bulk-church-group > summary .link-btn{
   background: #33435d !important;
   color: #f1f5fb !important;
@@ -554,48 +412,6 @@
 }
 :root[data-theme="dark"] .daily-assignee-cell.optional > span{
   color: #aab7cb !important;
-}/* Availability forms: make every grid item and native date control stay inside its card. */
-.availability-form-panel,.availability-form-panel form,.bulk-availability-form,.bulk-form-grid,.recurring-rule-form,.serving-preference-form,.rule-inline,.bulk-servant-picker{
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-}
-.bulk-form-grid{
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: start;
-  gap: 14px;
-}
-.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > *{
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-.bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select,.serving-preference-form input:not([type="checkbox"]),.serving-preference-form select{
-  box-sizing: border-box !important;
-  display: block;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-.bulk-form-grid input[type="date"],.recurring-rule-form input[type="date"],.availability-form input[type="date"]{
-  padding-inline: 10px !important;
-  overflow: hidden;
-}
-.recurring-rule-form{
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  max-width: 100% !important;
-  align-items: end;
-  gap: 14px;
-}
-.recurring-rule-form > .rule-inline,.recurring-rule-form > label:last-of-type,.recurring-rule-form > button{
-  grid-column: 1 / -1;
-}
-.recurring-rule-form > .rule-inline{
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
 }
 .bulk-servant-list{
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -607,15 +423,6 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 760px){
-  .bulk-form-grid,.recurring-rule-form{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-  .bulk-form-grid > .availability-self-name,.bulk-form-grid .wide,.bulk-form-grid .bulk-weekdays,.recurring-rule-form > .rule-inline,.recurring-rule-form > label:last-of-type,.recurring-rule-form > button{
-    grid-column: 1 !important;
-  }
-  .bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > *{
-    grid-column: 1 !important;
-  }
   .bulk-servant-list{
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -703,35 +510,12 @@
     color: #c0cce0 !important;
   }
 }
-@media (max-width: 760px){
-  .bulk-servant-picker{ grid-row: auto !important; }
-}/* Final pass: field controls stay inside their card at every breakpoint. */
-.availability-form,.bulk-availability-form,.bulk-form-grid,.recurring-rule-form,.serving-preference-form,.rule-inline,.days-field{
+/* Final pass: field controls stay inside their card at every breakpoint. */
+.days-field{
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-}
-.availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *,.rule-inline > *{
-  box-sizing: border-box;
-  min-width: 0 !important;
-  max-width: 100%;
-}
-.availability-form input:not([type="checkbox"]),.availability-form select,.bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select,.serving-preference-form input:not([type="checkbox"]),.serving-preference-form select{
-  box-sizing: border-box !important;
-  display: block;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-}
-.availability-form input[type="date"],.bulk-form-grid input[type="date"],.recurring-rule-form input[type="date"],.serving-preference-form input[type="date"]{
-  padding-inline: 11px 34px !important;
-  overflow: hidden;
-}
-.availability-form input[type="date"]::-webkit-calendar-picker-indicator,.bulk-form-grid input[type="date"]::-webkit-calendar-picker-indicator,.recurring-rule-form input[type="date"]::-webkit-calendar-picker-indicator,.serving-preference-form input[type="date"]::-webkit-calendar-picker-indicator{
-  margin: 0;
-  padding: 0;
-  cursor: pointer;
 }
 :root[data-theme="dark"] .bulk-matrix th{
   background: #293951 !important;
@@ -762,10 +546,6 @@
 }
 @media (max-width: 760px){
   .days-field{ grid-template-columns: minmax(0, 1fr) !important; }
-  .bulk-form-grid,.recurring-rule-form,.serving-preference-form{ grid-template-columns: minmax(0, 1fr) !important; }
-  .bulk-form-grid.is-day .bulk-servant-picker{ grid-column: 1 !important; }
-  .recurring-rule-form > .rule-field-dates{ grid-template-columns: minmax(0, 1fr); }
-  .availability-form > *,.bulk-form-grid > *,.recurring-rule-form > *,.serving-preference-form > *{ grid-column: 1 !important; }
 }
 :root[data-theme="dark"] .bulk-group-selection-actions .link-btn{
   background: #293951 !important;
@@ -775,134 +555,11 @@
 :root[data-theme="dark"] .bulk-group-selection-actions .link-btn:disabled{
   color: #9eabc0 !important;
 }
-.servant-status-toggle{ min-width: 190px; }/* Bulk availability forms: deliberate grid placement prevents stranded blank columns. */
-.bulk-form-grid.is-person{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  align-items: end;
-}
-.bulk-form-grid.is-day{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  align-items: end;
-}
-.bulk-form-grid.is-day .bulk-servant-picker{
-  grid-column: 1 / -1 !important;
-  grid-row: auto !important;
-  min-height: 130px;
-}
-.bulk-form-grid.is-day .bulk-servant-list{
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-}
-.bulk-form-grid .bulk-weekdays,.bulk-form-grid > .wide{
-  grid-column: 1 / -1 !important;
-}
-.bulk-availability-form > .btn,.bulk-availability-form > button{
-  width: 100%;
-  max-width: 100%;
-}
-.bulk-form-grid input[type="date"],.recurring-rule-form input[type="date"]{
-  min-width: 0 !important;
-  max-width: 100% !important;
-  width: 100% !important;
-  padding-right: 42px !important;
-}
-.bulk-servant-picker{
-  background: transparent;
-}
-:root[data-theme="dark"] .bulk-servant-picker{
-  background: #202c42 !important;
-  border-color: #465a77 !important;
-}
-:root[data-theme="dark"] .bulk-servant-picker > b,:root[data-theme="dark"] .bulk-servant-picker small{
-  color: #c6d3e7 !important;
-}/* Recurring restriction form: balanced two-column desktop layout with full-width actions. */
-.recurring-rule-form{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  align-items: end;
-  gap: 13px 14px !important;
-}
-.recurring-rule-form > .rule-field-status,.recurring-rule-form > .rule-field-dates,.recurring-rule-form > .rule-field-notes,.recurring-rule-form > .rule-save{
-  grid-column: 1 / -1 !important;
-}
-.recurring-rule-form > .rule-field-dates{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.recurring-rule-form > .rule-field-occurrence{
-  grid-column: 1 / -1 !important;
-}
-.recurring-rule-form > .rule-field-occurrence label{
-  min-width: 0;
-}
-.recurring-rule-form > .rule-save{
-  width: 100%;
-  max-width: 100%;
-  min-height: 44px;
-}
-.recurring-rule-form label,.bulk-form-grid label{
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-.recurring-rule-form input,.recurring-rule-form select,.bulk-form-grid input:not([type="checkbox"]),.bulk-form-grid select{
-  min-width: 0 !important;
-  max-width: 100% !important;
-}/* Make availability and restriction cards use one consistent dark surface. */
-:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .recurring-rule-panel,:root[data-theme="dark"] .bulk-availability-form{
-  background: #202f46 !important;
-  border-color: #405571 !important;
-}
-:root[data-theme="dark"] .bulk-form-grid .availability-self-name{
-  background: #1a2639 !important;
-  border-color: #465a77 !important;
-}
-:root[data-theme="dark"] .recurring-rule-form label,:root[data-theme="dark"] .bulk-form-grid > label{
-  color: #d5deed !important;
-}
+.servant-status-toggle{ min-width: 190px; }
 :root[data-theme="dark"] .bulk-matrix-pending{
   color: #ffd08a !important;
-}/* Explicit field order: no half-empty rows in person/day bulk availability. */
-.bulk-form-grid.is-person .bulk-person-servant{
-  grid-column: 1 / -1 !important;
 }
-.bulk-form-grid.is-person .bulk-from-date,.bulk-form-grid.is-person .bulk-to-date,.bulk-form-grid.is-person .bulk-status,.bulk-form-grid.is-person .bulk-apply-to{
-  grid-column: auto !important;
-}
-.bulk-form-grid.is-day .bulk-servant-picker{
-  grid-column: 1 / -1 !important;
-}
-.bulk-form-grid.is-day .bulk-from-date,.bulk-form-grid.is-day .bulk-to-date,.bulk-form-grid.is-day .bulk-status,.bulk-form-grid.is-day .bulk-apply-to{
-  grid-column: auto !important;
-}
-.bulk-form-grid.is-day .bulk-weekdays,.bulk-form-grid.is-person .bulk-weekdays,.bulk-form-grid.is-day > .wide,.bulk-form-grid.is-person > .wide{
-  grid-column: 1 / -1 !important;
-}
-.bulk-form-grid.is-day .bulk-servant-picker .bulk-servant-list{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px 14px;
-  max-height: 155px;
-  overflow-y: auto;
-}
-@media (max-width: 760px){
-  .bulk-form-grid.is-person .bulk-person-servant,.bulk-form-grid.is-day .bulk-servant-picker,.bulk-form-grid.is-person .bulk-from-date,.bulk-form-grid.is-person .bulk-to-date,.bulk-form-grid.is-person .bulk-status,.bulk-form-grid.is-person .bulk-apply-to,.bulk-form-grid.is-day .bulk-from-date,.bulk-form-grid.is-day .bulk-to-date,.bulk-form-grid.is-day .bulk-status,.bulk-form-grid.is-day .bulk-apply-to{
-    grid-column: 1 / -1 !important;
-  }
-  .bulk-form-grid.is-day .bulk-servant-picker .bulk-servant-list{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
-  background: transparent !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
-  border-color: #405571 !important;
-}
+
 :root[data-theme="dark"] .daily-location-name,.app-shell[data-theme="dark"] .daily-location-name{
   background: #087985 !important;
   color: #ffffff !important;
@@ -1055,26 +712,6 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
   }
-}/* Remove the second shaded surface that was visible behind availability fields.
-   The form grid inherits the containing card; only actual inputs are inset controls. */
-:root[data-theme="dark"] .availability-form-panel .bulk-availability-form,:root[data-theme="dark"] .availability-form-panel .bulk-form-grid,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form,:root[data-theme="dark"] .availability-form-panel .serving-preference-form{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .availability-form-panel .bulk-form-grid > label,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form > label,:root[data-theme="dark"] .availability-form-panel .recurring-rule-form > .rule-inline{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .availability-form-panel .bulk-servant-picker{
-  background: transparent !important;
-  border: 1px solid #405571 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .availability-form-panel .availability-self-name{
-  background: transparent !important;
-  border-color: #405571 !important;
 }/* Compact and predictable church group controls on small screens. */
 @media (max-width: 760px){
   .bulk-church-group > summary{
