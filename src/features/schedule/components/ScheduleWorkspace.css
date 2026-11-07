@@ -613,6 +613,7 @@
 
 .schedule-card .role-grid{padding:0 16px 16px;margin-top:0}
 
+.card-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid #f0f1f4}
 .schedule-card .card-actions{margin:0 16px 14px}
 
 .role-box{padding:12px}
@@ -2346,3 +2347,7 @@
 @media(min-width:761px) and (max-width:1100px){
   .toolbar.serving-toolbar .toolbar-actions{min-width:0}
 }
+
+
+/* Schedule-only card action surface and dark-mode divider. */
+:root[data-theme="dark"] .card-actions{border-color:#3b4b65!important;}
