@@ -334,10 +334,11 @@ Deno.test("signup form remains scroll-contained in dark mode and authentication 
 
 
 Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens", async () => {
-  const [globalCss, availabilityCss, scheduleCss, tokensCss] = await Promise.all([
+  const [globalCss, availabilityCss, scheduleCss, servantCss, tokensCss] = await Promise.all([
     readGlobalStyles(),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
+    readRepoFile("src/features/servants/components/ServantInformationPanel.css"),
     readRepoFile("src/styles/tokens.css"),
   ]);
 
@@ -356,7 +357,7 @@ Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens
   assert(globalCss.includes("box-shadow:0 0 0 3px var(--focus-ring)"), "Shared form focus states must use the focus-ring token.");
   assert(globalCss.includes("background:var(--status-success-bg);color:var(--status-success-text)"), "Positive status chips must use semantic success tokens.");
   assert(globalCss.includes("background:var(--status-danger-bg);color:var(--status-danger-text)"), "Declined status chips must use semantic danger tokens.");
-  assert(globalCss.includes("background:var(--status-warning-bg);color:var(--status-warning-text)"), "Dark warning states must use semantic warning tokens.");
+  assert(servantCss.includes("background:var(--status-warning-bg)!important;") && servantCss.includes("color:var(--status-warning-text) !important;"), "Servant account warning states must use the feature-owned semantic warning tokens.");
 
   assert(availabilityCss.includes(".availability-status.available{color:var(--status-success-text);background:var(--status-success-bg)}"), "Availability success state must use semantic success tokens.");
   assert(availabilityCss.includes(".availability-status.unavailable{color:var(--status-danger-text);background:var(--status-danger-bg)}"), "Availability unavailable state must use semantic danger tokens.");
@@ -370,6 +371,7 @@ Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens
   assertBalancedCss(globalCss, "src/style.css");
   assertBalancedCss(availabilityCss, "AvailabilityWorkspace.css");
   assertBalancedCss(scheduleCss, "ScheduleWorkspace.css");
+  assertBalancedCss(servantCss, "ServantInformationPanel.css");
 });
 
 
