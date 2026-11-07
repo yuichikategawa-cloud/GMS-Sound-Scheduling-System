@@ -18,8 +18,14 @@ Deno.test("Statistics feature owns presentation and pure calculation", async () 
 
   assert(app.includes('import StatisticsPanel from "./features/statistics/components/StatisticsPanel";'),
     "App must compose Statistics through its feature-owned panel.");
-  assert(app.includes('<StatisticsPanel schedules={scheduleWorkspace.filtered} servants={servants}/>'),
-    "App must pass the currently filtered schedules and shared servant records into Statistics.");
+  assert(app.includes("const statisticsSchedules = useMemo(") &&
+    app.includes('schedule.status === "published" && schedule.service_date >= today()') &&
+    app.includes('<StatisticsPanel schedules={statisticsSchedules} servants={servants}/>') &&
+    !app.includes('<StatisticsPanel schedules={scheduleWorkspace.filtered}'),
+    "Statistics must receive all upcoming published schedules independently of Schedule-page filters.");
+  assert(panel.includes("Schedule-page filters do not affect these figures.") &&
+    panel.includes("Workload comparison across upcoming published schedules."),
+    "Statistics must clearly explain its independent upcoming-published dataset.");
   assert(!app.includes("calculateServingStatistics"),
     "Statistics calculations must not be duplicated in the App composition root.");
 
@@ -50,17 +56,17 @@ Deno.test("Statistics feature owns presentation and pure calculation", async () 
     "StatisticsPanel.css must contain the feature-owned statistics presentation.");
 });
 
-Deno.test("Statistics servant breakdown and fairness are scoped to servants assigned in the filtered schedule set", async () => {
+Deno.test("Statistics servant breakdown and fairness are scoped to servants assigned in the Statistics dataset", async () => {
   const service = await readRepoFile("src/features/statistics/services/servingStatistics.ts");
   const panel = await readRepoFile("src/features/statistics/components/StatisticsPanel.tsx");
   assert(service.includes('servant.active && (counts.get(servant.id)?.total ?? 0) > 0'),
-    "Servant rows must exclude active servants who have no assignments in the selected schedule filters.");
+    "Servant rows must exclude active servants who have no assignments in the Statistics dataset.");
   assert(service.includes('activeServants - rows.filter(row => row.total > 0).length'),
     "The not-scheduled metric must still compare filtered assignments with the full active servant directory.");
   assert(service.includes('const highestWorkload = rows[0]?.total ?? 0') &&
     service.includes('Math.min(...rows.map(row => row.total))'),
-    "Fairness metrics must compare only the assigned servants in the filtered schedule set.");
-  assert(panel.includes("No servants are assigned within the selected filters.") &&
+    "Fairness metrics must compare only the assigned servants in the Statistics dataset.");
+  assert(panel.includes("No servants are assigned within the Statistics dataset.") &&
     panel.includes("No assignments match the selected schedule filters."),
     "Statistics must explain when the selected filters return no assignment data.");
 });
