@@ -155,3 +155,9 @@
   color:#e2e9f4!important;
   border-color:#3a4a64!important;
 }
+
+.stats-empty-state{
+  margin:0;
+  padding:12px 0;
+  line-height:1.5;
+}
