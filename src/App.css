@@ -1,0 +1,14 @@
+/* App-level startup and profile-loading/error centering. */
+.center-screen{
+  min-height:100vh;
+  display:flex;
+  gap:10px;
+  color:#64748b;
+  padding:20px;
+  background:linear-gradient(140deg,#f2f4ff,#f7f8fb 55%,#edf1f8);
+}
+:root[data-theme="dark"] .center-screen{
+  background:linear-gradient(140deg,#101727,#151f33 55%,#101727);
+  overflow:visible!important;
+  min-width:0;
+}
