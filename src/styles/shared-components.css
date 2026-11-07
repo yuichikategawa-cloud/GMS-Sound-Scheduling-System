@@ -1,0 +1,274 @@
+.brand-mark{width:42px;height:42px;border-radius:13px;background:#e9eaff;color:#4f46e5;display:grid;place-items:center}.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e7eaff;color:#4f46e5;font-weight:800;flex:none}
+.eyebrow{font-size:10px;letter-spacing:.15em;font-weight:800;color:#858da1;margin:0 0 5px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}.toolbar h2,.list-heading h2{font-size:19px;margin:0 0 4px}.subtle{color:var(--muted);font-size:13px;margin:0}.toolbar-actions{display:flex;gap:8px}.btn{border:0;border-radius:9px;padding:10px 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;white-space:nowrap}.btn.primary{background:var(--brand);color:white}.btn.secondary{background:white;color:#394357;border:1px solid var(--line)}.btn.danger{background:#fff1f2;color:#be123c}.btn.tiny{padding:7px 10px;font-size:11px}.btn.full{width:100%;padding:12px}.icon-btn{border:0;background:transparent;color:#7b8496;padding:7px;border-radius:8px;display:grid;place-items:center}.icon-btn:hover{background:#f0f2f7;color:#27334a}
+.filter-panel{background:white;border:1px solid var(--line);border-radius:14px;padding:16px 17px;margin-bottom:23px}.filter-title{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:13px}.filters{display:grid;grid-template-columns:1.5fr 1.2fr 1fr .8fr .8fr;gap:10px}.filters label,.form-grid label,.modal-card>label,.stack label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle)}.filters input,.filters select,.form-grid input,.form-grid select,.modal-card>label input,.stack input{border:1px solid var(--border-strong);border-radius:8px;padding:9px 10px;color:#293448;background:white;min-width:0;font-size:12px;outline:none}.filters input:focus,.filters select:focus,.form-grid input:focus,.form-grid select:focus,.stack input:focus{border-color:var(--focus-border);box-shadow:0 0 0 3px var(--focus-ring)}.clear-btn,.link-btn{border:0;background:none;color:#555bd6;font-size:11px;font-weight:750;padding:10px 0 0}.list-heading{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}.list-heading span{font-size:11px;color:var(--muted)}.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.day-pill{font-size:10px;color:#4f46e5;background:#eef2ff;border-radius:30px;padding:5px 9px;font-weight:800}.card-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px;padding-top:11px;border-top:1px solid #f0f1f4}.empty-state{background:white;border:1px dashed #cbd3df;border-radius:14px;padding:45px 20px;text-align:center;color:#7d8798;display:flex;align-items:center;flex-direction:column;gap:8px}.empty-state b{color:#27334a}.empty-state p{font-size:12px;margin:0}
+.message-banner{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:12px;display:flex;justify-content:space-between;align-items:center}.message{font-size:12px;color:#9a3412;background:#fff7ed;padding:10px;border-radius:8px;margin-top:12px}
+.people-list{background:white;border:1px solid var(--line);border-radius:13px;overflow:hidden}.person-row{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid #f0f1f4}.person-row:last-child{border-bottom:0}.person-name{flex:1}.person-name b,.person-name small{display:block}.person-name b{font-size:13px}.person-name small{font-size:10px;color:var(--muted);margin-top:2px}
+.modal-backdrop{position:fixed;inset:0;background:#11182788;z-index:20;display:grid;place-items:center;padding:16px}.modal-card{width:min(590px,100%);max-height:92vh;overflow:auto;background:white;border-radius:16px;padding:22px;box-shadow:0 20px 80px #11182755}.modal-card.compact{width:min(420px,100%)}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:18px}.modal-head h2{font-size:18px;margin:0 0 4px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .wide{grid-column:1/-1}.form-grid label{gap:6px}.form-grid input,.form-grid select{width:100%}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.center-screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(140deg,#f2f4ff,#f7f8fb 55%,#edf1f8)}.stack{display:flex;flex-direction:column;gap:13px}.stack label{font-size:12px}.stack input{padding:11px;font-size:13px}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.center-screen{display:flex;gap:10px;color:#64748b}
+@media(max-width:1100px){.filters{grid-template-columns:repeat(3,minmax(0,1fr))}.filters .search-field{grid-column:span 2}}
+@media(max-width:760px){.toolbar{align-items:flex-start}.toolbar-actions{flex-wrap:wrap;justify-content:flex-end}.toolbar h2{font-size:17px}.filters{grid-template-columns:1fr 1fr}.filters .search-field{grid-column:span 2}}
+@media(max-width:430px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.toolbar{flex-direction:column}.toolbar-actions{justify-content:flex-start}.filters{grid-template-columns:1fr 1fr}}/* Accessibility and expandable dashboard panels */
+.collapsible-panel{background:transparent;margin:0 0 20px}.collapsible-panel>summary{list-style:none;cursor:pointer}.collapsible-panel>summary::-webkit-details-marker{display:none}
+.collapsible-panel>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;background:#fff;border:1px solid var(--line);border-radius:13px;box-shadow:0 4px 16px #17243a06}
+.collapsible-panel>summary span{display:flex;flex-direction:column;gap:4px}
+.collapsible-panel>summary b{font-size:17px}.collapsible-panel>summary small{font-size:12px;color:var(--muted)}.collapsible-panel>summary>svg{transition:transform .18s ease;flex:none}
+.collapsible-panel[open]>summary,.service-panel[open]>summary{border-radius:13px 13px 0 0}.collapsible-panel[open]>summary>svg{transform:rotate(180deg)}
+
+@media(max-width:760px){.collapsible-panel>summary b{font-size:16px}}
+.status-chip{display:inline-flex;vertical-align:middle;margin-left:5px;border-radius:20px;padding:3px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;background:#f1f5f9;color:#475569}.status-chip.published,.status-chip.approved,.status-chip.confirmed{background:var(--status-success-bg);color:var(--status-success-text)}.status-chip.draft,.status-chip.pending{background:#fef3c7;color:#92400e}.status-chip.declined{background:var(--status-danger-bg);color:var(--status-danger-text)}/* v4 registration, member profile and mobile touch targets */
+
+.days-field{border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.days-field legend{font-size:13px;font-weight:800;padding:0 5px;color:#475569}
+.days-field label{display:flex;align-items:center;gap:8px;font-size:13px}
+.days-field input{width:18px;height:18px;flex:none}
+.field-disabled{opacity:.48}.field-disabled input{background:#eef1f5!important;cursor:not-allowed}/* v5: branded loading state */
+.gms-v3-loader{display:flex;align-items:center;justify-content:center;gap:10px;color:#64748b}.loader{width:19px;height:19px;border:2px solid #dce0ed;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}
+@media(max-width:600px){.servant-account-chip{font-size:9px}}
+
+.gms-loader-progress span{width:100%}/* Service detail hierarchy: church first, then its dated service cards. */
+.church-schedule-groups{display:flex;flex-direction:column;gap:18px;padding-top:14px}
+.church-schedule-group{background:#f8f9fc;border:1px solid var(--line);border-radius:15px;padding:15px}
+.church-schedule-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:2px 2px 12px;border-bottom:1px solid #e5e9f0}
+.church-schedule-heading h3{font:800 20px Manrope,'DM Sans',sans-serif;letter-spacing:-.025em;color:#202b40;margin:0}
+.church-schedule-heading p{font-size:11px;color:var(--muted);margin:4px 0 0}
+.church-group-count{display:grid;place-items:center;min-width:32px;height:32px;padding:0 9px;border-radius:20px;background:#e9eaff;color:#4544b8;font-size:12px;font-weight:850}
+@media(max-width:760px){.church-schedule-group{padding:11px}.church-schedule-heading h3{font-size:18px}}
+.inbox-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#8060c5;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}/* Phase 1-4 workflow enhancements */
+.admin-control-center{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px;margin:16px 0;box-shadow:var(--shadow)}
+.control-center-head h2{margin:0;font-size:18px}.control-center-head p{margin:4px 0 0}
+.control-center-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
+.control-center-grid>div{display:grid;gap:5px;padding:13px;border:1px solid var(--line);border-radius:11px;background:#fbfcff}
+.control-center-grid small{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.control-center-grid b{font-size:25px;color:var(--ink)}.control-center-grid span{font-size:11px;color:var(--muted)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+
+
+@media(max-width:850px){.control-center-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.control-center-grid{grid-template-columns:1fr 1fr}}
+.filters select{min-height:40px;border:1px solid var(--line);border-radius:9px;padding:9px 34px 9px 11px;background-color:#fff;color:var(--ink);font:inherit;font-size:12px;box-shadow:0 1px 2px rgba(16,24,40,.04);cursor:pointer}
+.filters select:focus{border-color:var(--focus-border);outline:none;box-shadow:0 0 0 3px var(--focus-ring)}/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
+/* FOH and Monitor use matching full-width assignment cards on phones. */
+@media(max-width:600px){
+  .schedule-card .role-grid{grid-template-columns:minmax(0,1fr)!important;gap:9px!important;}
+  .schedule-card .role-box{width:100%;min-width:0;box-sizing:border-box;padding:11px 13px!important;}
+  .schedule-card .role-box:last-child{grid-column:auto!important}
+}/* Keep every schedule filter inside its card on narrow mobile screens. */
+.filters{grid-template-columns:repeat(5,minmax(0,1fr));min-width:0;}
+.filters>label{min-width:0;width:100%;}
+.filters input,.filters select{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
+.filter-panel,.filters{box-sizing:border-box;max-width:100%;}
+@media(max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr));}.filters .search-field{grid-column:1/-1;}}
+@media(max-width:520px){
+  .filter-panel{padding:13px 12px;}
+  .filters{grid-template-columns:minmax(0,1fr);gap:11px;}
+  .filters .search-field{grid-column:1/-1;}
+  .filters>label,.filters input,.filters select{width:100%;min-width:0;max-width:100%;}
+}
+.message-banner{
+  display:block;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+.message-banner b{display:inline-block;margin:0 3px}
+
+@media(max-width:640px){
+  .message-banner{
+    padding:11px 12px;
+    line-height:1.6;
+    margin-bottom:14px;
+  }
+  .message-banner b{display:inline}
+  
+  
+}/* Mobile Option B: fixed bottom navigation with a More sheet */
+
+@media(max-width:760px){
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+}
+.action-dialog-backdrop{z-index:1000}
+.action-dialog{width:min(480px,calc(100vw - 32px));padding:22px}
+.action-dialog .modal-head{align-items:flex-start}
+.action-dialog-message{white-space:pre-line;line-height:1.6;margin-top:8px;max-width:56ch}
+.action-dialog .modal-actions{margin-top:22px}
+.action-dialog .btn.danger{background:#fff1f2;border:1px solid #fecdd3;color:#be123c}
+@media(max-width:600px){.action-dialog{padding:18px}.action-dialog .modal-actions{display:grid;grid-template-columns:1fr 1fr}}
+.modal-backdrop{z-index:100!important}
+.action-dialog-backdrop{z-index:110!important}
+@media(max-width:760px){
+  .modal-backdrop{padding:10px;place-items:center}
+  .modal-card{width:min(100%,590px);max-height:calc(100dvh - 20px);overflow-y:auto}
+  
+}/* iOS date/time controls: align values consistently with text/select inputs */
+.form-grid input[type="date"],.form-grid input[type="time"]{
+  box-sizing:border-box;width:100%;min-width:0;max-width:100%;
+  min-height:42px;text-align:left;padding-inline:11px;
+  -webkit-appearance:none;appearance:none
+}
+.form-grid input[type="date"]::-webkit-date-and-time-value,.form-grid input[type="time"]::-webkit-date-and-time-value{
+  text-align:left;margin:0;width:100%
+}
+.form-grid input[type="date"]::-webkit-calendar-picker-indicator,.form-grid input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}/* 2026-11-03 responsive refinement: tablet actions, iOS fields, statistics cards */
+
+.brand-mark{flex:0 0 42px;box-shadow:0 5px 14px rgba(79,70,229,.16)}
+@media(min-width:761px) and (max-width:1100px){
+  .toolbar.serving-toolbar .toolbar-actions{min-width:0}
+}
+@media(max-width:760px){
+  input[type="date"],input[type="time"]{
+    box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+    min-height:44px;padding:10px 12px;font-size:16px!important;
+    line-height:1.35;text-align:left;-webkit-appearance:none;appearance:none
+  }
+  input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+  input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}
+}/* Requested desktop-only recurring generation guidance layout.
+   Mobile keeps its existing stacked presentation unchanged. */
+@media (min-width: 701px){
+  .generate-note{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 9px;
+    align-items: start;
+  }
+  .generate-note-title{
+    grid-column: 1 / -1;
+  }
+  .generate-note p{
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    min-width: 0;
+    margin: 0;
+  }
+}/* 2026-11-03 visual refinement: compact sidebar identity and coordinated template actions. */
+
+/* Desktop: make the template heading and its actions read as one toolbar. */
+@media (min-width: 761px){
+  .template-picker-head{
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 9px;
+    min-height: 38px;
+    font-size: 12px;
+  }
+  .template-picker-head > b{
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+  .template-picker-head > span{
+    margin-right: 8px;
+    padding: 5px 9px;
+    border: 1px solid #e5e7f2;
+    border-radius: 999px;
+    background: #f7f8fc;
+    color: #667085;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .template-picker-head > .clear-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    margin: 0;
+    padding: 0 11px;
+    border: 1px solid #e1e5f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #4d54c8;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .template-picker-head > .clear-btn:hover:not(:disabled){
+    background: #f5f5ff;
+    border-color: #c9caff;
+  }
+  .template-picker-head > .clear-btn:active:not(:disabled){
+    transform: translateY(1px);
+  }
+  .template-picker-head > .clear-btn:disabled{
+    opacity: .45;
+    cursor: not-allowed;
+  }
+  .template-picker-head > .template-add-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    margin-left: auto;
+    padding: 0 13px;
+    border-radius: 9px;
+    white-space: nowrap;
+  }
+}
+.bulk-availability-form,.recurring-rule-form{display:flex;flex-direction:column;gap:14px}
+.bulk-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bulk-form-grid>label,.recurring-rule-form>label,.rule-inline label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle);min-width:0}
+.bulk-form-grid input:not([type=checkbox]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select{box-sizing:border-box;width:100%;min-width:0;max-width:100%;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px;background:#fff;color:#293448;font-size:13px;min-height:42px}
+.bulk-form-grid .wide{grid-column:1/-1}
+.bulk-servant-picker{grid-row:span 2;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:11px;min-width:0}
+.bulk-servant-picker>b,.bulk-weekdays>b{font-size:11px;color:var(--text-subtle)}
+.bulk-servant-list{max-height:190px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.bulk-servant-list label,.bulk-weekdays label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
+.bulk-servant-picker>small{color:var(--muted);font-size:10px}
+.bulk-weekdays{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.bulk-conflict-warning{display:flex;flex-direction:column;gap:5px;padding:10px;border:1px solid #fecaca;background:#fff7f7;color:var(--status-danger-text);border-radius:9px;font-size:11px}.bulk-conflict-warning small{color:#7f1d1d}
+.recurring-rule-panel>p{margin:-5px 0 15px;line-height:1.55}.recurring-rule-form{max-width:760px}.rule-inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.saved-rules-list{display:grid;gap:8px;margin-top:15px}.saved-rule-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcff}.saved-rule-row b,.saved-rule-row small{display:block}.saved-rule-row b{font-size:12px}.saved-rule-row small{font-size:10px;color:var(--muted);margin-top:4px}
+.bulk-form-grid input[type=date],.recurring-rule-form input[type=date],.availability-form input[type=date],.availability-filter input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
+.bulk-form-grid input[type=date]::-webkit-date-and-time-value,.recurring-rule-form input[type=date]::-webkit-date-and-time-value,.availability-form input[type=date]::-webkit-date-and-time-value,.availability-filter input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+@media(max-width:760px){.bulk-form-grid{grid-template-columns:minmax(0,1fr)}.bulk-form-grid .wide,.bulk-weekdays{grid-column:auto}.bulk-servant-list{grid-template-columns:1fr}.rule-inline{grid-template-columns:minmax(0,1fr)}.recurring-rule-form{width:100%}}/* GMS PWA and scheduling intelligence surfaces */
+.offline-status-banner{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 13px;border:1px solid #f2d7a2;border-radius:11px;background:#fff9eb;color:#80530b;font-size:12px;font-weight:650;line-height:1.45}
+.offline-status-banner svg{flex:0 0 auto}
+.serving-preference-form{display:grid;gap:13px;max-width:760px}
+.serving-preference-form>label,.preference-weekday-picker,.preference-service-picker{display:flex;flex-direction:column;gap:7px;font-size:11px;font-weight:750;color:var(--text-subtle);min-width:0}
+.serving-preference-form input:not([type=checkbox]),.serving-preference-form select{width:100%;min-width:0;min-height:44px;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px;background:#fff;color:#293448;font-size:13px}
+.preference-weekday-picker>div{display:flex;flex-wrap:wrap;gap:7px}
+.preference-weekday-picker label,.preference-service-picker label{display:flex;align-items:center;gap:7px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fbfcff;color:#394357;font-size:12px;font-weight:650}
+.preference-weekday-picker input,.preference-service-picker input{accent-color:var(--brand)}
+.preference-service-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.preference-service-picker>b{grid-column:1/-1}
+.serving-preference-form input[type=time],.serving-preference-form input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
+.serving-preference-form input[type=time]::-webkit-date-and-time-value,.serving-preference-form input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+
+@media(max-width:760px){
+  .preference-service-picker{grid-template-columns:1fr}
+  .preference-service-picker>b{grid-column:auto}
+  .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{font-size:16px;min-height:46px}
+  .offline-status-banner{align-items:flex-start;font-size:11px}
+}/* Consistent iPhone form control sizing for scheduling and availability fields. */
+@media(max-width:760px){
+  input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
+  input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
+  input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+}/* Inbox readability: status badges remain compact and request sections have clear separation. */
+
+@media(max-width:640px){
+  
+  
+}
+.bulk-apply-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:15px;color:#68748d;font-size:12px}
+@media(max-width:700px){
+ .bulk-apply-footer{align-items:stretch;flex-direction:column}
+ .bulk-apply-footer .btn{width:100%}
+}/* Availability sections: remove internal explanations and give form fields breathing room below headings. */
+.recurring-rule-panel h3,.serving-preferences-panel h3{margin-bottom:24px}
+.recurring-rule-panel .recurring-rule-form,.serving-preferences-panel .serving-preference-form{margin-top:0}

@@ -8,6 +8,15 @@ async function readRepoFile(path: string): Promise<string> {
   return await Deno.readTextFile(new URL("../../" + path, import.meta.url));
 }
 
+async function readGlobalStyles(): Promise<string> {
+  const [entry, shared, dark] = await Promise.all([
+    readRepoFile("src/style.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+  return [entry, shared, dark].join("\n");
+}
+
 function assertBalancedCss(source: string, path: string): void {
   const opens = (source.match(/{/g) ?? []).length;
   const closes = (source.match(/}/g) ?? []).length;
@@ -16,13 +25,15 @@ function assertBalancedCss(source: string, path: string): void {
 
 Deno.test("global entry stylesheet delegates tokens and document defaults", async () => {
   const [globalCss, tokensCss, baseCss] = await Promise.all([
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/styles/tokens.css"),
     readRepoFile("src/styles/base.css"),
   ]);
 
   assert(globalCss.includes('@import "./styles/tokens.css";'), "Global CSS must import design tokens.");
   assert(globalCss.includes('@import "./styles/base.css";'), "Global CSS must import document defaults.");
+  assert(globalCss.includes('@import "./styles/shared-components.css";'), "Global CSS must import the shared component module.");
+  assert(globalCss.includes('@import "./styles/dark-theme.css";'), "Global CSS must import the dark-theme module.");
   assert(tokensCss.includes("--brand:"), "Design token stylesheet must own the shared brand token.");
   assert(baseCss.includes("box-sizing:border-box"), "Base stylesheet must own the global box-sizing reset.");
   assert(baseCss.includes("min-width:320px"), "Base stylesheet must own the document minimum-width rule.");
@@ -30,6 +41,36 @@ Deno.test("global entry stylesheet delegates tokens and document defaults", asyn
   assertBalancedCss(tokensCss, "src/styles/tokens.css");
   assertBalancedCss(baseCss, "src/styles/base.css");
 });
+
+
+Deno.test("global style entry composes shared and dark-theme modules in order", async () => {
+  const [entryCss, sharedCss, darkCss] = await Promise.all([
+    readRepoFile("src/style.css"),
+    readRepoFile("src/styles/shared-components.css"),
+    readRepoFile("src/styles/dark-theme.css"),
+  ]);
+
+  const imports = [
+    '@import "./styles/tokens.css";',
+    '@import "./styles/base.css";',
+    '@import "./styles/shared-components.css";',
+    '@import "./styles/dark-theme.css";',
+  ];
+  let previous = -1;
+  for (const item of imports) {
+    const index = entryCss.indexOf(item);
+    assert(index > previous, "Global stylesheet imports must retain their dependency and cascade order.");
+    previous = index;
+  }
+
+  assert(sharedCss.length > 20_000, "Shared presentation rules must be retained in their dedicated module.");
+  assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
+  assert(!sharedCss.includes(':root[data-theme="dark"]'), "Dark-theme overrides must not leak into the shared light/base module.");
+  assertBalancedCss(entryCss, "src/style.css");
+  assertBalancedCss(sharedCss, "src/styles/shared-components.css");
+  assertBalancedCss(darkCss, "src/styles/dark-theme.css");
+});
+
 
 Deno.test("extracted presentation stylesheets are imported by their owning components", async () => {
   const ownership = [
@@ -59,7 +100,7 @@ Deno.test("extracted presentation stylesheets are imported by their owning compo
 });
 
 Deno.test("app-shell and requests presentation no longer live as light-mode global rules", async () => {
-  const globalCss = await readRepoFile("src/style.css");
+  const globalCss = await readGlobalStyles();
   const movedSelectors = [
     ".app-shell",
     ".sidebar",
@@ -127,7 +168,7 @@ Deno.test("semantic theme tokens cover both schemes and retain legacy aliases", 
 
 Deno.test("Availability owns its component rules while mixed dark-mode overrides stay global", async () => {
   const [globalCss, availabilityCss] = await Promise.all([
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
   ]);
 
@@ -177,7 +218,7 @@ Deno.test("global stylesheet loads before feature-owned stylesheets", async () =
 
 Deno.test("Schedule owns its layout and responsive presentation while dark-mode overrides stay global", async () => {
   const [globalCss, scheduleCss] = await Promise.all([
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
   ]);
 
@@ -213,7 +254,7 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
 
 
 Deno.test("dark recurring-generation guidance has readable semantic contrast", async () => {
-  const globalCss = await readRepoFile("src/style.css");
+  const globalCss = await readGlobalStyles();
   assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note-title'), "The document dark theme must explicitly style the generation guidance title.");
   assert(globalCss.includes("color: var(--text-primary) !important;"), "The generation guidance title must use the dark theme's primary text token.");
   assert(globalCss.includes(':root[data-theme="dark"] .generate-panel .generate-note p span'), "Generation guidance descriptions must use a dark-theme secondary text rule.");
@@ -239,7 +280,7 @@ Deno.test("signup form remains scroll-contained in dark mode and authentication 
 
 Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens", async () => {
   const [globalCss, availabilityCss, scheduleCss, tokensCss] = await Promise.all([
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/availability/components/AvailabilityWorkspace.css"),
     readRepoFile("src/features/schedule/components/ScheduleWorkspace.css"),
     readRepoFile("src/styles/tokens.css"),
@@ -349,7 +390,7 @@ Deno.test("signup card and every registration control stay within the mobile vie
 
 
 Deno.test("global dark controls use one shared theme surface across generic and content forms", async () => {
-  const globalCss = await readRepoFile("src/style.css");
+  const globalCss = await readGlobalStyles();
   assert(!globalCss.includes("background:#111a2b!important;"), "The superseded dark control surface must be removed.");
   assert(!globalCss.includes("background:#111c2e!important;"), "The final dark control surface must use semantic tokens.");
   assert(globalCss.includes("background:var(--surface-control)!important;"), "Generic dark controls must use the active control-surface token.");
@@ -412,7 +453,7 @@ Deno.test("Member profile dark theme does not retain superseded form and fieldse
 Deno.test("application shell owns its sidebar and mobile-navigation dark theme", async () => {
   const [layout, globalCss, shellCss] = await Promise.all([
     readRepoFile("src/app/components/AppLayout.tsx"),
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/app/components/AppShell.css"),
   ]);
   assert(layout.includes('import "./AppShell.css";'), "AppLayout must own and import its shell presentation.");
@@ -441,7 +482,7 @@ Deno.test("application shell owns its sidebar and mobile-navigation dark theme",
 
 
 Deno.test("shared dark secondary buttons and action controls have one effective rule", async () => {
-  const css = await readRepoFile("src/style.css");
+  const css = await readGlobalStyles();
   assert(css.split(':root[data-theme="dark"] .btn.secondary,:root[data-theme="dark"] .icon-btn,:root[data-theme="dark"] .bulk-row-action{').length - 1 === 1,
     "The base shared button/action group should occur once.");
   assert(css.split(':root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{').length - 1 === 1,
@@ -468,7 +509,7 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   const [requestsPanel, inbox, globalCss, requestsCss] = await Promise.all([
     readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
     readRepoFile("src/features/requests/components/ServantInbox.tsx"),
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/requests/components/RequestsInbox.css"),
   ]);
   assert(requestsPanel.includes('import "./RequestsInbox.css";'), "RequestsPanel must import the shared Requests feature stylesheet.");
@@ -508,7 +549,7 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
 Deno.test("Requests feature owns its servant inbox dark layout and card treatment", async () => {
   const [inbox, globalCss, requestsCss] = await Promise.all([
     readRepoFile("src/features/requests/components/ServantInbox.tsx"),
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/requests/components/RequestsInbox.css"),
   ]);
   assert(inbox.includes('import "./RequestsInbox.css";'), "ServantInbox must import RequestsInbox.css.");
@@ -541,7 +582,7 @@ Deno.test("Requests feature owns its servant inbox dark layout and card treatmen
 Deno.test("Statistics owns its table layout and light/dark presentation", async () => {
   const [component, globalCss, statisticsCss] = await Promise.all([
     readRepoFile("src/features/statistics/components/StatisticsPanel.tsx"),
-    readRepoFile("src/style.css"),
+    readGlobalStyles(),
     readRepoFile("src/features/statistics/components/StatisticsPanel.css"),
   ]);
 
