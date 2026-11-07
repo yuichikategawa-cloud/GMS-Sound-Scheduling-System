@@ -885,3 +885,46 @@ Deno.test("Statistics owns its table layout and light/dark presentation", async 
   assertBalancedCss(statisticsCss, "StatisticsPanel.css");
   assertBalancedCss(globalCss, "src/style.css");
 });
+
+
+Deno.test("Notification history belongs to Requests and obsolete global surfaces are removed", async () => {
+  const [requestsPanel, requestsCss, globalCss, statisticsPanel, statisticsCss] = await Promise.all([
+    readRepoFile("src/features/requests/components/RequestsPanel.tsx"),
+    readRepoFile("src/features/requests/components/RequestsInbox.css"),
+    readGlobalStyles(),
+    readRepoFile("src/features/statistics/components/StatisticsPanel.tsx"),
+    readRepoFile("src/features/statistics/components/StatisticsPanel.css"),
+  ]);
+
+  assert(requestsPanel.includes('className="requests-content-card notification-history-section"'),
+    "RequestsPanel must own the notification history section.");
+  assert(requestsPanel.includes('className="notification-history-list"'),
+    "RequestsPanel must render the feature-owned notification history list.");
+  assert(requestsCss.includes(".notification-history-list\\n{"),
+    "RequestsInbox.css must own the notification history list layout.");
+  assert(requestsCss.includes(':root[data-theme="dark"] .notification-history-list'),
+    "RequestsInbox.css must own notification history dark-mode spacing.");
+  assert(requestsCss.includes("gap:12px!important"),
+    "The existing dark notification history spacing must be preserved.");
+  assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-card{'),
+    "RequestsInbox.css must own the notification history card surface through its shared card class.");
+  assert(requestsCss.includes(':root[data-theme="dark"] .requests-content-heading h2{'),
+    "RequestsInbox.css must own the notification history heading contrast.");
+  assert(requestsCss.includes(".notification-history-section .inbox-item"),
+    "RequestsInbox.css must own notification history item styling.");
+
+  assert(!globalCss.includes(".notification-history-section"),
+    "Global styles must not retain Requests notification history selectors.");
+  assert(!globalCss.includes(".notification-history-list"),
+    "Global styles must not retain notification history list overrides.");
+  assert(!globalCss.includes(".statistics-panel"),
+    "Global styles must not retain the unused legacy Statistics panel selector.");
+
+  assert(statisticsPanel.includes('className="stats-grid stats-grid-wide"'),
+    "StatisticsPanel must continue to render its feature-owned metric grid.");
+  assert(statisticsCss.includes(':root[data-theme="dark"] .stat-card{'),
+    "StatisticsPanel.css must continue to own dark metric-card presentation.");
+  assertBalancedCss(requestsCss, "RequestsInbox.css");
+  assertBalancedCss(statisticsCss, "StatisticsPanel.css");
+  assertBalancedCss(globalCss, "global styles");
+});
