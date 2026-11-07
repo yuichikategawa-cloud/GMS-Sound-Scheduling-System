@@ -1477,7 +1477,7 @@ Deno.test("Mobile app header and shell stay within the viewport without losing t
     shellCss.includes("overflow-x:clip;") &&
     shellCss.includes("width:100%;"),
     "The app shell and content must be constrained to the mobile viewport.");
-  assert(header.includes('className="pwa-install-button"') &&
+  assert(header.includes("pwa-install-button") &&
     mobileNav.includes('className="mobile-more-menu"') &&
     mobileNav.includes("onInstallApp"),
     "Hiding the header install action must preserve the install action in the More menu.");
