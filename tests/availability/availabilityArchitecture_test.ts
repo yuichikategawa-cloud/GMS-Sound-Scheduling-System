@@ -68,3 +68,26 @@ Deno.test("Requests and Inbox accept Notifications through app composition, not 
   assert((app.match(/notificationSettings=\{/g) ?? []).length === 2,
     "App should supply settings to admin Requests and member Inbox.");
 });
+
+Deno.test("Availability overview presents date records, recurring restrictions, and serving preferences separately", async () => {
+  const workspace = await readRepoFile("src/features/availability/components/AvailabilityWorkspace.tsx");
+  const styles = await readRepoFile("src/features/availability/components/AvailabilityWorkspace.css");
+  assert(workspace.includes('aria-labelledby="availability-overview-title"'),
+    "The consolidated overview should have an accessible heading.");
+  assert(workspace.includes("<h3>Date-specific records</h3>") &&
+    workspace.includes("<h3>Recurring restrictions</h3>") &&
+    workspace.includes("<h3>Serving preferences & eligibility</h3>"),
+    "The overview must show all three availability data categories separately.");
+  assert(workspace.includes("{rows.length}") && workspace.includes("{ownRules.length}") &&
+    workspace.includes("{visiblePreferences.length}"),
+    "The overview must show independent counts for all three categories.");
+  assert(workspace.includes("No date-specific submissions yet.") &&
+    workspace.includes("No recurring restrictions saved.") &&
+    workspace.includes("No serving preferences saved."),
+    "Each category must have its own accurate empty state.");
+  assert(workspace.includes("ownRules.map(rule=>") && workspace.includes("visiblePreferences.map(rule=>"),
+    "Saved recurring restrictions and preferences must be rendered from their existing loaded data.");
+  assert(styles.includes(".availability-overview-counts") &&
+    styles.includes("@media (max-width: 600px)"),
+    "The consolidated overview must have responsive count and mobile layouts.");
+});
