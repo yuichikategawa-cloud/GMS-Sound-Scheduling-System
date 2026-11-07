@@ -176,41 +176,14 @@
     white-space: nowrap;
   }
 }
-.bulk-availability-form,.recurring-rule-form{display:flex;flex-direction:column;gap:14px}
-.bulk-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.bulk-form-grid>label,.recurring-rule-form>label,.rule-inline label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle);min-width:0}
-.bulk-form-grid input:not([type=checkbox]),.bulk-form-grid select,.recurring-rule-form input,.recurring-rule-form select{box-sizing:border-box;width:100%;min-width:0;max-width:100%;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px;background:#fff;color:#293448;font-size:13px;min-height:42px}
-.bulk-form-grid .wide{grid-column:1/-1}
-.bulk-servant-picker{grid-row:span 2;display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:10px;padding:11px;min-width:0}
-.bulk-servant-picker>b,.bulk-weekdays>b{font-size:11px;color:var(--text-subtle)}
 .bulk-servant-list{max-height:190px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.bulk-servant-list label,.bulk-weekdays label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
-.bulk-servant-picker>small{color:var(--muted);font-size:10px}
-.bulk-weekdays{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px;border:1px solid var(--line);border-radius:10px}
+.bulk-servant-list label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
 
-.recurring-rule-panel>p{margin:-5px 0 15px;line-height:1.55}.recurring-rule-form{max-width:760px}.rule-inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.saved-rules-list{display:grid;gap:8px;margin-top:15px}.saved-rule-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcff}.saved-rule-row b,.saved-rule-row small{display:block}.saved-rule-row b{font-size:12px}.saved-rule-row small{font-size:10px;color:var(--muted);margin-top:4px}
-.bulk-form-grid input[type=date],.recurring-rule-form input[type=date],.availability-form input[type=date],.availability-filter input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
-.bulk-form-grid input[type=date]::-webkit-date-and-time-value,.recurring-rule-form input[type=date]::-webkit-date-and-time-value,.availability-form input[type=date]::-webkit-date-and-time-value,.availability-filter input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
-@media(max-width:760px){.bulk-form-grid{grid-template-columns:minmax(0,1fr)}.bulk-form-grid .wide,.bulk-weekdays{grid-column:auto}.bulk-servant-list{grid-template-columns:1fr}.rule-inline{grid-template-columns:minmax(0,1fr)}.recurring-rule-form{width:100%}}/* GMS PWA and scheduling intelligence surfaces */
+/* GMS PWA and scheduling intelligence surfaces */
 .offline-status-banner{display:flex;align-items:center;gap:9px;margin:0 0 16px;padding:11px 13px;border:1px solid #f2d7a2;border-radius:11px;background:#fff9eb;color:#80530b;font-size:12px;font-weight:650;line-height:1.45}
 .offline-status-banner svg{flex:0 0 auto}
-.serving-preference-form{display:grid;gap:13px;max-width:760px}
-.serving-preference-form>label,.preference-weekday-picker,.preference-service-picker{display:flex;flex-direction:column;gap:7px;font-size:11px;font-weight:750;color:var(--text-subtle);min-width:0}
-.serving-preference-form input:not([type=checkbox]),.serving-preference-form select{width:100%;min-width:0;min-height:44px;border:1px solid var(--border-strong);border-radius:9px;padding:10px 12px;background:#fff;color:#293448;font-size:13px}
-.preference-weekday-picker>div{display:flex;flex-wrap:wrap;gap:7px}
-.preference-weekday-picker label,.preference-service-picker label{display:flex;align-items:center;gap:7px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fbfcff;color:#394357;font-size:12px;font-weight:650}
-.preference-weekday-picker input,.preference-service-picker input{accent-color:var(--brand)}
-.preference-service-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.preference-service-picker>b{grid-column:1/-1}
-.serving-preference-form input[type=time],.serving-preference-form input[type=date]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:44px;padding:10px 12px;font-size:16px;-webkit-appearance:none;appearance:none;text-align:left}
-.serving-preference-form input[type=time]::-webkit-date-and-time-value,.serving-preference-form input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
 
-@media(max-width:760px){
-  .preference-service-picker{grid-template-columns:1fr}
-  .preference-service-picker>b{grid-column:auto}
-  .serving-preference-form input:not([type=checkbox]),.serving-preference-form select{font-size:16px;min-height:46px}
-  .offline-status-banner{align-items:flex-start;font-size:11px}
-}/* Consistent iPhone form control sizing for scheduling and availability fields. */
+/* Consistent iPhone form control sizing for scheduling and availability fields. */
 @media(max-width:760px){
   input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
   input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
@@ -223,5 +196,3 @@
  .bulk-apply-footer{align-items:stretch;flex-direction:column}
  .bulk-apply-footer .btn{width:100%}
 }/* Availability sections: remove internal explanations and give form fields breathing room below headings. */
-.recurring-rule-panel h3,.serving-preferences-panel h3{margin-bottom:24px}
-.recurring-rule-panel .recurring-rule-form,.serving-preferences-panel .serving-preference-form{margin-top:0}
