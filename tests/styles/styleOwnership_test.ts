@@ -340,6 +340,13 @@ Deno.test("Schedule owns its layout, responsive presentation and dark-mode overr
   assert(scheduleCss.includes(".schedule-grid{"), "Schedule grid styles must live with the Schedule feature.");
   assert(scheduleCss.includes(".assignment-overview-card{"), "Assignment overview styles must live with the Schedule feature.");
   assert(scheduleCss.includes(".bulk-assignment-center{"), "Bulk assignment styles must live with the Schedule feature.");
+  assert(scheduleCss.includes(".bulk-apply-footer{"), "ScheduleWorkspace.css must own the bulk action footer base layout.");
+  assert(scheduleCss.includes("@media(max-width:700px)"), "ScheduleWorkspace.css must own the bulk action footer mobile layout.");
+  assert(scheduleCss.includes("@media (min-width: 701px)"), "ScheduleWorkspace.css must own the desktop generation guidance layout.");
+  assert(scheduleCss.includes(".template-picker-head > .clear-btn{"), "ScheduleWorkspace.css must own the desktop template action controls.");
+  for (const selector of [".bulk-apply-footer", ".generate-note", ".template-picker-head"]) {
+    assert(!globalCss.includes(selector), "Global styles must not retain Schedule-owned selector " + selector + ".");
+  }
   assert(scheduleCss.includes("@media(max-width:1100px)"), "The existing desktop/tablet Schedule breakpoint must be preserved.");
   assert(scheduleCss.includes("@media(max-width:760px)"), "The existing mobile Schedule breakpoint must be preserved.");
   assert(scheduleCss.includes("@media(max-width:430px)"), "The existing compact-phone Schedule breakpoint must be preserved.");
