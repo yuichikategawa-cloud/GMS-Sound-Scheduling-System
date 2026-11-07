@@ -1409,12 +1409,17 @@ Deno.test("Availability deadline form is synchronized and blocks empty or unchan
 
   assert(workspace.includes("const [deadlineInput,setDeadlineInput]=useState(deadline);"),
     "The deadline input must initialize from the current deadline.");
-  assert(workspace.includes("useEffect(()=>setDeadlineInput(deadline),[deadline]);"),
-    "The deadline input must synchronize when the asynchronously loaded deadline changes.");
-  assert(workspace.includes('required value={deadlineInput} onChange={event=>setDeadlineInput(event.target.value)}'),
-    "The deadline field must be required and controlled.");
-  assert(workspace.includes("disabled={!deadlineInput || deadlineInput === deadline}"),
-    "Saving must stay disabled until a non-empty, changed deadline is selected.");
+  assert(workspace.includes("useEffect(()=>{setDeadlineInput(deadline);setDeadlineError(\"\");},[deadline]);"),
+    "The deadline input must synchronize and clear stale validation when the asynchronously loaded deadline changes.");
+  assert(workspace.includes('noValidate onSubmit={event=>{if(!deadlineInput)') &&
+    workspace.includes('setDeadlineError("Choose a submission deadline before saving.")'),
+    "An empty deadline submission must show an inline required-field message.");
+  assert(workspace.includes('deadlineInput===deadline') &&
+    workspace.includes('setDeadlineError("Choose a different deadline to save changes.")'),
+    "An unchanged deadline submission must explain why no save is needed.");
+  assert(workspace.includes('aria-invalid={!!deadlineError}') &&
+    workspace.includes('role="alert">{deadlineError}</p>'),
+    "Deadline validation must be associated with the field and announced accessibly.");
   assert(actions.includes('if (!value) {') && actions.includes('if (value === deadline) return;'),
     "The action handler must reject empty deadlines and ignore no-op submissions.");
 });
