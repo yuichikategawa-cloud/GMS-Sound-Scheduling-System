@@ -910,9 +910,9 @@ Deno.test("shared dark secondary buttons and action controls have one effective 
     "The base shared button/action group should occur once.");
   assert(normalizedCss.split(':root[data-theme="dark"].btn.secondary:hover,:root[data-theme="dark"].icon-btn:hover,:root[data-theme="dark"].bulk-row-action:hover{').length - 1 === 1,
     "The shared button/action hover group should occur once.");
-  assert(css.includes("background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;"),
+  assert(normalizedCss.includes("background:#283750!important;color:#e5ebf6!important;border-color:#465670!important;"),
     "The final shared button palette must be retained.");
-  assert(css.includes("background:#364764!important;color:#fff!important"),
+  assert(normalizedCss.includes("background:#364764!important;color:#fff!important"),
     "The final shared hover palette must be retained.");
   assert(!css.includes("background:#26324a;border-color:#3c4963;color:#dbe4f5"),
     "The superseded bulk-row action palette must be removed.");
