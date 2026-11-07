@@ -114,7 +114,7 @@ export default function ScheduleWorkspace({
             </details>
             <details className="collapsible-panel">
               <summary><span><b>{calendarView === "week" ? "Weekly calendar" : "Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
-              {calendarSections.length > 0 && calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={isAdmin}/>)}</div></section>)}
+              {calendarSections.length > 0 ? calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={isAdmin}/>)}</div></section>) : <div className="empty-state"><b>No published schedules match these filters.</b><p>Draft and unpublished schedules remain available in Assignment management.</p></div>}
             </details>
           </section>
         </>
@@ -139,7 +139,7 @@ export default function ScheduleWorkspace({
             </details>
             <details className="collapsible-panel">
               <summary><span><b>{calendarView === "week" ? "Weekly calendar" : "Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
-              {calendarSections.length > 0 && calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={false}/>)}</div></section>)}
+              {calendarSections.length > 0 ? calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={false}/>)}</div></section>) : <div className="empty-state"><b>No published schedules match these filters.</b><p>Try clearing or adjusting the filters.</p></div>}
           </details>
         </>
       )}
