@@ -359,6 +359,9 @@ Deno.test("Schedule owns its remaining dark-theme and responsive presentation ru
     ':root[data-theme="dark"] .location-text',
     ':root[data-theme="dark"] .time-text',
     ':root[data-theme="dark"] .date-text',
+    ':root[data-theme="dark"] .collapsible-panel>summary',
+    ':root[data-theme="dark"] .collapsible-panel>summary b',
+    ':root[data-theme="dark"] .collapsible-panel>summary small',
   ];
   for (const selector of ownedSelectors) {
     assert(scheduleCss.includes(selector), "ScheduleWorkspace.css must own " + selector);
