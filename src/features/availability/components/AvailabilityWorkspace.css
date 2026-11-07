@@ -1,5 +1,5 @@
-/* Availability workspace presentation. Component-owned light and responsive rules live here.
-   Dark-mode overrides stay in the global stylesheet until shared theme cascade cleanup. */
+/* Availability workspace presentation. Feature-owned light, responsive and dark-mode rules live here.
+   Shared primitives and controls remain in src/styles/*.css. */
 
 .availability-form-panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
 
@@ -863,3 +863,7 @@
   color:#ffc0c8!important;
 }
 :root[data-theme="dark"] .bulk-conflict-warning small{color:#ffc0c8!important}
+
+
+/* Dark-mode treatment for the Availability-owned bulk conflict warning. */
+:root[data-theme="dark"] .bulk-conflict-warning{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
