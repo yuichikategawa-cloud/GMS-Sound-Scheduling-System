@@ -104,9 +104,9 @@ export default function AuthScreen({
                   </select>
                 </label>
                 <label>CG number<input name="cg_number" required /></label>
-                <fieldset className="days-field">
+                <fieldset className="signup-days-field">
                   <legend>CG day (select multiple)</legend>
-                  <div className="days-options">
+                  <div className="signup-days-options">
                     {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
                       <label key={day}><input type="checkbox" name="cg_days" value={day} />{day}</label>
                     ))}
