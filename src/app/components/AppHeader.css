@@ -64,3 +64,37 @@ width:34px;height:34px
 }
 
 :root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
+
+/* Mobile header controls must never force the document wider than the viewport.
+   App installation remains available from the bottom navigation's More menu. */
+.topbar{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+}
+.topbar > div:first-child{
+  min-width:0;
+  flex:1 1 auto;
+}
+.topbar h1{
+  overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  .topbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .topbar .pwa-install-button{
+    display:none!important;
+  }
+  .topbar .top-actions{
+    flex:0 0 auto;
+    gap:8px;
+  }
+  .topbar .top-actions > .icon-btn:not(.theme-toggle){
+    width:34px;
+    height:34px;
+    flex:0 0 34px;
+  }
+}
