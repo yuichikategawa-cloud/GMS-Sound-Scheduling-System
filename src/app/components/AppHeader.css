@@ -16,17 +16,11 @@ display:flex;align-items:center;gap:13px
 font-size:11px;font-weight:700;color:#4f46e5;background:#eef2ff;border-radius:30px;padding:7px 10px;display:flex;align-items:center;gap:6px
 }
 
-.mobile-menu{
-display:none
-}
 
 @media(max-width:760px){.topbar{
 height:82px;padding:0 17px;gap:10px
 }}
 
-@media(max-width:760px){.mobile-menu{
-display:grid
-}}
 
 @media(max-width:760px){.topbar h1{
 font-size:19px
@@ -40,9 +34,6 @@ font-size:8px
 display:none
 }}
 
-@media(max-width:760px){.mobile-menu{
-display:none!important
-}}
 
 .pwa-install-button{
 min-height:38px
