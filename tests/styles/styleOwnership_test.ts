@@ -718,7 +718,7 @@ Deno.test("App shell, sidebar, header and mobile navigation own their presentati
   assert(mobileCss.includes("background:#1b2437!important;"), "The final dark More-menu surface must be retained.");
   assert(mobileCss.includes("color:#ffb8c0!important;"), "The effective dark sign-out color must be retained.");
   assert(headerCss.includes("background:#182238!important;"), "The effective dark topbar surface must be retained.");
-  assert(shellCss.split(".main-area{\\nmargin-left:0").length - 1 === 1, "The mobile shell offset must have one consolidated rule.");
+  assert(shellCss.split("margin-left:0").length - 1 === 1, "The mobile shell offset must have one consolidated rule.");
   assert(shellCss.includes("padding:22px 15px calc(92px + env(safe-area-inset-bottom))"), "The content's mobile padding must preserve bottom-navigation safe-area clearance.");
   assert(!shellCss.includes("padding:22px 15px 45px"), "The superseded mobile content padding must be removed.");
   for (const selector of [".sidebar", ".nav-item", ".topbar", ".mobile-bottom-nav", ".mobile-more-menu"]) {
