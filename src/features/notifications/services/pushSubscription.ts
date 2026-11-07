@@ -121,18 +121,24 @@ export async function enableServingPushSubscription(
 }
 
 /**
- * Removes the current endpoint and unsubscribes locally. The current behavior of
- * not branching on the database delete result is intentionally preserved.
+ * Removes only this user's current endpoint. Do not unsubscribe locally when
+ * the server-side delete fails; the caller must not report a false success.
  */
 export async function disableServingPushSubscription(
   client: PushLifecycleClient,
+  userId: string,
   runtime: PushLifecycleRuntime,
 ): Promise<void> {
-  if (!runtime.serviceWorkerSupported) return;
+  if (!userId || !runtime.serviceWorkerSupported) return;
   const registration = await runtime.serviceWorkerReady();
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
-  await client.from("serving_push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+  const { error } = await client
+    .from("serving_push_subscriptions")
+    .delete()
+    .eq("user_id", userId)
+    .eq("endpoint", subscription.endpoint);
+  if (error) throw error;
   await subscription.unsubscribe();
 }
 

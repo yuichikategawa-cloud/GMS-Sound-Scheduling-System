@@ -108,7 +108,7 @@ export function usePushNotificationActions({
     if (!client || !userId || !("serviceWorker" in navigator)) return;
     setPushBusy(true);
     try {
-      await disableServingPushSubscription(client, getPushLifecycleRuntime());
+      await disableServingPushSubscription(client, userId, getPushLifecycleRuntime());
       setPushEnabled(false);
       setMessage("Push notifications disabled on this device. Your in-app Inbox is unchanged.");
     } catch (error) {

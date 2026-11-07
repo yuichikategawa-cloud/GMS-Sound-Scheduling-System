@@ -167,16 +167,25 @@ Deno.test("push enable passes registration RPC errors through", async () => {
   const { client, runtime } = createHarness({ rpcError: new Error("Push registration rejected.") });
   await assertThrows(() => enableServingPushSubscription(client, "user-1", "AQID", runtime), "Push registration rejected.");
 });
-Deno.test("push disable deletes the endpoint and unsubscribes locally", async () => {
+Deno.test("push disable deletes only the signed-in user's endpoint before unsubscribing locally", async () => {
   const { client, runtime, calls } = createHarness();
-  await disableServingPushSubscription(client, runtime);
+  await disableServingPushSubscription(client, "user-1", runtime);
   assertEqual(calls.from, ["serving_push_subscriptions"], "Disable must target the existing table.");
   assertSame(calls.deletes, 1, "Disable must issue one deletion.");
-  assertEqual(calls.filters, [{
-    column: "endpoint",
-    value: "https://push.example/subscription/1234567890123456789012345678901234567890",
-  }], "Disable must retain endpoint-only filter.");
-  assertSame(calls.unsubscribes, 1, "Disable must unsubscribe locally.");
+  assertEqual(calls.filters, [
+    { column: "user_id", value: "user-1" },
+    { column: "endpoint", value: "https://push.example/subscription/1234567890123456789012345678901234567890" },
+  ], "Disable must scope deletion to both the signed-in user and current endpoint.");
+  assertSame(calls.unsubscribes, 1, "Disable must unsubscribe locally after successful server cleanup.");
+});
+
+Deno.test("push disable reports server deletion errors and keeps the browser subscription intact", async () => {
+  const { client, runtime, calls } = createHarness({ deleteError: new Error("Push endpoint deletion rejected.") });
+  await assertThrows(
+    () => disableServingPushSubscription(client, "user-1", runtime),
+    "Push endpoint deletion rejected.",
+  );
+  assertSame(calls.unsubscribes, 0, "A failed server deletion must not silently unsubscribe the browser endpoint.");
 });
 Deno.test("sign-out cleanup retains ownership filters and unsubscribes", async () => {
   const { client, runtime, calls } = createHarness();
