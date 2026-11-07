@@ -33,49 +33,53 @@ merge, deploy, or modify production.
 - Preview deployment is disabled for `security/push-endpoint-hardening` in
   `vercel.json`; the regression test passed in the full CI run.
 
+## Production rollout status — 2026-11-08
+
+Approved production database and Edge Function work has been completed:
+
+- Applied `gms_push_subscription_endpoint_security` to production (Supabase migration history version `20261107192330`).
+- Applied `gms_assignment_confirmation_notification_idempotency` to production (history version `20261107192334`).
+- Verified both SECURITY DEFINER functions now use `search_path = pg_catalog, public`, grant EXECUTE only to `authenticated` (plus owner), and no longer grant it to `service_role`.
+- Ran an isolated production registration smoke test: an unsupported `attacker.invalid` endpoint was rejected with `Push endpoint URL is not supported`. No subscription was created.
+- Deployed hardened `dispatch-push` Edge Function version 4. Retrieved deployed source confirms `security.ts` is imported and shared lease/retry modules are included.
+- Verified required Vault entries exist and are non-empty without retrieving their values.
+- Verified all five production cron jobs remain active, with the existing `gms-dispatch-web-push` cadence unchanged at every minute. No cron job was added, removed, or rescheduled.
+- Production still has zero push subscriptions. Real-device delivery and retry verification remain outstanding.
+
+The application has **not** been merged to `main` and no Vercel Production deployment was made. The user’s approval covered the database migrations and hardened Edge Function deployment only.
+
 ## Production blockers / decisions
 
-### 1. Push endpoint security — BLOCKER if push is enabled at launch
+### 1. Push endpoint security — code and database hardening deployed; device verification outstanding
 
 Read-only comparison found:
 
-- Staging `register_serving_push_subscription` validates supported HTTPS push
-  endpoint hosts, validates subscription keys and user-agent bounds, and uses
-  advisory locks to serialize endpoint ownership/account switching.
-- Production's same RPC has only basic non-empty length validation, deletes an
-  endpoint from another account, and upserts it without the staging allowlist or
-  ownership-lock safeguards.
-- Staging `dispatch-push` imports `isAllowedPushEndpoint`, removes unsupported
-  stored endpoints, and sends only to approved endpoints.
-- Production's deployed `dispatch-push` version 3 does not contain this endpoint
-  validation.
+- Production `register_serving_push_subscription` now validates approved HTTPS
+  endpoint hosts, subscription keys and user-agent bounds, and uses advisory
+  locks to serialize endpoint ownership/account switching.
+- Production `dispatch-push` version 4 imports `isAllowedPushEndpoint`, removes
+  unsupported stored endpoints, and sends only to approved endpoints.
 - Both environments currently have zero push subscriptions and zero pending queue
   rows. Production has 20 historical queue rows; staging has 6.
 - Push cron is active in both environments, but staging runs every 5 seconds and
   production every minute.
 
-Required before enabling push in updated production:
-1. Review the exact migration and edge-function bundle from the candidate branch.
-2. Apply the endpoint-registration migration to production under an approved,
-   controlled database rollout.
-3. Deploy the complete hardened dispatcher bundle and required shared modules.
-4. Verify the dispatcher secret and VAPID configuration without exposing values.
-5. Register one real test device, verify delivery, retry behavior and endpoint
+Remaining before declaring push fully verified:
+1. Register one real test device and verify delivery, retry behavior and endpoint
    rejection, then clean up the test subscription.
-6. Decide separately whether the sub-minute cron cadence is required for launch;
-   preserve production-only cron jobs.
+2. Confirm VAPID configuration through a real delivery test; do not expose values.
+3. Keep the existing one-minute cron cadence unless a separately approved change
+   is justified; preserve production-only cron jobs.
 
 Do not apply staging's entire migration history to production.
 
 ### 2. Assignment-confirmation idempotency — RELIABILITY GATE
 
-- Staging has the hardened idempotent `notify_admin_assignment_confirmation`
-  implementation with a stable per-confirmation-cycle event key.
-- Production still has the older implementation, which inserts notifications
-  without the same event-key deduplication.
-- The canonical migration is now included on the release branch at `supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql`, with rollback-only regression at `supabase/tests/assignment_confirmation_notification_idempotency.sql`.
-- The latest GitHub Actions SQL-staging job applied the migration to staging and executed the regression successfully (run `42405525583`).
-- Production still requires the same migration under a separately approved rollout. Do not apply it without explicit production approval and final review.
+- Staging and production now use the hardened idempotent
+  `notify_admin_assignment_confirmation` implementation with a stable
+  per-confirmation-cycle event key.
+- The canonical migration is included on the release branch at `supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql`, with rollback-only regression at `supabase/tests/assignment_confirmation_notification_idempotency.sql`.
+- GitHub Actions staging validation passed (run `42405525583`), and the migration is now applied in production.
 
 ### 3. Candidate promotion scope — BLOCKER until release scope is agreed
 
