@@ -4,7 +4,7 @@
   color:#e8edf7;
 }
 :root[data-theme="dark"] body{background:var(--page-bg);color:#e8edf7}
-:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b2437!important;
   border-color:#354059!important;
   color:#e8edf7;
@@ -21,12 +21,12 @@
 :root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text{
   color:#a3aec3!important;
 }
-:root[data-theme="dark"] .control-center-alert,:root[data-theme="dark"] .schedule-error,:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
+:root[data-theme="dark"] .control-center-alert,:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
   background:#3a2d2c!important;
   border-color:#704744!important;
   color:#ffd2c7!important;
 }:root[data-theme="dark"] .people-list{border-color:#354059}:root[data-theme="dark"] .person-row{border-color:#354059!important}
-:root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
+
 :root[data-theme="dark"] .empty-state{background:#1b2437;border-color:#43516d;color:#a3aec3}
 :root[data-theme="dark"] .center-screen{background:linear-gradient(140deg,#101727,#151f33 55%,#101727)}
 :root[data-theme="dark"] .loader{border-color:#46516b;border-top-color:#8980ff}
@@ -43,11 +43,11 @@
   color:#e8edf7!important;
 }
 :root[data-theme="dark"] .servant-profile-card .member-verification-warning{background:#3d3322!important;border-color:#6a5831!important;color:#f7d995!important}
-:root[data-theme="dark"] .bulk-conflict-warning,:root[data-theme="dark"] .schedule-error{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
+:root[data-theme="dark"] .bulk-conflict-warning{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
 :root[data-theme="dark"] .new-template-help{color:#a3aec3}
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
 
-:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
   color:#edf2fa!important;
@@ -58,14 +58,14 @@
   border-color:#40516d!important;
   color:#edf2fa!important;
 }
-:root[data-theme="dark"] .control-center-grid small,:root[data-theme="dark"] .control-center-grid span,:root[data-theme="dark"] .bulk-apply-footer{
+:root[data-theme="dark"] .control-center-grid small,:root[data-theme="dark"] .control-center-grid span{
   color:#c0cbe0!important;
 }
 :root[data-theme="dark"] .control-center-grid b{
   color:#f4f6fc!important;
 }
-:root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
-:root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
+
+/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
 :root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text{
   color:#b9c6da!important;
 }
@@ -98,11 +98,11 @@
 :root[data-theme="dark"] .btn.secondary:hover,:root[data-theme="dark"] .icon-btn:hover,:root[data-theme="dark"] .bulk-row-action:hover{background:#364764!important;color:#fff!important}
 :root[data-theme="dark"] .bulk-row-action.danger{background:#482d38!important;border-color:#734653!important;color:#ffc1ca!important}
 :root[data-theme="dark"] .bulk-row-action.danger:hover{background:#5b3542!important}
-:root[data-theme="dark"] .bulk-selected-count{background:#39366c!important;color:#e0dcff!important}
+
 :root[data-theme="dark"] .link-btn,:root[data-theme="dark"] .clear-btn{color:#b8afff!important}
 :root[data-theme="dark"] .empty-state{color:#c2cee0!important}
 :root[data-theme="dark"] .empty-state b{color:#f0f4fb!important}
-:root[data-theme="dark"] .control-center-alert,:root[data-theme="dark"] .schedule-error,:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
+:root[data-theme="dark"] .control-center-alert,:root[data-theme="dark"] .message-banner,:root[data-theme="dark"] .offline-status-banner{
   background:#443625!important;border-color:#705638!important;color:#ffe0ad!important;
 }
 :root[data-theme="dark"] .person-row{border-color:#3b4b65!important}
@@ -114,37 +114,17 @@
 :root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
 /* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
    and readable servant dashboard labels. Child cards retain their own surfaces. */
-:root[data-theme="dark"] .schedule-workspace-panel{
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  color: #eaf0fa !important;
-}/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
-:root[data-theme="dark"] .assignment-workspace-heading h2,:root[data-theme="dark"] .assignment-workspace-heading b{
-  color: #f3f6fc !important;
-}
-:root[data-theme="dark"] .assignment-workspace-heading .subtle{
-  color: #bdcbe0 !important;
-}
-:root[data-theme="dark"] .calendar-period,:root[data-theme="dark"] .calendar-period>h3,:root[data-theme="dark"] .calendar-period .subtle{
-  color: #d2deee !important;
-}/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
+/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
+
+
+/* Keep the login focus indicator complete and evenly spaced on narrow screens. */
 :root[data-theme="dark"] .center-screen{
   overflow: visible !important;
   min-width: 0;
 }/* Filter schedule is one continuous card: remove the bright light-theme divider on expand. */
-:root[data-theme="dark"] .filter-panel-collapsible > .filter-title{
-  color: #edf3fb !important;
-  background: transparent !important;
-  border-bottom: 0 !important;
-  box-shadow: none !important;
-}
-:root[data-theme="dark"] .filter-panel-collapsible > .filter-title b,:root[data-theme="dark"] .filter-panel-collapsible > .filter-title svg{
-  color: #e8eef8 !important;
-}
-:root[data-theme="dark"] .filter-panel-collapsible[open] > .filter-title{
-  border-bottom: 0 !important;
-}/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
+
+
+/* CG/profile edit fields: remove inherited dim legend and prevent grid items from spilling. */
 /* Inbox should read as distinct, neatly spaced sections with subdued separators. */
 :root[data-theme="dark"] .notification-history-list{
   gap: 12px !important;
@@ -154,92 +134,16 @@
 
 
 
-:root[data-theme="dark"] .assignment-field-feedback.blocked{
-  background: #492b36 !important;
-  border-color: #784452 !important;
-  color: #ffc6cf !important;
-}
-:root[data-theme="dark"] .assignment-field-feedback.warning{
-  background: #493a25 !important;
-  border-color: #755c37 !important;
-  color: #ffe0a8 !important;
-}
-:root[data-theme="dark"] .assignment-field-feedback.clear{
-  background: #193d34 !important;
-  border-color: #326a58 !important;
-  color: #a9ebcc !important;
-}
-:root[data-theme="dark"] .role-assignment-field{
-  color: #e4ebf5 !important;
-}
-.bulk-servant-list{
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-width: 0;
-  width: 100%;
-}
-.bulk-servant-list label{
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-@media (max-width: 760px){
-  .bulk-servant-list{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 430px){
-  .bulk-servant-list{
-    grid-template-columns: minmax(0, 1fr);
-  }
-}/* Fix the clipped/faint left edge of the login password input and focus ring. */
-/* More obvious calendar headings and compact matrix-like service rows on phones. */
-@media (max-width: 760px){
-  .daily-card > .daily-head{
-    align-items: center !important;
-    flex-direction: row !important;
-    gap: 8px;
-    padding: 13px 14px !important;
-  }
-  .daily-head-right{
-    align-self: center;
-  }
-  .daily-locations{
-    padding: 11px !important;
-    gap: 11px !important;
-  }
-  .daily-location-name{
-    padding: 10px 11px !important;
-  }
-  .daily-service-table-head{
-    display: none;
-  }
-  .daily-service-row{
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0;
-    padding: 9px;
-  }
-  .daily-service-identity{
-    grid-column: 1 / -1;
-    padding: 5px 4px 9px;
-  }
-  .daily-assignee-cell{
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-    min-height: 52px;
-    padding: 8px;
-    border: 1px solid #e6ebf2;
-    border-radius: 8px;
-  }
-  .daily-assignee-cell > small{
-    display: block;
-    color: #6c7890;
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-  }
-}
+
+
+
+
+
+
+
+/* Fix the clipped/faint left edge of the login password input and focus ring. */
+
+
 /* Final pass: field controls stay inside their card at every breakpoint. */
 .days-field{
   box-sizing: border-box;
@@ -271,239 +175,18 @@
 @media (max-width: 760px){
   .days-field{ grid-template-columns: minmax(0, 1fr) !important; }
 }
-:root[data-theme="dark"] .bulk-group-selection-actions .link-btn{
-  background: #293951 !important;
-  border-color: #4c607d !important;
-  color: #e1dcff !important;
-}
-:root[data-theme="dark"] .bulk-group-selection-actions .link-btn:disabled{
-  color: #9eabc0 !important;
-}
 
-.app-shell[data-theme="dark"] .daily-location-name{
-  background: #087985 !important;
-  color: #ffffff !important;
-  border-bottom-color: #31a9af !important;
-}
-.app-shell[data-theme="dark"] .daily-location-name b,.app-shell[data-theme="dark"] .daily-location-name span{
-  color: #ffffff !important;
-}/* Mobile: FOH, Monitor and Assistant always sit on the same row below the service name. */
-@media (max-width: 760px){
-  .daily-service-row.role-count-3{
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 6px !important;
-    padding: 9px !important;
-  }
-  .daily-service-row.role-count-2{
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6px !important;
-    padding: 9px !important;
-  }
-  .daily-service-row .daily-service-identity{
-    grid-column: 1 / -1 !important;
-    padding: 5px 3px 7px !important;
-  }
-  .daily-service-row .daily-assignee-cell{
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
-    gap: 4px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 60px !important;
-    padding: 7px 6px !important;
-    border: 1px solid #d5deeb !important;
-    border-radius: 8px !important;
-    background: #ffffff !important;
-    overflow: hidden;
-  }
-  .daily-service-row .daily-assignee-cell > small{
-    display: block !important;
-    color: #53647d !important;
-    font-size: 9px !important;
-    line-height: 1.1 !important;
-    font-weight: 900 !important;
-    letter-spacing: .045em;
-  }
-  .daily-service-row .daily-assignee-cell > span{
-    display: block !important;
-    min-width: 0 !important;
-    width: 100%;
-    color: #26364f !important;
-    font-size: 10px !important;
-    line-height: 1.25 !important;
-    font-weight: 800 !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  .daily-service-row .daily-assignee-cell.missing{
-    background: #fff2df !important;
-    border-color: #e8b66f !important;
-  }
-  .daily-service-row .daily-assignee-cell.missing > small{
-    color: #8e4b08 !important;
-  }
-  .daily-service-row .daily-assignee-cell.missing > span{
-    color: #9b4c05 !important;
-  }
-  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell{
-    background: #263a55 !important;
-    border-color: #506887 !important;
-  }
-  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell > small{
-    color: #dce9f8 !important;
-  }
-  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell > span{
-    color: #ffffff !important;
-  }
-  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing{
-    background: #493724 !important;
-    border-color: #b27b3f !important;
-  }
-  .app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > small,.app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell.missing > span{
-    color: #ffe0ad !important;
-  }
-}/* Mobile church groups: keep the church name, counts and selection actions inside the card. */
-@media (max-width: 760px){
-  .bulk-church-group > summary{
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    grid-template-rows: auto auto !important;
-    align-items: center !important;
-    gap: 9px 10px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 12px !important;
-  }
-  .bulk-church-group > summary > span{
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .bulk-church-group > summary > span > b{
-    display: block;
-    width: 100%;
-    font-size: 14px !important;
-    line-height: 1.3 !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  .bulk-church-group > summary > span > small{
-    display: block;
-    margin-top: 3px;
-    font-size: 11px !important;
-    line-height: 1.25 !important;
-    white-space: nowrap;
-  }
-  .bulk-church-group > summary .bulk-group-selection-actions{
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-    display: flex !important;
-    flex-wrap: wrap !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 7px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-  }
-  .bulk-church-group > summary .bulk-group-selection-actions .link-btn{
-    flex: 0 1 auto !important;
-    width: auto !important;
-    min-width: 90px !important;
-    min-height: 34px !important;
-    padding: 7px 10px !important;
-    text-align: center !important;
-    white-space: nowrap !important;
-  }
-  .bulk-church-group > summary > svg{
-    grid-column: 2 !important;
-    grid-row: 1 / span 2 !important;
-    align-self: center !important;
-    justify-self: end !important;
-    flex: 0 0 auto !important;
-  }
-  .bulk-church-group .bulk-matrix-wrap{
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
-}/* Compact and predictable church group controls on small screens. */
-@media (max-width: 760px){
-  .bulk-church-group > summary{
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 22px !important;
-    grid-template-rows: auto auto !important;
-    gap: 9px 8px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 12px !important;
-  }
-  .bulk-church-group > summary > span{
-    display: grid !important;
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    gap: 3px !important;
-    min-width: 0 !important;
-  }
-  .bulk-church-group > summary > span > b{
-    font-size: 13px !important;
-    line-height: 1.25 !important;
-    white-space: normal !important;
-    overflow-wrap: anywhere !important;
-  }
-  .bulk-church-group > summary > span > small{
-    display: block !important;
-    white-space: nowrap !important;
-    font-size: 10px !important;
-  }
-  .bulk-church-group > summary > .bulk-group-selection-actions{
-    display: grid !important;
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 7px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-  }
-  .bulk-church-group > summary > .bulk-group-selection-actions > .link-btn{
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 35px !important;
-    padding: 7px 6px !important;
-    font-size: 10px !important;
-    white-space: nowrap !important;
-  }
-  .bulk-church-group > summary > svg{
-    grid-column: 2 !important;
-    grid-row: 1 / span 2 !important;
-    justify-self: end !important;
-    align-self: center !important;
-    width: 17px !important;
-    height: 17px !important;
-  }
-}
-.app-shell[data-theme="dark"] .daily-location-name{
-  background: var(--church-band, #405a78) !important;
-  color: #f8fbff !important;
-}
-.app-shell[data-theme="dark"] .daily-service-row .daily-assignee-cell:not(.missing){
-  background: var(--role-team-tint, transparent) !important;
-}
-.app-shell[data-theme="dark"] .daily-service-row .daily-service-identity{
-  background: var(--service-category-tint, var(--foh-team-tint, transparent)) !important;
-}
-.app-shell[data-theme="dark"] .daily-service-row.category-regular .daily-service-identity{
-  background: var(--foh-team-tint, transparent) !important;
-}
+
+
+
+
+
+
+
+
+
+
+
 
 /* Notification history heading color remains shared until its component CSS is moved. */
 :root[data-theme="dark"] .notification-history-section .list-heading h3{
