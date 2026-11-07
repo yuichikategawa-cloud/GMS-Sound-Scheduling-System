@@ -50,12 +50,10 @@
   color:#b9c6da!important;
 }
 :root[data-theme="dark"] .form-grid label,
-:root[data-theme="dark"] .modal-card>label,
-:root[data-theme="dark"] .stack label{
+:root[data-theme="dark"] .modal-card>label{
   color:#d5deed!important;
 }
-:root[data-theme="dark"] .message-banner,
-:root[data-theme="dark"] .offline-status-banner{
+:root[data-theme="dark"] .message-banner{
   background:#443625!important;
   border-color:#705638!important;
   color:#ffe0ad!important;
