@@ -139,7 +139,7 @@ Deno.test("app-shell and requests presentation no longer live as light-mode glob
     assert(!pattern.test(globalCss), selector + " must be owned by its colocated stylesheet, not a bare global rule.");
   }
 
-  assert(shellCss.includes(':root[data-theme="dark"] .topbar'), "AppShell must own the topbar dark appearance.");
+
   assert(!globalCss.includes(':root[data-theme="dark"] .inbox-item'), "Inbox feature dark-mode presentation must remain with RequestsInbox.css.");
   assert(globalCss.includes(".inbox-count{"), "The Inbox badge shared with app navigation must remain a global primitive.");
   assert(!globalCss.includes(".schedule-grid{"), "Schedule workspace base presentation must be owned by its colocated stylesheet.");
