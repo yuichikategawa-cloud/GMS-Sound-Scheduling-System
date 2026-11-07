@@ -971,3 +971,28 @@
 :root[data-theme="dark"] .availability-form-panel .bulk-servant-picker>small{
   color:var(--text-secondary)!important;
 }
+
+/* Keep native validation targets clear of the sticky mobile header and nav. */
+.availability-form-panel input,
+.availability-form-panel select,
+.availability-form-panel textarea {
+  scroll-margin-top: 180px;
+  scroll-margin-bottom: 120px;
+}
+.availability-form-panel .availability-validation-message {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 8px 0 12px;
+  color: #b45309;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+:root[data-theme="dark"] .availability-form-panel .availability-validation-message {
+  color: #ffd09a;
+}
+.availability-form-panel input[aria-invalid="true"] {
+  border-color: #c45a45 !important;
+}
