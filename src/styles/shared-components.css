@@ -17,8 +17,7 @@
 
 /* v4 registration, member profile and mobile touch targets */
 
-/* v5: branded loading state */
-@keyframes spin{to{transform:rotate(360deg)}}
+/* v5: branded loading state — keyframes are defined once above. */
 
 
 
