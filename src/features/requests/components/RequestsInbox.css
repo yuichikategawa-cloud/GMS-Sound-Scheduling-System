@@ -1,9 +1,3 @@
-/* Request status chips are owned by the Requests feature. */
-.status-chip{display:inline-flex;vertical-align:middle;margin-left:5px;border-radius:20px;padding:3px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;background:#f1f5f9;color:#475569}
-.status-chip.published,.status-chip.approved,.status-chip.confirmed{background:var(--status-success-bg);color:var(--status-success-text)}
-.status-chip.draft,.status-chip.pending{background:#fef3c7;color:#92400e}
-.status-chip.declined{background:var(--status-danger-bg);color:var(--status-danger-text)}
-
 /* Requests and Inbox presentation. Shared primitives and dark-mode theme overrides remain in src/style.css. */
 
 /* Requests-owned people directory presentation moved out of shared-components.css. */
@@ -514,24 +508,4 @@ gap:13px
 :root[data-theme="dark"] .inbox-status.approved{
   background: #174b38 !important;
   color: #b8f2d2 !important;
-}
-/* Requests status variants retain the shared dark palette at feature scope. */
-:root[data-theme="dark"] .status-chip{
-  background:#293951!important;
-  color:#d4deed!important;
-}
-:root[data-theme="dark"] .status-chip.published,
-:root[data-theme="dark"] .status-chip.approved,
-:root[data-theme="dark"] .status-chip.confirmed{
-  background:#194b39!important;
-  color:#a7ecc9!important;
-}
-:root[data-theme="dark"] .status-chip.draft,
-:root[data-theme="dark"] .status-chip.pending{
-  background:#514024!important;
-  color:#ffe0a2!important;
-}
-:root[data-theme="dark"] .status-chip.declined{
-  background:#512b34!important;
-  color:#ffc0c6!important;
 }
