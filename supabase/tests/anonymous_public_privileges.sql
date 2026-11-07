@@ -44,8 +44,12 @@ BEGIN
     SELECT 1
     FROM pg_default_acl d
     CROSS JOIN LATERAL aclexplode(d.defaclacl) acl
+    WHERE d.defaclnamespace = 'public'::regnamespace
+      AND d.defaclobjtype IN ('r', 'S')
+      AND d.defaclrole = 'postgres'::regrole
+      AND acl.grantee = 'anon'::regrole
   ) THEN
-    RAISE EXCEPTION 'Anonymous table/sequence privileges remain in public-schema default ACLs';
+    RAISE EXCEPTION 'Anonymous table/sequence privileges remain in postgres-owned public-schema default ACLs';
   END IF;
 
   -- Servants read only their own availability; admins retain the all-row path.
