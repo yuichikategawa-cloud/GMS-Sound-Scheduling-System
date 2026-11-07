@@ -57,9 +57,6 @@
 :root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
 :root[data-theme="dark"] .bulk-church-group>summary{background:#202c42;color:#edf2fb}
-:root[data-theme="dark"] .calendar-switch{background:#202c42;border-color:#354059}
-:root[data-theme="dark"] .calendar-switch button{color:#b9c4d8}
-:root[data-theme="dark"] .calendar-switch button.selected{background:#393b72;color:#fff}
 :root[data-theme="dark"] .generate-panel{background:#202644;border-color:#39416c}
 :root[data-theme="dark"] .generate-note{background:#202c42;border-color:#394660;color:#d9e2f2}
 :root[data-theme="dark"] .empty-state{background:#1b2437;border-color:#43516d;color:#a3aec3}
@@ -126,7 +123,7 @@
 :root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
 :root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}
 :root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .availability-form label,:root[data-theme="dark"] .availability-form-panel label,:root[data-theme="dark"] .serving-preference-form>label,:root[data-theme="dark"] .preference-weekday-picker,:root[data-theme="dark"] .preference-service-picker,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-switch span,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label,:root[data-theme="dark"] .availability-person small,:root[data-theme="dark"] .saved-rule-row small{
+:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .availability-form label,:root[data-theme="dark"] .availability-form-panel label,:root[data-theme="dark"] .serving-preference-form>label,:root[data-theme="dark"] .preference-weekday-picker,:root[data-theme="dark"] .preference-service-picker,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label,:root[data-theme="dark"] .availability-person small,:root[data-theme="dark"] .saved-rule-row small{
   color:#b9c6da!important;
 }
 :root[data-theme="dark"] .preference-weekday-picker input,:root[data-theme="dark"] .preference-service-picker input{
@@ -148,13 +145,11 @@
 :root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
 :root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
 :root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}/* Calendar view, filters, forms and nested cards use the same dark palette. */
-:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .calendar-switch,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .saved-rule-row,:root[data-theme="dark"] .availability-row,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
+:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .availability-form-panel,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .saved-rule-row,:root[data-theme="dark"] .availability-row,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
   background:#202f46!important;
   border-color:#40516d!important;
   color:#ecf1fa!important;
 }
-:root[data-theme="dark"] .calendar-switch button{color:#d1dced!important}
-:root[data-theme="dark"] .calendar-switch button.selected{background:#49458a!important;color:#fff!important;border-color:#8179e8!important}
 :root[data-theme="dark"] .schedule-workspace-tabs button{color:#cbd6e8!important}
 :root[data-theme="dark"] .schedule-workspace-tabs button.selected{background:#484582!important;color:#fff!important;border-color:#8982e9!important}
 :root[data-theme="dark"] .daily-location-name{background:#34345f!important;color:#e0dcff!important}
@@ -221,39 +216,6 @@
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-}
-:root[data-theme="dark"] .calendar-switch{
-  display: inline-flex;
-  width: max-content;
-  max-width: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 5px;
-  margin: 0 0 16px;
-  border: 1px solid #3c4c66 !important;
-  border-radius: 12px;
-  background: #1b263a !important;
-  color: #c7d3e6 !important;
-}
-:root[data-theme="dark"] .calendar-switch button,:root[data-theme="dark"] .calendar-switch button:not(.selected){
-  border: 1px solid #465873 !important;
-  border-radius: 8px;
-  background: #26354d !important;
-  color: #e4ebf7 !important;
-}
-:root[data-theme="dark"] .calendar-switch button:hover:not(.selected){
-  background: #354762 !important;
-  color: #ffffff !important;
-}
-:root[data-theme="dark"] .calendar-switch button.selected{
-  background: #49458a !important;
-  color: #ffffff !important;
-  border-color: #8982e9 !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,.2);
-}
-:root[data-theme="dark"] .calendar-switch span{
-  color: #c7d3e6 !important;
 }/* Remove residual light-mode styling from inner inbox/request wrappers. */
 
 

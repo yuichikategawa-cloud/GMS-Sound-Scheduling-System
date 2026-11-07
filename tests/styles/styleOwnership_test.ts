@@ -265,7 +265,10 @@ Deno.test("Schedule owns its layout and responsive presentation while dark-mode 
   assert(scheduleCss.includes("@media(max-width:1100px)"), "The existing desktop/tablet Schedule breakpoint must be preserved.");
   assert(scheduleCss.includes("@media(max-width:760px)"), "The existing mobile Schedule breakpoint must be preserved.");
   assert(scheduleCss.includes("@media(max-width:430px)"), "The existing compact-phone Schedule breakpoint must be preserved.");
-  assert(!scheduleCss.includes(':root[data-theme="dark"]'), "Shared and feature-specific dark-mode overrides remain global in this batch.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .calendar-switch'), "Schedule must own its calendar grouping switch dark-mode surface.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .calendar-switch button.selected'), "Schedule must own its selected calendar switch dark-mode state.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .calendar-switch span'), "Schedule must own its calendar switch label contrast.");
+  assert(!globalCss.includes(".calendar-switch"), "Global styles must not retain Schedule calendar switch selectors.");
 
   assert(globalCss.includes(':root[data-theme="dark"] .schedule-workspace-tabs'), "Schedule tab dark-mode overrides must remain global.");
   assert(globalCss.includes(':root[data-theme="dark"] .daily-location-name'), "Schedule summary dark-mode overrides must remain global.");

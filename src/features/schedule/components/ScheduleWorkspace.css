@@ -1427,3 +1427,49 @@
     width:100%;
   }
 }
+
+
+:root[data-theme="dark"] .calendar-switch{background:#202c42;border-color:#354059}
+:root[data-theme="dark"] .calendar-switch button{color:#b9c4d8}
+:root[data-theme="dark"] .calendar-switch button.selected{background:#393b72;color:#fff}:root[data-theme="dark"] .calendar-switch span{
+  color:#b9c6da!important;
+}:root[data-theme="dark"] .calendar-switch{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+}
+:root[data-theme="dark"] .calendar-switch button{color:#d1dced!important}
+:root[data-theme="dark"] .calendar-switch button.selected{background:#49458a!important;color:#fff!important;border-color:#8179e8!important}
+:root[data-theme="dark"] .calendar-switch{
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  margin: 0 0 16px;
+  border: 1px solid #3c4c66 !important;
+  border-radius: 12px;
+  background: #1b263a !important;
+  color: #c7d3e6 !important;
+}
+:root[data-theme="dark"] .calendar-switch button,:root[data-theme="dark"] .calendar-switch button:not(.selected){
+  border: 1px solid #465873 !important;
+  border-radius: 8px;
+  background: #26354d !important;
+  color: #e4ebf7 !important;
+}
+:root[data-theme="dark"] .calendar-switch button:hover:not(.selected){
+  background: #354762 !important;
+  color: #ffffff !important;
+}
+:root[data-theme="dark"] .calendar-switch button.selected{
+  background: #49458a !important;
+  color: #ffffff !important;
+  border-color: #8982e9 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+:root[data-theme="dark"] .calendar-switch span{
+  color: #c7d3e6 !important;
+}
