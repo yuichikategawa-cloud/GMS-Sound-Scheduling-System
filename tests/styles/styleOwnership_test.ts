@@ -278,14 +278,20 @@ Deno.test("C3 status, focus, border and muted-surface colors use semantic tokens
 
 
 Deno.test("signup CG-day choices stay legible and contained on mobile", async () => {
-  const authCss = await readRepoFile("src/features/auth/components/AuthScreens.css");
-  assert(authCss.includes(".auth-registration .days-field{") && authCss.includes("display:block !important;"), "The fieldset must use normal block layout so its legend cannot compete with the weekday grid.");
-  assert(authCss.includes(".auth-registration .days-options{") && authCss.includes("grid-template-columns:repeat(2,minmax(0,1fr));"), "CG-day choices must use a bounded two-column grid inside the fieldset.");
-  assert(authCss.includes(".auth-registration .days-field legend{") && authCss.includes("display:inline-block;"), "The CG-day legend must remain in the fieldset's normal flow.");
+  const [authCss, authComponent] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/features/auth/components/AuthScreen.tsx"),
+  ]);
+  assert(authComponent.includes('className="signup-days-field"'), "Signup CG days must use an isolated fieldset class rather than the shared member-profile selector.");
+  assert(authComponent.includes('className="signup-days-options"'), "Signup weekday choices must use their isolated options grid.");
+  assert(authCss.includes(".auth-registration .signup-days-field{") && authCss.includes("display:block !important;") && authCss.includes("flex:0 0 auto;"), "The signup fieldset must remain a non-shrinking block in the vertical form flow.");
+  assert(authCss.includes(".auth-registration .signup-days-options{") && authCss.includes("grid-template-columns:repeat(2,minmax(0,1fr));"), "CG-day choices must use a bounded two-column grid inside the fieldset.");
+  assert(authCss.includes(".auth-registration .signup-days-field legend{") && authCss.includes("display:inline-block;"), "The CG-day legend must remain in the fieldset's normal flow.");
+  assert(authCss.includes("min-height:max-content;") && authCss.includes("overflow:visible !important;"), "The signup fieldset must expand to contain every weekday row.");
   assert(authCss.includes("color:var(--text-subtle);"), "The CG-day legend must use the shared subtle-text token.");
   assert(authCss.includes("color:var(--text-subtle) !important;"), "Weekday labels must use the same semantic text color as the legend.");
   assert(authCss.includes("accent-color:var(--accent-primary);"), "Native checkboxes must use the theme accent.");
-  assert(authCss.includes("@media(max-width:360px)") && authCss.includes(".days-options{grid-template-columns:minmax(0,1fr)}"), "Very narrow devices must fall back to a single-column CG-day layout.");
+  assert(authCss.includes("@media(max-width:360px)") && authCss.includes(".signup-days-options{grid-template-columns:minmax(0,1fr)}"), "Very narrow devices must fall back to a single-column CG-day layout.");
   assert(!authCss.includes("flex-basis: 100%"), "CG-day options must not use the overflowing single-column flex layout.");
 });
 
