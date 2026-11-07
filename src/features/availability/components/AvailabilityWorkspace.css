@@ -864,6 +864,3 @@
 }
 :root[data-theme="dark"] .bulk-conflict-warning small{color:#ffc0c8!important}
 
-
-/* Dark-mode treatment for the Availability-owned bulk conflict warning. */
-:root[data-theme="dark"] .bulk-conflict-warning{background:#3b282f!important;border-color:#72414d!important;color:#ffc0c8!important}
