@@ -19,18 +19,17 @@ merge, deploy, or modify production.
 ## Candidate branch status
 
 - Candidate branch: `security/push-endpoint-hardening`.
-- Candidate head at time of review:
-  `8aa1ba59d52ee9f15df3286fc8061f27388a2eef`.
-- Branch is 458 commits ahead of main and 0 behind.
-- Compare with main: 170 changed files, 19,896 additions, 6,089 deletions.
+- Candidate baseline: `583296a47912d680636ec9ccec3f99df436c2277` (the user-confirmed all-green Preview deployment `dpl_ExxHmhiBYyxDDwEHjQ3kVLNf74GF`, READY / HTTP 200).
+- Current branch head after release-readiness additions: `bbb44f5ced47319131c0bd456707534697cd2ad1`.
+- Current branch retains the baseline as its ancestor; compare against the baseline shows only release documentation plus the assignment-confirmation migration, its regression test, and CI wiring.
+- The baseline is 459 commits ahead of main at the time of comparison, with 170 changed files, 19,896 additions, and 6,089 deletions.
 - The candidate includes substantial application restructuring, CSS modularization,
   push-dispatch changes, database migrations, and regression tests. It is not a
   small production patch and must not be merged as an unreviewed bulk change.
 - Full Phase 1 CI passed at code commit
   `583296a47912d680636ec9ccec3f99df436c2277`: SQL staging, Deno tests/type-check,
   and frontend TypeScript/Vite build all passed.
-- The later candidate commit `8aa1ba5` changes documentation only. The CI workflow
-  path filter does not include `docs/**`, so no new run was triggered for that commit.
+- Full CI has now passed again on the current release branch. Runs `42405517359`, `42405520973`, and `42405525583` each completed with all three jobs green (Deno, frontend build, staging SQL). The latest run `42405525583` includes the assignment-confirmation migration and regression test.
 - Preview deployment is disabled for `security/push-endpoint-hardening` in
   `vercel.json`; the regression test passed in the full CI run.
 
@@ -74,12 +73,9 @@ Do not apply staging's entire migration history to production.
   implementation with a stable per-confirmation-cycle event key.
 - Production still has the older implementation, which inserts notifications
   without the same event-key deduplication.
-- Draft PR #5 contains the canonical migration and rollback-only regression test:
-  https://github.com/yuichikategawa-cloud/GMS-Sound-Scheduling-System/pull/5
-- PR #5 is open, draft, unmerged. Its frontend build CI passed, but GitHub Actions
-  does not execute the SQL assertions. Core runtime behavior was separately
-  exercised in staging through a rollback/cleanup test block.
-- Do not merge or apply the migration without explicit approval and final review.
+- The canonical migration is now included on the release branch at `supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql`, with rollback-only regression at `supabase/tests/assignment_confirmation_notification_idempotency.sql`.
+- The latest GitHub Actions SQL-staging job applied the migration to staging and executed the regression successfully (run `42405525583`).
+- Production still requires the same migration under a separately approved rollout. Do not apply it without explicit production approval and final review.
 
 ### 3. Candidate promotion scope — BLOCKER until release scope is agreed
 
@@ -88,9 +84,7 @@ relative to main. The green full CI is valuable evidence, but it does not replac
 a controlled diff review, production compatibility review, or browser QA.
 Browser-based visual and interaction QA remains incomplete.
 
-For the six-hour objective, prefer a narrowly scoped release over a wholesale
-unreviewed promotion. Separate must-have launch fixes from optional modularization
-and refactoring if the release scope cannot be reviewed in time.
+The user has explicitly selected the all-green Preview commit `583296a` as the full-feature production baseline. Preserve its complete application and modularization scope; do not substitute the older staging-only branch. Production promotion remains gated on database/Edge Function parity, final browser/device QA, and explicit approval.
 
 ### 4. Remaining verification
 
