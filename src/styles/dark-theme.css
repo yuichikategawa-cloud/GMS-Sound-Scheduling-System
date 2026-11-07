@@ -116,3 +116,24 @@
 :root[data-theme="dark"] .bulk-row-action.danger:hover{
   background:#5b3542!important;
 }
+
+/* Shared status chip palette. */
+:root[data-theme="dark"] .status-chip{
+  background:#293951!important;
+  color:#d4deed!important;
+}
+:root[data-theme="dark"] .status-chip.published,
+:root[data-theme="dark"] .status-chip.approved,
+:root[data-theme="dark"] .status-chip.confirmed{
+  background:#194b39!important;
+  color:#a7ecc9!important;
+}
+:root[data-theme="dark"] .status-chip.draft,
+:root[data-theme="dark"] .status-chip.pending{
+  background:#514024!important;
+  color:#ffe0a2!important;
+}
+:root[data-theme="dark"] .status-chip.declined{
+  background:#512b34!important;
+  color:#ffc0c6!important;
+}
