@@ -556,6 +556,23 @@ Deno.test("authentication dark card styling has one consolidated rule and regist
 });
 
 
+Deno.test("Auth owns disabled signup field styling", async () => {
+  const [component, authCss, sharedCss] = await Promise.all([
+    readRepoFile("src/features/auth/components/AuthScreen.tsx"),
+    readRepoFile("src/features/auth/components/AuthScreens.css"),
+    readRepoFile("src/styles/shared-components.css"),
+  ]);
+  assert(component.includes('"field-disabled"'),
+    "Signup role-specific disabled fields must keep their feature-owned state class.");
+  assert(authCss.includes(".field-disabled{opacity:.48}"),
+    "AuthScreens.css must own the disabled field opacity.");
+  assert(authCss.includes(".field-disabled input{background:#eef1f5!important;cursor:not-allowed}"),
+    "AuthScreens.css must own the disabled input surface and cursor.");
+  assert(!sharedCss.includes(".field-disabled{"),
+    "Shared CSS must not retain the Auth-only disabled field styling.");
+});
+
+
 Deno.test("servant account linking opens in a portal dialog instead of inside each record", async () => {
   const [component, styles] = await Promise.all([
     readRepoFile("src/features/servants/components/ServantInformationPanel.tsx"),
