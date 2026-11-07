@@ -63,8 +63,14 @@ Deno.test("global style entry composes shared and dark-theme modules in order", 
     previous = index;
   }
 
-  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".collapsible-panel{", ".status-chip{"]) {
+  for (const selector of [".btn{", ".filter-panel{", ".modal-card{", ".message-banner{", ".inbox-count{", ".status-chip{"]) {
     assert(sharedCss.includes(selector), "Shared stylesheet must retain reusable primitive " + selector);
+  }
+  for (const selector of [".filters{", ".collapsible-panel{"]) {
+    assert(!sharedCss.includes(selector), "Schedule-owned selector must not remain in shared-components.css: " + selector);
+  }
+  for (const obsolete of [".gms-v3-loader{", ".gms-loader-progress", ".church-group-count{", ".loader{"]) {
+    assert(!sharedCss.includes(obsolete), "Unused legacy selector must be removed from shared-components.css: " + obsolete);
   }
   assert(darkCss.startsWith("/* Dark mode — a persistent, selectable GMS appearance. */"), "Dark-theme overrides must begin at the extracted theme boundary.");
   assert(!sharedCss.includes(':root[data-theme="dark"]'), "Dark-theme overrides must not leak into the shared light/base module.");
@@ -82,7 +88,6 @@ Deno.test("shared dark theme keeps one canonical rule per reusable surface", asy
     ':root[data-theme="dark"] .empty-state{',
     ':root[data-theme="dark"] .message-banner,',
     ':root[data-theme="dark"] .center-screen{',
-    ':root[data-theme="dark"] .loader{',
     ':root[data-theme="dark"] .clear-btn,',
     ':root[data-theme="dark"] .subtle,',
   ]) {
@@ -333,12 +338,21 @@ Deno.test("Schedule owns its layout, responsive presentation and dark-mode overr
     ".template-picker",
     ".my-upcoming-panel",
     ".swap-modal",
+    ".filters",
+    ".collapsible-panel",
   ]) {
     const escaped = selector.split(".").join("\\.");
     const pattern = new RegExp("(^|[\\n}])\\s*" + escaped + "\\s*\\{");
     assert(!pattern.test(globalCss), selector + " base presentation must be owned by ScheduleWorkspace.css.");
   }
+  assert(!globalCss.includes(".filters"), "Global styles must not retain Schedule-owned filter selectors.");
+  assert(!globalCss.includes(".collapsible-panel"), "Global styles must not retain Schedule-owned disclosure selectors.");
 
+  assert(scheduleCss.includes(".filters{display:grid;"), "Schedule filter grid styles must live with the Schedule feature.");
+  assert(scheduleCss.includes("@media(max-width:760px){.filters{grid-template-columns:repeat(2,minmax(0,1fr));}"), "Schedule tablet filter layout must remain feature-owned.");
+  assert(scheduleCss.includes("@media(max-width:520px){.filters{grid-template-columns:minmax(0,1fr);"), "Schedule narrow-phone filter layout must remain feature-owned.");
+  assert(scheduleCss.includes(':root[data-theme="dark"] .filters label{'), "Schedule filter labels must retain dark-mode contrast in the feature stylesheet.");
+  assert(scheduleCss.includes(".collapsible-panel>summary{"), "Schedule disclosure summary styling must remain feature-owned.");
   assert(scheduleCss.includes(".schedule-grid{"), "Schedule grid styles must live with the Schedule feature.");
   assert(scheduleCss.includes(".assignment-overview-card{"), "Assignment overview styles must live with the Schedule feature.");
   assert(scheduleCss.includes(".bulk-assignment-center{"), "Bulk assignment styles must live with the Schedule feature.");
