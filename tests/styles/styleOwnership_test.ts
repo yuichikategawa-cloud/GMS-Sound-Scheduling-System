@@ -900,7 +900,7 @@ Deno.test("Notification history belongs to Requests and obsolete global surfaces
     "RequestsPanel must own the notification history section.");
   assert(requestsPanel.includes('className="notification-history-list"'),
     "RequestsPanel must render the feature-owned notification history list.");
-  assert(requestsCss.includes(".notification-history-list\\n{"),
+  assert(/\.notification-history-list\s*\{\s*display:grid;gap:10px\s*\}/.test(requestsCss),
     "RequestsInbox.css must own the notification history list layout.");
   assert(requestsCss.includes(':root[data-theme="dark"] .notification-history-list'),
     "RequestsInbox.css must own notification history dark-mode spacing.");
