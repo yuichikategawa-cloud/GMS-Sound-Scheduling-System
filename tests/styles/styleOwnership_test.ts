@@ -555,6 +555,8 @@ Deno.test("Requests and Inbox own their dark card and heading presentation", asy
   assert(requestsCss.includes("border-bottom:1px solid #3b4b65!important;"), "The final request heading divider must be preserved.");
   assert(requestsCss.includes("color:#f3f6fc!important;"), "The final request heading contrast must be preserved.");
   assert(requestsCss.includes("color:#bdcbe0!important;"), "The final muted request text color must be preserved.");
+  const globalRequestsThemeRule = /:root\\[data-theme="dark"\\][^{]*\\.(?:inbox-item|inbox-intro|inbox-status|servant-inbox|requests-panel|requests-content[\\w-]*|requests-section-heading|request-main|request-row|servant-requests-section)[^{]*\\{/s;
+  assert(!globalRequestsThemeRule.test(globalCss), "Global styles must not retain Requests/Inbox feature dark selectors.");
   for (const selector of [
     ':root[data-theme="dark"] .requests-section-heading{',
     ':root[data-theme="dark"] .request-main b{',

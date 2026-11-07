@@ -428,3 +428,70 @@ gap:13px
   outline:3px solid #8b5cf6;
   outline-offset:2px;
 }
+
+:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .requests-panel{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .inbox-item-title b{
+  color:#edf2fb!important;
+}:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small{
+  color:#a3aec3!important;
+}
+:root[data-theme="dark"] .inbox-item.unread{background:#26233d!important;border-color:#514875!important}
+:root[data-theme="dark"] .inbox-item.read{opacity:.9}
+:root[data-theme="dark"] .inbox-item-icon{background:#302b50;color:#c5baff}
+:root[data-theme="dark"] .inbox-intro>span{background:#302b50;color:#d0c7ff}
+:root[data-theme="dark"] .inbox-status.approved{background:var(--status-success-bg);color:var(--status-success-text)}
+:root[data-theme="dark"] .inbox-status.rejected{background:#492727;color:#ffb8b2}
+:root[data-theme="dark"] .inbox-status.pending{background:var(--status-warning-bg);color:var(--status-warning-text)}:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .servant-inbox{
+  background:#1b263a!important;
+  border-color:#3a4963!important;
+  color:#edf2fa!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small{
+  color:#b9c6da!important;
+}:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .servant-requests-section h2{
+  color:#f2f5fc!important;
+}/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
+
+
+:root[data-theme="dark"] .inbox-item{background:#222f46!important;border-color:#40516d!important;box-shadow:none!important}
+:root[data-theme="dark"] .inbox-item.unread{background:#292744!important;border-color:#514a79!important}
+:root[data-theme="dark"] .inbox-item.read{opacity:1!important}
+:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{color:#f1f4fb!important}
+:root[data-theme="dark"] .inbox-item-body p{color:#c2cde0!important}
+:root[data-theme="dark"] .inbox-item-body small{color:#9faec5!important}
+:root[data-theme="dark"] .inbox-status.approved{background:#194b39!important;color:#a7ecc9!important}
+:root[data-theme="dark"] .inbox-status.rejected{background:#512b34!important;color:#ffc0c6!important}
+:root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
+:root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
+:root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}:root[data-theme="dark"] .request-row{border-color:#3b4b65!important}:root[data-theme="dark"] .requests-panel{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #eaf0fa !important;
+}/* Remove residual light-mode styling from inner inbox/request wrappers. */
+
+
+
+
+:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .notification-history-section .inbox-item{
+  background: #24334b !important;
+  border-color: #40536f !important;
+  color: #edf3fb !important;
+}
+:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .inbox-item-body p{
+  color: #cad5e5 !important;
+}
+:root[data-theme="dark"] .inbox-item-body small{
+  color: #aebdd2 !important;
+}
+:root[data-theme="dark"] .inbox-status.approved{
+  background: #174b38 !important;
+  color: #b8f2d2 !important;
+}

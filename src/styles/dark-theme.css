@@ -7,7 +7,7 @@
 :root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
 :root[data-theme="dark"] .main-area{background:#101727}
 :root[data-theme="dark"] .content{color:#e8edf7}
-:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .my-upcoming-panel,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .assignment-overview,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .mobile-more-menu,:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .requests-panel,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-schedule-summary>div,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .topbar,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .my-upcoming-panel,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .assignment-overview,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .mobile-more-menu,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-schedule-summary>div,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b2437!important;
   border-color:#354059!important;
   color:#e8edf7;
@@ -18,10 +18,10 @@
   border-color:#394660!important;
   color:#e8edf7;
 }
-:root[data-theme="dark"] .collapsible-panel>summary b,:root[data-theme="dark"] .toolbar h2,:root[data-theme="dark"] .list-heading h2,:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-role-row b,:root[data-theme="dark"] .daily-role-row span,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4,:root[data-theme="dark"] .assignment-workload-detail b,:root[data-theme="dark"] .church-schedule-heading h3,:root[data-theme="dark"] .bulk-assignment-heading h2,:root[data-theme="dark"] .bulk-preview-heading h3,:root[data-theme="dark"] .bulk-copy-panel b,:root[data-theme="dark"] .bulk-matrix td b,:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .empty-state b,:root[data-theme="dark"] .modal-head h2,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .topbar h1{
+:root[data-theme="dark"] .collapsible-panel>summary b,:root[data-theme="dark"] .toolbar h2,:root[data-theme="dark"] .list-heading h2,:root[data-theme="dark"] .daily-date,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .daily-role-row b,:root[data-theme="dark"] .daily-role-row span,:root[data-theme="dark"] .role-box b,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .my-upcoming-info b,:root[data-theme="dark"] .my-upcoming-location h4,:root[data-theme="dark"] .assignment-workload-detail b,:root[data-theme="dark"] .church-schedule-heading h3,:root[data-theme="dark"] .bulk-assignment-heading h2,:root[data-theme="dark"] .bulk-preview-heading h3,:root[data-theme="dark"] .bulk-copy-panel b,:root[data-theme="dark"] .bulk-matrix td b,:root[data-theme="dark"] .empty-state b,:root[data-theme="dark"] .modal-head h2,:root[data-theme="dark"] .daily-service-top b,:root[data-theme="dark"] .topbar h1{
   color:#edf2fb!important;
 }
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status{
+:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .collapsible-panel>summary small,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .my-next-empty,:root[data-theme="dark"] .my-next-detail,:root[data-theme="dark"] .my-days-card small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .workload-copy span,:root[data-theme="dark"] .workload-status{
   color:#a3aec3!important;
 }
 
@@ -46,14 +46,7 @@
   color:#ffd2c7!important;
 }
 :root[data-theme="dark"] .coverage-pill.complete{background:var(--status-success-bg);color:#8fe0b7}
-:root[data-theme="dark"] .coverage-pill.pending{background:#49351f;color:var(--status-warning-text)}
-:root[data-theme="dark"] .inbox-item.unread{background:#26233d!important;border-color:#514875!important}
-:root[data-theme="dark"] .inbox-item.read{opacity:.9}
-:root[data-theme="dark"] .inbox-item-icon{background:#302b50;color:#c5baff}
-:root[data-theme="dark"] .inbox-intro>span{background:#302b50;color:#d0c7ff}
-:root[data-theme="dark"] .inbox-status.approved{background:var(--status-success-bg);color:var(--status-success-text)}
-:root[data-theme="dark"] .inbox-status.rejected{background:#492727;color:#ffb8b2}
-:root[data-theme="dark"] .inbox-status.pending{background:var(--status-warning-bg);color:var(--status-warning-text)}:root[data-theme="dark"] .people-list{border-color:#354059}:root[data-theme="dark"] .person-row{border-color:#354059!important}
+:root[data-theme="dark"] .coverage-pill.pending{background:#49351f;color:var(--status-warning-text)}:root[data-theme="dark"] .people-list{border-color:#354059}:root[data-theme="dark"] .person-row{border-color:#354059!important}
 :root[data-theme="dark"] .bulk-assignment-center{background:#1b2437;border-color:#354059}
 :root[data-theme="dark"] .bulk-selected-count{background:#34315f;color:#d1ccff}
 :root[data-theme="dark"] .bulk-church-group>summary{background:#202c42;color:#edf2fb}
@@ -92,7 +85,7 @@
 :root[data-theme="dark"] .message{background:#3a2d2c;color:#ffd2c7}
 :root[data-theme="dark"] .bulk-church-group>summary{color:#edf2fb}/* Dark theme refinement: consistent surfaces, readable secondary text and balanced section cards. */
 
-:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .servant-inbox,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
+:root[data-theme="dark"] .assignment-overview-card,:root[data-theme="dark"] .notification-history-section,:root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .statistics-panel,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .church-bulk-actions,:root[data-theme="dark"] .admin-control-center,:root[data-theme="dark"] .bulk-assignment-center,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .servant-profile-card{
   background:#1b263a!important;
   border-color:#3a4963!important;
   color:#edf2fa!important;
@@ -118,25 +111,12 @@
 :root[data-theme="dark"] .assignment-coverage-pill{background:#194534!important;color:#a4ebc7!important}
 :root[data-theme="dark"] .assignment-coverage-pill.needs-attention{background:#4a3823!important;color:#ffdda1!important}
 :root[data-theme="dark"] .assignment-overview-ops .attention-number{color:#ffbd72!important}/* Shared text contrast: secondary descriptions and labels should remain legible on dark surfaces. */
-:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label{
+:root[data-theme="dark"] .subtle,:root[data-theme="dark"] .eyebrow,:root[data-theme="dark"] .list-heading span,:root[data-theme="dark"] .toolbar .subtle,:root[data-theme="dark"] .filter-title,:root[data-theme="dark"] .filters label,:root[data-theme="dark"] .form-grid label,:root[data-theme="dark"] .modal-card>label,:root[data-theme="dark"] .stack label,:root[data-theme="dark"] .people-toolbar,:root[data-theme="dark"] .person-name small,:root[data-theme="dark"] .calendar-workspace-heading .subtle,:root[data-theme="dark"] .daily-subtitle,:root[data-theme="dark"] .location-text,:root[data-theme="dark"] .time-text,:root[data-theme="dark"] .date-text,:root[data-theme="dark"] .daily-service-top span,:root[data-theme="dark"] .daily-roles span,:root[data-theme="dark"] .role-box small,:root[data-theme="dark"] .bulk-copy-panel small,:root[data-theme="dark"] .bulk-matrix td small,:root[data-theme="dark"] .bulk-copy-controls label{
   color:#b9c6da!important;
 }
-:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2,:root[data-theme="dark"] .servant-requests-section h2{
+:root[data-theme="dark"] .list-heading h3,:root[data-theme="dark"] .notification-history-section h2{
   color:#f2f5fc!important;
-}/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
-
-
-:root[data-theme="dark"] .inbox-item{background:#222f46!important;border-color:#40516d!important;box-shadow:none!important}
-:root[data-theme="dark"] .inbox-item.unread{background:#292744!important;border-color:#514a79!important}
-:root[data-theme="dark"] .inbox-item.read{opacity:1!important}
-:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{color:#f1f4fb!important}
-:root[data-theme="dark"] .inbox-item-body p{color:#c2cde0!important}
-:root[data-theme="dark"] .inbox-item-body small{color:#9faec5!important}
-:root[data-theme="dark"] .inbox-status.approved{background:#194b39!important;color:#a7ecc9!important}
-:root[data-theme="dark"] .inbox-status.rejected{background:#512b34!important;color:#ffc0c6!important}
-:root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
-:root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
-:root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}/* Calendar view, filters, forms and nested cards use the same dark palette. */
+}/* Calendar view, filters, forms and nested cards use the same dark palette. */
 :root[data-theme="dark"] .calendar-workspace-heading,:root[data-theme="dark"] .filter-panel,:root[data-theme="dark"] .daily-card,:root[data-theme="dark"] .schedule-card,:root[data-theme="dark"] .people-list,:root[data-theme="dark"] .empty-state,:root[data-theme="dark"] .modal-card,:root[data-theme="dark"] .new-template-form,:root[data-theme="dark"] .bulk-matrix-wrap,:root[data-theme="dark"] .profile-card,:root[data-theme="dark"] .schedule-location-group,:root[data-theme="dark"] .church-schedule-group,:root[data-theme="dark"] .daily-service,:root[data-theme="dark"] .daily-role-row,:root[data-theme="dark"] .role-box,:root[data-theme="dark"] .role-box.optional,:root[data-theme="dark"] .my-upcoming-item,:root[data-theme="dark"] .my-days-card,:root[data-theme="dark"] .my-next-card,:root[data-theme="dark"] .inbox-settings-card,:root[data-theme="dark"] .template-picker,:root[data-theme="dark"] .workload-preview,:root[data-theme="dark"] .assignment-workload-detail,:root[data-theme="dark"] .bulk-preview-panel,:root[data-theme="dark"] .bulk-copy-panel,:root[data-theme="dark"] .bulk-church-group,:root[data-theme="dark"] .bulk-church-group>summary{
   background:#202f46!important;
   border-color:#40516d!important;
@@ -183,7 +163,7 @@
 :root[data-theme="dark"] .coverage-pill.pending{background:#594022!important;color:#ffe0a5!important}
 :root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
 :root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}
-:root[data-theme="dark"] .person-row,:root[data-theme="dark"] .request-row{border-color:#3b4b65!important}
+:root[data-theme="dark"] .person-row{border-color:#3b4b65!important}
 
 
 :root[data-theme="dark"] .status-chip{background:#293951!important;color:#d4deed!important}
@@ -192,7 +172,7 @@
 :root[data-theme="dark"] .status-chip.declined{background:#512b34!important;color:#ffc0c6!important}
 /* Dark-theme polish pass: transparent workspace shells, compact calendar toggle,
    and readable servant dashboard labels. Child cards retain their own surfaces. */
-:root[data-theme="dark"] .schedule-workspace-panel,:root[data-theme="dark"] .requests-panel{
+:root[data-theme="dark"] .schedule-workspace-panel{
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -203,28 +183,6 @@
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
-}/* Remove residual light-mode styling from inner inbox/request wrappers. */
-
-
-
-
-:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .notification-history-section .inbox-item{
-  background: #24334b !important;
-  border-color: #40536f !important;
-  color: #edf3fb !important;
-}
-:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{
-  color: #f4f7fc !important;
-}
-:root[data-theme="dark"] .inbox-item-body p{
-  color: #cad5e5 !important;
-}
-:root[data-theme="dark"] .inbox-item-body small{
-  color: #aebdd2 !important;
-}
-:root[data-theme="dark"] .inbox-status.approved{
-  background: #174b38 !important;
-  color: #b8f2d2 !important;
 }/* Ensure nested text inside dark cards does not inherit low-contrast light-mode colors. */
 :root[data-theme="dark"] .calendar-workspace-heading h2,:root[data-theme="dark"] .assignment-workspace-heading h2,:root[data-theme="dark"] .calendar-workspace-heading b,:root[data-theme="dark"] .assignment-workspace-heading b{
   color: #f3f6fc !important;
