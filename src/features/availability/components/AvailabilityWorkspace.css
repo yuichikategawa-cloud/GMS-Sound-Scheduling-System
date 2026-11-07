@@ -1125,3 +1125,61 @@
   font-size: 12px;
   line-height: 1.45;
 }
+
+/* Keep the complete Availability feature inside the mobile content viewport. */
+.availability-workspace {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.availability-workspace > *,
+.availability-workspace .availability-form-panel,
+.availability-workspace .availability-filter,
+.availability-workspace .availability-overview,
+.availability-workspace .availability-row,
+.availability-workspace .saved-rule-row,
+.availability-workspace .people-list {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 760px) {
+  .availability-workspace .availability-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .availability-workspace .availability-date {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .availability-workspace .availability-person {
+    min-width: 0;
+    width: auto;
+  }
+  .availability-workspace .availability-status {
+    max-width: 100%;
+    white-space: normal;
+    justify-self: start;
+  }
+  .availability-workspace .saved-rule-row {
+    align-items: flex-start;
+  }
+  .availability-workspace .saved-rule-row > div {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .availability-workspace .saved-rule-row > .icon-btn {
+    flex: 0 0 auto;
+  }
+  .availability-workspace .availability-mode-switch,
+  .availability-workspace .availability-mode-switch button {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
