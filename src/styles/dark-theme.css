@@ -76,9 +76,6 @@
 :root[data-theme="dark"] .link-btn{
   color:#b8afff!important;
 }
-:root[data-theme="dark"] .card-actions{
-  border-color:#3b4b65!important;
-}
 :root[data-theme="dark"] input,
 :root[data-theme="dark"] select,
 :root[data-theme="dark"] textarea,
