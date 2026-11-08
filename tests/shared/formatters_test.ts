@@ -97,4 +97,7 @@ Deno.test("schedule upcoming helper compares local service start time against no
   assertEqual(isScheduleUpcoming("2026-11-08", "11:00:00", new Date(2026, 10, 8, 18, 42)), false, "Earlier services on the current date must be excluded.");
   assertEqual(isScheduleUpcoming("2026-11-09", "07:00:00", new Date(2026, 10, 8, 23, 59)), true, "A future local calendar date remains upcoming.");
   assertEqual(isScheduleUpcoming("invalid", "09:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid dates must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-02-30", "09:00", new Date(2026, 1, 1)), false, "Impossible calendar dates must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "24:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid hours must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "09:60", new Date(2026, 10, 8, 8, 0)), false, "Invalid minutes must fail closed.");
 });
