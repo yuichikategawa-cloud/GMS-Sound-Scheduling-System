@@ -2,7 +2,20 @@ name: Staging QA validation
 on:
   push:
     branches:
-      - qa/staging-mobile-time-integrity
+      - "qa/**"
+    paths:
+      - "src/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/staging-qa-validation.yml"
+  pull_request:
+    branches:
+      - security/push-endpoint-hardening
     paths:
       - "src/**"
       - "supabase/migrations/**"
