@@ -6,6 +6,7 @@ import {
   errorText,
   fmtDate,
   localDateKey,
+  isScheduleUpcoming,
   shortTime,
   today,
 } from "../../src/shared/formatters.ts";
@@ -88,4 +89,15 @@ Deno.test("displayList preserves plain strings and safely handles unsupported va
   assertEqual(displayList("not-json"), "not-json", "Plain text should not be modified.");
   assertEqual(displayList(null), "", "Null values should display as empty.");
   assertEqual(displayList({ label: "FOH" }), "", "Objects should not be stringified as list values.");
+});
+
+Deno.test("schedule upcoming helper compares local service start time against now", () => {
+  assertEqual(isScheduleUpcoming("2026-11-08", "19:00:00", new Date(2026, 10, 8, 18, 59)), true, "A service that has not started should remain upcoming.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "18:00:00", new Date(2026, 10, 8, 18, 0)), false, "A service is no longer actionable at its start time.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "11:00:00", new Date(2026, 10, 8, 18, 42)), false, "Earlier services on the current date must be excluded.");
+  assertEqual(isScheduleUpcoming("2026-11-09", "07:00:00", new Date(2026, 10, 8, 23, 59)), true, "A future local calendar date remains upcoming.");
+  assertEqual(isScheduleUpcoming("invalid", "09:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid dates must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-02-30", "09:00", new Date(2026, 1, 1)), false, "Impossible calendar dates must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "24:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid hours must fail closed.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "09:60", new Date(2026, 10, 8, 8, 0)), false, "Invalid minutes must fail closed.");
 });
