@@ -37,6 +37,7 @@ jobs:
           deno test --no-lock --config supabase/functions/dispatch-push/deno.json
           supabase/functions/dispatch-push/security_test.ts
           supabase/functions/dispatch-push/providerFailure_test.ts
+          supabase/functions/dispatch-push/deliveryTargets_test.ts
           supabase/functions/_shared/leaseKeeper_test.ts
           supabase/functions/_shared/retryBackoff_test.ts
       - name: Test shared formatting helpers
