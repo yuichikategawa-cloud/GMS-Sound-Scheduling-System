@@ -6,6 +6,7 @@ import webpush from "web-push";
 import { retryDelaySeconds } from "../_shared/retryBackoff.ts";
 import { startLeaseKeeper } from "../_shared/leaseKeeper.ts";
 import { isAllowedPushEndpoint } from "./security.ts";
+import { classifyPushFailure } from "./providerFailure.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -253,8 +254,8 @@ async function processQueueItem(
       continue;
     }
 
-    const statusCode = Number((sendError as any)?.statusCode ?? 0);
-    if (statusCode === 404 || statusCode === 410) {
+    const failure = classifyPushFailure(sendError);
+    if (failure.permanent) {
       if (!await lease.renewNow()) return "lost_claim";
 
       const { error: deleteError } = await db
@@ -271,7 +272,7 @@ async function processQueueItem(
       sentEndpoints.add(sub.endpoint);
     } else {
       hadTransientFailure = true;
-      lastError = String((sendError as any)?.body ?? (sendError as any)?.message ?? sendError).slice(0, 1000);
+      lastError = failure.message;
     }
   }
 
