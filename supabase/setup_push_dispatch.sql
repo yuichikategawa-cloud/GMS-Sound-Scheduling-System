@@ -11,7 +11,7 @@ create extension if not exists pg_net;
 -- If these names already exist, update/remove the existing Vault secrets before rerunning.
 select vault.create_secret('https://zqpmzvhudxprzdfijrtu.supabase.co', 'gms_push_project_url');
 select vault.create_secret('sb_publishable_7nURmIs2t0CUGA7PUzGI7Q_NJWDS8RQ', 'gms_push_anon_key');
-select vault.create_secret('b46e500c34270d7eaad6078dcf2b03a4e7d9a36e436a19efed77e6ed5cec20b1', 'gms_push_dispatch_secret');
+select vault.create_secret('<SET_A_NEW_RANDOM_SECRET_HERE>', 'gms_push_dispatch_secret');
 
 do $setup$
 declare
