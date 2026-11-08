@@ -216,8 +216,10 @@ BEGIN
   IF src_assignment.servant_id <> req.requester_servant_id THEN
     RAISE EXCEPTION 'The requester is no longer assigned to the original service';
   END IF;
-  IF dst_assignment.servant_id IS NULL OR dst_assignment.servant_id = req.requester_servant_id THEN
-    RAISE EXCEPTION 'The target assignment is no longer valid';
+  IF dst_assignment.servant_id IS NULL
+     OR dst_assignment.servant_id = req.requester_servant_id
+     OR dst_assignment.servant_id IS DISTINCT FROM req.target_servant_id THEN
+    RAISE EXCEPTION 'The target assignment is no longer valid or no longer belongs to the requested target servant';
   END IF;
 
   IF EXISTS (
