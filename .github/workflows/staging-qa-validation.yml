@@ -5,6 +5,8 @@ on:
       - qa/staging-mobile-time-integrity
     paths:
       - "src/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
       - "tests/**"
       - "package.json"
       - "package-lock.json"
