@@ -46,7 +46,7 @@ export function useScheduleWorkspace({
     .filter(schedule => isScheduleUpcoming(schedule.service_date, schedule.start_time, now))
     .sort((a, b) => a.service_date.localeCompare(b.service_date) || a.start_time.localeCompare(b.start_time))[0] ?? null;
   const myUpcomingSchedules = [...myPublishedSchedules]
-    .filter(schedule => schedule.service_date >= today())
+    .filter(schedule => isScheduleUpcoming(schedule.service_date, schedule.start_time, now))
     .sort((a, b) => a.service_date.localeCompare(b.service_date) || a.start_time.localeCompare(b.start_time));
 
   const filtered = useMemo(() => {
