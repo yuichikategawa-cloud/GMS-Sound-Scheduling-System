@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ScheduleView } from "../../../types";
-import { today } from "../../../shared/formatters";
+import { isScheduleUpcoming, today } from "../../../shared/formatters";
 
 export type CalendarView = "week" | "month";
 export type AdminScheduleView = "overview" | "assignments" | "calendar";
@@ -20,6 +20,12 @@ export function useScheduleWorkspace({
   const [serviceFilter, setServiceFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [nowTimestamp, setNowTimestamp] = useState(() => Date.now());
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTimestamp(Date.now()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+  const now = new Date(nowTimestamp);
 
   const myPublishedSchedules = useMemo(
     () => myServantId
@@ -37,16 +43,16 @@ export function useScheduleWorkspace({
       .map(schedule => schedule.service_date)
   ).size;
   const nextMySchedule = [...myPublishedSchedules]
-    .filter(schedule => schedule.service_date >= today())
+    .filter(schedule => isScheduleUpcoming(schedule.service_date, schedule.start_time, now))
     .sort((a, b) => a.service_date.localeCompare(b.service_date) || a.start_time.localeCompare(b.start_time))[0] ?? null;
   const myUpcomingSchedules = [...myPublishedSchedules]
-    .filter(schedule => schedule.service_date >= today())
+    .filter(schedule => isScheduleUpcoming(schedule.service_date, schedule.start_time, now))
     .sort((a, b) => a.service_date.localeCompare(b.service_date) || a.start_time.localeCompare(b.start_time));
 
   const filtered = useMemo(() => {
     const query = personFilter.trim().toLowerCase();
     return schedules.filter(schedule =>
-      schedule.service_date >= today() &&
+      isScheduleUpcoming(schedule.service_date, schedule.start_time, now) &&
       schedule.status === "published" &&
       (!query || schedule.assignments.some(assignment => assignment.servant_name.toLowerCase().includes(query))) &&
       (!locationFilter || schedule.location_id === locationFilter) &&
@@ -54,7 +60,7 @@ export function useScheduleWorkspace({
       (!fromDate || schedule.service_date >= fromDate) &&
       (!toDate || schedule.service_date <= toDate)
     );
-  }, [schedules, personFilter, locationFilter, serviceFilter, fromDate, toDate]);
+  }, [schedules, personFilter, locationFilter, serviceFilter, fromDate, toDate, nowTimestamp]);
 
   const dailyGroups = useMemo(() => {
     const groups = new Map<string, ScheduleView[]>();
