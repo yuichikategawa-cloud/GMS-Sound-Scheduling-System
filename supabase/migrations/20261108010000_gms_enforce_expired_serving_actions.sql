@@ -189,8 +189,16 @@ BEGIN
 
   SELECT * INTO src FROM public.schedules WHERE id = req.schedule_id;
   SELECT * INTO dst FROM public.schedules WHERE id = req.target_schedule_id;
-  SELECT * INTO src_assignment FROM public.assignments WHERE id = req.assignment_id FOR UPDATE;
-  SELECT * INTO dst_assignment FROM public.assignments WHERE id = req.target_assignment_id FOR UPDATE;
+
+  -- Lock assignment rows in a stable order to avoid opposing-swap deadlocks.
+  PERFORM a.id
+  FROM public.assignments a
+  WHERE a.id IN (req.assignment_id, req.target_assignment_id)
+  ORDER BY a.id
+  FOR UPDATE OF a;
+
+  SELECT * INTO src_assignment FROM public.assignments WHERE id = req.assignment_id;
+  SELECT * INTO dst_assignment FROM public.assignments WHERE id = req.target_assignment_id;
 
   IF src.id IS NULL OR dst.id IS NULL OR src_assignment.id IS NULL OR dst_assignment.id IS NULL THEN
     RAISE EXCEPTION 'One of the selected services or assignments no longer exists';
