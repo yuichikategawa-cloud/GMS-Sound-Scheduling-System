@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ScheduleView, Servant } from "../../../types";
-import { fmtDate } from "../../../shared/formatters";
+import { fmtDate, isScheduleUpcoming } from "../../../shared/formatters";
 import type { ServingRequestRecord, ServingRequestReadMarker } from "../services/requestData";
 import {
   createServingRequest,
@@ -56,6 +56,10 @@ export function useRequestActions({
     schedule: ScheduleView,
     kind: "replacement" | "swap",
   ) {
+    if (!isScheduleUpcoming(schedule.service_date, schedule.start_time)) {
+      setMessage("This service has already started. Swap and replacement requests are no longer available.");
+      return;
+    }
     if (kind === "swap") {
       setSwapDraft(schedule);
       return;
@@ -94,6 +98,11 @@ export function useRequestActions({
   ) {
     if (!client || !myServant || !swapDraft) return;
     const source = swapDraft;
+    if (!isScheduleUpcoming(source.service_date, source.start_time)) {
+      setMessage("The original service has already started. This swap can no longer be submitted.");
+      setSwapDraft(null);
+      return;
+    }
     const own = source.assignments.find(assignment =>
       assignment.servant_id === myServant.id
     );
@@ -103,6 +112,10 @@ export function useRequestActions({
     );
     if (!own || !targetSchedule || !target) {
       setMessage("Please select a valid servant assignment to swap with.");
+      return;
+    }
+    if (!isScheduleUpcoming(targetSchedule.service_date, targetSchedule.start_time)) {
+      setMessage("The target service has already started. Choose a future assignment.");
       return;
     }
     if (target.servant_id === myServant.id) {
