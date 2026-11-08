@@ -18,9 +18,7 @@ DECLARE
   v_source_assignment uuid;
   v_target_assignment uuid;
   v_request uuid;
-  v_rule_servant uuid;
   v_message text;
-  v_old_deadline text;
 BEGIN
   SELECT id INTO v_admin FROM public.profiles WHERE role='admin' ORDER BY created_at LIMIT 1;
   SELECT s.id, s.auth_user_id INTO v_servant, v_servant_user
@@ -76,8 +74,10 @@ BEGIN
 
   -- A configured, elapsed deadline must reject dated and recurring availability writes.
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
-  SELECT value INTO v_old_deadline FROM public.system_settings WHERE key='availability_deadline';
-  UPDATE public.system_settings SET value='2000-01-01' WHERE key='availability_deadline';
+  INSERT INTO public.system_settings(key,value,updated_at,updated_by)
+  VALUES('availability_deadline','2000-01-01',pg_catalog.now(),v_admin)
+  ON CONFLICT (key) DO UPDATE
+    SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at, updated_by=EXCLUDED.updated_by;
 
   PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
   BEGIN
