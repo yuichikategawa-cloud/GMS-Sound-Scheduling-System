@@ -7,6 +7,7 @@ import { retryDelaySeconds } from "../_shared/retryBackoff.ts";
 import { startLeaseKeeper } from "../_shared/leaseKeeper.ts";
 import { isAllowedPushEndpoint } from "./security.ts";
 import { classifyPushFailure } from "./providerFailure.ts";
+import { getPendingPushSubscriptions } from "./deliveryTargets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -203,9 +204,10 @@ async function processQueueItem(
   }
 
   const sentEndpoints = new Set<string>(item.delivered_endpoints ?? []);
-  const pending = storedSubscriptions
-    .filter((sub) => isAllowedPushEndpoint(sub.endpoint))
-    .filter((sub) => !sentEndpoints.has(sub.endpoint));
+  const pending = getPendingPushSubscriptions(
+    storedSubscriptions.filter((sub) => isAllowedPushEndpoint(sub.endpoint)),
+    item.delivered_endpoints ?? [],
+  );
 
   if (pending.length === 0) {
     return await completeClaim(db, item, null) ? "processed" : "lost_claim";
