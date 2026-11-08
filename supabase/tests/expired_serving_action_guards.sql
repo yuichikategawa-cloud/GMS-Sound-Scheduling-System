@@ -118,6 +118,22 @@ BEGIN
   SELECT id INTO v_target_assignment FROM public.assignments WHERE schedule_id=v_future_target LIMIT 1;
   UPDATE public.schedules SET status='published' WHERE id IN (v_future_source,v_future_target);
 
+  -- A future source cannot be swapped into a target service that has already started.
+  UPDATE public.schedules SET service_date=DATE '2000-01-02' WHERE id=v_future_target;
+  BEGIN
+    INSERT INTO public.serving_requests(schedule_id,assignment_id,requester_servant_id,request_type,details,status,
+      target_schedule_id,target_assignment_id,target_servant_id)
+    VALUES(v_future_source,v_source_assignment,v_servant,'swap','rollback expired target test','pending',
+      v_future_target,v_target_assignment,v_target_servant);
+    RAISE EXCEPTION USING ERRCODE='ZX906', MESSAGE='Swap request with expired target was accepted';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+    IF v_message NOT LIKE 'The target service has already started%' THEN
+      RAISE EXCEPTION 'Unexpected expired target request result: %',v_message;
+    END IF;
+  END;
+  UPDATE public.schedules SET service_date=DATE '2099-12-27' WHERE id=v_future_target;
+
   INSERT INTO public.serving_requests(schedule_id,assignment_id,requester_servant_id,request_type,details,status,
     target_schedule_id,target_assignment_id,target_servant_id)
   VALUES(v_future_source,v_source_assignment,v_servant,'swap','rollback temporal swap test','pending',
