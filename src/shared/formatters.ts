@@ -8,6 +8,13 @@ export function localDateKey(date: Date): string {
 
 export const today = () => localDateKey(new Date());
 
+/** True only while a service's local start time is still in the future. */
+export function isScheduleUpcoming(serviceDate: string, startTime: string, now = new Date()): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(serviceDate) || !/^\d{2}:\d{2}/.test(startTime)) return false;
+  const startsAt = new Date(`${serviceDate}T${startTime.slice(0, 5)}:00`);
+  return Number.isFinite(startsAt.getTime()) && startsAt.getTime() > now.getTime();
+}
+
 export const fmtDate = (d: string) =>
   new Date(`${d}T12:00:00`).toLocaleDateString("en-US", {
     weekday: "short",
