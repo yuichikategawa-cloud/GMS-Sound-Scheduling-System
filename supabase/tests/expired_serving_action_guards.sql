@@ -66,6 +66,7 @@ BEGIN
   END;
 
   -- A servant cannot change confirmation status after service start.
+  UPDATE public.profiles SET role='servant' WHERE id=v_servant_user;
   PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
   IF public.is_admin() THEN RAISE EXCEPTION 'Servant JWT unexpectedly resolves as admin'; END IF;
   BEGIN
@@ -79,12 +80,14 @@ BEGIN
   END;
 
   -- A configured, elapsed deadline must reject dated and recurring availability writes.
+  UPDATE public.profiles SET role='admin' WHERE id=v_admin;
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
   INSERT INTO public.system_settings(key,value,updated_at,updated_by)
   VALUES('availability_deadline','2000-01-01',pg_catalog.now(),v_admin)
   ON CONFLICT (key) DO UPDATE
     SET value=EXCLUDED.value, updated_at=EXCLUDED.updated_at, updated_by=EXCLUDED.updated_by;
 
+  UPDATE public.profiles SET role='servant' WHERE id=v_servant_user;
   PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
   BEGIN
     INSERT INTO public.servant_availability(servant_id,service_date,status,notes)
@@ -109,6 +112,7 @@ BEGIN
   END;
 
   -- Restore administrator identity for creation of a pending swap.
+  UPDATE public.profiles SET role='admin' WHERE id=v_admin;
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
   v_future_source := public.admin_save_schedule_with_assignments(
     NULL,jsonb_build_object('service_date','2099-12-26','location_id',v_location,
