@@ -217,6 +217,7 @@ export function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDe
  const [newStart,setNewStart]=useState("09:00"); const [newEnd,setNewEnd]=useState("11:00");
  const [savingTemplate,setSavingTemplate]=useState(false); const [formError,setFormError]=useState("");
  const [selected,setSelected]=useState<string[]>(()=>templates.filter(t=>t.active!==false).map(t=>String(t.id)));
+ useEffect(()=>{if(!locations.some(location=>location.id===newLocation))setNewLocation(locations[0]?.id??"");},[locations,newLocation]);
  useEffect(()=>setSelected(current=>current.filter(id=>templates.some(t=>String(t.id)===id)).concat(templates.filter(t=>t.active!==false&&!current.includes(String(t.id))).map(t=>String(t.id)))),[templates]);
  const toggle=(id:string)=>setSelected(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
