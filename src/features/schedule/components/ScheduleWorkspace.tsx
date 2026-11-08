@@ -70,7 +70,7 @@ export default function ScheduleWorkspace({
       {!isAdmin && <MyUpcomingAssignments items={myUpcomingSchedules} servantId={myServant?.id ?? ""} onConfirm={onConfirmAssignment} onRequest={onSubmitServingRequest}/>}
       {isAdmin ? (
         <>
-          <div className="toolbar schedule-page-heading"><div><h2>Serving schedule</h2><p className="subtle">Manage coverage, servant assignments and service calendars across all church locations.</p></div></div>
+          <div className="toolbar schedule-page-heading"><div><h2>Schedule management</h2><p className="subtle">Manage coverage, servant assignments and service calendars across all church locations.</p></div></div>
           <div className="schedule-workspace-tabs" role="tablist" aria-label="Schedule workspace">
             <button type="button" role="tab" aria-selected={adminScheduleView === "overview"} className={adminScheduleView === "overview" ? "selected" : ""} onClick={() => setAdminScheduleView("overview")}><BarChart3 size={16}/> Overview</button>
             <button type="button" role="tab" aria-selected={adminScheduleView === "assignments"} className={adminScheduleView === "assignments" ? "selected" : ""} onClick={() => setAdminScheduleView("assignments")}><Users size={16}/> Assignments</button>
