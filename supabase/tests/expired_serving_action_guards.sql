@@ -21,20 +21,26 @@ DECLARE
   v_message text;
 BEGIN
   SELECT id INTO v_admin FROM public.profiles WHERE role='admin' ORDER BY created_at LIMIT 1;
-  SELECT s.id, s.auth_user_id INTO v_servant, v_servant_user
-  FROM public.servants s
-  JOIN public.profiles p ON p.id=s.auth_user_id AND p.role='servant'
-  WHERE s.active=true AND s.auth_user_id IS NOT NULL
-  ORDER BY s.id LIMIT 1;
   SELECT id INTO v_target_servant FROM public.servants
-  WHERE active=true AND id IS DISTINCT FROM v_servant ORDER BY id LIMIT 1;
+  WHERE active=true ORDER BY id LIMIT 1;
   SELECT id INTO v_location FROM public.locations ORDER BY name LIMIT 1;
 
-  IF v_admin IS NULL OR v_servant IS NULL OR v_servant_user IS NULL
-     OR v_target_servant IS NULL OR v_location IS NULL THEN
-    RAISE EXCEPTION 'Test requires an admin, two active servants (one linked), and a location';
+  IF v_admin IS NULL OR v_target_servant IS NULL OR v_location IS NULL THEN
+    RAISE EXCEPTION 'Test requires an admin profile, one active target servant, and a location';
   END IF;
 
+  -- Reuse the existing authenticated admin identity as a temporary servant.
+  -- The profile-role change, fixture servant, and all test rows are inside this
+  -- transaction and are reverted by the final ROLLBACK. This avoids inserting
+  -- synthetic rows into Supabase's protected auth schema.
+  v_servant_user := v_admin;
+  INSERT INTO public.servants(full_name,active,auth_user_id)
+  VALUES('GMS rollback-only temporal test servant',true,v_servant_user)
+  RETURNING id INTO v_servant;
+  UPDATE public.profiles SET role='servant' WHERE id=v_servant_user;
+  PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
+  IF public.is_admin() THEN RAISE EXCEPTION 'Temporary servant JWT unexpectedly resolves as admin'; END IF;
+  UPDATE public.profiles SET role='admin' WHERE id=v_admin;
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
   IF NOT public.is_admin() THEN RAISE EXCEPTION 'Admin JWT simulation failed'; END IF;
 
