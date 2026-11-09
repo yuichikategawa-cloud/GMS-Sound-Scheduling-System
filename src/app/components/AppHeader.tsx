@@ -42,7 +42,7 @@ export default function AppHeader({
   return (
     <header className="topbar">
       <div>
-        <div className="eyebrow">GMS • CHURCH SERVING</div>
+        <div className="eyebrow">GMS • SOUND SERVING</div>
         <h1>{PAGE_TITLES[activeTab]}</h1>
       </div>
       <div className="top-actions">
