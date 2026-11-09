@@ -4,16 +4,27 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-Deno.test("Vercel configuration keeps main and develop eligible for deployments", async () => {
+Deno.test("Vercel Git deployments require an explicit branch allowlist", async () => {
   const source = await Deno.readTextFile(new URL("../../vercel.json", import.meta.url));
   const config = JSON.parse(source) as {
     git?: { deploymentEnabled?: boolean | Record<string, boolean> };
   };
   const deploymentEnabled = config.git?.deploymentEnabled;
-  if (typeof deploymentEnabled === "object" && deploymentEnabled !== null) {
-    assert(deploymentEnabled.main !== false,
-      "The Production branch must not be disabled by vercel.json.");
-    assert(deploymentEnabled.develop !== false,
-      "The development branch must not be disabled by vercel.json.");
-  }
+
+  assert(
+    typeof deploymentEnabled === "object" && deploymentEnabled !== null,
+    "Vercel Git deployment rules must use an explicit branch map.",
+  );
+  assert(
+    deploymentEnabled["**"] === false,
+    "Unapproved branches, including feature branches, must not auto-deploy.",
+  );
+  assert(
+    deploymentEnabled.main === true,
+    "The Production branch must remain eligible for deployment.",
+  );
+  assert(
+    deploymentEnabled.develop === false,
+    "The develop branch must not create automatic Preview deployments.",
+  );
 });
