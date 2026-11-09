@@ -15,6 +15,7 @@ on:
       - ".github/workflows/staging-qa-validation.yml"
   pull_request:
     branches:
+      - main
       - develop
       - security/push-endpoint-hardening
     paths:
