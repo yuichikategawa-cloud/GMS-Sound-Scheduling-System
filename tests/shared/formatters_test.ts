@@ -91,11 +91,12 @@ Deno.test("displayList preserves plain strings and safely handles unsupported va
   assertEqual(displayList({ label: "FOH" }), "", "Objects should not be stringified as list values.");
 });
 
-Deno.test("schedule upcoming helper compares local service start time against now", () => {
-  assertEqual(isScheduleUpcoming("2026-11-08", "19:00:00", new Date(2026, 10, 8, 18, 59)), true, "A service that has not started should remain upcoming.");
-  assertEqual(isScheduleUpcoming("2026-11-08", "18:00:00", new Date(2026, 10, 8, 18, 0)), false, "A service is no longer actionable at its start time.");
-  assertEqual(isScheduleUpcoming("2026-11-08", "11:00:00", new Date(2026, 10, 8, 18, 42)), false, "Earlier services on the current date must be excluded.");
-  assertEqual(isScheduleUpcoming("2026-11-09", "07:00:00", new Date(2026, 10, 8, 23, 59)), true, "A future local calendar date remains upcoming.");
+Deno.test("schedule upcoming helper compares Asia/Jakarta service time against the current instant", () => {
+  assertEqual(isScheduleUpcoming("2026-11-08", "19:00:00", new Date("2026-11-08T11:59:00Z")), true, "A service one minute in the future in Jakarta must remain upcoming.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "19:00:00", new Date("2026-11-08T12:00:00Z")), false, "A service is no longer actionable at its Jakarta start time.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "11:00:00", new Date("2026-11-08T11:42:00Z")), false, "Earlier Jakarta services must be excluded.");
+  assertEqual(isScheduleUpcoming("2026-11-09", "07:00:00", new Date("2026-11-08T16:59:00Z")), true, "A future Jakarta calendar date remains upcoming.");
+  assertEqual(isScheduleUpcoming("2026-11-08", "19:00:00", new Date("2026-11-08T12:01:00Z")), false, "A service that has started in Jakarta must stay expired regardless of browser timezone.");
   assertEqual(isScheduleUpcoming("invalid", "09:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid dates must fail closed.");
   assertEqual(isScheduleUpcoming("2026-02-30", "09:00", new Date(2026, 1, 1)), false, "Impossible calendar dates must fail closed.");
   assertEqual(isScheduleUpcoming("2026-11-08", "24:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid hours must fail closed.");

@@ -2,6 +2,7 @@
 import {
   getInclusiveDateCount,
   validateServingPreferenceInput,
+  validateBulkAvailabilityRows,
 } from "../../src/features/availability/services/availabilityInputValidation.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
@@ -34,4 +35,20 @@ Deno.test("bulk availability date range count is inclusive, rejects invalid rang
   assertEqual(getInclusiveDateCount("2026-01-01", "2027-01-06"), 371, "An overlong range must be detectable, not silently truncated.");
   assertEqual(getInclusiveDateCount("2026-02-30", "2026-03-01"), null, "Impossible calendar dates must be rejected.");
   assertEqual(getInclusiveDateCount("2026-11-08", "2026-11-07"), null, "Reversed date ranges must be rejected.");
+});
+
+
+Deno.test("bulk availability validation accepts valid ISO dates and rejects malformed dates", () => {
+  const row = { servant_id: "servant-1", service_date: "2026-11-09", status: "available" };
+  assertEqual(validateBulkAvailabilityRows([row]), null, "A valid YYYY-MM-DD date must pass the bulk validator.");
+  assertEqual(validateBulkAvailabilityRows([{ ...row, service_date: "2026-2-09" }]) !== null, true, "Unpadded dates must be rejected.");
+  assertEqual(validateBulkAvailabilityRows([{ ...row, service_date: "2026-02-30" }]) !== null, true, "Impossible calendar dates must be rejected.");
+  assertEqual(validateBulkAvailabilityRows([{ ...row, service_date: "2026-11-09T00:00:00Z" }]) !== null, true, "Datetime strings must not be accepted as date-only values.");
+});
+
+Deno.test("bulk availability validation rejects duplicate servant/date keys", () => {
+  const first = { servant_id: "servant-1", service_date: "2026-11-09", status: "available" };
+  assertEqual(validateBulkAvailabilityRows([first, { ...first }]) !== null, true, "Identical duplicates must be rejected before a multi-row upsert.");
+  assertEqual(validateBulkAvailabilityRows([first, { ...first, status: "unavailable" }]) !== null, true, "Contradictory duplicate statuses must be rejected.");
+  assertEqual(validateBulkAvailabilityRows([first, { ...first, servant_id: "servant-2" }, { ...first, service_date: "2026-11-10" }]), null, "Different servant/date keys must remain valid.");
 });

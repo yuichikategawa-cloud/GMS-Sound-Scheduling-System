@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { FormEvent } from "react";
 import { errorText, fmtDate, shortTime, today } from "../../../shared/formatters";
+import { validateBulkAvailabilityRows } from "../services/availabilityInputValidation";
 import type { ScheduleView, Servant } from "../../../types";
 import {
   deleteAvailabilityRecordById,
@@ -108,8 +109,9 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
         setMessage("The availability submission deadline (" + fmtDate(deadline) + ") has passed. Please contact the administrator if you need to change your availability.");
         return false;
       }
-      if (rows.some(row => !row.servant_id || !/^\\d{4}-\\d{2}-\\d{2}$/.test(row.service_date) || !["available", "unavailable", "prefer_not"].includes(row.status))) {
-        setMessage("One or more bulk availability entries contain an invalid servant, date or status.");
+      const inputError = validateBulkAvailabilityRows(rows);
+      if (inputError) {
+        setMessage(inputError);
         return false;
       }
       const conflicts = rows.filter(row => availability.some(item => item.servant_id === row.servant_id && item.service_date === row.service_date && item.status !== row.status));

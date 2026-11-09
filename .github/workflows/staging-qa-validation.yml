@@ -48,6 +48,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: deno test --no-lock tests/shared/formatters_test.ts
+      - run: deno test --no-lock tests/availability/availabilityInputValidation_test.ts
       - run: deno test --no-lock tests/app/assignmentConfirmation_test.ts
       - run: deno test --no-lock tests/schedule/dailyDisplay_test.ts
       - run: deno test --no-lock tests/schedule/assignmentValidation_test.ts
