@@ -1,5 +1,6 @@
 -- Rollback-only regression tests for database-side temporal enforcement.
--- Run after 20261108010000_gms_enforce_expired_serving_actions.sql.
+-- Run after 20261108010000_gms_enforce_expired_serving_actions.sql and
+-- 20261109010000_gms_enforce_availability_delete_deadline.sql.
 -- No persistent data or settings changes remain after ROLLBACK.
 
 BEGIN;
@@ -18,6 +19,8 @@ DECLARE
   v_source_assignment uuid;
   v_target_assignment uuid;
   v_request uuid;
+  v_dated_availability_id uuid;
+  v_recurring_availability_id uuid;
   v_message text;
 BEGIN
   SELECT id INTO v_admin FROM public.profiles WHERE role='admin' ORDER BY created_at LIMIT 1;
@@ -82,6 +85,15 @@ BEGIN
   -- A configured, elapsed deadline must reject dated and recurring availability writes.
   UPDATE public.profiles SET role='admin' WHERE id=v_admin;
   PERFORM set_config('request.jwt.claim.sub',v_admin::text,true);
+  -- Create owned availability rows before closing the deadline so DELETE can
+  -- be tested independently of INSERT rejection.
+  INSERT INTO public.servant_availability(servant_id,service_date,status,notes)
+  VALUES(v_servant,DATE '2099-01-02','available','rollback delete deadline test')
+  RETURNING id INTO v_dated_availability_id;
+  INSERT INTO public.servant_availability_rules(servant_id,pattern,status,effective_from,effective_until,weekday,ordinal,notes)
+  VALUES(v_servant,'saturday','available',DATE '2099-01-01',DATE '2099-12-31',6,1,'rollback delete deadline test')
+  RETURNING id INTO v_recurring_availability_id;
+
   INSERT INTO public.system_settings(key,value,updated_at,updated_by)
   VALUES('availability_deadline','2000-01-01',pg_catalog.now(),v_admin)
   ON CONFLICT (key) DO UPDATE
@@ -108,6 +120,27 @@ BEGIN
     GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
     IF v_message NOT LIKE 'The availability submission deadline has passed%' THEN
       RAISE EXCEPTION 'Unexpected recurring availability deadline result: %',v_message;
+    END IF;
+  END;
+
+  -- Servants must not bypass the deadline by deleting existing availability.
+  BEGIN
+    DELETE FROM public.servant_availability WHERE id=v_dated_availability_id;
+    RAISE EXCEPTION USING ERRCODE='ZX907', MESSAGE='Expired deadline allowed dated availability delete';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+    IF v_message NOT LIKE 'The availability submission deadline has passed%' THEN
+      RAISE EXCEPTION 'Unexpected dated availability delete deadline result: %',v_message;
+    END IF;
+  END;
+
+  BEGIN
+    DELETE FROM public.servant_availability_rules WHERE id=v_recurring_availability_id;
+    RAISE EXCEPTION USING ERRCODE='ZX908', MESSAGE='Expired deadline allowed recurring availability delete';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
+    IF v_message NOT LIKE 'The availability submission deadline has passed%' THEN
+      RAISE EXCEPTION 'Unexpected recurring availability delete deadline result: %',v_message;
     END IF;
   END;
 
