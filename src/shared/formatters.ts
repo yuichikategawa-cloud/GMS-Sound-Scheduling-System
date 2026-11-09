@@ -8,6 +8,15 @@ export function localDateKey(date: Date): string {
 
 export const today = () => localDateKey(new Date());
 
+/** Current calendar date in the timezone used by service and deadline rules. */
+export const todayInJakarta = (now = new Date()): string => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(now);
+  const current = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${current.year}-${current.month}-${current.day}`;
+};
+
 /** True only while a service's Asia/Jakarta start time is still in the future. */
 export function isScheduleUpcoming(serviceDate: string, startTime: string, now = new Date()): boolean {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(serviceDate);

@@ -9,6 +9,7 @@ import {
   isScheduleUpcoming,
   shortTime,
   today,
+  todayInJakarta,
 } from "../../src/shared/formatters.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
@@ -101,4 +102,10 @@ Deno.test("schedule upcoming helper compares Asia/Jakarta service time against t
   assertEqual(isScheduleUpcoming("2026-02-30", "09:00", new Date(2026, 1, 1)), false, "Impossible calendar dates must fail closed.");
   assertEqual(isScheduleUpcoming("2026-11-08", "24:00", new Date(2026, 10, 8, 8, 0)), false, "Invalid hours must fail closed.");
   assertEqual(isScheduleUpcoming("2026-11-08", "09:60", new Date(2026, 10, 8, 8, 0)), false, "Invalid minutes must fail closed.");
+});
+
+
+Deno.test("Jakarta date helper follows the service timezone independently of device timezone", () => {
+  assertEqual(todayInJakarta(new Date("2026-11-08T16:59:00Z")), "2026-11-08", "The helper must return the Jakarta date before its midnight boundary.");
+  assertEqual(todayInJakarta(new Date("2026-11-08T17:00:00Z")), "2026-11-09", "The helper must roll over at midnight in Jakarta.");
 });

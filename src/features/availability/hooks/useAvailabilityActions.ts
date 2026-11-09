@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { FormEvent } from "react";
-import { errorText, fmtDate, shortTime, today } from "../../../shared/formatters";
+import { errorText, fmtDate, shortTime, todayInJakarta } from "../../../shared/formatters";
 import { validateBulkAvailabilityRows } from "../services/availabilityInputValidation";
 import type { ScheduleView, Servant } from "../../../types";
 import {
@@ -65,7 +65,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
         status: statusValue as AvailabilityStatus,
         notes: String(formData.get("notes") || "").trim(),
       };
-      if (!isAdmin && deadline && today() > deadline) {
+      if (!isAdmin && deadline && todayInJakarta() > deadline) {
         setMessage("The availability submission deadline (" + fmtDate(deadline) + ") has passed. Please contact the administrator if you need to change your availability.");
         return;
       }
