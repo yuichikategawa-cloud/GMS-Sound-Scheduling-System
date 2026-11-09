@@ -91,7 +91,7 @@ BEGIN
   VALUES(v_servant,DATE '2099-01-02','available','rollback delete deadline test')
   RETURNING id INTO v_dated_availability_id;
   INSERT INTO public.servant_availability_rules(servant_id,pattern,status,effective_from,effective_until,weekday,ordinal,notes)
-  VALUES(v_servant,'saturday','available',DATE '2099-01-01',DATE '2099-12-31',6,1,'rollback delete deadline test')
+  VALUES(v_servant,'saturday','prefer_not',DATE '2099-01-01',DATE '2099-12-31',6,1,'rollback delete deadline test')
   RETURNING id INTO v_recurring_availability_id;
 
   INSERT INTO public.system_settings(key,value,updated_at,updated_by)
@@ -114,7 +114,7 @@ BEGIN
 
   BEGIN
     INSERT INTO public.servant_availability_rules(servant_id,pattern,status,effective_from,effective_until,weekday,ordinal,notes)
-    VALUES(v_servant,'saturday','available',DATE '2099-01-01',DATE '2099-12-31',6,1,'rollback deadline test');
+    VALUES(v_servant,'saturday','prefer_not',DATE '2099-01-01',DATE '2099-12-31',6,1,'rollback deadline test');
     RAISE EXCEPTION USING ERRCODE='ZX904', MESSAGE='Expired deadline allowed recurring availability write';
   EXCEPTION WHEN OTHERS THEN
     GET STACKED DIAGNOSTICS v_message=MESSAGE_TEXT;
