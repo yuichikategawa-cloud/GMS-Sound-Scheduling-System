@@ -144,4 +144,4 @@ The live `gms-dispatch-web-push` command is the same after whitespace normalizat
 - Read-only Supabase queries against both projects.
 - Read-only comparison of stored migration SQL with current/older repository files.
 - Read-only catalog, privilege and cron inventory.
-- No SQL migrations applied; no migration ledger rows edited; no Edge Functions, secrets, cron jobs, GitHub settings, branches other than this documentation branch, or Vercel deployments changed.
+- No SQL migrations applied; no migration ledger rows edited; no Edge Functions, secrets, cron jobs, or GitHub settings changed. Only this documentation branch was created/updated; `develop` and `main` were not changed. Vercel created Git-triggered attempts for the documentation commits, but the project's Ignored Build Step canceled them (exit code 0) before any deployment became Ready; no Preview or Production deployment was produced.
