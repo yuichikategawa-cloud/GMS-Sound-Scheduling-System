@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { ScheduleView, Servant } from "../../types";
+import { isScheduleUpcoming } from "../../shared/formatters";
 import type { ServingRequestRecord } from "../../features/requests/services/requestData";
 import { createServingRequest } from "../../features/requests/services/requestPersistence";
 import {
@@ -36,6 +37,10 @@ export function useAssignmentConfirmationActions({
 }) {
   async function confirmAssignment(schedule: ScheduleView, status: "confirmed" | "declined") {
     if (!client || !myServant || !sessionUserId) return;
+    if (!isScheduleUpcoming(schedule.service_date, schedule.start_time)) {
+      setMessage("This service has already started. Confirmation and request actions are no longer available.");
+      return;
+    }
     const assignment = schedule.assignments.find(item => item.servant_id === myServant.id);
     if (!assignment?.id) return;
 

@@ -225,7 +225,10 @@ export function useScheduleActions({
   }
 
   async function addServiceTemplate(locationId: string, day: number, name: string, start: string, end: string) {
-    if (!client || !isAdmin) return;
+    if (!client || !isAdmin) throw new Error("Only an administrator with an active session can save service templates.");
+    if (!locationId || !name.trim() || !Number.isInteger(day) || ![0, 6].includes(day) || !/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end) || start >= end) {
+      throw new Error("Check the church, service day, name and time range before saving.");
+    }
     const { error } = await upsertScheduleServiceTemplate(client, {
       location_id: locationId,
       day_of_week: day,

@@ -1183,3 +1183,44 @@
     box-sizing: border-box;
   }
 }
+
+
+/* Mobile servant picker: native checkboxes must not shrink with long names or grid tracks. */
+.bulk-servant-picker .bulk-servant-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  align-items:start;
+  gap:12px 14px;
+}
+.bulk-servant-picker .bulk-servant-list label{
+  display:grid;
+  grid-template-columns:20px minmax(0,1fr);
+  align-items:center;
+  justify-content:start;
+  gap:9px;
+  min-width:0;
+  min-height:38px;
+  line-height:1.35;
+  overflow-wrap:anywhere;
+}
+.bulk-servant-picker .bulk-servant-list input[type="checkbox"]{
+  appearance:auto;
+  -webkit-appearance:checkbox;
+  display:block;
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+  min-height:20px!important;
+  max-width:20px!important;
+  max-height:20px!important;
+  margin:0!important;
+  padding:0!important;
+  flex:none!important;
+  align-self:center;
+}
+@media(max-width:760px){
+  .bulk-servant-picker .bulk-servant-list{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px}
+}
+@media(max-width:430px){
+  .bulk-servant-picker .bulk-servant-list{grid-template-columns:minmax(0,1fr)!important}
+}

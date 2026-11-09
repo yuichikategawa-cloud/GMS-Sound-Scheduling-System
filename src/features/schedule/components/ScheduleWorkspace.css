@@ -2372,3 +2372,39 @@
     background: transparent !important;
   }
 }
+
+
+/* Mobile template controls: centered, full-width actions and readable helper copy. */
+@media(max-width:760px){
+  .template-picker-head{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:stretch;
+    justify-items:stretch;
+    gap:10px;
+    text-align:center;
+  }
+  .template-picker-head>b{grid-column:1/-1;text-align:center}
+  .template-picker-head>span{grid-column:1/-1;text-align:center;margin:0}
+  .template-picker-head>.clear-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:44px;
+    margin:0;
+    text-align:center;
+  }
+  .template-picker-head>.template-add-btn{
+    grid-column:1/-1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    min-height:44px;
+    margin:0;
+    text-align:center;
+  }
+  .new-template-form>button{display:flex;align-items:center;justify-content:center;text-align:center}
+  .new-template-help{grid-column:1/-1;text-align:center}
+}

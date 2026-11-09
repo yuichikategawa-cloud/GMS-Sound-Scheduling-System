@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { FormEvent } from "react";
-import { errorText, fmtDate, shortTime, today } from "../../../shared/formatters";
+import { errorText, fmtDate, shortTime, todayInJakarta } from "../../../shared/formatters";
+import { validateBulkAvailabilityRows } from "../services/availabilityInputValidation";
 import type { ScheduleView, Servant } from "../../../types";
 import {
   deleteAvailabilityRecordById,
@@ -64,7 +65,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
         status: statusValue as AvailabilityStatus,
         notes: String(formData.get("notes") || "").trim(),
       };
-      if (!isAdmin && deadline && today() > deadline) {
+      if (!isAdmin && deadline && todayInJakarta() > deadline) {
         setMessage("The availability submission deadline (" + fmtDate(deadline) + ") has passed. Please contact the administrator if you need to change your availability.");
         return;
       }
@@ -95,6 +96,24 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
 
     async function saveBulkAvailability(rows: AvailabilitySubmissionRow[]): Promise<boolean> {
       if (!client) return false;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        setMessage("Select at least one availability entry before saving.");
+        return false;
+      }
+      const linkedServant = servants.find(servant => servant.auth_user_id === sessionUserId);
+      if (!isAdmin && (!linkedServant || rows.some(row => row.servant_id !== linkedServant.id))) {
+        setMessage("Your login may only update availability for its own linked servant profile.");
+        return false;
+      }
+      if (!isAdmin && deadline && todayInJakarta() > deadline) {
+        setMessage("The availability submission deadline (" + fmtDate(deadline) + ") has passed. Please contact the administrator if you need to change your availability.");
+        return false;
+      }
+      const inputError = validateBulkAvailabilityRows(rows);
+      if (inputError) {
+        setMessage(inputError);
+        return false;
+      }
       const conflicts = rows.filter(row => availability.some(item => item.servant_id === row.servant_id && item.service_date === row.service_date && item.status !== row.status));
       if (conflicts.length) {
         setMessage("Cannot save: " + conflicts.length + " date/person combination(s) already have a different availability status. Resolve the conflicts first.");
@@ -153,7 +172,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       const currentForPerson = servingPreferences.filter(rule => rule.servant_id === preference.servant_id && rule.active !== false);
       const combined = [...currentForPerson, preference];
       const conflicts = schedules
-        .filter(schedule => schedule.service_date >= today() && schedule.assignments.some(assignment => assignment.servant_id === preference.servant_id))
+        .filter(schedule => schedule.service_date >= todayInJakarta() && schedule.assignments.some(assignment => assignment.servant_id === preference.servant_id))
         .filter(schedule => {
           const dateDow = new Date(schedule.service_date + "T12:00:00").getDay();
           const timeRules = combined.filter(rule => rule.rule_type === "allowed_time_window");
