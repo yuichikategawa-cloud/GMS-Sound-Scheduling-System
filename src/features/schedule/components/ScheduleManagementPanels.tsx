@@ -223,13 +223,38 @@ export function GeneratePanel({templates,locations,onGenerate,onAddTemplate,onDe
  const dayName=(d:number)=>Number(d)===6?"Saturday":"Sunday";
  return <details className="generate-panel generate-panel-collapsible"><summary className="generate-panel-summary"><div className="generate-heading"><div><b>Bulk generate recurring weekend slots</b><p className="subtle">Choose the church services to generate and how existing matching slots should be handled.</p></div></div><ChevronDown className="generate-chevron" size={19}/></summary><div className="generate-panel-content">
   <div className="template-picker"><div className="template-picker-head"><b>Service templates</b><span>{selected.length} selected</span><button type="button" className="clear-btn" onClick={()=>setSelected(templates.filter(t=>t.active!==false).map(t=>String(t.id)))}>Select all</button><button type="button" className="clear-btn" onClick={()=>setSelected([])} disabled={selected.length===0}>Clear selection</button><button type="button" className="btn secondary template-add-btn" onClick={()=>setShowNewTemplate(v=>!v)}>{showNewTemplate?"Close":"＋ Add new service"}</button></div>
-   {showNewTemplate&&<form className="new-template-form" onSubmit={async e=>{e.preventDefault();if(!newLocation||!newName.trim()||newStart>=newEnd)return;setSavingTemplate(true);setFormError("");try{await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);setNewName("");setShowNewTemplate(false);}catch(error){setFormError(error instanceof Error?error.message:"Could not save service template.");}finally{setSavingTemplate(false);}}}>
+   {showNewTemplate&&<form className="new-template-form" noValidate onSubmit={async e=>{
+    e.preventDefault();
+    if(!newName.trim()){
+      setFormError("Enter a service name before saving this template.");
+      return;
+    }
+    if(!newLocation){
+      setFormError("Choose a church location before saving this template.");
+      return;
+    }
+    if(newStart>=newEnd){
+      setFormError("End time must be later than start time.");
+      return;
+    }
+    setSavingTemplate(true);
+    setFormError("");
+    try{
+      await onAddTemplate(newLocation,newDay,newName.trim(),newStart,newEnd);
+      setNewName("");
+      setShowNewTemplate(false);
+    }catch(error){
+      setFormError(error instanceof Error?error.message:"Could not save service template.");
+    }finally{
+      setSavingTemplate(false);
+    }
+   }}>
     <label>Church location<select value={newLocation} onChange={e=>setNewLocation(e.target.value)} required>{locations.map(l=><option key={l.id} value={l.id}>{l.name}</option>)}</select></label>
     <label>Service day<select value={newDay} onChange={e=>setNewDay(Number(e.target.value))}><option value={6}>Saturday</option><option value={0}>Sunday</option></select></label>
-    <label>Service name<input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Service 4" required/></label>
+    <label>Service name<input value={newName} onChange={e=>{setNewName(e.target.value);if(e.target.value.trim())setFormError("");}} placeholder="e.g. Service 4" aria-required="true" aria-invalid={!!formError&&!newName.trim()}/></label>
     <label>Start time<input type="time" value={newStart} onChange={e=>setNewStart(e.target.value)} required/></label>
     <label>End time<input type="time" value={newEnd} onChange={e=>setNewEnd(e.target.value)} required/></label>
-    <button className="btn primary" type="submit" disabled={savingTemplate||!newName.trim()||newStart>=newEnd}>{savingTemplate?"Saving…":"Save service template"}</button>
+    <button className="btn primary" type="submit" disabled={savingTemplate}>{savingTemplate?"Saving…":"Save service template"}</button>
     {formError&&<p className="schedule-error" role="alert">{formError}</p>}
     <p className="new-template-help">The new service will be added to this church’s template list and can be selected for future weekend generation.</p>
    </form>}
