@@ -2484,3 +2484,76 @@
   border-color: #a5b4fc !important;
   box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.2);
 }
+
+
+/* Mobile light-theme correction: selection actions retain visible button
+   boundaries even though their desktop control rule is breakpoint-scoped. */
+@media (max-width: 760px) {
+  .template-picker-head > .clear-btn {
+    border: 1px solid #d5d9e5 !important;
+    border-radius: 9px !important;
+    background: #ffffff !important;
+    color: #4d54c8 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06) !important;
+    text-decoration: none !important;
+  }
+  .template-picker-head > .clear-btn:hover:not(:disabled) {
+    border-color: #aeb3e8 !important;
+    background: #f7f7ff !important;
+  }
+  .template-picker-head > .clear-btn:disabled {
+    border-color: #e1e4ec !important;
+    background: #f8f9fc !important;
+  }
+}
+
+
+/* Final mobile layout: keep the two selection actions side by side,
+   with each label centered inside a clearly outlined button. */
+@media (max-width: 760px) {
+  .template-picker-head {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    gap: 10px !important;
+  }
+  .template-picker-head > b,
+  .template-picker-head > span,
+  .template-picker-head > .template-add-btn {
+    grid-column: 1 / -1 !important;
+  }
+  .template-picker-head > .clear-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    box-sizing: border-box !important;
+    border: 1px solid #cbd2e2 !important;
+    border-radius: 9px !important;
+    background: #ffffff !important;
+    color: #4d54c8 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.07) !important;
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.25 !important;
+  }
+  .template-picker-head > .clear-btn:hover:not(:disabled) {
+    border-color: #aeb6dc !important;
+    background: #f7f8ff !important;
+  }
+  :root[data-theme="dark"] .template-picker-head > .clear-btn {
+    border-color: #566783 !important;
+    background: #26364f !important;
+    color: #e7edff !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+  }
+  :root[data-theme="dark"] .template-picker-head > .clear-btn:hover:not(:disabled) {
+    border-color: #8092b3 !important;
+    background: #30415e !important;
+  }
+}
