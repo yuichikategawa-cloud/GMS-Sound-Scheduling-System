@@ -19,7 +19,7 @@ This document records live `supabase_migrations.schema_migrations` entries, comp
 | Migration ledger rows | 25 | 30 |
 | Rows with a non-empty migration name and SQL body | 25 | 27 |
 | Blank/no-op ledger rows | 0 | 3 |
-| Version IDs shared exactly between environments | \\multicolumn{2}{c}{0} |
+| Version IDs shared exactly between environments | 0 | 0 |
 
 The two environments use different migration version sequences. A logical mapping exists for much of the history, but it is not a version-for-version mirror.
 
