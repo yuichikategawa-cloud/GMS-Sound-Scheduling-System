@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
   deno-tests:
     runs-on: ubuntu-latest
@@ -54,3 +54,27 @@ jobs:
       - run: deno test --no-lock tests/schedule/assignmentValidation_test.ts
       - run: deno test --no-lock tests/requests/swapValidation_test.ts
       - run: deno test --no-lock --allow-read=src,tests tests/styles/styleOwnership_test.ts
+  sql-regression-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify rollback-only temporal SQL regression coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f supabase/tests/expired_serving_action_guards.sql
+          sql_file=supabase/tests/expired_serving_action_guards.sql
+          grep -Eiq '^BEGIN;[[:space:]]*$' "$sql_file"
+          grep -Eiq '^ROLLBACK;[[:space:]]*$' "$sql_file"
+          for assertion in \
+            "The original service has already started" \
+            "This service has started" \
+            "The target service has already started" \
+            "Both services must still be in the future" \
+            "The availability submission deadline has passed" \
+            "DELETE FROM public.servant_availability" \
+            "DELETE FROM public.servant_availability_rules"; do
+            grep -Fq "$assertion" "$sql_file"
+          done
+          echo "Rollback-only SQL regression source checks passed."
+          echo "Live Staging execution remains a separate, explicitly authorized validation step."
