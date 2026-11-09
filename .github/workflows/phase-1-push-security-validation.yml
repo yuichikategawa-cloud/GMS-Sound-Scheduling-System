@@ -174,6 +174,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_schedule_replace.sql
       - name: Apply anonymous public privilege hardening migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261118000000_gms_anonymous_public_privilege_hardening.sql
+      - name: Apply authenticated TRUNCATE privilege hardening migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261119000000_revoke_authenticated_public_truncate.sql
       - name: Run rollback-only assignment-confirmation notification idempotency regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
@@ -186,6 +188,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/weekend_replace_atomicity.sql
       - name: Run rollback-only anonymous public privilege and read-scope regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/anonymous_public_privileges.sql
+      - name: Run rollback-only authenticated TRUNCATE privilege regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/authenticated_truncate_privileges.sql
       - name: Run rollback-only admin RPC authorization regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
       - name: Run rollback-only expired serving action and availability deadline regression
