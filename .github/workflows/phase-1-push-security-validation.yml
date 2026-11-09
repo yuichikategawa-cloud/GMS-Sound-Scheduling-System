@@ -5,6 +5,22 @@ on:
   push:
     branches:
       - security/push-endpoint-hardening
+      - develop
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "src/**"
+      - "vercel.json"
+      - "tests/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/phase-1-push-security-validation.yml"
+  pull_request:
+    branches:
+      - develop
     paths:
       - "supabase/functions/**"
       - "supabase/migrations/**"
@@ -172,6 +188,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/anonymous_public_privileges.sql
       - name: Run rollback-only admin RPC authorization regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
+      - name: Run rollback-only expired serving action and availability deadline regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/expired_serving_action_guards.sql
 
   frontend:
     runs-on: ubuntu-latest
