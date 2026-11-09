@@ -1,0 +1,511 @@
+/* Requests and Inbox presentation. Shared primitives and dark-mode theme overrides remain in src/style.css. */
+
+/* Requests-owned people directory presentation moved out of shared-components.css. */
+.person-row{display:flex;align-items:center;gap:11px;padding:12px 15px;border-bottom:1px solid #f0f1f4}
+.person-row:last-child{border-bottom:0}
+.person-name{flex:1}
+.person-name b,.person-name small{display:block}
+.person-name b{font-size:13px}
+.person-name small{font-size:10px;color:var(--muted);margin-top:2px}
+
+
+.request-row
+{
+display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 16px;border-bottom:1px solid #edf0f5
+}
+
+.request-row:last-child
+{
+border-bottom:0
+}
+
+.request-main
+{
+display:flex;flex-direction:column;gap:4px;min-width:0
+}
+
+.request-main b
+{
+font-size:13px
+}
+
+.request-main small
+{
+font-size:11px;color:#64748b;overflow-wrap:anywhere
+}
+
+
+.request-target {
+  display: grid;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.request-target b {
+  font-size: 11px;
+}
+.request-target small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.request-actions
+{
+display:flex;gap:6px;flex:none
+}
+
+.requests-panel
+{
+margin-top:20px
+}
+
+.requests-panel .list-heading
+{
+margin-top:0
+}
+
+@media(max-width:760px) {
+.request-row
+{
+align-items:flex-start;flex-direction:column
+}
+}
+
+@media(max-width:760px) {
+.request-actions
+{
+width:100%
+}
+}
+
+@media(max-width:760px) {
+.request-actions .btn
+{
+flex:1
+}
+}
+
+.servant-inbox
+{
+display:grid;gap:16px
+}
+
+.inbox-intro
+{
+display:flex;justify-content:space-between;align-items:center;gap:12px
+}
+
+.inbox-intro h2
+{
+margin:0;font-size:20px
+}
+
+.inbox-intro p
+{
+margin:4px 0 0
+}
+
+.inbox-intro>span
+{
+font-size:12px;font-weight:750;color:#67519a;background:#f1edfb;border-radius:99px;padding:7px 10px
+}
+
+.inbox-list
+{
+display:grid;gap:10px
+}
+
+.inbox-item
+{
+display:flex;gap:13px;padding:15px;border:1px solid #e3e7f0;border-radius:13px;background:#fff;box-shadow:0 2px 8px rgba(26,36,64,.04)
+}
+
+.inbox-item-icon
+{
+width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#f1edfb;color:#7256ae;flex:none
+}
+
+.inbox-item-body
+{
+display:grid;gap:5px;min-width:0;flex:1
+}
+
+.inbox-item-title
+{
+display:flex;justify-content:space-between;align-items:center;gap:10px
+}
+
+.inbox-item-title b
+{
+font-size:14px;color:#25314a
+}
+
+.inbox-item-body p
+{
+margin:0;font-size:13px;color:#59657d
+}
+
+.inbox-item-body small
+{
+font-size:11px;color:#7a8498
+}
+
+.inbox-status
+{
+font-size:11px;font-weight:800;padding:5px 9px;border-radius:99px;white-space:nowrap
+}
+
+.inbox-status.approved
+{
+background:#e8f7ef;color:#187747
+}
+
+.inbox-status.rejected
+{
+background:#fff0ef;color:#b93832
+}
+
+.inbox-status.pending
+{
+background:#fff6e8;color:#98620b
+}
+
+@media(max-width:640px) {
+.inbox-intro
+{
+align-items:flex-start
+}
+}
+
+@media(max-width:640px) {
+.inbox-item
+{
+padding:12px
+}
+}
+
+.inbox-item
+{
+cursor:pointer
+}
+
+.inbox-item.unread
+{
+border-color:#cfc3ee;background:#fcfaff
+}
+
+.inbox-item.read
+{
+opacity:.82
+}
+
+.inbox-item.unread:after
+{
+content:"NEW";align-self:flex-start;font-size:9px;font-weight:900;color:#6d4bb1;background:#eee8fb;border-radius:99px;padding:4px 6px
+}
+
+.inbox-unread-count
+{
+flex:0 0 auto;
+  white-space:nowrap;
+  min-width:max-content;
+  text-align:center;
+}
+
+@media(max-width:640px) {
+.inbox-intro
+{
+align-items:center;gap:8px
+}
+}
+
+@media(max-width:640px) {
+.inbox-intro>span.inbox-unread-count
+{
+white-space:nowrap;
+    flex:0 0 auto;
+    font-size:11px;
+    padding:7px 9px;
+    margin-left:auto;
+}
+}
+
+.inbox-status
+{
+align-self:flex-start;flex:none;line-height:1.2;min-height:0;height:auto;white-space:nowrap
+}
+
+.inbox-item-title>.inbox-status
+{
+align-self:flex-start;margin-top:1px
+}
+
+.requests-panel>.inbox-item
+{
+align-items:flex-start
+}
+
+.requests-panel>.inbox-item>.inbox-status
+{
+align-self:flex-start;margin-top:2px
+}
+
+.requests-panel>.requests-section-heading
+{
+margin-top:28px!important;padding-top:20px;border-top:1px solid #e8ebf2
+}
+
+.inbox-item.unread:after
+{
+content:none;display:none
+}
+
+@media(max-width:640px) {
+.requests-panel>.requests-section-heading
+{
+margin-top:22px!important;padding-top:16px
+}
+}
+
+@media(max-width:640px) {
+.inbox-status
+{
+font-size:10px;padding:4px 8px
+}
+}
+
+.requests-panel
+{
+display:grid;gap:16px;margin-top:20px
+}
+
+.requests-content-card
+{
+background:#fff;border:1px solid #e3e8f1;border-radius:14px;padding:16px;min-width:0
+}
+
+.requests-content-heading
+{
+margin:0 0 12px;padding-bottom:11px;border-bottom:1px solid #edf0f5
+}
+
+.requests-content-heading h2
+{
+font-size:16px;margin:0
+}
+
+.requests-content-heading span
+{
+font-size:11px;color:var(--muted)
+}
+
+.notification-history-list
+{
+display:grid;gap:10px
+}
+
+:root[data-theme="dark"] .notification-history-list
+{
+gap:12px!important
+}
+
+.requests-empty-note
+{
+padding:14px 2px;color:var(--muted);font-size:13px;line-height:1.5
+}
+
+.requests-content-card .people-list
+{
+background:transparent;border:0;border-radius:0;overflow:visible
+}
+
+@media(max-width:760px) {
+.requests-content-card
+{
+padding:13px;border-radius:12px
+}
+}
+
+@media(max-width:760px) {
+.requests-content-heading
+{
+align-items:flex-start;gap:8px
+}
+}
+
+@media(max-width:760px) {
+.requests-content-heading h2
+{
+font-size:15px
+}
+}
+
+@media(max-width:760px) {
+.requests-panel
+{
+gap:13px
+}
+}
+
+/* Requests and Inbox own their separate-card dark surfaces and muted headings. */
+:root[data-theme="dark"] .requests-content-card{
+  background:#1b263a!important;
+  border-color:#3c4c66!important;
+  color:#eaf0fa!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .requests-content-heading{
+  border-bottom:1px solid #3b4b65!important;
+  box-shadow:none!important;
+}
+:root[data-theme="dark"] .requests-content-heading h2{
+  color:#f3f6fc!important;
+}
+:root[data-theme="dark"] .requests-content-heading span,
+:root[data-theme="dark"] .requests-empty-note{
+  color:#bdcbe0!important;
+}
+:root[data-theme="dark"] .requests-content-card .people-list{
+  background:transparent!important;
+  border-color:transparent!important;
+}
+:root[data-theme="dark"] .requests-content-card .person-row{
+  border-color:#394862!important;
+}
+
+/* Dark-mode ownership for the servant request inbox. */
+:root[data-theme="dark"] .servant-inbox{
+  width: 100%;
+  min-width: 0;
+  gap: 18px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .inbox-intro{
+  min-width: 0;
+  width: 100%;
+  gap: 12px;
+  padding: 2px 1px;
+}
+:root[data-theme="dark"] .inbox-intro h2{
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .inbox-intro p{
+  color: #bdcbe0 !important;
+}
+:root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
+  background: #34345f !important;
+  color: #e6e2ff !important;
+  border: 1px solid #514d80 !important;
+}
+:root[data-theme="dark"] .inbox-item{
+  background: #202f46 !important;
+  border: 1px solid #3b4d68 !important;
+  border-radius: 13px !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] .inbox-item.unread{
+  background: #292744 !important;
+  border-color: #514b7b !important;
+}
+:root[data-theme="dark"] .inbox-item + .inbox-item{
+  margin-top: 0 !important;
+}
+@media (max-width: 760px){
+  :root[data-theme="dark"] .inbox-intro{
+    align-items: center;
+  }
+  :root[data-theme="dark"] .inbox-intro > .inbox-unread-count{
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}
+
+/* Dark theme rules for admin replacement/swap requests. */
+:root[data-theme="dark"] .requests-section-heading{
+  border-color:#3b4b65!important;
+  border-top-color:#394862!important;
+}
+:root[data-theme="dark"] .request-main b{color:#f1f5fb!important}
+:root[data-theme="dark"] .request-target{background:#182437!important;border-color:#3b4b65!important}
+:root[data-theme="dark"] .request-target small{color:#b8c5d8!important}
+:root[data-theme="dark"] .servant-requests-section .request-row{background:transparent!important;border-bottom-color:#3b4b65!important}
+
+
+/* Keyboard affordance for inbox cards that mark a notification or request as read. */
+.inbox-item[role="button"]:focus-visible{
+  outline:3px solid #8b5cf6;
+  outline-offset:2px;
+}
+
+:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .requests-panel{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .inbox-item-title b{
+  color:#edf2fb!important;
+}:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small{
+  color:#a3aec3!important;
+}
+:root[data-theme="dark"] .inbox-item.unread{background:#26233d!important;border-color:#514875!important}
+:root[data-theme="dark"] .inbox-item.read{opacity:.9}
+:root[data-theme="dark"] .inbox-item-icon{background:#302b50;color:#c5baff}
+:root[data-theme="dark"] .inbox-intro>span{background:#302b50;color:#d0c7ff}
+:root[data-theme="dark"] .inbox-status.approved{background:var(--status-success-bg);color:var(--status-success-text)}
+:root[data-theme="dark"] .inbox-status.rejected{background:#492727;color:#ffb8b2}
+:root[data-theme="dark"] .inbox-status.pending{background:var(--status-warning-bg);color:var(--status-warning-text)}:root[data-theme="dark"] .servant-requests-section,:root[data-theme="dark"] .servant-inbox{
+  background:#1b263a!important;
+  border-color:#3a4963!important;
+  color:#edf2fa!important;
+  box-shadow:0 5px 18px rgba(0,0,0,.16);
+}:root[data-theme="dark"] .request-main small,:root[data-theme="dark"] .inbox-item-body p,:root[data-theme="dark"] .inbox-item-body small{
+  color:#b9c6da!important;
+}:root[data-theme="dark"] .inbox-intro h2,:root[data-theme="dark"] .servant-requests-section h2{
+  color:#f2f5fc!important;
+}/* Inbox and admin requests are separate, balanced cards rather than one long forced panel. */
+
+
+:root[data-theme="dark"] .inbox-item{background:#222f46!important;border-color:#40516d!important;box-shadow:none!important}
+:root[data-theme="dark"] .inbox-item.unread{background:#292744!important;border-color:#514a79!important}
+:root[data-theme="dark"] .inbox-item.read{opacity:1!important}
+:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{color:#f1f4fb!important}
+:root[data-theme="dark"] .inbox-item-body p{color:#c2cde0!important}
+:root[data-theme="dark"] .inbox-item-body small{color:#9faec5!important}
+:root[data-theme="dark"] .inbox-status.approved{background:#194b39!important;color:#a7ecc9!important}
+:root[data-theme="dark"] .inbox-status.rejected{background:#512b34!important;color:#ffc0c6!important}
+:root[data-theme="dark"] .inbox-status.pending{background:#514024!important;color:#ffe0a2!important}
+:root[data-theme="dark"] .inbox-item-icon{background:#34345c!important;color:#d5ceff!important}
+:root[data-theme="dark"] .inbox-intro>span{background:#34345c!important;color:#e0dcff!important}:root[data-theme="dark"] .request-row{border-color:#3b4b65!important}:root[data-theme="dark"] .requests-panel{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #eaf0fa !important;
+}/* Remove residual light-mode styling from inner inbox/request wrappers. */
+
+
+
+
+:root[data-theme="dark"] .inbox-item,:root[data-theme="dark"] .notification-history-section .inbox-item{
+  background: #24334b !important;
+  border-color: #40536f !important;
+  color: #edf3fb !important;
+}
+:root[data-theme="dark"] .inbox-item-title b,:root[data-theme="dark"] .inbox-item-body>b{
+  color: #f4f7fc !important;
+}
+:root[data-theme="dark"] .inbox-item-body p{
+  color: #cad5e5 !important;
+}
+:root[data-theme="dark"] .inbox-item-body small{
+  color: #aebdd2 !important;
+}
+:root[data-theme="dark"] .inbox-status.approved{
+  background: #174b38 !important;
+  color: #b8f2d2 !important;
+}

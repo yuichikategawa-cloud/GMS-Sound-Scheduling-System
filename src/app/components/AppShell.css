@@ -1,0 +1,95 @@
+/* Application layout frame. Header, sidebar and mobile navigation styles live with their components. */
+
+.app-shell{
+min-height:100vh
+}
+
+.main-area{
+margin-left:248px;min-height:100vh
+}
+
+.content{
+max-width:1320px;padding:30px 36px 60px;margin:0 auto
+}
+
+@media(max-width:760px){
+.main-area{
+margin-left:0
+}
+
+.content{
+padding:22px 15px calc(92px + env(safe-area-inset-bottom))
+}
+}
+
+/* Dark-mode application frame and content-control surfaces. */
+
+:root[data-theme="dark"] .app-shell{background:#101727;color:#e8edf7}
+:root[data-theme="dark"] .main-area{background:#101727}
+:root[data-theme="dark"] .content{color:#e8edf7}
+
+:root[data-theme="dark"] .content input,:root[data-theme="dark"] .content select,:root[data-theme="dark"] .content textarea{
+  background:var(--surface-control)!important;
+  color:var(--text-primary)!important;
+  border-color:var(--border-strong)!important;
+}
+:root[data-theme="dark"] .content input[type="checkbox"],:root[data-theme="dark"] .content input[type="radio"]{accent-color:#8980ff}
+
+/* App-level offline state banner rendered inside AppLayout content. */
+.offline-status-banner{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:0 0 16px;
+  padding:11px 13px;
+  border:1px solid #f2d7a2;
+  border-radius:11px;
+  background:#fff9eb;
+  color:#80530b;
+  font-size:12px;
+  font-weight:650;
+  line-height:1.45;
+}
+.offline-status-banner svg{flex:0 0 auto}
+:root[data-theme="dark"] .offline-status-banner{
+  background:#443625!important;
+  border-color:#705638!important;
+  color:#ffe0ad!important;
+}
+
+
+/* Keep transient app messages and their dismiss control on one row. */
+.app-message-banner{
+  display:flex!important;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.app-message-banner>span{
+  flex:1 1 auto;
+  min-width:0;
+}
+.app-message-banner>.icon-btn{
+  flex:0 0 auto;
+  align-self:center;
+  margin:0;
+}
+
+/* App shell descendants must be allowed to shrink inside narrow mobile viewports. */
+.app-shell,.main-area,.content{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+}
+@media(max-width:760px){
+  .app-shell{
+    width:100%;
+    max-width:100%;
+    overflow-x:clip;
+  }
+  .main-area,.content{
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+}

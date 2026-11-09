@@ -122,13 +122,25 @@ create policy "admins manage templates" on public.service_templates for all to a
 using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "authenticated read schedules" on public.schedules;
-create policy "authenticated read schedules" on public.schedules for select to authenticated using (true);
+drop policy if exists "users read published schedules" on public.schedules;
+create policy "users read published schedules" on public.schedules
+for select to authenticated
+using (public.is_admin() or status = 'published');
 drop policy if exists "admins manage schedules" on public.schedules;
 create policy "admins manage schedules" on public.schedules for all to authenticated
 using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "authenticated read assignments" on public.assignments;
-create policy "authenticated read assignments" on public.assignments for select to authenticated using (true);
+drop policy if exists "users read published assignments" on public.assignments;
+create policy "users read published assignments" on public.assignments
+for select to authenticated
+using (
+  public.is_admin()
+  or exists (
+    select 1 from public.schedules s
+    where s.id = assignments.schedule_id and s.status = 'published'
+  )
+);
 drop policy if exists "admins manage assignments" on public.assignments;
 create policy "admins manage assignments" on public.assignments for all to authenticated
 using (public.is_admin()) with check (public.is_admin());
@@ -187,9 +199,20 @@ create index if not exists servant_availability_date_idx on public.servant_avail
 create index if not exists servant_availability_servant_idx on public.servant_availability(servant_id);
 alter table public.servant_availability enable row level security;
 drop policy if exists "authenticated read availability" on public.servant_availability;
-create policy "authenticated read availability" on public.servant_availability for select to authenticated using (true);
+drop policy if exists "users read own availability" on public.servant_availability;
 drop policy if exists "admins manage availability" on public.servant_availability;
-create policy "admins manage availability" on public.servant_availability for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "admins manage availability" on public.servant_availability
+for all to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "users read own availability" on public.servant_availability
+for select to authenticated
+using (
+  public.is_admin()
+  or exists (
+    select 1 from public.servants s
+    where s.id = servant_availability.servant_id
+      and s.auth_user_id = auth.uid()
+  )
+);
 
 create or replace function public.prevent_cross_location_same_day_assignment()
 returns trigger language plpgsql security definer set search_path = public
@@ -223,3 +246,16 @@ drop policy if exists "servants manage own availability" on public.servant_avail
 create policy "servants manage own availability" on public.servant_availability for all to authenticated
 using (exists (select 1 from public.servants s where s.id = servant_id and s.auth_user_id = auth.uid()))
 with check (exists (select 1 from public.servants s where s.id = servant_id and s.auth_user_id = auth.uid()));
+
+
+-- Anonymous browser sessions have no direct application-table access.
+-- Signed-in member/admin access is controlled by the policies above.
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon;
+
+-- Avoid reintroducing broad anon grants when future migrations create tables
+-- or sequences under either role used by the connected project environments.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM anon;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM anon;

@@ -1,0 +1,163 @@
+/* Statistics feature presentation. Shared table, toolbar, filter, and heading primitives remain global. */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:17px}
+.stat-card{background:white;border:1px solid var(--line);border-radius:13px;padding:15px 17px;box-shadow:0 4px 16px #17243a06}
+.stat-card span{display:block;color:#7a8497;font-size:10px;font-weight:800;letter-spacing:.08em}
+.stat-card b{display:block;font:800 25px Manrope;margin-top:4px}
+@media(max-width:760px){
+.stats-grid{gap:8px}
+.stat-card{padding:12px}
+.stat-card span{font-size:8px}
+.stat-card b{font-size:22px}}
+@media(max-width:430px){
+.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stat-card b{font-size:19px}
+.stat-card span{letter-spacing:0}}
+.stats-grid-wide{grid-template-columns:repeat(4,1fr)}
+.location-stat-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.location-stat{display:flex;justify-content:space-between;align-items:center;min-width:0;min-height:64px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#f8f9fc;gap:10px;font-size:13px;overflow-wrap:anywhere}
+.location-stat b{flex:0 0 auto;font-size:18px}
+@media(max-width:1050px){
+.stats-grid-wide{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){
+.location-stat-list{grid-template-columns:minmax(0,1fr)}
+.stats-grid-wide{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fairness-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.fairness-metrics>div{background:#f7f8fb;border-radius:9px;padding:12px}
+.fairness-metrics small,
+.fairness-metrics b{display:block}
+.fairness-metrics small{font-size:11px;color:#64748b}
+.fairness-metrics b{font-size:20px;margin-top:4px}
+.fairness-alert{margin-top:10px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;padding:10px;border-radius:8px;font-size:12px}
+@media(max-width:760px){
+.fairness-metrics{grid-template-columns:1fr}}
+.stats-servant-cards{display:none}
+@media(max-width:760px){
+.stats-desktop-table{display:none}
+.stats-servant-cards{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.stats-servant-card{
+    min-width:0;background:#fff;border:1px solid var(--line);
+    border-radius:13px;padding:13px;box-shadow:0 3px 10px rgba(24,36,65,.035)
+  }
+.stats-servant-name{display:block;font-size:14px;line-height:1.4;overflow-wrap:anywhere;margin-bottom:11px}
+.stats-servant-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.stats-servant-metrics>div{
+    min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:5px;padding:9px 3px;border-radius:9px;background:#f5f6fb
+  }
+.stats-servant-metrics small{font-size:10px;color:var(--muted);font-weight:700}
+.stats-servant-metrics strong{font-size:17px;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums}}
+@media(max-width:390px){
+.stats-servant-metrics{gap:5px}
+.stats-servant-metrics>div{padding:8px 2px}
+.stats-servant-metrics small{font-size:9px}
+.stats-servant-metrics strong{font-size:16px}}
+:root[data-theme="dark"] .stat-card{
+  background:#222f46!important;
+  border-color:#40516d!important;
+  color:#edf2fa!important;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+/* Retain a root-level fallback; the app-shell rule below specializes mobile cards. */
+:root[data-theme="dark"] .stats-servant-card{
+  background:#222f46!important;
+  border-color:#40516d!important;
+  color:#edf2fa!important;
+}
+:root[data-theme="dark"] .fairness-metrics > div{
+  background: #26364f !important;
+  border: 1px solid #405571 !important;
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .fairness-metrics small{
+  color: #c1cde0 !important;
+}
+:root[data-theme="dark"] .fairness-metrics b{
+  color: #ffffff !important;
+}
+/* Church location labels can wrap without pushing the metric outside its card. */
+.location-stat span{
+  min-width: 0;
+  line-height: 1.35;
+}
+:root[data-theme="dark"] .location-stat{
+  background: #26364f !important;
+  border: 1px solid #405571 !important;
+  color: #f3f6fc !important;
+}
+:root[data-theme="dark"] .location-stat span{
+  color: #c1cde0 !important;
+}
+:root[data-theme="dark"] .location-stat b{
+  color: #ffffff !important;
+}
+
+/* GMS mobile statistics: keep servant metric tiles dark and readable. */
+:root[data-theme="dark"] .stats-servant-metrics > div{
+  background: #273a55 !important;
+  border: 1px solid #465d7d !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .stats-servant-metrics small{
+  color: #c7d4e8 !important;
+}
+:root[data-theme="dark"] .stats-servant-metrics strong{
+  color: #ffffff !important;
+}
+/* Servant statistics: make the four small metrics genuinely readable in dark mode. */
+.app-shell[data-theme="dark"] .stats-servant-card{
+  background: #1d2a40 !important;
+  border: 1px solid #405571 !important;
+  color: #f4f7fc !important;
+  box-shadow: none !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-name{
+  color: #f4f7fc !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics > div{
+  background: #2c405b !important;
+  border: 1px solid #59718f !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics small{
+  color: #e0eaf7 !important;
+  font-weight: 800 !important;
+}
+.app-shell[data-theme="dark"] .stats-servant-metrics strong{
+  color: #ffffff !important;
+  font-size: 17px !important;
+  font-weight: 850 !important;
+}
+
+
+/* Statistics-owned responsive table. Keep the existing desktop scroll surface. */
+.stats-table-wrap{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:auto;border-color:#354059}
+.stats-table{width:100%;border-collapse:collapse;min-width:520px}
+.stats-table th,.stats-table td{text-align:left;padding:13px 16px;border-bottom:1px solid #edf0f5;font-size:13px}
+.stats-table th{font-size:11px;color:var(--text-subtle);text-transform:uppercase;letter-spacing:.05em;background:#f8f9fc}
+.stats-table td:not(:first-child),.stats-table th:not(:first-child){text-align:center}
+.stats-table tbody tr:last-child td{border-bottom:0}
+.stats-table td{border-color:#354059!important}
+
+/* Final dark-mode table values, previously supplied by late global overrides. */
+:root[data-theme="dark"] .stats-table-wrap{
+  background:#202f46!important;
+  border-color:#40516d!important;
+  color:#ecf1fa!important;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+:root[data-theme="dark"] .stats-table th{
+  background:#293951!important;
+  color:#d4deed!important;
+  border-color:#40516d!important;
+}
+:root[data-theme="dark"] .stats-table td{
+  color:#e2e9f4!important;
+  border-color:#3a4a64!important;
+}
+
+.stats-empty-state{
+  margin:0;
+  padding:12px 0;
+  line-height:1.5;
+}

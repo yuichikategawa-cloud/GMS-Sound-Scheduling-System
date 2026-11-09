@@ -1,0 +1,77 @@
+/* Semantic theme tokens and compatibility aliases for the GMS design system. */
+:root {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text-primary);
+  background: var(--page-bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  --page-bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-raised: #ffffff;
+  --surface-contrast: #171d35;
+  --surface-control: #ffffff;
+  --text-primary: #182230;
+  --text-secondary: #718096;
+  --text-subtle: #596579;
+  --border-subtle: #e5e9f0;
+  --border-strong: #dfe4ec;
+  --accent-primary: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --focus-border: #818cf8;
+  --focus-ring: #eef2ff;
+  --status-success-text: #166534;
+  --status-success-bg: #dcfce7;
+  --status-warning-text: #92400e;
+  --status-warning-bg: #fef3c7;
+  --status-danger-text: #991b1b;
+  --status-danger-bg: #fee2e2;
+  --status-info-text: #1d4ed8;
+  --status-info-bg: #dbeafe;
+  --overlay-scrim: #11182788;
+  /* Backward-compatible names retained while feature styles migrate to semantic tokens. */
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: var(--border-subtle);
+  --brand: var(--accent-primary);
+  --navy: var(--surface-contrast);
+  --card: var(--surface);
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #101727;
+  --surface: #1b263a;
+  --surface-muted: #202f46;
+  --surface-raised: #1b263a;
+  --surface-contrast: #10172b;
+  --surface-control: #111c2e;
+  --text-primary: #f2f5fb;
+  --text-secondary: #b5c1d5;
+  --text-subtle: #b9c6da;
+  --border-subtle: #3a4963;
+  --border-strong: #465773;
+  --accent-primary: #9b91ff;
+  --accent-hover: #a9a2ff;
+  --accent-soft: #393b72;
+  --focus-border: #9b91ff;
+  --focus-ring: rgba(155, 145, 255, 0.24);
+  --status-success-text: #91e0b7;
+  --status-success-bg: #173d32;
+  --status-warning-text: #ffd28e;
+  --status-warning-bg: #49371e;
+  --status-danger-text: #ffb8b2;
+  --status-danger-bg: #492727;
+  --status-info-text: #a4c4ff;
+  --status-info-bg: #203b61;
+  --overlay-scrim: #11182788;
+  /* Keep the original variable names pointing at the active theme values. */
+  --ink: var(--text-primary);
+  --muted: var(--text-secondary);
+  --line: var(--border-subtle);
+  --brand: var(--accent-primary);
+  --navy: var(--surface-contrast);
+  --card: var(--surface);
+}

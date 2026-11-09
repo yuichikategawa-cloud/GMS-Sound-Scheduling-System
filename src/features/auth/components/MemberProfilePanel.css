@@ -1,0 +1,125 @@
+/* Member profile form styles. Shared cards, controls, tables, and typography remain global. */
+.days-field{border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.days-field legend{font-size:13px;font-weight:800;padding:0 5px;color:#475569}
+.days-field label{display:flex;align-items:center;gap:8px;font-size:13px}
+.days-field input{width:18px;height:18px;flex:none}
+.profile-edit-grid input,.profile-edit-grid select,.profile-edit-grid textarea{width:100%;min-width:0;border:1px solid #d8dee9;border-radius:9px;padding:12px 13px;background:#fff;color:#1f2937;font:inherit;font-size:14px}
+.profile-edit-grid input:focus,.profile-edit-grid select:focus,.profile-edit-grid textarea:focus{outline:3px solid #e0e7ff;border-color:#6366f1}
+.profile-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:end}
+.profile-edit-grid>label{display:flex;flex-direction:column;gap:6px;min-width:0;font-size:13px;font-weight:700;color:#475569}
+.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:1/-1}
+@media(max-width:600px){.profile-edit-grid{grid-template-columns:1fr}.profile-edit-grid .days-field,.profile-edit-grid>button{grid-column:auto}}:root[data-theme="dark"] .profile-edit-grid input,:root[data-theme="dark"] .profile-edit-grid select,:root[data-theme="dark"] .profile-edit-grid textarea{
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  background: #111c2e !important;
+  color: #f0f4fb !important;
+  border-color: #465773 !important;
+}:root[data-theme="dark"] .profile-edit-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 13px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+:root[data-theme="dark"] .profile-edit-grid > label{
+  min-width: 0;
+  max-width: 100%;
+  color: #e0e8f4 !important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field{
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  background: #202f46 !important;
+  border: 1px solid #465873 !important;
+  border-radius: 10px;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend,
+:root[data-theme="dark"] .profile-edit-grid .days-field label{
+  color:#edf3fb!important;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field legend{
+  background:#202f46!important;
+  padding:0 7px;
+}
+:root[data-theme="dark"] .profile-edit-grid .days-field input{
+  accent-color: #a99fff;
+}
+
+@media (max-width: 760px){
+  :root[data-theme="dark"] .profile-edit-grid{
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-theme="dark"] .profile-edit-grid .days-field,:root[data-theme="dark"] .profile-edit-grid > button{
+    grid-column: auto;
+  }}.profile-edit-grid .days-field{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: center;
+  justify-items: stretch;
+  gap: 10px 18px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 13px 14px;
+}
+.profile-edit-grid .days-field label{
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 9px !important;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  white-space: nowrap;
+}
+.profile-edit-grid .days-field label input[type="checkbox"]{
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+
+@media (max-width: 760px){
+  .profile-edit-grid .days-field{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }}.profile-edit-grid{
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.profile-edit-grid > *{
+  box-sizing: border-box;
+  min-width: 0 !important;
+  max-width: 100%;
+}
+.profile-edit-grid input:not([type="checkbox"]),.profile-edit-grid select{
+  box-sizing: border-box !important;
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+.profile-edit-grid input[type="date"]{
+  padding-inline: 11px 34px !important;
+  overflow: hidden;
+}
+.profile-edit-grid input[type="date"]::-webkit-calendar-picker-indicator{
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+@media (max-width: 760px){
+  .profile-edit-grid{ grid-template-columns: minmax(0, 1fr) !important; }
+  .profile-edit-grid > *{ grid-column: 1 !important; }}

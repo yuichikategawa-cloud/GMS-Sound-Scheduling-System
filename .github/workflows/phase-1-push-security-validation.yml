@@ -1,0 +1,206 @@
+name: Phase 1 push security validation
+run-name: Phase 1 validation with full test set
+
+on:
+  push:
+    branches:
+      - security/push-endpoint-hardening
+      - develop
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "src/**"
+      - "vercel.json"
+      - "tests/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/phase-1-push-security-validation.yml"
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "supabase/functions/**"
+      - "supabase/migrations/**"
+      - "supabase/tests/**"
+      - "src/**"
+      - "vercel.json"
+      - "tests/**"
+      - "index.html"
+      - "package.json"
+      - "vite.config.ts"
+      - "tsconfig*.json"
+      - ".github/workflows/phase-1-push-security-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run push endpoint and queue helper tests
+        run: >-
+          deno test --no-lock --config supabase/functions/dispatch-push/deno.json
+          supabase/functions/dispatch-push/security_test.ts
+          supabase/functions/dispatch-push/providerFailure_test.ts
+          supabase/functions/dispatch-push/deliveryTargets_test.ts
+          supabase/functions/_shared/leaseKeeper_test.ts
+          supabase/functions/_shared/retryBackoff_test.ts
+      - name: Test shared formatting helpers
+        run: deno test --no-lock tests/shared/formatters_test.ts
+      - name: Test authentication registration metadata
+        run: deno test --no-lock tests/auth/registration_test.ts
+      - name: Test authentication session lifecycle
+        run: deno test --no-lock tests/auth/sessionLifecycle_test.ts
+      - name: Test profile request sequence guard
+        run: deno test --no-lock tests/app/profileLoadGuard_test.ts
+      - name: Test App dashboard data composition
+        run: deno test --no-lock tests/app/dashboardData_test.ts
+      - name: Test App dashboard loading lifecycle
+        run: deno test --no-lock tests/app/dashboardLoadController_test.ts
+      - name: Test assignment confirmation workflow
+        run: deno test --no-lock tests/app/assignmentConfirmation_test.ts
+      - name: Test App dashboard state reducer
+        run: deno test --no-lock tests/app/dashboardState_test.ts
+      - name: Test App dashboard state architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/app/dashboardStateArchitecture_test.ts
+      - name: Test mobile navigation keyboard accessibility
+        run: deno test --no-lock --allow-read=src,tests tests/app/mobileNavigation_test.ts
+      - name: Test repository-wide feature dependency direction
+        run: deno test --no-lock --allow-read=src,tests tests/architecture/featureDependencyGraph_test.ts
+      - name: Test App browser lifecycle behavior
+        run: deno test --no-lock tests/app/browserLifecycle_test.ts
+      - name: Test App browser lifecycle architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/app/browserLifecycleArchitecture_test.ts
+      - name: Test Auth workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/auth/authArchitecture_test.ts
+      - name: Test schedule mapping
+        run: deno test --no-lock tests/schedule/mapSchedules_test.ts
+      - name: Test schedule display helpers
+        run: deno test --no-lock tests/schedule/dailyDisplay_test.ts
+      - name: Test schedule eligibility rules
+        run: deno test --no-lock tests/schedule/eligibility_test.ts
+      - name: Test schedule assignment validation
+        run: deno test --no-lock tests/schedule/assignmentValidation_test.ts
+      - name: Test weekend schedule generation
+        run: deno test --no-lock tests/schedule/weekendGeneration_test.ts
+      - name: Test schedule persistence operations
+        run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
+      - name: Test Schedule dashboard and history data loading
+        run: deno test --no-lock tests/schedule/scheduleData_test.ts
+      - name: Test Schedule CSV export formatting
+        run: deno test --no-lock tests/schedule/scheduleCsv_test.ts
+      - name: Test Schedule historical export preparation
+        run: deno test --no-lock tests/schedule/scheduleExport_test.ts
+      - name: Test Schedule feature architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/schedule/scheduleArchitecture_test.ts
+      - name: Test Vercel branch-specific Preview deployment guard
+        run: deno test --no-lock --allow-read=vercel.json tests/deployment/vercelPreviewGuard_test.ts
+      - name: Test recurring availability rules
+        run: deno test --no-lock tests/availability/recurringAvailability_test.ts
+      - name: Test Availability form validation and bulk date range limits
+        run: deno test --no-lock tests/availability/availabilityInputValidation_test.ts
+      - name: Test availability persistence operations
+        run: deno test --no-lock tests/availability/availabilityPersistence_test.ts
+      - name: Test Availability data loading
+        run: deno test --no-lock tests/availability/availabilityData_test.ts
+      - name: Test Availability and Requests feature boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/availability/availabilityArchitecture_test.ts
+      - name: Test servant management persistence operations
+        run: deno test --no-lock tests/servants/servantManagement_test.ts
+      - name: Test Servants workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/servants/servantArchitecture_test.ts
+      - name: Test servant account candidate mapping
+        run: deno test --no-lock tests/servants/servantDirectory_test.ts
+      - name: Test servant directory data loading
+        run: deno test --no-lock tests/servants/servantDirectoryData_test.ts
+      - name: Test serving request data loading
+        run: deno test --no-lock tests/requests/requestData_test.ts
+      - name: Test serving request persistence operations
+        run: deno test --no-lock tests/requests/requestPersistence_test.ts
+      - name: Test serving request swap conflict validation
+        run: deno test --no-lock tests/requests/swapValidation_test.ts
+      - name: Test Requests workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/requests/requestArchitecture_test.ts
+      - name: Test notification data loading
+        run: deno test --no-lock tests/notifications/notificationData_test.ts
+      - name: Test notification persistence operations
+        run: deno test --no-lock tests/notifications/notificationPersistence_test.ts
+      - name: Test Notifications workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/notifications/notificationArchitecture_test.ts
+      - name: Test push subscription lifecycle
+        run: deno test --no-lock tests/notifications/pushSubscription_test.ts
+      - name: Test serving statistics calculations
+        run: deno test --no-lock tests/statistics/servingStatistics_test.ts
+      - name: Test Statistics feature architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/statistics/statisticsArchitecture_test.ts
+      - name: Test audit data loading and export
+        run: deno test --no-lock tests/audit/auditData_test.ts
+      - name: Test Audit workflow architecture boundaries
+        run: deno test --no-lock --allow-read=src,tests tests/audit/auditArchitecture_test.ts
+      - name: Test stylesheet ownership and decomposition
+        run: deno test --no-lock --allow-read=src,tests tests/styles/styleOwnership_test.ts
+      - name: Type-check push dispatcher
+        run: >-
+          deno check --no-lock --config supabase/functions/dispatch-push/deno.json
+          supabase/functions/dispatch-push/index.ts
+
+  sql-staging:
+    runs-on: ubuntu-latest
+    env:
+      STAGING_DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Require staging database secret
+        run: test -n "$STAGING_DATABASE_URL" || (echo "STAGING_DATABASE_URL is required and must point only to staging" && exit 1)
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Apply assignment-confirmation notification idempotency migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql
+      - name: Apply bulk-assignment pending-request guard migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261116000000_gms_bulk_assignment_pending_request_guard.sql
+      - name: Apply atomic weekend-template replacement migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_schedule_replace.sql
+      - name: Apply anonymous public privilege hardening migration to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261118000000_gms_anonymous_public_privilege_hardening.sql
+      - name: Run rollback-only assignment-confirmation notification idempotency regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
+      - name: Run rollback-only bulk-assignment pending-request guard regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/bulk_assignment_pending_request_guard.sql
+      - name: Run rollback-only push registration SQL regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/push_registration_security.sql
+      - name: Run rollback-only publication integrity regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/publication_integrity.sql
+      - name: Run rollback-only weekend-template replacement regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/weekend_replace_atomicity.sql
+      - name: Run rollback-only anonymous public privilege and read-scope regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/anonymous_public_privileges.sql
+      - name: Run rollback-only admin RPC authorization regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/admin_rpc_authorization.sql
+      - name: Run rollback-only expired serving action and availability deadline regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/expired_serving_action_guards.sql
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build frontend (TypeScript + Vite)
+        run: npm run build

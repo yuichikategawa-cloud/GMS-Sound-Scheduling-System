@@ -1,0 +1,376 @@
+/* Servant Information feature styles. Shared profile and application primitives remain global. */
+/* v5: servant information dashboard */
+.servant-info-page{display:flex;flex-direction:column;gap:16px}
+.servant-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.servant-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.servant-kpi>span{font-size:10px;letter-spacing:.08em;font-weight:800;color:#667085}
+.servant-kpi>b{font-size:29px;line-height:1.1;color:#1d2939}
+.servant-kpi>b small{font-size:13px;color:#667085}
+.servant-kpi>small{font-size:11px;color:#667085}
+.servant-summary-section{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.servant-summary-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;cursor:pointer}
+.servant-summary-section>summary::-webkit-details-marker{display:none}
+.servant-summary-section>summary span{display:flex;flex-direction:column;gap:4px}
+.servant-summary-section>summary b{font-size:14px;color:#1d2939}
+.servant-summary-section>summary small{font-size:11px;color:#667085}
+.servant-summary-section[open]>summary>svg{transform:rotate(180deg)}
+.servant-summary-body{padding:0 17px 17px}
+.servant-mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.servant-mini-grid>div{padding:12px;border-radius:10px;background:#f7f8fb;display:flex;flex-direction:column;gap:4px}
+.servant-mini-grid b{font-size:22px;color:#1d2939}
+.servant-mini-grid span{font-size:11px;color:#667085}
+.servant-bars{display:flex;flex-direction:column;gap:12px}
+.servant-bar-row>div:first-child{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#475467;margin-bottom:6px}
+.servant-bar-row b{color:#1d2939}
+.servant-bar-row b small{font-weight:500;color:#667085}
+.servant-bar-track{height:8px;border-radius:10px;background:#edf0f5;overflow:hidden}
+.servant-bar-track i{height:100%;display:block;border-radius:10px;background:linear-gradient(90deg,#345b91,#7397c4)}
+.servant-two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.servant-two-col h4,
+.servant-record-detail h4{font-size:12px;margin:0 0 12px;color:#344054}
+.servant-health-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.servant-health-list>div{display:flex;justify-content:space-between;gap:10px;padding:12px;background:#f7f8fb;border-radius:9px;font-size:12px}
+.servant-health-list b{font-size:16px}
+.servant-directory-block{background:#fff;border:1px solid var(--line);border-radius:14px;padding:17px}
+.servant-directory-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.servant-directory-heading h3{margin:0 0 5px;font-size:16px}
+.servant-directory-heading p{margin:0;font-size:12px}
+.servant-directory-heading>b{font-size:12px;color:#667085;white-space:nowrap}
+.servant-filters{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:9px;margin-bottom:13px}
+.servant-filters input,
+.servant-filters select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;color:#344054;font-size:12px}
+.servant-record-list{display:flex;flex-direction:column;gap:8px}
+.servant-record{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.servant-record-summary{width:100%;display:flex;align-items:center;gap:11px;padding:12px;background:#fff;border:0;text-align:left;cursor:pointer}
+.servant-avatar{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;border-radius:50%;background:var(--accent-soft);color:var(--accent-hover);font-weight:800}
+.servant-record-name{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.servant-record-name b{font-size:13px;color:#1d2939}
+.servant-record-name small{font-size:11px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.servant-record-detail{padding:15px;background:#fafbfc;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.servant-record-detail p{font-size:11px;color:#475467;margin:7px 0;overflow-wrap:anywhere}
+.servant-record-detail p b{color:#344054}
+.servant-record-detail .btn{margin-top:8px}
+@media(max-width:900px){
+.servant-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.servant-filters{grid-template-columns:1fr 1fr}
+.servant-record-detail{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){
+.servant-mini-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.servant-two-col{grid-template-columns:1fr}
+.servant-health-list{grid-template-columns:1fr}
+.servant-directory-block{padding:12px}
+.servant-directory-heading{flex-direction:column}
+.servant-filters{grid-template-columns:1fr}
+.servant-record-summary{gap:8px;padding:10px}
+.servant-record-detail{grid-template-columns:1fr}
+.servant-kpi{padding:12px}
+.servant-kpi>b{font-size:25px}}
+/* Explicit empty state for the Servant Information directory */
+.servant-empty-state{padding:28px 18px;text-align:center;border:1px dashed var(--border,#3a3a3a);border-radius:14px;color:var(--text,#fff)}
+.servant-empty-state p{max-width:560px;margin:8px auto 16px;color:var(--muted,#999);line-height:1.5}
+/* Servant CG/record detail columns must shrink inside mobile cards rather than overflow. */
+.servant-record-detail{
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.servant-record-detail > div{
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.servant-record-detail h4,
+.servant-record-detail p{
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.servant-record-detail p b{
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+.servant-record-detail{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }}
+@media (max-width: 600px) {
+.servant-record-detail{
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+    padding: 13px;
+    overflow: hidden;
+  }
+.servant-record-detail > div{
+    padding: 0;
+    width: 100%;
+  }
+.servant-record-detail h4{
+    margin-bottom: 7px;
+  }
+.servant-record-detail p{
+    line-height: 1.5;
+  }}
+/* Keep the admin account-link action visible even while servant details are collapsed. */
+.servant-record-heading{
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding-right: 10px;
+  min-width: 0;
+  background: var(--surface, #fff);
+}
+.servant-record-heading .servant-record-summary{
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+.servant-record-heading .servant-link-trigger{
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+.servant-record-heading{
+    gap: 2px 8px;
+    flex-wrap: wrap;
+    padding: 0 10px 10px;
+  }
+.servant-record-heading .servant-record-summary{
+    flex: 1 1 100%;
+    padding: 10px 0 8px;
+  }
+.servant-record-heading .servant-link-trigger{
+    margin: 0 0 0 44px;
+  }}
+
+
+/* A single semantic palette for all Servant Information dark surfaces. */
+:root[data-theme="dark"] .servant-directory-block,
+:root[data-theme="dark"] .servant-record,
+:root[data-theme="dark"] .servant-summary-section,
+:root[data-theme="dark"] .servant-summary-section>summary,
+:root[data-theme="dark"] .servant-record-heading,
+:root[data-theme="dark"] .servant-record-heading .servant-record-summary,
+:root[data-theme="dark"] .servant-record-detail{
+  background:var(--surface)!important;
+  border-color:var(--border-strong)!important;
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .servant-kpi,
+:root[data-theme="dark"] .servant-mini-grid>div,
+:root[data-theme="dark"] .servant-health-list>div{
+  background:var(--surface-muted) !important;
+  border-color:var(--border-strong)!important;
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .servant-record-detail>div{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+  min-width:0!important;
+}
+:root[data-theme="dark"] .servant-bar-track{background:#2b3a52!important}
+:root[data-theme="dark"] .servant-record-name b,
+:root[data-theme="dark"] .servant-summary-section>summary b,
+:root[data-theme="dark"] .servant-directory-heading h3,
+:root[data-theme="dark"] .servant-two-col h4,
+:root[data-theme="dark"] .servant-record-detail h4,
+:root[data-theme="dark"] .servant-record-detail p b,
+:root[data-theme="dark"] .servant-bar-row b,
+:root[data-theme="dark"] .servant-mini-grid b,
+:root[data-theme="dark"] .servant-health-list b,
+:root[data-theme="dark"] .servant-kpi>b{
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .servant-record-name small,
+:root[data-theme="dark"] .servant-summary-section>summary small,
+:root[data-theme="dark"] .servant-directory-heading p,
+:root[data-theme="dark"] .servant-directory-heading>b,
+:root[data-theme="dark"] .servant-kpi>span,
+:root[data-theme="dark"] .servant-kpi>b small,
+:root[data-theme="dark"] .servant-kpi>small,
+:root[data-theme="dark"] .servant-mini-grid span,
+:root[data-theme="dark"] .servant-record-detail p,
+:root[data-theme="dark"] .servant-health-list>div span,
+:root[data-theme="dark"] .servant-bar-row>div:first-child,
+:root[data-theme="dark"] .servant-bar-row b small,
+:root[data-theme="dark"] .servant-summary-body{
+  color:var(--text-secondary)!important;
+}
+:root[data-theme="dark"] .servant-account-chip.linked{
+  background:var(--status-success-bg)!important;
+  color:var(--status-success-text)!important;
+}
+:root[data-theme="dark"] .servant-account-chip.unlinked{
+  background:var(--status-warning-bg)!important;
+  color:var(--status-warning-text) !important;
+}
+:root[data-theme="dark"] .servant-record-heading .servant-link-trigger{
+  background:var(--surface-muted)!important;
+  border:1px solid var(--border-strong)!important;
+  color:var(--text-primary)!important;
+}
+:root[data-theme="dark"] .servant-record-heading .servant-link-trigger:hover{
+  background:var(--accent-soft)!important;
+  border-color:var(--focus-border)!important;
+}
+:root[data-theme="dark"] .servant-empty-state{
+  color:var(--text-primary);
+  border-color:var(--border-strong);
+}
+:root[data-theme="dark"] .servant-empty-state p{color:var(--text-secondary)}
+
+.servant-link-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  display:grid;
+  place-items:center;
+  box-sizing:border-box;
+  padding:max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background:var(--overlay-scrim);
+  -webkit-backdrop-filter:blur(5px);
+  backdrop-filter:blur(5px);
+}
+.servant-link-dialog{
+  box-sizing:border-box;
+  width:min(560px,100%);
+  max-width:100%;
+  max-height:min(88vh,760px);
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:clamp(18px,4vw,26px);
+  border:1px solid var(--border-strong);
+  border-radius:18px;
+  background:var(--surface);
+  color:var(--text-primary);
+  box-shadow:0 24px 80px rgba(0,0,0,.32);
+}
+@supports(height:100dvh){
+  .servant-link-dialog{max-height:min(88dvh,760px)}
+}
+.servant-link-dialog-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:8px;
+}
+.servant-link-dialog-heading h3{
+  margin:0;
+  color:var(--text-primary);
+  font-size:clamp(18px,4vw,22px);
+}
+.servant-link-dialog-heading p,
+.servant-link-dialog-description,
+.servant-link-dialog-footnote{
+  color:var(--text-secondary);
+  line-height:1.55;
+}
+.servant-link-dialog-heading p{margin:5px 0 0}
+.servant-link-dialog-heading p b{color:var(--text-primary)}
+.servant-link-dialog-close{
+  flex:0 0 auto;
+  color:var(--text-secondary);
+}
+.servant-link-dialog-description{margin:0 0 20px;font-size:13px}
+.servant-link-dialog-fields{display:grid;gap:14px}
+.servant-link-dialog-fields label{
+  display:grid;
+  gap:7px;
+  min-width:0;
+  color:var(--text-subtle);
+  font-size:13px;
+  font-weight:700;
+}
+.servant-link-dialog-fields input,
+.servant-link-dialog-fields select{
+  box-sizing:border-box;
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  min-height:46px;
+  padding:11px 13px;
+  border:1px solid var(--border-strong);
+  border-radius:10px;
+  background:var(--surface-control);
+  color:var(--text-primary);
+  font:inherit;
+}
+.servant-link-dialog-fields input:focus,
+.servant-link-dialog-fields select:focus{
+  outline:2px solid var(--focus-border);
+  outline-offset:2px;
+  border-color:var(--focus-border);
+}
+.servant-link-dialog-fields option{
+  background:var(--surface-control);
+  color:var(--text-primary);
+}
+.servant-link-dialog-note,
+.servant-link-dialog-footnote{
+  margin:14px 0 0;
+  font-size:12px;
+  line-height:1.5;
+}
+.servant-link-dialog-error{
+  margin:14px 0 0;
+  color:var(--status-danger-text);
+  font-size:13px;
+  font-weight:650;
+}
+.servant-link-dialog-submit{
+  width:100%;
+  min-height:44px;
+  margin-top:18px;
+}
+.servant-link-dialog-footnote{margin-top:16px}
+@media(max-width:600px){
+  .servant-link-backdrop{align-items:end;padding:12px 12px max(12px,env(safe-area-inset-bottom))}
+  .servant-link-dialog{
+    width:100%;
+    max-height:min(86vh,760px);
+    border-radius:18px 18px 14px 14px;
+  }
+}
+@supports(height:100dvh){
+  @media(max-width:600px){
+    .servant-link-dialog{max-height:min(86dvh,760px)}
+  }
+}
+
+/* Servant account-link status chips and record state action. */
+.servant-account-chip{font-size:10px;font-weight:700;padding:5px 8px;border-radius:20px;white-space:nowrap}.servant-account-chip.linked{background:#e9f6ef;color:#24734a}.servant-account-chip.unlinked{background:#fff3e5;color:#9a5b12}@media(max-width:600px){.servant-account-chip{font-size:9px}}
+
+:root[data-theme="dark"] .servant-account-chip.linked{background:var(--status-success-bg);color:var(--status-success-text)}
+:root[data-theme="dark"] .servant-account-chip.unlinked{background:var(--status-warning-bg);color:var(--status-warning-text)}
+:root[data-theme="dark"] .servant-account-chip.linked{background:#194b39!important;color:#a7ecc9!important}
+:root[data-theme="dark"] .servant-account-chip.unlinked{background:#594022!important;color:#ffe0a5!important}/* Destructive servant state action is deliberately red and easy to hit. */
+.servant-status-toggle{
+  min-width: 176px;
+  min-height: 36px;
+  justify-content: center;
+  font-weight: 800;
+}
+.servant-status-toggle.danger,.btn.danger.servant-status-toggle{
+  background: #fff0f0 !important;
+  color: #b42332 !important;
+  border: 1px solid #f0b8bd !important;
+}
+.servant-status-toggle.danger:hover{
+  background: #ffe1e3 !important;
+  border-color: #dc7b85 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger,:root[data-theme="dark"] .btn.danger.servant-status-toggle{
+  background: #4b2932 !important;
+  color: #ffc3c9 !important;
+  border-color: #8e4a58 !important;
+}
+:root[data-theme="dark"] .servant-status-toggle.danger:hover{
+  background: #60313c !important;
+}
+.servant-status-toggle{ min-width: 190px; }

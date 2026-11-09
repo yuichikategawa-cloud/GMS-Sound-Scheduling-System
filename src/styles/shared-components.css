@@ -1,0 +1,100 @@
+.brand-mark{width:42px;height:42px;flex:0 0 42px;border-radius:13px;background:#e9eaff;color:#4f46e5;display:grid;place-items:center;box-shadow:0 5px 14px rgba(79,70,229,.16)}.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e7eaff;color:#4f46e5;font-weight:800;flex:none}
+.eyebrow{font-size:10px;letter-spacing:.15em;font-weight:800;color:#858da1;margin:0 0 5px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}.toolbar h2,.list-heading h2{font-size:19px;margin:0 0 4px}.subtle{color:var(--muted);font-size:13px;margin:0}.toolbar-actions{display:flex;gap:8px}.btn{border:0;border-radius:9px;padding:10px 13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:750;white-space:nowrap}.btn.primary{background:var(--brand);color:white}.btn.secondary{background:white;color:#394357;border:1px solid var(--line)}.btn.danger{background:#fff1f2;color:#be123c}.btn.tiny{padding:7px 10px;font-size:11px}.btn.full{width:100%;padding:12px}.icon-btn{border:0;background:transparent;color:#7b8496;padding:7px;border-radius:8px;display:grid;place-items:center}.icon-btn:hover{background:#f0f2f7;color:#27334a}
+.filter-panel{box-sizing:border-box;max-width:100%;background:white;border:1px solid var(--line);border-radius:14px;padding:16px 17px;margin-bottom:23px}.filter-title{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:13px}.form-grid label,.modal-card>label{display:flex;flex-direction:column;gap:6px;font-size:11px;font-weight:750;color:var(--text-subtle)}.form-grid input,.form-grid select,.modal-card>label input{border:1px solid var(--border-strong);border-radius:8px;padding:9px 10px;color:#293448;background:white;min-width:0;font-size:12px;outline:none}.form-grid input:focus,.form-grid select:focus{border-color:var(--focus-border);box-shadow:0 0 0 3px var(--focus-ring)}.clear-btn,.link-btn{border:0;background:none;color:#555bd6;font-size:11px;font-weight:750;padding:10px 0 0}.list-heading{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}.list-heading span{font-size:11px;color:var(--muted)}.empty-state{background:white;border:1px dashed #cbd3df;border-radius:14px;padding:45px 20px;text-align:center;color:#7d8798;display:flex;align-items:center;flex-direction:column;gap:8px}.empty-state b{color:#27334a}.empty-state p{font-size:12px;margin:0}
+.message-banner{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:12px;display:block;line-height:1.55;overflow-wrap:anywhere}.message{font-size:12px;color:#9a3412;background:#fff7ed;padding:10px;border-radius:8px;margin-top:12px}
+.people-list{background:white;border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.modal-backdrop{position:fixed;inset:0;background:#11182788;z-index:20;display:grid;place-items:center;padding:16px}.modal-card{width:min(590px,100%);max-height:92vh;overflow:auto;background:white;border-radius:16px;padding:22px;box-shadow:0 20px 80px #11182755}.modal-card.compact{width:min(420px,100%)}.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:18px}.modal-head h2{font-size:18px;margin:0 0 4px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .wide{grid-column:1/-1}.form-grid label{gap:6px}.form-grid input,.form-grid select{width:100%}.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:760px){.toolbar{align-items:flex-start}.toolbar-actions{flex-wrap:wrap;justify-content:flex-end}.toolbar h2{font-size:17px}}
+@media(max-width:430px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.toolbar{flex-direction:column}.toolbar-actions{justify-content:flex-start}}/* Accessibility and expandable dashboard panels */
+
+
+
+
+
+
+
+/* v4 registration, member profile and mobile touch targets */
+
+/* v5: branded loading state — keyframes are defined once above. */
+
+
+
+
+
+
+.status-chip{display:inline-flex;vertical-align:middle;margin-left:5px;border-radius:20px;padding:3px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.04em;font-weight:850;background:#f1f5f9;color:#475569}
+.status-chip.published,.status-chip.approved,.status-chip.confirmed{background:var(--status-success-bg);color:var(--status-success-text)}
+.status-chip.draft,.status-chip.pending{background:#fef3c7;color:#92400e}
+.status-chip.declined{background:var(--status-danger-bg);color:var(--status-danger-text)}
+
+
+
+/* Phase 1-4 workflow enhancements */
+
+
+
+/* 2026-11-03: login script heading, dynamic sound fact, and mobile layout refinements */
+/* FOH and Monitor use matching full-width assignment cards on phones. */
+/* Keep every schedule filter inside its card on narrow mobile screens. */
+
+
+
+
+@media(max-width:520px){
+  .filter-panel{padding:13px 12px;}
+}
+.message-banner b{display:inline-block;margin:0 3px}
+
+@media(max-width:640px){
+  .message-banner{
+    padding:11px 12px;
+    line-height:1.6;
+    margin-bottom:14px;
+  }
+  .message-banner b{display:inline}
+  
+  
+}/* Mobile Option B: fixed bottom navigation with a More sheet */
+
+
+
+.modal-backdrop{z-index:100!important}
+@media(max-width:760px){
+  .modal-backdrop{padding:10px;place-items:center}
+  .modal-card{width:min(100%,590px);max-height:calc(100dvh - 20px);overflow-y:auto}
+  
+}/* iOS date/time controls: align values consistently with text/select inputs */
+.form-grid input[type="date"],.form-grid input[type="time"]{
+  box-sizing:border-box;width:100%;min-width:0;max-width:100%;
+  min-height:42px;text-align:left;padding-inline:11px;
+  -webkit-appearance:none;appearance:none
+}
+.form-grid input[type="date"]::-webkit-date-and-time-value,.form-grid input[type="time"]::-webkit-date-and-time-value{
+  text-align:left;margin:0;width:100%
+}
+.form-grid input[type="date"]::-webkit-calendar-picker-indicator,.form-grid input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}/* 2026-11-03 responsive refinement: tablet actions, iOS fields, statistics cards */
+
+
+@media(max-width:760px){
+  input[type="date"],input[type="time"]{
+    box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+    min-height:44px;padding:10px 12px;font-size:16px!important;
+    line-height:1.35;text-align:left;-webkit-appearance:none;appearance:none
+  }
+  input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+  input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{margin:0 1px 0 8px;flex:0 0 auto}
+}/* 2026-11-03 visual refinement: compact sidebar identity and coordinated template actions. */
+
+.bulk-servant-list{max-height:190px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.bulk-servant-list label{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink);font-weight:600}
+
+/* GMS PWA and scheduling intelligence surfaces */
+
+/* Consistent iPhone form control sizing for scheduling and availability fields. */
+@media(max-width:760px){
+  input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
+  input[type=date],input[type=time],.modal-card input[type=date],.modal-card input[type=time]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:46px;padding:10px 12px;line-height:1.25;font-size:16px!important;text-align:left}
+  input[type=date]::-webkit-date-and-time-value,.modal-card input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0;width:100%}
+}/* Availability sections: remove internal explanations and give form fields breathing room below headings. */

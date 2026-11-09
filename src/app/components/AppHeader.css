@@ -1,0 +1,100 @@
+/* AppHeader presentation. Imported by its owning component. */
+
+.topbar{
+height:100px;background:white;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 36px;position:sticky;top:0;z-index:3
+}
+
+.topbar h1{
+font-size:23px;margin:0
+}
+
+.top-actions{
+display:flex;align-items:center;gap:13px
+}
+
+.role-tag{
+font-size:11px;font-weight:700;color:#4f46e5;background:#eef2ff;border-radius:30px;padding:7px 10px;display:flex;align-items:center;gap:6px
+}
+
+
+@media(max-width:760px){.topbar{
+height:82px;padding:0 17px;gap:10px
+}}
+
+
+@media(max-width:760px){.topbar h1{
+font-size:19px
+}}
+
+@media(max-width:760px){.topbar .eyebrow{
+font-size:8px
+}}
+
+@media(max-width:760px){.role-tag{
+display:none
+}}
+
+
+.pwa-install-button{
+min-height:38px
+}
+
+.theme-toggle{
+width:36px;height:36px;flex:0 0 auto
+}
+
+@media(max-width:760px){.theme-toggle{
+width:34px;height:34px
+}}
+
+:root[data-theme="dark"] .role-tag{
+  background:#292c55;
+  color:#c9c4ff;
+}
+
+:root[data-theme="dark"] .topbar{
+  background:#1b2437!important;
+  border-color:#354059!important;
+  color:#e8edf7;
+  box-shadow:0 4px 18px rgba(0,0,0,.16);
+}
+
+:root[data-theme="dark"] .topbar h1{
+  color:#edf2fb!important;
+}
+
+:root[data-theme="dark"] .topbar{background:#182238!important;border-color:#354059!important}
+
+/* Mobile header controls must never force the document wider than the viewport.
+   App installation remains available from the bottom navigation's More menu. */
+.topbar{
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+}
+.topbar > div:first-child{
+  min-width:0;
+  flex:1 1 auto;
+}
+.topbar h1{
+  overflow-wrap:anywhere;
+}
+@media(max-width:760px){
+  .topbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+  .topbar .pwa-install-button{
+    display:none!important;
+  }
+  .topbar .top-actions{
+    flex:0 0 auto;
+    gap:8px;
+  }
+  .topbar .top-actions > .icon-btn:not(.theme-toggle){
+    width:34px;
+    height:34px;
+    flex:0 0 34px;
+  }
+}

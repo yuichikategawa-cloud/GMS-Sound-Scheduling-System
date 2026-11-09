@@ -1,0 +1,8 @@
+import { Bell } from "lucide-react";
+import "./PushNotificationSettings.css";
+
+export default function PushNotificationSettings({enabled,busy,onEnable,onDisable,preferences,onSavePreferences}:{enabled:boolean;busy:boolean;onEnable:()=>void;onDisable:()=>void;preferences:any;onSavePreferences:(next:any)=>void}){
+ const configured=!!(import.meta.env.VITE_VAPID_PUBLIC_KEY as string|undefined)?.trim();
+ const options=[["new_assignments","New serving assignments"],["schedule_changes","Schedule changes"],["confirmation_reminders","Confirmation reminders"],["availability_deadlines","Availability deadline reminders"],["request_updates","Swap and replacement updates"]];
+ return <section className="push-settings-card"><div className="push-settings-icon"><Bell size={19}/></div><div className="push-settings-copy"><b>Device notifications</b><p>In-app Inbox is your primary notification history. Choose which optional push alerts this account receives.</p>{!configured&&<small>Push delivery setup is still pending. The in-app Inbox continues to work.</small>}<div className="notification-preference-grid">{options.map(([key,label])=><label key={key}><input type="checkbox" checked={preferences?.[key]!==false} onChange={e=>onSavePreferences({...preferences,[key]:e.target.checked})}/>{label}</label>)}</div></div><button className="btn secondary tiny" disabled={busy||(!configured&&!enabled)} onClick={enabled?onDisable:onEnable}>{busy?"Please wait…":enabled?"Disable on this device":"Enable push"}</button></section>;
+}
