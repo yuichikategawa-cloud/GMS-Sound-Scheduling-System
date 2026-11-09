@@ -4,7 +4,7 @@ run-name: Phase 1 validation with full test set
 on:
   push:
     branches:
-      - security/push-endpoint-hardening
+      - main
       - develop
     paths:
       - "supabase/functions/**"
@@ -20,6 +20,7 @@ on:
       - ".github/workflows/phase-1-push-security-validation.yml"
   pull_request:
     branches:
+      - main
       - develop
     paths:
       - "supabase/functions/**"
@@ -34,6 +35,10 @@ on:
       - "tsconfig*.json"
       - ".github/workflows/phase-1-push-security-validation.yml"
   workflow_dispatch:
+
+concurrency:
+  group: gms-staging-database-validation
+  cancel-in-progress: false
 
 permissions:
   contents: read
