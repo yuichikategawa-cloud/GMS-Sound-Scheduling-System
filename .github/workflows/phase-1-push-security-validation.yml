@@ -36,6 +36,10 @@ on:
       - ".github/workflows/phase-1-push-security-validation.yml"
   workflow_dispatch:
 
+concurrency:
+  group: gms-staging-database-validation
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
