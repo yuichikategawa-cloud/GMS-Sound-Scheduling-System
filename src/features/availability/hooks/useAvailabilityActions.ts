@@ -105,7 +105,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
         setMessage("Your login may only update availability for its own linked servant profile.");
         return false;
       }
-      if (!isAdmin && deadline && today() > deadline) {
+      if (!isAdmin && deadline && todayInJakarta() > deadline) {
         setMessage("The availability submission deadline (" + fmtDate(deadline) + ") has passed. Please contact the administrator if you need to change your availability.");
         return false;
       }
@@ -172,7 +172,7 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
       const currentForPerson = servingPreferences.filter(rule => rule.servant_id === preference.servant_id && rule.active !== false);
       const combined = [...currentForPerson, preference];
       const conflicts = schedules
-        .filter(schedule => schedule.service_date >= today() && schedule.assignments.some(assignment => assignment.servant_id === preference.servant_id))
+        .filter(schedule => schedule.service_date >= todayInJakarta() && schedule.assignments.some(assignment => assignment.servant_id === preference.servant_id))
         .filter(schedule => {
           const dateDow = new Date(schedule.service_date + "T12:00:00").getDay();
           const timeRules = combined.filter(rule => rule.rule_type === "allowed_time_window");
