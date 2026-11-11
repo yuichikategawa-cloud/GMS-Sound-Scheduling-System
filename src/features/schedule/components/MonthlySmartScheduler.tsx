@@ -224,7 +224,7 @@ export default function MonthlySmartScheduler({
   }, [selectedLocationIds, specialServiceLocation]);
 
   const specialServiceDateMax = useMemo(() => {
-    if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month)) return undefined;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return undefined;
     const [year, monthNumber] = month.split("-").map(Number);
     const lastDay = new Date(year, monthNumber, 0).getDate();
     return month + "-" + String(lastDay).padStart(2, "0");
