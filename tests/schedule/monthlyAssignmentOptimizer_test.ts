@@ -150,7 +150,7 @@ Deno.test("monthly optimizer can use prefer-not as a visible fallback when no al
   const result = optimizeMonthlyAssignments(input);
   if (!result.ok) throw new Error("Expected generation to succeed.");
   assertEqual(result.assignments[0].servant_id, "prefer-not", "Prefer-not must remain a soft restriction.");
-  assertEqual(result.warnings.length, 1, "The use of prefer-not must be disclosed.");
+  assertEqual(result.preferNotWarnings.length, 1, "The use of prefer-not must be disclosed separately from operational warnings.");
 });
 
 Deno.test("monthly optimizer preserves existing assignments and only fills vacant roles", () => {
