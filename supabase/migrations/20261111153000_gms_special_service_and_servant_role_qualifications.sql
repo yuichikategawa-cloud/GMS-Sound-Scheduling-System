@@ -2,6 +2,8 @@
 -- lifecycle. The RPC executes as SECURITY DEFINER, so session-provided temp
 -- relations must be dropped and recreated before validation or writes.
 
+BEGIN;
+
 -- Extend monthly scheduling to one-off weekday services and per-servant sound-role qualifications.
 
 ALTER TABLE public.servants
@@ -26,8 +28,6 @@ ALTER TABLE public.servants
 --
 -- The RPC is intentionally separate from admin_bulk_assignments_grouped:
 -- monthly generation must never replace a manually assigned role.
-
-BEGIN;
 
 CREATE OR REPLACE FUNCTION public.admin_apply_monthly_schedule_plan(
   p_month_start date,
