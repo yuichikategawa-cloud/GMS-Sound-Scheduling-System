@@ -6,6 +6,7 @@ import type { ServingPreferenceRecord } from "../../availability/services/availa
 import type { ServingRequestRecord } from "../../requests/services/requestData";
 import { buildMonthlyScheduleSlots } from "../services/monthlyScheduleGeneration";
 import {
+  getMonthlyAssignmentCandidates,
   optimizeMonthlyAssignments,
   type MonthlyAssignmentOptimizerResult,
   type MonthlyGeneratedAssignment,
@@ -16,9 +17,13 @@ import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfile
 import "./MonthlySmartScheduler.css";
 
 type SuccessfulOptimizerResult = Extract<MonthlyAssignmentOptimizerResult, { ok: true }>;
+type ManualOverrides = Record<string, Partial<Record<Role, string>>>;
+
 type PreviewData = {
+  baseSlots: MonthlyScheduleSlot[];
   slots: MonthlyScheduleSlot[];
   result: SuccessfulOptimizerResult;
+  manualOverrides: ManualOverrides;
 };
 
 type MonthlySmartSchedulerProps = {
@@ -70,37 +75,63 @@ function GeneratedOrExistingRole({
   generated,
   unfilled,
   includeAssistant,
+  candidateOptions,
+  servants,
+  onManualChange,
 }: {
   slot: MonthlyScheduleSlot;
   role: Role;
   generated: MonthlyGeneratedAssignment | undefined;
   unfilled: MonthlyUnfilledPosition | undefined;
   includeAssistant: boolean;
+  candidateOptions: Servant[];
+  servants: Servant[];
+  onManualChange: (servantId: string) => void;
 }) {
-  const existing = slot.assignments.find((assignment) => assignment.role === role);
-  if (existing) {
+  const selected = slot.assignments.find((assignment) => assignment.role === role);
+  if (selected && !selected.preview_manual) {
     return (
       <div className="monthly-role-value is-locked">
-        <b>{existing.servant_name}</b>
-        <small><span className="monthly-lock-dot"/> Preserved · {existing.confirmation_status === "declined" ? "declined" : "locked"}</small>
+        <b>{selected.servant_name}</b>
+        <small><span className="monthly-lock-dot"/> Preserved · {selected.confirmation_status === "declined" ? "declined" : "locked"}</small>
       </div>
     );
   }
-  if (generated) {
-    return (
-      <div className="monthly-role-value is-generated">
-        <b>{generated.servant_name}</b>
-        <small><CheckCircle2 size={12}/> Generated · draft proposal</small>
-      </div>
-    );
-  }
-  if (role === "Assistant" && !includeAssistant) {
+  if (role === "Assistant" && !includeAssistant && !selected && !generated) {
     return <div className="monthly-role-value is-optional"><b>Not included</b><small>Optional role</small></div>;
   }
+
+  const selectedId = selected?.servant_id ?? generated?.servant_id ?? "";
+  const selectedName = selected?.servant_name ?? generated?.servant_name ?? "";
+  const options = [...candidateOptions];
+  if (selectedId && !options.some((servant) => servant.id === selectedId)) {
+    const current = servants.find((servant) => servant.id === selectedId);
+    if (current) options.unshift(current);
+  }
+
   return (
-    <div className="monthly-role-value is-unfilled">
-      <b>Unfilled</b>
-      <small>{unfilled ? reasonLabel(unfilled.reason) : "No candidate selected"}</small>
+    <div className="monthly-role-value">
+      <b>{selectedName || "Unfilled"}</b>
+      <small className={selected?.preview_manual ? "is-manual" : generated ? "is-generated" : "is-unfilled"}>
+        {selected?.preview_manual
+          ? "Manual selection · preview only"
+          : generated
+          ? "Auto-generated · preview only"
+          : unfilled
+          ? reasonLabel(unfilled.reason)
+          : "No candidate selected"}
+      </small>
+      <select
+        className="monthly-role-select"
+        aria-label={slot.service_name + " " + role + " candidate"}
+        value={selectedId}
+        onChange={(event) => onManualChange(event.target.value)}
+      >
+        <option value="">Auto assign / clear manual selection</option>
+        {options.map((servant) => (
+          <option key={servant.id} value={servant.id}>{servant.full_name}</option>
+        ))}
+      </select>
     </div>
   );
 }
