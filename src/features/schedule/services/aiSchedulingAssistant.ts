@@ -41,7 +41,7 @@ export type AiSchedulingSnapshot = {
         servingDays: number;
         eligibleOpportunities: number;
         recent60DayAssignments: number;
-        roleHistoryCount: number;
+        currentMonthRoleAssignments: number;
       }>;
       vacancies: Array<{
         role: Role;
@@ -131,7 +131,7 @@ export function buildAiSchedulingSnapshot(input: {
     return "unknown" as const;
   };
 
-  const roleHistoryCount = (servantId: string, role: Role) =>
+  const currentMonthRoleAssignments = (servantId: string, role: Role) =>
     workloadById.get(servantId)?.role_counts[role] ?? 0;
 
   const churches = churchIds.map((locationId) => {
@@ -159,7 +159,7 @@ export function buildAiSchedulingSnapshot(input: {
             servingDays: workload?.serving_days ?? 0,
             eligibleOpportunities: workload?.eligible_opportunities ?? 0,
             recent60DayAssignments: workload?.recent_60_day_assignments ?? 0,
-            roleHistoryCount: roleHistoryCount(assignment.servant_id, assignment.role),
+            currentMonthRoleAssignments: currentMonthRoleAssignments(assignment.servant_id, assignment.role),
           };
         });
 
@@ -177,7 +177,7 @@ export function buildAiSchedulingSnapshot(input: {
             servingDays: workload?.serving_days ?? 0,
             eligibleOpportunities: workload?.eligible_opportunities ?? 0,
             recent60DayAssignments: workload?.recent_60_day_assignments ?? 0,
-            roleHistoryCount: roleHistoryCount(assignment.servant_id, assignment.role),
+            currentMonthRoleAssignments: currentMonthRoleAssignments(assignment.servant_id, assignment.role),
           });
         }
 
