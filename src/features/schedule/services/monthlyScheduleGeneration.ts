@@ -1,6 +1,6 @@
 import type { Role, ScheduleView, ServiceTemplate } from "../../../types.ts";
 
-export type MonthlyScheduleStatus = "new" | "draft" | "published";
+export type MonthlyScheduleStatus = "new" | "new_special" | "draft" | "published";
 export type MonthlyScheduleBlockReason = "published" | "pending_request" | "preexisting_conflict";
 
 export type MonthlyScheduleSlotAssignment = {
@@ -14,7 +14,7 @@ export type MonthlyScheduleSlotAssignment = {
 
 export type MonthlyScheduleSlot = {
   key: string;
-  template_id: string;
+  template_id: string | null;
   schedule_id: string | null;
   service_date: string;
   location_id: string;
@@ -26,11 +26,20 @@ export type MonthlyScheduleSlot = {
   blocked_reason: MonthlyScheduleBlockReason | null;
 };
 
+export type MonthlySpecialServiceInput = {
+  service_date: string;
+  location_id: string;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+};
+
 export type MonthlyScheduleGenerationInput = {
   month: string;
   locationIds: readonly string[];
   templates: readonly ServiceTemplate[];
   existingSchedules: readonly ScheduleView[];
+  specialServices?: readonly MonthlySpecialServiceInput[];
   pendingRequestScheduleIds?: readonly string[];
   dataErrors?: readonly string[];
 };
@@ -50,7 +59,8 @@ export type MonthlyScheduleGenerationResult =
         | "select_location"
         | "data_unavailable"
         | "no_weekend_templates"
-        | "duplicate_existing_slot";
+        | "duplicate_existing_slot"
+        | "invalid_special_service";
       errors?: string[];
     };
 
@@ -117,13 +127,11 @@ export function buildMonthlyScheduleSlots(
       (day === 0 || day === 6);
   });
 
-  if (!templates.length) {
-    return { ok: false, reason: "no_weekend_templates" };
-  }
-
   const [year, monthNumber] = input.month.split("-").map(Number);
   const monthIndex = monthNumber - 1;
   const daysInMonth = new Date(year, monthNumber, 0).getDate();
+  const monthStart = input.month + "-01";
+  const monthEnd = localDateKey(year, monthIndex, daysInMonth);
   const existingByKey = new Map<string, ScheduleView>();
   const duplicateKeys = new Set<string>();
 
@@ -147,6 +155,7 @@ export function buildMonthlyScheduleSlots(
   const pendingIds = new Set(input.pendingRequestScheduleIds ?? []);
   const slots: MonthlyScheduleSlot[] = [];
   const selectedTemplateKeys = new Set<string>();
+  const representedKeys = new Set<string>();
 
   for (let day = 1; day <= daysInMonth; day += 1) {
     const serviceDate = localDateKey(year, monthIndex, day);
@@ -188,12 +197,92 @@ export function buildMonthlyScheduleSlots(
         })),
         blocked_reason: blockedReason,
       });
+      representedKeys.add(key);
     }
+  }
+
+  // Existing one-off/special schedules are included even when they do not
+  // originate from a Saturday/Sunday template (e.g. Christmas Day services).
+  for (const schedule of existingByKey.values()) {
+    const key = naturalKey(schedule.service_date, schedule.location_id, schedule.service_name);
+    if (representedKeys.has(key)) continue;
+    slots.push({
+      key,
+      template_id: null,
+      schedule_id: schedule.id,
+      service_date: schedule.service_date,
+      location_id: schedule.location_id,
+      service_name: schedule.service_name,
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
+      status: schedule.status ?? "draft",
+      assignments: (schedule.assignments ?? []).map((assignment) => ({
+        ...(assignment.id ? { id: assignment.id } : {}),
+        role: assignment.role,
+        servant_id: assignment.servant_id,
+        servant_name: assignment.servant_name,
+        ...(assignment.confirmation_status
+          ? { confirmation_status: assignment.confirmation_status }
+          : {}),
+      })),
+      blocked_reason: schedule.status === "published"
+        ? "published"
+        : pendingIds.has(schedule.id)
+        ? "pending_request"
+        : null,
+    });
+    representedKeys.add(key);
+  }
+
+  // One-off services authored directly in the monthly planner can occur on
+  // any date, including public holidays and special church events.
+  for (const special of input.specialServices ?? []) {
+    const key = naturalKey(special.service_date, special.location_id, special.service_name);
+    const validDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(special.service_date) &&
+      special.service_date >= monthStart && special.service_date <= monthEnd;
+    const start = /^([01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$/.test(special.start_time);
+    const end = /^([01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$/.test(special.end_time);
+    if (!validDate || !locationIds.has(special.location_id) || !special.service_name.trim() ||
+        !start || !end || special.start_time >= special.end_time || representedKeys.has(key)) {
+      return {
+        ok: false,
+        reason: "invalid_special_service",
+        errors: [key],
+      };
+    }
+
+    const [specialYear, specialMonth, specialDay] = special.service_date.split("-").map(Number);
+    const normalizedDate = localDateKey(specialYear, specialMonth - 1, specialDay);
+    if (normalizedDate !== special.service_date) {
+      return { ok: false, reason: "invalid_special_service", errors: [key] };
+    }
+
+    slots.push({
+      key,
+      template_id: null,
+      schedule_id: null,
+      service_date: special.service_date,
+      location_id: special.location_id,
+      service_name: special.service_name.trim(),
+      start_time: special.start_time,
+      end_time: special.end_time,
+      status: "new_special",
+      assignments: [],
+      blocked_reason: null,
+    });
+    representedKeys.add(key);
   }
 
   if (!slots.length) {
     return { ok: false, reason: "no_weekend_templates" };
   }
+
+  slots.sort((first, second) =>
+    first.service_date.localeCompare(second.service_date) ||
+    first.start_time.localeCompare(second.start_time) ||
+    first.location_id.localeCompare(second.location_id) ||
+    first.service_name.localeCompare(second.service_name)
+  );
 
   const weekendCount = new Set(slots.map((slot) => getWeekendStart(slot.service_date))).size;
   const warnings: string[] = [];
