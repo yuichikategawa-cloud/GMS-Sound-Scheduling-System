@@ -372,6 +372,45 @@ Deno.test("monthly optimizer stops when an availability or preference read faile
   }, "A failed data read must fail closed.");
 });
 
+Deno.test("monthly optimizer excludes manual-only servants from automatic allocation", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("manual-only"), createServant("automatic")],
+  );
+  input.autoAssignmentExcludedServantIds = ["manual-only"];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "automatic", "Manual-only servants must remain available for manual selection but not auto-assignment.");
+});
+
+Deno.test("monthly optimizer freezes a service when a preserved assignment already violates a hard conflict", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "cross-church-servant" },
+  ]);
+  const schedules = [
+    createSchedule("bsd-existing", "2026-11-08", "loc-bsd", "BSD Service", "17:00", "19:00", [
+      { role: "Monitor", servant_id: "cross-church-servant" },
+    ]),
+  ];
+  const input = {
+    ...baseInput([slot], [
+      createServant("cross-church-servant"),
+      createServant("otherwise-eligible"),
+    ]),
+    schedules,
+  };
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(result.assignments.length, 0, "A slot with an existing hard conflict must be frozen.");
+  assertEqual(result.unfilledPositions.map((position) => position.reason), ["preexisting_conflict"], "The vacancy should explain why the service was frozen.");
+  assertEqual(result.skippedServiceCount, 1, "The frozen service should be counted as skipped.");
+});
+
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
   const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
   const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
