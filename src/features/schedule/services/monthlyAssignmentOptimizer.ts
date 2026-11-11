@@ -29,6 +29,7 @@ export type MonthlyUnfilledPositionReason =
   | "published_service"
   | "pending_request"
   | "preexisting_conflict"
+  | "declined_assignment"
   | "no_active_servants"
   | "no_auto_assignable_servants"
   | "unavailable"
@@ -94,6 +95,7 @@ export type MonthlyAssignmentOptimizerResult =
       generatedAssistantCount: number;
       unfilledOptionalAssistantCount: number;
       skippedServiceCount: number;
+      declinedAssignmentCount: number;
     }
   | {
       ok: false;
@@ -225,6 +227,7 @@ function buildExistingCommitments(
         end_time: slot.end_time,
         role: assignment.role,
         servant_id: assignment.servant_id,
+        confirmation_status: assignment.confirmation_status,
         source: "existing",
       });
     }
@@ -606,8 +609,23 @@ export function optimizeMonthlyAssignments(
   for (const slot of input.slots) {
     const roles = includeAssistant ? ALL_ROLES : REQUIRED_ROLES;
     for (const role of roles) {
-      const filled = slot.assignments.some((assignment) => assignment.role === role);
-      if (filled) continue;
+      const existingAssignment = slot.assignments.find((assignment) => assignment.role === role);
+      if (existingAssignment) {
+        if (existingAssignment.confirmation_status === "declined") {
+          unfilledPositions.push({
+            schedule_key: slot.key,
+            schedule_id: slot.schedule_id,
+            service_date: slot.service_date,
+            location_id: slot.location_id,
+            service_name: slot.service_name,
+            role,
+            required: role !== "Assistant",
+            reason: "declined_assignment",
+            blocked_candidate_count: 0,
+          });
+        }
+        continue;
+      }
 
       const effectiveBlockReason = slot.blocked_reason ??
         (preexistingConflictSlots.has(slot.key) ? "preexisting_conflict" : null);
@@ -895,7 +913,7 @@ export function optimizeMonthlyAssignments(
   const requiredPositionCount = input.slots.length * REQUIRED_ROLES.length;
   const existingRequiredCount = input.slots.reduce(
     (count, slot) => count + slot.assignments.filter((assignment) =>
-      REQUIRED_ROLES.includes(assignment.role)
+      REQUIRED_ROLES.includes(assignment.role) && assignment.confirmation_status !== "declined"
     ).length,
     0,
   );
@@ -913,6 +931,18 @@ export function optimizeMonthlyAssignments(
   const skippedServiceCount = input.slots.filter((slot) =>
     slot.blocked_reason !== null || preexistingConflictSlots.has(slot.key)
   ).length;
+  const declinedAssignmentCount = input.slots.reduce(
+    (count, slot) => count + slot.assignments.filter((assignment) =>
+      assignment.confirmation_status === "declined"
+    ).length,
+    0,
+  );
+  if (declinedAssignmentCount) {
+    warnings.push(
+      declinedAssignmentCount +
+      " existing assignment(s) were declined. They remain preserved and are not counted as active workload or covered positions.",
+    );
+  }
 
   return {
     ok: true,
@@ -928,5 +958,6 @@ export function optimizeMonthlyAssignments(
     generatedAssistantCount,
     unfilledOptionalAssistantCount,
     skippedServiceCount,
+    declinedAssignmentCount,
   };
 }
