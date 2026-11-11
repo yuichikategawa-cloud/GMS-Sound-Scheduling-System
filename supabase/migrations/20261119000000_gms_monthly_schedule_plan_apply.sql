@@ -22,7 +22,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 VOLATILE
 SECURITY DEFINER
-SET search_path TO 'pg_catalog', 'public'
+SET search_path TO ''
 AS $function$
 DECLARE
   v_month_end date;
