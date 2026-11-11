@@ -92,6 +92,83 @@ export function upsertGeneratedSchedules(
 }
 
 
+export type MonthlyPlanRole = "FOH" | "Monitor" | "Assistant";
+
+export type MonthlyPlanExpectedAssignment = {
+  id: string;
+  role: MonthlyPlanRole;
+  servant_id: string;
+  confirmation_status: "pending" | "confirmed" | "declined";
+};
+
+export type MonthlyPlanExpectedSlot = {
+  template_id: string;
+  schedule_id: string | null;
+  service_date: string;
+  location_id: string;
+  service_name: string;
+  start_time: string;
+  end_time: string;
+  expected_status: "new" | "draft";
+  assignments: MonthlyPlanExpectedAssignment[];
+};
+
+export type MonthlyPlanAssignment = {
+  service_date: string;
+  location_id: string;
+  service_name: string;
+  role: MonthlyPlanRole;
+  servant_id: string;
+};
+
+export type MonthlyPlanApplyResponse = {
+  created_schedules: number;
+  inserted_assignments: number;
+  schedule_ids: string[];
+};
+
+export type MonthlyPlanApplyInput = {
+  monthStart: string;
+  expectedState: MonthlyPlanExpectedSlot[];
+  assignments: MonthlyPlanAssignment[];
+  acknowledgedPreferNot: boolean;
+};
+
+export type MonthlyPlanApplyClient = {
+  rpc(
+    functionName: "admin_apply_monthly_schedule_plan",
+    args: {
+      p_month_start: string;
+      p_expected_state: MonthlyPlanExpectedSlot[];
+      p_plan: MonthlyPlanAssignment[];
+      p_acknowledged_prefer_not: boolean;
+    },
+  ): PromiseLike<{
+    data: MonthlyPlanApplyResponse | null;
+    error: unknown | null;
+  }>;
+};
+
+/**
+ * Applies an exact administrator-reviewed snapshot through the additive-only
+ * monthly RPC. The database creates missing slots as drafts and inserts only
+ * vacant assignments after transactional stale-state and eligibility checks.
+ */
+export function applyMonthlySchedulePlan(
+  client: MonthlyPlanApplyClient,
+  input: MonthlyPlanApplyInput,
+): PromiseLike<{
+  data: MonthlyPlanApplyResponse | null;
+  error: unknown | null;
+}> {
+  return client.rpc("admin_apply_monthly_schedule_plan", {
+    p_month_start: input.monthStart,
+    p_expected_state: input.expectedState,
+    p_plan: input.assignments,
+    p_acknowledged_prefer_not: input.acknowledgedPreferNot,
+  });
+}
+
 export interface WeekendReplacementResponse {
   data: number | null;
   error: unknown | null;
