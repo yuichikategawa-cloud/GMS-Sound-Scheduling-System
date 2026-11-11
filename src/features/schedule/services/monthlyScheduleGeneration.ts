@@ -1,7 +1,7 @@
 import type { Role, ScheduleView, ServiceTemplate } from "../../../types.ts";
 
 export type MonthlyScheduleStatus = "new" | "draft" | "published";
-export type MonthlyScheduleBlockReason = "published" | "pending_request";
+export type MonthlyScheduleBlockReason = "published" | "pending_request" | "preexisting_conflict";
 
 export type MonthlyScheduleSlotAssignment = {
   id?: string;
