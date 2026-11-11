@@ -5,7 +5,7 @@
       "**": false,
       "main": true,
       "develop": false,
-      "feat/monthly-smart-scheduler-engine": true
+      "feat/monthly-smart-scheduler-engine": false
     }
   }
 }
