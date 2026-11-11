@@ -1,4 +1,4 @@
-import type { Servant } from "../../../types";
+import type { Role, Servant } from "../../../types";
 
 export interface ServantManagementResponse {
   error: unknown | null;
@@ -15,9 +15,7 @@ export interface ServantManagementClient {
       full_name: string;
       active: true;
     }): PromiseLike<ServantManagementResponse>;
-    update(values: {
-      active: boolean;
-    }): {
+    update(values: { active: boolean } | { qualified_roles: Role[] }): {
       eq(
         column: "id",
         value: string,
@@ -62,6 +60,16 @@ export function setServantActive(
   active: boolean,
 ): PromiseLike<ServantManagementResponse> {
   return client.from("servants").update({ active }).eq("id", servantId);
+}
+
+/** Updates only the roles a servant is approved to fill; database policies enforce admin access. */
+export function setServantQualifiedRoles(
+  client: ServantManagementClient,
+  servantId: string,
+  roles: Role[],
+): PromiseLike<ServantManagementResponse> {
+  const uniqueRoles = [...new Set(roles)];
+  return client.from("servants").update({ qualified_roles: uniqueRoles }).eq("id", servantId);
 }
 
 /**
