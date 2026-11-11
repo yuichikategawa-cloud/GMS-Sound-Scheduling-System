@@ -5,6 +5,7 @@ import {
   linkServantAccountRecord,
   loadServantRecords,
   setServantActive,
+  setServantQualifiedRoles,
   type ServantManagementClient,
   type ServantManagementResponse,
   type ServantRecordsResponse,
@@ -146,6 +147,15 @@ Deno.test("servant management changes only the active flag for the selected serv
     assertEqual(calls.insert, [], "Status changes must not insert a new servant.");
     assertEqual(calls.rpc, [], "Status changes must not invoke an unrelated RPC.");
   }
+});
+
+Deno.test("servant management saves unique qualified sound roles for one servant", async () => {
+  const { client, calls } = createFakeClient();
+  await setServantQualifiedRoles(client, "servant-123", ["FOH", "Monitor", "FOH"]);
+
+  assertEqual(calls.update, [{ qualified_roles: ["FOH", "Monitor"] }], "Role qualifications should be deduplicated before updating.");
+  assertEqual(calls.eq, [{ column: "id", value: "servant-123" }], "Role qualification updates must target the selected servant.");
+  assertEqual(calls.insert, [], "Role qualifications must not create a separate servant record.");
 });
 
 Deno.test("servant management links through the existing admin RPC and trims verified NIJ", async () => {
