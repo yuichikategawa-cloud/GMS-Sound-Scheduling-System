@@ -85,6 +85,7 @@ export default function App() {
     notificationPrefs,
     auditLogs,
     availabilityDeadline,
+    scheduleGenerationErrors,
     memberProfile,
     memberDirectory,
     accountProfiles,
@@ -449,6 +450,7 @@ export default function App() {
           workspace={scheduleWorkspace} isAdmin={isAdmin} schedules={schedules}
           requests={requests} servants={servants} availability={availability}
           preferences={servingPreferences} locations={locations} templates={templates}
+          scheduleGenerationErrors={scheduleGenerationErrors}
           loading={loading} myServant={myServant}
           onOpenNewSchedule={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}
           onAddLocation={scheduleActions.addLocation}
