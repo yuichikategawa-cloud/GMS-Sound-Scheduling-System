@@ -211,7 +211,7 @@ function buildExistingCommitments(
         role: assignment.role,
         servant_id: assignment.servant_id,
         confirmation_status: assignment.confirmation_status,
-        source: assignment.preview_manual ? "preview_manual" : "existing",
+        source: "existing",
       });
     }
   }
@@ -230,7 +230,7 @@ function buildExistingCommitments(
         role: assignment.role,
         servant_id: assignment.servant_id,
         confirmation_status: assignment.confirmation_status,
-        source: "existing",
+        source: assignment.preview_manual ? "preview_manual" : "existing",
       });
     }
   }
