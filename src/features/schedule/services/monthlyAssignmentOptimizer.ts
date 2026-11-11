@@ -23,6 +23,7 @@ export type MonthlyGeneratedAssignment = {
   role: Role;
   servant_id: string;
   servant_name: string;
+  preview_manual?: boolean;
 };
 
 export type MonthlyUnfilledPositionReason =
@@ -115,7 +116,7 @@ type AssignmentCommitment = {
   role: Role;
   servant_id: string;
   confirmation_status?: string;
-  source: "existing" | "generated";
+  source: "existing" | "generated" | "preview_manual";
 };
 
 type RolePosition = {
@@ -210,7 +211,7 @@ function buildExistingCommitments(
         role: assignment.role,
         servant_id: assignment.servant_id,
         confirmation_status: assignment.confirmation_status,
-        source: "existing",
+        source: assignment.preview_manual ? "preview_manual" : "existing",
       });
     }
   }
@@ -568,14 +569,30 @@ export function optimizeMonthlyAssignments(
   const month = input.slots[0].service_date.slice(0, 7);
   const baseCommitments = buildExistingCommitments(input);
   const generatedCommitments: AssignmentCommitment[] = [];
-  const generatedAssignments: MonthlyGeneratedAssignment[] = [];
+  const generatedAssignments: MonthlyGeneratedAssignment[] = input.slots.flatMap((slot) =>
+    slot.assignments
+      .filter((assignment) => assignment.preview_manual)
+      .map((assignment) => ({
+        schedule_key: slot.key,
+        schedule_id: slot.schedule_id,
+        service_date: slot.service_date,
+        location_id: slot.location_id,
+        service_name: slot.service_name,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        role: assignment.role,
+        servant_id: assignment.servant_id,
+        servant_name: assignment.servant_name,
+        preview_manual: true,
+      }))
+  );
   const preexistingConflictSlots = new Map<string, string[]>();
   const unfilledPositions: MonthlyUnfilledPosition[] = [];
   const warnings: string[] = [];
   const preferNotWarnings: string[] = [];
   const positionList: RolePosition[] = [];
   const lockedAssignmentCount = input.slots.reduce(
-    (count, slot) => count + slot.assignments.length,
+    (count, slot) => count + slot.assignments.filter((assignment) => !assignment.preview_manual).length,
     0,
   );
   const includeAssistant = input.includeAssistant !== false;
@@ -662,6 +679,14 @@ export function optimizeMonthlyAssignments(
 
   if (preexistingConflictSlots.size) {
     warnings.push(preexistingConflictSlots.size + " service(s) were frozen because an existing assignment has a hard conflict.");
+  }
+  for (const assignment of generatedAssignments.filter((item) => item.preview_manual)) {
+    if (availabilityStatus(assignment.servant_id, assignment.service_date, input.availability) === "prefer_not") {
+      preferNotWarnings.push(
+        assignment.servant_name + " prefers not to serve on " +
+        assignment.service_date + " (" + assignment.service_name + ").",
+      );
+    }
   }
 
   const opportunities = new Map<string, Set<string>>();
