@@ -27,9 +27,8 @@ export function DailySummary({date,items,isAdmin=true}:{date:string;items:Schedu
  const servantLocations=new Map<string,Set<string>>();
  for(const item of items)for(const assignment of item.assignments){if(!assignment.servant_id)continue;const set=servantLocations.get(assignment.servant_id)??new Set<string>();set.add(item.location_id);servantLocations.set(assignment.servant_id,set);}
  const crossLocationConflicts=[...servantLocations.entries()].filter(([,ids])=>ids.size>1).map(([id])=>items.flatMap(i=>i.assignments.filter(a=>a.servant_id===id).map(a=>a.servant_name))[0]);
- const dayDate=new Date(`${date}T12:00:00`);
- const dayLabel=dayDate.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
- const compactDayLabel=dayDate.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+ const dayLabel=fmtDate(date);
+ const compactDayLabel=dayLabel;
  return <details className="daily-card" open>
   <summary className="daily-head"><div className="daily-head-copy"><div className="daily-date"><span className="daily-date-full">{dayLabel}</span><span className="daily-date-compact">{compactDayLabel}</span></div><div className="daily-subtitle">{items.length} services · {locations.length} {locations.length===1?"location":"locations"}</div></div><div className="daily-head-right">{isAdmin&&<div className={`coverage-pill ${assigned>=required?"complete":"pending"}`}>{assigned}/{required} required roles filled</div>}<ChevronDown size={19}/></div></summary>
   {crossLocationConflicts.length>0&&<div className="day-conflict-warning"><AlertTriangle size={16}/><span><b>Cross-location conflict:</b> {crossLocationConflicts.join(", ")} assigned at more than one church location on this date.</span></div>}
