@@ -12,7 +12,7 @@ import {
   type MonthlyGeneratedAssignment,
   type MonthlyUnfilledPosition,
 } from "../services/monthlyAssignmentOptimizer";
-import type { MonthlyScheduleSlot } from "../services/monthlyScheduleGeneration";
+import type { MonthlyScheduleSlot, MonthlySpecialServiceInput } from "../services/monthlyScheduleGeneration";
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import "./MonthlySmartScheduler.css";
@@ -81,8 +81,12 @@ function nextMonthKey(): string {
 }
 
 function displayDate(value: string): string {
-  const [year, month, day] = value.split("-");
-  return [day, month, year].join("-");
+  const [year, month, day] = value.split("-").map(Number);
+  const monthName = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ][month - 1];
+  return monthName ? `${String(day).padStart(2, "0")}-${monthName}-${year}` : value;
 }
 
 function reasonLabel(reason: MonthlyUnfilledPosition["reason"]): string {
@@ -99,6 +103,7 @@ function reasonLabel(reason: MonthlyUnfilledPosition["reason"]): string {
     overlapping_service: "Candidates have overlapping services",
     serving_restriction: "Availability and serving restrictions exclude candidates",
     no_eligible_candidate: "No eligible candidate remains",
+    role_not_qualified: "No servant is qualified for this role",
   };
   return labels[reason];
 }
@@ -184,6 +189,12 @@ export default function MonthlySmartScheduler({
   const [month, setMonth] = useState(nextMonthKey);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [includeAssistant, setIncludeAssistant] = useState(true);
+  const [specialServices, setSpecialServices] = useState<MonthlySpecialServiceInput[]>([]);
+  const [specialServiceDate, setSpecialServiceDate] = useState(nextMonthKey() + "-25");
+  const [specialServiceLocation, setSpecialServiceLocation] = useState("");
+  const [specialServiceName, setSpecialServiceName] = useState("");
+  const [specialServiceStart, setSpecialServiceStart] = useState("10:00");
+  const [specialServiceEnd, setSpecialServiceEnd] = useState("12:00");
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [acknowledgedPreferNot, setAcknowledgedPreferNot] = useState(false);
@@ -251,6 +262,7 @@ export default function MonthlySmartScheduler({
       locationIds: selectedLocationIds,
       templates,
       existingSchedules: schedules,
+      specialServices,
       pendingRequestScheduleIds,
       dataErrors: inputErrors,
     });
@@ -259,7 +271,8 @@ export default function MonthlySmartScheduler({
         invalid_month: "Choose a valid month.",
         select_location: "Select at least one church location.",
         data_unavailable: "Required scheduling data could not be loaded. Refresh the GMS workspace and retry.",
-        no_weekend_templates: "No active Saturday or Sunday service templates exist for this month and selection.",
+        no_weekend_templates: "No active weekend templates or one-off services exist for this month and selection.",
+        invalid_special_service: "A one-off service has an invalid date, location, name or time range, or duplicates another service.",
         duplicate_existing_slot: "Duplicate existing services share the same date, church and service name. Resolve these duplicates before generating.",
       };
       setError(reasonMessages[built.reason] + (built.errors?.length ? " " + built.errors.join(" · ") : ""));
@@ -313,7 +326,7 @@ export default function MonthlySmartScheduler({
         service_name: slot.service_name,
         start_time: slot.start_time,
         end_time: slot.end_time,
-        expected_status: slot.schedule_id ? "draft" : "new",
+        expected_status: slot.schedule_id ? "draft" : slot.status === "new_special" ? "new_special" : "new",
         assignments: persistedAssignments.map((assignment) => ({
           id: assignment.id!,
           role: assignment.role,
@@ -358,6 +371,7 @@ export default function MonthlySmartScheduler({
       }
       setPreview(null);
       setAcknowledgedPreferNot(false);
+      setSpecialServices([]);
     } finally {
       setApplying(false);
     }
@@ -469,6 +483,60 @@ export default function MonthlySmartScheduler({
     [locations],
   );
 
+  const previewChurchGroups = useMemo(() => {
+    if (!preview) return [];
+    return locations
+      .filter((location) => selectedLocationIds.includes(location.id))
+      .map((location) => ({
+        location,
+        slots: preview.slots
+          .filter((slot) => slot.location_id === location.id)
+          .slice()
+          .sort((first, second) =>
+            first.service_date.localeCompare(second.service_date) ||
+            first.start_time.localeCompare(second.start_time) ||
+            first.service_name.localeCompare(second.service_name)
+          ),
+      }))
+      .filter((group) => group.slots.length > 0);
+  }, [preview, locations, selectedLocationIds]);
+
+  const addSpecialService = () => {
+    const normalizedName = specialServiceName.trim();
+    if (!normalizedName || !specialServiceLocation || !specialServiceDate ||
+        !specialServiceDate.startsWith(month + "-") ||
+        specialServiceStart >= specialServiceEnd) {
+      setError("Enter a service name, selected church, valid date in the planning month and valid start/end times.");
+      return;
+    }
+    const key = [specialServiceDate, specialServiceLocation, normalizedName].join("|");
+    const duplicate = specialServices.some((service) =>
+      [service.service_date, service.location_id, service.service_name.trim()].join("|") === key
+    ) || schedules.some((schedule) =>
+      schedule.service_date === specialServiceDate &&
+      schedule.location_id === specialServiceLocation &&
+      schedule.service_name.trim() === normalizedName
+    );
+    if (duplicate) {
+      setError("A service with this date, church and name already exists.");
+      return;
+    }
+    setSpecialServices((current) => [...current, {
+      service_date: specialServiceDate,
+      location_id: specialServiceLocation,
+      service_name: normalizedName,
+      start_time: specialServiceStart,
+      end_time: specialServiceEnd,
+    }].sort((first, second) =>
+      first.service_date.localeCompare(second.service_date) ||
+      first.start_time.localeCompare(second.start_time)
+    ));
+    setSpecialServiceName("");
+    setError("");
+    setPreview(null);
+  };
+
+
   return (
     <section className="monthly-smart-scheduler">
       <div className="monthly-smart-header">
@@ -496,7 +564,13 @@ export default function MonthlySmartScheduler({
       <div className="monthly-smart-controls">
         <label>
           <span>Planning month</span>
-          <input type="month" value={month} onChange={(event) => { setMonth(event.target.value); setPreview(null); }} disabled={Boolean(inputErrors.length)}/>
+          <input type="month" value={month} onChange={(event) => {
+            const nextMonth = event.target.value;
+            setMonth(nextMonth);
+            setSpecialServiceDate(nextMonth ? nextMonth + "-25" : "");
+            setSpecialServices([]);
+            setPreview(null);
+          }} disabled={Boolean(inputErrors.length)}/>
         </label>
         <div className="monthly-smart-location-control">
           <span className="monthly-smart-field-label">Church locations</span>
@@ -529,6 +603,52 @@ export default function MonthlySmartScheduler({
           />
           <span>Include optional Assistant assignments</span>
         </label>
+      </div>
+
+      <div className="monthly-smart-special-service">
+        <div className="monthly-smart-special-heading">
+          <div>
+            <b>Add one-off / special service</b>
+            <p>For Christmas, Good Friday, Easter, conferences or other weekday services. These slots are added to this preview only until you apply the draft plan.</p>
+          </div>
+          <span>Special service</span>
+        </div>
+        <div className="monthly-smart-special-fields">
+          <label>
+            <span>Service date</span>
+            <input type="date" value={specialServiceDate} min={month + "-01"} max={month ? month + "-31" : undefined} onChange={(event) => setSpecialServiceDate(event.target.value)}/>
+          </label>
+          <label>
+            <span>Church</span>
+            <select value={specialServiceLocation} onChange={(event) => setSpecialServiceLocation(event.target.value)}>
+              <option value="">Choose church</option>
+              {locations.filter((location) => selectedLocationIds.includes(location.id)).map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+            </select>
+          </label>
+          <label className="monthly-smart-special-name">
+            <span>Service name</span>
+            <input value={specialServiceName} onChange={(event) => setSpecialServiceName(event.target.value)} placeholder="e.g. Christmas Service"/>
+          </label>
+          <label>
+            <span>Starts</span>
+            <input type="time" value={specialServiceStart} onChange={(event) => setSpecialServiceStart(event.target.value)}/>
+          </label>
+          <label>
+            <span>Ends</span>
+            <input type="time" value={specialServiceEnd} onChange={(event) => setSpecialServiceEnd(event.target.value)}/>
+          </label>
+          <button type="button" className="btn secondary" onClick={addSpecialService}>Add service</button>
+        </div>
+        {specialServices.length > 0 && (
+          <div className="monthly-smart-special-list">
+            {specialServices.map((service, index) => (
+              <div className="monthly-smart-special-chip" key={service.service_date + "|" + service.location_id + "|" + service.service_name}>
+                <span><b>{displayDate(service.service_date)}</b> · {locationNames.get(service.location_id)} · {service.service_name} · {service.start_time}–{service.end_time}</span>
+                <button type="button" aria-label={"Remove " + service.service_name} onClick={() => { setSpecialServices((current) => current.filter((_, i) => i !== index)); setPreview(null); }}>Remove</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="monthly-smart-rule-summary">
@@ -574,39 +694,52 @@ export default function MonthlySmartScheduler({
 
           <div className="monthly-smart-section">
             <h4>Service-by-service review</h4>
-            <div className="monthly-smart-table-wrap">
-              <table className="monthly-smart-table">
-                <thead>
-                  <tr><th>Date</th><th>Church / service</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr>
-                </thead>
-                <tbody>
-                  {preview.slots.map((slot) => {
-                    const generated = generatedBySlot.get(slot.key);
-                    const unfilled = unfilledBySlot.get(slot.key);
-                    return (
-                      <tr key={slot.key}>
-                        <td><b>{displayDate(slot.service_date)}</b><small>{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</small></td>
-                        <td><b>{locationNames.get(slot.location_id) ?? "Unknown church"}</b><small>{slot.service_name}</small></td>
-                        {ROLES.map((role) => (
-                          <td key={role}>
-                            <GeneratedOrExistingRole
-                              slot={slot}
-                              role={role}
-                              generated={generated?.get(role)}
-                              unfilled={unfilled?.get(role)}
-                              includeAssistant={includeAssistant}
-                              candidateOptions={candidateOptionsByRole.get(slot.key + "|" + role) ?? []}
-                              servants={servants}
-                              onManualChange={(servantId) => handleManualChange(slot.key, role, servantId)}
-                            />
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            {previewChurchGroups.map(({ location, slots }) => (
+              <div className="monthly-smart-church-group" key={location.id}>
+                <div className="monthly-smart-church-heading">
+                  <h5>{location.name}</h5>
+                  <span>{slots.length} services · {displayDate(slots[0].service_date)} to {displayDate(slots[slots.length - 1].service_date)}</span>
+                </div>
+                <div className="monthly-smart-table-wrap">
+                  <table className="monthly-smart-table">
+                    <thead>
+                      <tr><th>Date</th><th>Service</th><th>FOH</th><th>Monitor</th><th>Assistant</th></tr>
+                    </thead>
+                    <tbody>
+                      {slots.map((slot) => {
+                        const generated = generatedBySlot.get(slot.key);
+                        const unfilled = unfilledBySlot.get(slot.key);
+                        return (
+                          <tr key={slot.key}>
+                            <td><b>{displayDate(slot.service_date)}</b><small>{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</small></td>
+                            <td>
+                              <b>{slot.service_name}</b>
+                              {slot.status === "new_special" && <small className="monthly-smart-special-label">One-off special service</small>}
+                              {slot.template_id === null && slot.status !== "new_special" && <small className="monthly-smart-special-label">Existing custom service</small>}
+                              {slot.blocked_reason && <small className="monthly-smart-lock-label">Preserved · {slot.blocked_reason === "published" ? "published" : "pending request"}</small>}
+                            </td>
+                            {ROLES.map((role) => (
+                              <td key={role}>
+                                <GeneratedOrExistingRole
+                                  slot={slot}
+                                  role={role}
+                                  generated={generated?.get(role)}
+                                  unfilled={unfilled?.get(role)}
+                                  includeAssistant={includeAssistant}
+                                  candidateOptions={candidateOptionsByRole.get(slot.key + "|" + role) ?? []}
+                                  servants={servants}
+                                  onManualChange={(servantId) => handleManualChange(slot.key, role, servantId)}
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="monthly-smart-section">
@@ -615,7 +748,7 @@ export default function MonthlySmartScheduler({
               <div className="monthly-smart-table-wrap">
                 <table className="monthly-smart-workload-table">
                   <thead>
-                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th><th>History to 01-11-2026</th></tr>
+                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th><th>History to 01-November-2026</th></tr>
                   </thead>
                   <tbody>
                     {preview.result.workloads.map((workload) => (
