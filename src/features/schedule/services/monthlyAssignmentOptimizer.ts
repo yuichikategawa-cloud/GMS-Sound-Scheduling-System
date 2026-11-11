@@ -665,19 +665,45 @@ export function optimizeMonthlyAssignments(
   }
 
   const opportunities = new Map<string, Set<string>>();
-  for (const position of positionList) {
+  const activeServantIds = new Set(activeServants.map((servant) => servant.id));
+  const addOpportunity = (servantId: string, serviceKey: string) => {
+    if (!activeServantIds.has(servantId)) return;
+    const set = opportunities.get(servantId) ?? new Set<string>();
+    set.add(serviceKey);
+    opportunities.set(servantId, set);
+  };
+
+  // Count existing non-declined assignments as one practical opportunity per
+  // service, including published and special services that are not generated
+  // from a currently active template.
+  for (const commitment of baseCommitments) {
+    if (
+      commitment.service_date.startsWith(month) &&
+      commitment.confirmation_status !== "declined"
+    ) {
+      addOpportunity(commitment.servant_id, commitment.slot_key);
+    }
+  }
+
+  // Count additional services the servant could practically take, once per
+  // service even when both FOH and Monitor are vacant.
+  const candidateSlots = new Map<string, MonthlyScheduleSlot>();
+  for (const position of positionList) candidateSlots.set(position.slot.key, position.slot);
+  for (const [slotKey, slot] of candidateSlots) {
     for (const servant of activeServants) {
+      const alreadyCommittedHere = slot.assignments.some((assignment) =>
+        assignment.servant_id === servant.id &&
+        assignment.confirmation_status !== "declined"
+      );
+      if (alreadyCommittedHere) continue;
       if (getBlockReasons(
         servant,
-        position.slot,
+        slot,
         baseCommitments,
         input.availability,
         input.preferences,
       ).length) continue;
-
-      const set = opportunities.get(servant.id) ?? new Set<string>();
-      set.add(position.slot.key);
-      opportunities.set(servant.id, set);
+      addOpportunity(servant.id, slotKey);
     }
   }
 
