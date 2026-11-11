@@ -31,6 +31,7 @@ function createSlot(
   const key = date + "|" + location + "|" + service;
   return {
     key,
+    template_id: "template-" + service.toLowerCase().replace(/\\s+/g, "-"),
     schedule_id: null,
     service_date: date,
     location_id: location,
