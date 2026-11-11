@@ -185,6 +185,22 @@ export default function MonthlySmartScheduler({
   const unmatchedHistorical = historicalRoster.unmatchedHistoricalNames;
   const canReview = !inputErrors.length && selectedLocationIds.length > 0 && Boolean(month);
 
+  const runOptimizer = (baseSlots: MonthlyScheduleSlot[], manualOverrides: ManualOverrides) => {
+    const slots = applyManualOverrides(baseSlots, manualOverrides, servants);
+    const result = optimizeMonthlyAssignments({
+      slots,
+      servants,
+      availability,
+      preferences,
+      schedules,
+      historicalProfiles: historicalRoster.profiles,
+      autoAssignmentExcludedServantIds: historicalRoster.autoAssignmentExcludedServantIds,
+      includeAssistant,
+      dataErrors: inputErrors,
+    });
+    return { slots, result };
+  };
+
   const generatePreview = () => {
     setError("");
     setPreview(null);
@@ -210,30 +226,102 @@ export default function MonthlySmartScheduler({
       return;
     }
 
-    const optimized = optimizeMonthlyAssignments({
-      slots: built.slots,
-      servants,
-      availability,
-      preferences,
-      schedules,
-      historicalProfiles: historicalRoster.profiles,
-      autoAssignmentExcludedServantIds: historicalRoster.autoAssignmentExcludedServantIds,
-      includeAssistant,
-      dataErrors: inputErrors,
-    });
-    if (!optimized.ok) {
+    const manualOverrides: ManualOverrides = {};
+    const optimized = runOptimizer(built.slots, manualOverrides);
+    if (!optimized.result.ok) {
       setError(
-        optimized.reason === "data_unavailable"
+        optimized.result.reason === "data_unavailable"
           ? "Required scheduling data could not be loaded. Generation stopped safely."
-          : optimized.reason === "no_service_slots"
+          : optimized.result.reason === "no_service_slots"
           ? "No service slots were available to optimize."
           : "The final allocation validation failed. No plan was created.",
       );
       return;
     }
 
-    setPreview({ slots: built.slots, result: optimized });
+    setPreview({
+      baseSlots: built.slots,
+      slots: optimized.slots,
+      result: optimized.result,
+      manualOverrides,
+    });
   };
+
+  const handleManualChange = (scheduleKey: string, role: Role, servantId: string) => {
+    if (!preview) return;
+    const baseSlot = preview.baseSlots.find((slot) => slot.key === scheduleKey);
+    const currentSlot = preview.slots.find((slot) => slot.key === scheduleKey);
+    if (!baseSlot || !currentSlot || baseSlot.blocked_reason) return;
+    if (baseSlot.assignments.some((assignment) => assignment.role === role)) return;
+
+    if (servantId) {
+      const eligible = getMonthlyAssignmentCandidates({
+        slots: preview.slots,
+        servants,
+        availability,
+        preferences,
+        schedules,
+        historicalProfiles: historicalRoster.profiles,
+        autoAssignmentExcludedServantIds: historicalRoster.autoAssignmentExcludedServantIds,
+        includeAssistant,
+        dataErrors: inputErrors,
+      }, currentSlot, role);
+      if (!eligible.some((servant) => servant.id === servantId)) {
+        setError("That servant is no longer eligible for this service. The preview has not been changed.");
+        return;
+      }
+    }
+
+    const nextOverrides: ManualOverrides = Object.fromEntries(
+      Object.entries(preview.manualOverrides).map(([key, roles]) => [key, { ...roles }])
+    );
+    const nextRoles = { ...(nextOverrides[scheduleKey] ?? {}) };
+    if (servantId) nextRoles[role] = servantId;
+    else delete nextRoles[role];
+    if (Object.keys(nextRoles).length) nextOverrides[scheduleKey] = nextRoles;
+    else delete nextOverrides[scheduleKey];
+
+    const recalculated = runOptimizer(preview.baseSlots, nextOverrides);
+    if (!recalculated.result.ok) {
+      setError("The adjusted preview could not be validated. Your previous preview remains unchanged.");
+      return;
+    }
+
+    setError("");
+    setAcknowledgedPreferNot(false);
+    setPreview({
+      baseSlots: preview.baseSlots,
+      slots: recalculated.slots,
+      result: recalculated.result,
+      manualOverrides: nextOverrides,
+    });
+  };
+
+  const candidateOptionsByRole = useMemo(() => {
+    const map = new Map<string, Servant[]>();
+    if (!preview) return map;
+    for (const slot of preview.slots) {
+      if (slot.blocked_reason) continue;
+      for (const role of ROLES) {
+        if (role === "Assistant" && !includeAssistant) continue;
+        if (slot.assignments.some((assignment) => assignment.role === role && !assignment.preview_manual)) {
+          continue;
+        }
+        map.set(slot.key + "|" + role, getMonthlyAssignmentCandidates({
+          slots: preview.slots,
+          servants,
+          availability,
+          preferences,
+          schedules,
+          historicalProfiles: historicalRoster.profiles,
+          autoAssignmentExcludedServantIds: historicalRoster.autoAssignmentExcludedServantIds,
+          includeAssistant,
+          dataErrors: inputErrors,
+        }, slot, role));
+      }
+    }
+    return map;
+  }, [preview, servants, availability, preferences, schedules, historicalRoster, includeAssistant, inputErrors]);
 
   const generatedBySlot = useMemo(() => {
     const map = new Map<string, Map<Role, MonthlyGeneratedAssignment>>();
