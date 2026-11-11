@@ -1,11 +1,11 @@
-import type { Location, Role, Servant } from "../../../types";
-import type { AvailabilityRecord } from "../../availability/services/recurringAvailability";
+import type { Location, Role, Servant } from "../../../types.ts";
+import type { AvailabilityRecord } from "../../availability/services/recurringAvailability.ts";
 import type {
   MonthlyGeneratedAssignment,
   MonthlyServantWorkload,
   MonthlyUnfilledPosition,
-} from "./monthlyAssignmentOptimizer";
-import type { MonthlyScheduleSlot } from "./monthlyScheduleGeneration";
+} from "./monthlyAssignmentOptimizer.ts";
+import type { MonthlyScheduleSlot } from "./monthlyScheduleGeneration.ts";
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
