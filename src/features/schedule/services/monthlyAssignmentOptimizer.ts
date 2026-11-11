@@ -25,6 +25,7 @@ export type MonthlyGeneratedAssignment = {
 export type MonthlyUnfilledPositionReason =
   | "published_service"
   | "pending_request"
+  | "preexisting_conflict"
   | "no_active_servants"
   | "unavailable"
   | "serving_preference"
@@ -69,6 +70,7 @@ export type MonthlyAssignmentOptimizerInput = {
   historicalProfiles?: readonly MonthlyHistoricalServantProfile[];
   includeAssistant?: boolean;
   dataErrors?: readonly string[];
+  autoAssignmentExcludedServantIds?: readonly string[];
 };
 
 export type MonthlyAssignmentOptimizerResult =
@@ -444,6 +446,7 @@ function unfilledReason(
 ): MonthlyUnfilledPositionReason {
   if (slot.blocked_reason === "published") return "published_service";
   if (slot.blocked_reason === "pending_request") return "pending_request";
+  if (slot.blocked_reason === "preexisting_conflict") return "preexisting_conflict";
   if (!activeServants.length) return "no_active_servants";
 
   const reasonCounts: Record<BlockReason, number> = {
@@ -507,11 +510,15 @@ export function optimizeMonthlyAssignments(
   if (errors.length) return { ok: false, reason: "data_unavailable", errors };
   if (!input.slots.length) return { ok: false, reason: "no_service_slots" };
 
-  const activeServants = input.servants.filter((servant) => servant.active === true);
+  const excludedServantIds = new Set(input.autoAssignmentExcludedServantIds ?? []);
+  const activeServants = input.servants.filter((servant) =>
+    servant.active === true && !excludedServantIds.has(servant.id)
+  );
   const month = input.slots[0].service_date.slice(0, 7);
   const baseCommitments = buildExistingCommitments(input);
   const generatedCommitments: AssignmentCommitment[] = [];
   const generatedAssignments: MonthlyGeneratedAssignment[] = [];
+  const preexistingConflictSlots = new Map<string, string[]>();
   const unfilledPositions: MonthlyUnfilledPosition[] = [];
   const warnings: string[] = [];
   const positionList: RolePosition[] = [];
@@ -520,6 +527,40 @@ export function optimizeMonthlyAssignments(
     0,
   );
   const includeAssistant = input.includeAssistant !== false;
+  const servantDirectory = new Map(input.servants.map((servant) => [servant.id, servant]));
+
+  for (const slot of input.slots) {
+    if (slot.blocked_reason) continue;
+    const conflicts: string[] = [];
+    for (const assignment of slot.assignments) {
+      const servant = servantDirectory.get(assignment.servant_id);
+      if (!servant || servant.active !== true) {
+        conflicts.push(assignment.servant_name + " is inactive or missing from the active servant directory.");
+        continue;
+      }
+      const selfCommitment = baseCommitments.find((item) =>
+        item.servant_id === assignment.servant_id &&
+        item.role === assignment.role &&
+        (slot.schedule_id
+          ? item.schedule_id === slot.schedule_id
+          : item.slot_key === slot.key)
+      );
+      const otherCommitments = baseCommitments.filter((item) => item !== selfCommitment);
+      const reasons = getBlockReasons(
+        servant,
+        slot,
+        otherCommitments,
+        input.availability,
+        input.preferences,
+      );
+      if (reasons.length) {
+        conflicts.push(
+          assignment.servant_name + " has an existing " + reasons.join(", ") + " conflict."
+        );
+      }
+    }
+    if (conflicts.length) preexistingConflictSlots.set(slot.key, conflicts);
+  }
 
   for (const slot of input.slots) {
     const roles = includeAssistant ? ALL_ROLES : REQUIRED_ROLES;
@@ -527,7 +568,9 @@ export function optimizeMonthlyAssignments(
       const filled = slot.assignments.some((assignment) => assignment.role === role);
       if (filled) continue;
 
-      if (slot.blocked_reason) {
+      const effectiveBlockReason = slot.blocked_reason ??
+        (preexistingConflictSlots.has(slot.key) ? "preexisting_conflict" : null);
+      if (effectiveBlockReason) {
         unfilledPositions.push({
           schedule_key: slot.key,
           schedule_id: slot.schedule_id,
@@ -536,7 +579,11 @@ export function optimizeMonthlyAssignments(
           service_name: slot.service_name,
           role,
           required: role !== "Assistant",
-          reason: slot.blocked_reason === "published" ? "published_service" : "pending_request",
+          reason: effectiveBlockReason === "published"
+            ? "published_service"
+            : effectiveBlockReason === "pending_request"
+            ? "pending_request"
+            : "preexisting_conflict",
           blocked_candidate_count: 0,
         });
         continue;
@@ -544,6 +591,10 @@ export function optimizeMonthlyAssignments(
 
       positionList.push({ slot, role, required: role !== "Assistant" });
     }
+  }
+
+  if (preexistingConflictSlots.size) {
+    warnings.push(preexistingConflictSlots.size + " service(s) were frozen because an existing assignment has a hard conflict.");
   }
 
   const opportunities = new Map<string, Set<string>>();
@@ -812,7 +863,9 @@ export function optimizeMonthlyAssignments(
   const unfilledOptionalAssistantCount = unfilledPositions.filter((position) =>
     position.role === "Assistant"
   ).length;
-  const skippedServiceCount = input.slots.filter((slot) => slot.blocked_reason !== null).length;
+  const skippedServiceCount = input.slots.filter((slot) =>
+    slot.blocked_reason !== null || preexistingConflictSlots.has(slot.key)
+  ).length;
 
   return {
     ok: true,
