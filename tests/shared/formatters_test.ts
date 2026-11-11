@@ -5,6 +5,7 @@ import {
   displayList,
   errorText,
   fmtDate,
+  fmtDateTime,
   localDateKey,
   isScheduleUpcoming,
   shortTime,
@@ -32,8 +33,8 @@ Deno.test("shared date helpers use local calendar dates without UTC midnight shi
     throw new Error("today() must return a YYYY-MM-DD local date.");
   }
 
-  assertEqual(fmtDate("2026-11-07"), "07-November-2026", "Shared date display must use a two-digit day and full month name.");
-  assertEqual(fmtDate("2026-12-25"), "25-December-2026", "Christmas dates must use the requested DD-MONTH-YYYY format.");
+  assertEqual(fmtDate("2026-11-20"), "Fri, Nov 20, 2026", "Shared date display must match the schedule date format.");
+  assertEqual(fmtDate("2026-12-25"), "Fri, Dec 25, 2026", "Christmas dates must use the same abbreviated weekday and month format.");
   assertEqual(fmtDate("invalid"), "invalid", "Invalid date values must remain unchanged.");
 });
 
@@ -103,4 +104,12 @@ Deno.test("schedule upcoming helper compares Asia/Jakarta service time against t
 Deno.test("Jakarta date helper follows the service timezone independently of device timezone", () => {
   assertEqual(todayInJakarta(new Date("2026-11-08T16:59:00Z")), "2026-11-08", "The helper must return the Jakarta date before its midnight boundary.");
   assertEqual(todayInJakarta(new Date("2026-11-08T17:00:00Z")), "2026-11-09", "The helper must roll over at midnight in Jakarta.");
+});
+
+Deno.test("shared timestamp formatter keeps the shared date style and preserves local time", () => {
+  const value = "2026-11-20T13:15:00.000Z";
+  const date = new Date(value);
+  const expected = fmtDate(localDateKey(date)) + " · " + date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  assertEqual(fmtDateTime(value), expected, "Timestamps should use the same date style and retain their time.");
+  assertEqual(fmtDateTime("invalid"), "invalid", "Invalid timestamps should remain unchanged.");
 });
