@@ -84,6 +84,7 @@ Deno.test("Availability data loading preserves table filters, ordering, and the 
     ["maybeSingle"],
   ], "The same availability_deadline setting must be read with maybeSingle.");
   assertEqual(result.optionalErrors, [], "Successful optional reads should not create warnings.");
+  assertEqual(result.generationErrors, [], "Successful availability, recurring-rule and preference reads should be safe for schedule generation.");
 });
 
 Deno.test("Availability data loading retains empty fallbacks for optional table errors", async () => {
@@ -103,4 +104,6 @@ Deno.test("Availability data loading retains empty fallbacks for optional table 
   assertEqual(result.deadline, "", "A failed deadline read should preserve the empty-string fallback.");
   assertEqual(result.optionalErrors, ["availability denied", "rules unavailable", "preferences unavailable", "settings unavailable"],
     "Each optional data error should remain independently visible to App diagnostics.");
+  assertEqual(result.generationErrors, ["availability denied", "rules unavailable", "preferences unavailable"],
+    "Availability, recurring-rule and preference failures must independently block monthly schedule generation, while deadline settings remain non-blocking.");
 });
