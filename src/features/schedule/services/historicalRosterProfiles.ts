@@ -3,7 +3,7 @@ import type { MonthlyHistoricalServantProfile } from "./monthlyAssignmentOptimiz
 
 export type HistoricalRosterProfile = {
   name: string;
-  primary_role: Role;
+  primary_role?: Role;
   manual_only?: boolean;
 };
 
@@ -63,9 +63,9 @@ const HISTORICAL_ROSTER: readonly HistoricalRosterProfile[] = [
   { name: "Rivaldo William Suryajaya", primary_role: "Assistant" },
   { name: "Erik Jonathan", primary_role: "Assistant" },
   { name: "Cornelius Willsen Nugroho", primary_role: "Assistant" },
-  { name: "David Karel", primary_role: "FOH", manual_only: true },
-  { name: "Deddy", primary_role: "FOH", manual_only: true },
-  { name: "Kevin Award", primary_role: "FOH", manual_only: true },
+  { name: "David Karel", manual_only: true },
+  { name: "Deddy", manual_only: true },
+  { name: "Kevin Award", manual_only: true },
 ];
 
 function normalizeName(value: string): string {
@@ -114,7 +114,7 @@ export function mapHistoricalRosterProfiles(
     if (entry.manual_only) {
       autoAssignmentExcludedServantIds.push(servant.id);
       matchedManualOnlyNames.push(entry.name);
-    } else {
+    } else if (entry.primary_role) {
       profiles.push({
         servant_id: servant.id,
         primary_role: entry.primary_role,
