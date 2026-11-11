@@ -356,6 +356,9 @@ function roleProfileFor(
     servant_id: servantId,
     primary_role: primaryRole,
     role_counts: roleCounts,
+    historical_assignments: supplied?.historical_assignments ?? 0,
+    historical_serving_days: supplied?.historical_serving_days ?? 0,
+    history_as_of: supplied?.history_as_of,
   };
 }
 
@@ -849,6 +852,7 @@ export function optimizeMonthlyAssignments(
       );
       const roleCounts: Record<Role, number> = { FOH: 0, Monitor: 0, Assistant: 0 };
       for (const item of servantMonth) roleCounts[item.role] += 1;
+      const historicalProfile = roleProfileFor(servant.id, historicalProfiles, derivedRoleCounts);
       const opportunityCount = opportunities.get(servant.id)?.size ?? 0;
       const totalAssignments = existingAssignments + generatedCount;
 
@@ -863,6 +867,8 @@ export function optimizeMonthlyAssignments(
         utilization: opportunityCount ? totalAssignments / opportunityCount : 0,
         recent_60_day_assignments: recent.length,
         recent_60_day_days: new Set(recent.map((item) => item.service_date)).size,
+        historical_assignments: historicalProfile.historical_assignments ?? 0,
+        historical_serving_days: historicalProfile.historical_serving_days ?? 0,
         role_counts: roleCounts,
         prefer_not_assignments: preferNotByServant.get(servant.id) ?? 0,
       };
