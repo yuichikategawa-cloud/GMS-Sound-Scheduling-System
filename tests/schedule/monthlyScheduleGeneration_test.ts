@@ -91,6 +91,26 @@ Deno.test("monthly generation preserves existing draft assignments and marks pub
   assertEqual(pending?.blocked_reason, "pending_request", "Services with pending requests must be protected.");
 });
 
+Deno.test("monthly generation can build a month from special services without weekend templates", () => {
+  const result = buildMonthlyScheduleSlots({
+    month: "2026-12",
+    locationIds: ["loc-new"],
+    templates: [],
+    existingSchedules: [],
+    specialServices: [{
+      service_date: "2026-12-25",
+      location_id: "loc-new",
+      service_name: "Christmas Service",
+      start_time: "10:00",
+      end_time: "12:00",
+    }],
+  });
+
+  if (!result.ok) throw new Error("An explicitly added special service should not require weekend templates.");
+  assertEqual(result.slots.length, 1, "Only the Christmas service should be present.");
+  assertEqual(result.slots[0].template_id, null, "A special service must not invent a recurring template.");
+});
+
 Deno.test("monthly generation includes a one-off Friday special service", () => {
   const result = buildMonthlyScheduleSlots({
     month: "2026-12",
