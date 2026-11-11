@@ -14,6 +14,7 @@ export type MonthlyScheduleSlotAssignment = {
 
 export type MonthlyScheduleSlot = {
   key: string;
+  template_id: string;
   schedule_id: string | null;
   service_date: string;
   location_id: string;
@@ -168,6 +169,7 @@ export function buildMonthlyScheduleSlots(
 
       slots.push({
         key,
+        template_id: template.id,
         schedule_id: scheduleId,
         service_date: serviceDate,
         location_id: template.location_id,
