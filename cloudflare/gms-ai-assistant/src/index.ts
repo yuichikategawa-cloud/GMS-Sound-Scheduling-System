@@ -96,7 +96,7 @@ type SafeSnapshot = {
         servingDays: number;
         eligibleOpportunities: number;
         recent60DayAssignments: number;
-        roleHistoryCount: number;
+        currentMonthRoleAssignments: number;
       }>;
       vacancies: Array<{
         role: string;
@@ -185,7 +185,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
             !isIntegerInRange(rawAssignment.servingDays, 0, 100) ||
             !isIntegerInRange(rawAssignment.eligibleOpportunities, 0, 200) ||
             !isIntegerInRange(rawAssignment.recent60DayAssignments, 0, 100) ||
-            !isIntegerInRange(rawAssignment.roleHistoryCount, 0, 100)) return null;
+            !isIntegerInRange(rawAssignment.currentMonthRoleAssignments, 0, 100)) return null;
 
         assignments.push({
           servant: rawAssignment.servant,
@@ -197,7 +197,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
           servingDays: rawAssignment.servingDays as number,
           eligibleOpportunities: rawAssignment.eligibleOpportunities as number,
           recent60DayAssignments: rawAssignment.recent60DayAssignments as number,
-          roleHistoryCount: rawAssignment.roleHistoryCount as number,
+          currentMonthRoleAssignments: rawAssignment.currentMonthRoleAssignments as number,
         });
       }
 
