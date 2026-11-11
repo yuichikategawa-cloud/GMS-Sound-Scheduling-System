@@ -428,6 +428,63 @@ Deno.test("monthly optimizer freezes a service when a preserved assignment alrea
   assertEqual(result.skippedServiceCount, 1, "The frozen service should be counted as skipped.");
 });
 
+Deno.test("monthly optimizer uses the historical workbook as a low-weight long-term workload signal", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("high-history"), createServant("low-history")],
+  );
+  input.historicalProfiles = [
+    {
+      servant_id: "high-history",
+      primary_role: "FOH",
+      role_counts: { FOH: 80 },
+      historical_assignments: 172,
+      historical_serving_days: 59,
+      history_as_of: "2026-11-01",
+    },
+    {
+      servant_id: "low-history",
+      primary_role: "FOH",
+      role_counts: { FOH: 10 },
+      historical_assignments: 10,
+      historical_serving_days: 5,
+      history_as_of: "2026-11-01",
+    },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "low-history", "A lower long-term historic workload should be preferred when all current constraints and recent workload are equal.");
+  const high = result.workloads.find((workload) => workload.servant_id === "high-history");
+  assertEqual(high?.historical_assignments, 172, "The preview should surface the historical assignment baseline.");
+  assertEqual(high?.historical_serving_days, 59, "The preview should surface distinct historical serving days.");
+});
+
+Deno.test("monthly optimizer preserves declined assignments but reports them as uncovered and excludes them from workload", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "declined-servant" },
+    { role: "Monitor", servant_id: "pending-servant" },
+  ]);
+  slot.assignments[0].confirmation_status = "declined";
+  slot.assignments[1].confirmation_status = "pending";
+
+  const result = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("declined-servant"), createServant("pending-servant"), createServant("otherwise-free")],
+  ));
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.length, 0, "Existing declined role rows are preserved and not automatically replaced.");
+  assertEqual(result.lockedAssignmentCount, 2, "Both existing role rows remain preserved.");
+  assertEqual(result.declinedAssignmentCount, 1, "The declined commitment must be counted separately.");
+  assertEqual(result.filledRequiredPositionCount, 1, "A declined assignment is not considered covered.");
+  assertEqual(result.unfilledRequiredPositionCount, 1, "A declined required assignment remains a manual-review gap.");
+  assertEqual(result.unfilledPositions[0].reason, "declined_assignment", "The preview must explain the declined role.");
+  assertEqual(result.workloads.some((workload) => workload.servant_id === "declined-servant"), false, "Declined assignment is excluded from workload.");
+});
+
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
   const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
   const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
