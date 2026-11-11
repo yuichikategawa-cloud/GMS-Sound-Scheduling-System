@@ -255,3 +255,36 @@
   .monthly-smart-special-fields .monthly-smart-special-name{grid-column:span 2}
   .monthly-smart-special-chip{align-items:flex-start;flex-direction:column}
 }
+
+
+.monthly-smart-ai-panel{
+  display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;
+  margin:14px 0;padding:14px;border:1px solid var(--border-color,#dbe2ee);
+  border-radius:12px;background:var(--surface,#fff)
+}
+.monthly-smart-ai-copy{display:flex;flex:1 1 360px;min-width:0;flex-direction:column;gap:6px}
+.monthly-smart-ai-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.monthly-smart-ai-title>svg{color:#7654bd}
+.monthly-smart-ai-title b{font-size:13px}
+.monthly-smart-ai-free-label{
+  padding:3px 7px;border-radius:999px;background:#eaf7ef;color:#247347;font-size:10px;font-weight:750
+}
+.monthly-smart-ai-copy p{margin:0;color:var(--text-muted,#667085);font-size:11px;line-height:1.5}
+.monthly-smart-ai-copy>small,.monthly-smart-ai-muted{color:var(--text-muted,#667085);font-size:10px;line-height:1.45}
+.monthly-smart-ai-button{align-self:flex-start;white-space:nowrap}
+.monthly-smart-ai-error{flex:1 0 100%;margin:0;color:var(--danger,#b42318);font-size:11px}
+.monthly-smart-ai-result{
+  flex:1 0 100%;border:1px solid var(--border-color,#dbe2ee);border-radius:9px;
+  padding:11px;background:var(--surface-muted,#f5f7fb)
+}
+.monthly-smart-ai-result>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.monthly-smart-ai-result>div b{font-size:12px}
+.monthly-smart-ai-result>div span{font-size:10px;color:var(--text-muted,#667085)}
+.monthly-smart-ai-result pre{
+  margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:12px;line-height:1.6;color:var(--text-primary,#1f2937)
+}
+.monthly-smart-ai-result>small{display:block;color:var(--text-muted,#667085);font-size:10px;line-height:1.45}
+:root[data-theme="dark"] .monthly-smart-ai-panel{background:#111d30;border-color:#35455e}
+:root[data-theme="dark"] .monthly-smart-ai-free-label{background:#183a2c;color:#9ce1b8}
+:root[data-theme="dark"] .monthly-smart-ai-result{background:#1a2940;border-color:#35455e}
+:root[data-theme="dark"] .monthly-smart-ai-result pre{color:#eaf0fa}
