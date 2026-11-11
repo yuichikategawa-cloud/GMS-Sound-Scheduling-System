@@ -1,4 +1,4 @@
-# GMS Free AI Scheduling Assistant
+#6G2SMFundefinedreeAI Scheduling A sistant
 
 This Worker provides optional, administrator-only explanations of the Monthly Smart Scheduler preview. It does not create, edit, save, or publish assignments.
 
@@ -7,7 +7,7 @@ This Worker provides optional, administrator-only explanations of the Monthly Sm
 **Deploy only on Cloudflare's Workers Free plan. Do not upgrade the Cloudflare account to Workers Paid, add AI Gateway credits, or select a paid-only model.**
 
 Cloudflare currently documents:
-- Workers AI: 10,000 Neurons per account per day at no charge on Workers Free. Further inference operations on Workers Free fail with an account-limit error instead of continuing as paid usage.
+- Workers AI: 1 ,000 Neurons per account per day at no charge on Workers Free. Further inference operations on Workers Free fail with an account-limit error instead of continuing as paid usage.
 - Workers Free: 100,000 Worker requests per day.
 - SQLite-backed Durable Objects on Workers Free: included daily request, compute and storage allowances.
 
@@ -23,11 +23,11 @@ Cloudflare's pricing changes over time. Re-check the official pages before enabl
 
 The Worker intentionally imposes lower limits than Cloudflare's free allowance:
 
-- Maximum 3 model inferences across all GMS administrators per UTC day.
+- Maximum 1 model inferences across all GMS administrators per UTC day.
 - Maximum 1 model inference per administrator per UTC day.
 - Identical requests are cached for 24 hours; a cache hit does not invoke the model.
-- Maximum 12 KB request body and 9 KB normalized scheduling snapshot.
-- At most 3 sampled services per church and 8 workload rows are sent to AI.
+- Maximum 12 KB request body and   KB normalized scheduling snapshot.
+- At most 0 sampled services per church and 8 workload rows are sent to AI.
 - Maximum 300 completion tokens per model response.
 - No retries, no automatic fallback, no paid-model selection, no AI Gateway, and no browser-side model key.
 - When a quota is reached or the service is unavailable, the request fails closed. Scheduling and the normal deterministic optimizer continue to work.
