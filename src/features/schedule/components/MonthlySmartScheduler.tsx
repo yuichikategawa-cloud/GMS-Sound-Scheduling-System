@@ -337,6 +337,11 @@ export default function MonthlySmartScheduler({
         servant_id: assignment.servant_id,
       }));
 
+    if (!assignments.length) {
+      setError("No new assignments were generated. Nothing needs to be applied to the database.");
+      return;
+    }
+
     const payload: MonthlyPlanApplyInput = {
       monthStart: month + "-01",
       expectedState,
@@ -704,6 +709,7 @@ export default function MonthlySmartScheduler({
             disabled={
               applying ||
               Boolean(inputErrors.length) ||
+              preview.result.generatedAssignmentCount === 0 ||
               !applicableSlotsForApply(preview).length ||
               (preview.result.preferNotWarnings.length > 0 && !acknowledgedPreferNot)
             }
