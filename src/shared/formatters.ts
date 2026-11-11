@@ -47,27 +47,27 @@ export function isScheduleUpcoming(serviceDate: string, startTime: string, now =
   return serviceWallTime > nowWallTime;
 }
 
-/** Display service dates consistently as DD-MONTH-YYYY (for example, 25-December-2026). */
+/** Display dates consistently as "Fri, Nov 20, 2026" across the application. */
 export const fmtDate = (value: string): string => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return value;
 
-  const [, yearText, monthText, dayText] = match;
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const date = new Date(Date.UTC(year, month - 1, day));
+  const date = new Date(`${value}T12:00:00`);
+  if (!Number.isFinite(date.getTime()) || localDateKey(date) !== value) return value;
 
-  if (month < 1 || month > 12 || day < 1 || date.toISOString().slice(0, 10) !== value) {
-    return value;
-  }
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
-  const monthName = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    timeZone: "UTC",
-  }).format(date);
-
-  return dayText + "-" + monthName + "-" + yearText;
+/** Display a timestamp with the shared date format and browser-local time. */
+export const fmtDateTime = (value: string): string => {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  return `${fmtDate(localDateKey(date))} · ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 };
 
 export const shortTime = (t: string) => t?.slice(0, 5) ?? "";
