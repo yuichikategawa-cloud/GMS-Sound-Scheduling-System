@@ -58,6 +58,7 @@ export interface DashboardData {
   memberProfile: ServantDirectoryMember | null;
   accountProfiles: ServantDirectoryAccountProfile[];
   notificationPrefs: NotificationPreferenceState;
+  scheduleGenerationErrors: string[];
   optionalErrors: string[];
 }
 
@@ -111,6 +112,15 @@ export async function loadDashboardData(
     if (result.error) throw result.error;
   }
 
+  const scheduleGenerationErrors = [
+    ...availabilityDataRes.generationErrors,
+    ...(scheduleDataRes.templates.error
+      ? [scheduleDataRes.templates.error.message || "Service templates could not be loaded."]
+      : []),
+    ...(requestDataRes.requests.error
+      ? [requestDataRes.requests.error.message || "Pending serving requests could not be loaded."]
+      : []),
+  ];
   const optionalErrors = [
     ...availabilityDataRes.optionalErrors,
     ...[
@@ -169,6 +179,7 @@ export async function loadDashboardData(
         request_updates: true,
       }
       : notificationDataRes.preferences.data,
+    scheduleGenerationErrors,
     optionalErrors,
   };
 }
