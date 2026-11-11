@@ -509,7 +509,6 @@ Deno.test("monthly optimizer avoids assigning the same servant on both days of a
 
 Deno.test("monthly workload history excludes declined assignments from the recent 60-day display", () => {
   const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
-    { role: "FOH", servant_id: "locked-foh" },
     { role: "Monitor", servant_id: "locked-monitor" },
   ]);
   const oldDeclined = createSchedule("declined-old", "2026-10-25", "loc-as", "Prior Service", "09:00", "11:00", [
