@@ -70,7 +70,7 @@ BEGIN
     RAISE EXCEPTION 'Every expected service snapshot must include its assignment array';
   END IF;
 
-  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_slots (
+  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_expected_slots (
     template_id uuid NOT NULL,
     schedule_id uuid,
     service_date date NOT NULL,
@@ -83,7 +83,7 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_assignments (
+  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_expected_assignments (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -93,7 +93,7 @@ BEGIN
     confirmation_status text NOT NULL
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE pg_temp.gms_monthly_plan (
+  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_plan (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -102,7 +102,7 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name, role)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE pg_temp.gms_monthly_created_slots (
+  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_created_slots (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -111,7 +111,7 @@ BEGIN
     UNIQUE (schedule_id)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE pg_temp.gms_monthly_final_assignments (
+  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_final_assignments (
     schedule_id uuid NOT NULL,
     service_date date NOT NULL,
     location_id uuid NOT NULL,
@@ -122,6 +122,13 @@ BEGIN
     servant_id uuid NOT NULL,
     source text NOT NULL
   ) ON COMMIT DROP;
+
+  TRUNCATE TABLE
+    pg_temp.gms_monthly_expected_slots,
+    pg_temp.gms_monthly_expected_assignments,
+    pg_temp.gms_monthly_plan,
+    pg_temp.gms_monthly_created_slots,
+    pg_temp.gms_monthly_final_assignments;
 
   INSERT INTO pg_temp.gms_monthly_expected_slots(
     template_id, schedule_id, service_date, location_id, service_name,
