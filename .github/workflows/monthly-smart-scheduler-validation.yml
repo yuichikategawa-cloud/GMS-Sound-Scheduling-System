@@ -6,7 +6,17 @@ on:
       - feat/monthly-smart-scheduler-engine
     paths:
       - "src/features/schedule/services/monthly*.ts"
+      - "src/features/schedule/services/historicalRosterProfiles.ts"
+      - "src/features/schedule/components/MonthlySmartScheduler.*"
+      - "src/features/schedule/components/ScheduleWorkspace.tsx"
+      - "src/features/availability/services/availabilityData.ts"
+      - "src/app/services/dashboardData.ts"
+      - "src/app/state/dashboardState.ts"
+      - "src/App.tsx"
       - "tests/schedule/monthly*_test.ts"
+      - "tests/availability/availabilityData_test.ts"
+      - "tests/app/dashboardData_test.ts"
+      - "tests/app/dashboardState_test.ts"
       - "package.json"
       - "package-lock.json"
       - "tsconfig*.json"
@@ -29,6 +39,12 @@ jobs:
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+      - name: Test historical servant roster mapping
+        run: deno test --no-lock tests/schedule/historicalRosterProfiles_test.ts
+      - name: Test availability data readiness
+        run: deno test --no-lock tests/availability/availabilityData_test.ts
+      - name: Test dashboard scheduler readiness propagation
+        run: deno test --no-lock tests/app/dashboardData_test.ts tests/app/dashboardState_test.ts
 
   frontend-build:
     runs-on: ubuntu-latest
