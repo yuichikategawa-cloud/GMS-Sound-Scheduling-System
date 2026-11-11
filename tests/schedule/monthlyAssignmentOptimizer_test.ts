@@ -532,6 +532,35 @@ Deno.test("monthly workload history excludes declined assignments from the recen
   assertEqual(workload?.recent_60_day_days, 0, "Declined assignments must not count as recent serving days.");
 });
 
+Deno.test("monthly fairness counts preserved existing service assignments as practical opportunities", () => {
+  const slot = createSlot("2026-11-15", "New Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const publishedHistory = createSchedule(
+    "published-history",
+    "2026-11-01",
+    "loc-as",
+    "Earlier Published Service",
+    "09:00",
+    "11:00",
+    [{ role: "FOH", servant_id: "history-servant" }],
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("history-servant"),
+      createServant("fresh-servant"),
+    ]),
+    schedules: [publishedHistory],
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const workload = result.workloads.find((item) => item.servant_id === "history-servant");
+  assertEqual(workload?.existing_assignments, 1, "The preserved historical-month commitment remains part of total workload.");
+  assertEqual(workload?.eligible_opportunities, 2, "The existing commitment and a new eligible service both count as practical opportunities.");
+  assertEqual(workload?.utilization, 0.5, "One preserved assignment across two practical opportunities should produce 50% utilization.");
+});
+
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
   const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
   const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
