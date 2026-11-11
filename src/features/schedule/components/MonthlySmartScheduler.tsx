@@ -16,6 +16,7 @@ import type { MonthlyScheduleSlot, MonthlySpecialServiceInput } from "../service
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import { fmtDate } from "../../../shared/formatters";
+import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation } from "../services/aiSchedulingAssistant";
 import "./MonthlySmartScheduler.css";
 
 type SuccessfulOptimizerResult = Extract<MonthlyAssignmentOptimizerResult, { ok: true }>;
@@ -38,6 +39,8 @@ type MonthlySmartSchedulerProps = {
   requests: ServingRequestRecord[];
   inputErrors: string[];
   onApplyPlan: (input: MonthlyPlanApplyInput) => Promise<boolean>;
+  aiWorkerUrl?: string;
+  aiAccessToken?: string;
 };
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -178,6 +181,8 @@ export default function MonthlySmartScheduler({
   requests,
   inputErrors,
   onApplyPlan,
+  aiWorkerUrl,
+  aiAccessToken,
 }: MonthlySmartSchedulerProps) {
   const [month, setMonth] = useState(nextMonthKey);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
@@ -192,6 +197,10 @@ export default function MonthlySmartScheduler({
   const [error, setError] = useState("");
   const [acknowledgedPreferNot, setAcknowledgedPreferNot] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState("");
+  const [aiError, setAiError] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiCached, setAiCached] = useState(false);
   const initializedLocations = useRef(false);
 
   useEffect(() => {
@@ -265,6 +274,9 @@ export default function MonthlySmartScheduler({
   const generatePreview = () => {
     setError("");
     setPreview(null);
+    setAiExplanation("");
+    setAiError("");
+    setAiCached(false);
     setAcknowledgedPreferNot(false);
 
     const built = buildMonthlyScheduleSlots({
@@ -302,6 +314,9 @@ export default function MonthlySmartScheduler({
       return;
     }
 
+    setAiExplanation("");
+    setAiError("");
+    setAiCached(false);
     setPreview({
       baseSlots: built.slots,
       slots: optimized.slots,
@@ -428,6 +443,9 @@ export default function MonthlySmartScheduler({
     }
 
     setError("");
+    setAiExplanation("");
+    setAiError("");
+    setAiCached(false);
     setAcknowledgedPreferNot(false);
     setPreview({
       baseSlots: preview.baseSlots,
@@ -544,6 +562,37 @@ export default function MonthlySmartScheduler({
     setSpecialServiceName("");
     setError("");
     setPreview(null);
+  };
+
+  const explainPreviewWithAi = async () => {
+    if (!preview || aiBusy) return;
+    if (!aiWorkerUrl || !aiAccessToken) {
+      setAiError("The free AI Worker has not been configured yet. Scheduling works normally without it.");
+      return;
+    }
+    setAiBusy(true);
+    setAiError("");
+    setAiExplanation("");
+    setAiCached(false);
+    try {
+      const snapshot = buildAiSchedulingSnapshot({
+        month,
+        locations,
+        slots: preview.slots,
+        generatedAssignments: preview.result.assignments,
+        unfilledPositions: preview.result.unfilledPositions,
+        workloads: preview.result.workloads,
+        servants,
+        availability,
+      });
+      const result = await requestAiSchedulingExplanation(aiWorkerUrl, aiAccessToken, snapshot);
+      setAiExplanation(result.explanation);
+      setAiCached(result.cached);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : "The free AI assistant is temporarily unavailable.");
+    } finally {
+      setAiBusy(false);
+    }
   };
 
 
@@ -694,6 +743,23 @@ export default function MonthlySmartScheduler({
             <div><strong>{preview.result.generatedAssignmentCount}</strong><span>New proposals</span></div>
           </div>
 
+          <section className="monthly-smart-ai-panel" aria-labelledby="monthly-smart-ai-heading">
+            <div className="monthly-smart-ai-copy">
+              <div className="monthly-smart-ai-title">
+                <WandSparkles size={17}/>
+                <b id="monthly-smart-ai-heading">AI scheduling explanation</b>
+                <span className="monthly-smart-ai-free-label">Free pilot · hard capped</span>
+              </div>
+              <p>Get an explanation of coverage, role qualifications, vacancies and workload balance. Servant names and personal details are removed before the request leaves this browser.</p>
+              <small>Limit: 3 model calls per GMS per UTC day and 1 per administrator. Identical cached results do not use another model call.</small>
+            </div>
+            <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void explainPreviewWithAi()} title={!aiWorkerUrl || !aiAccessToken ? "The free Cloudflare Worker is not configured yet." : "Use the free daily AI allowance to explain this preview."}>
+              <WandSparkles size={16}/>{aiBusy ? "Analyzing preview…" : aiExplanation ? "Refresh AI explanation" : "Explain preview with AI"}
+            </button>
+            {!aiWorkerUrl && <small className="monthly-smart-ai-muted">Not connected yet. The feature stays disabled until a free-only Cloudflare Worker URL is configured.</small>}
+            {aiError && <p className="monthly-smart-ai-error" role="alert">{aiError}</p>}
+            {aiExplanation && <div className="monthly-smart-ai-result" role="status"><div><b>AI analysis</b>{aiCached && <span>Cached result · no model call used</span>}</div><pre>{aiExplanation}</pre><small>Advice only. The AI cannot edit assignments or publish schedules; the existing optimizer and database remain authoritative.</small></div>}
+          </section>
           <div className="monthly-smart-secondary-metrics">
             <span><b>{preview.result.lockedAssignmentCount}</b> preserved assignments</span>
             <span><b>{preview.result.generatedAssistantCount}</b> optional Assistants proposed</span>
