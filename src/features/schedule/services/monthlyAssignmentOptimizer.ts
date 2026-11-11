@@ -1008,7 +1008,9 @@ export function optimizeMonthlyAssignments(
   const requiredPositionCount = input.slots.length * REQUIRED_ROLES.length;
   const existingRequiredCount = input.slots.reduce(
     (count, slot) => count + slot.assignments.filter((assignment) =>
-      REQUIRED_ROLES.includes(assignment.role) && assignment.confirmation_status !== "declined"
+      REQUIRED_ROLES.includes(assignment.role) &&
+      !assignment.preview_manual &&
+      assignment.confirmation_status !== "declined"
     ).length,
     0,
   );
