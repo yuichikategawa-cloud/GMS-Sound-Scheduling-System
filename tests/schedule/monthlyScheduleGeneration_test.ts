@@ -91,6 +91,63 @@ Deno.test("monthly generation preserves existing draft assignments and marks pub
   assertEqual(pending?.blocked_reason, "pending_request", "Services with pending requests must be protected.");
 });
 
+Deno.test("monthly generation includes a one-off Friday special service", () => {
+  const result = buildMonthlyScheduleSlots({
+    month: "2026-12",
+    locationIds: ["loc-as"],
+    templates,
+    existingSchedules: [],
+    specialServices: [{
+      service_date: "2026-12-25",
+      location_id: "loc-as",
+      service_name: "Christmas Service",
+      start_time: "10:00",
+      end_time: "12:00",
+    }],
+  });
+
+  if (!result.ok) throw new Error("Expected the Christmas special service to be included.");
+  const christmas = result.slots.find((slot) => slot.service_name === "Christmas Service");
+  assertEqual(christmas?.service_date, "2026-12-25", "The custom date should remain December 25.");
+  assertEqual(christmas?.template_id, null, "A one-off service does not require a recurring service template.");
+  assertEqual(christmas?.status, "new_special", "A new special service is a draft proposal.");
+});
+
+Deno.test("monthly generation includes existing off-template custom draft services", () => {
+  const special = createSchedule("christmas-id", "2026-12-25", "Christmas Service", "draft", ["servant-a"]);
+  special.start_time = "10:00";
+  special.end_time = "12:00";
+  const result = buildMonthlyScheduleSlots({
+    month: "2026-12",
+    locationIds: ["loc-as"],
+    templates,
+    existingSchedules: [special],
+  });
+
+  if (!result.ok) throw new Error("Expected an existing special service to be included.");
+  const christmas = result.slots.find((slot) => slot.schedule_id === "christmas-id");
+  assertEqual(christmas?.template_id, null, "Existing ad-hoc services should be represented without a recurring template.");
+  assertEqual(christmas?.assignments[0]?.servant_id, "servant-a", "Existing special-service assignments must remain locked.");
+});
+
+Deno.test("monthly generation rejects invalid or out-of-month special services", () => {
+  const result = buildMonthlyScheduleSlots({
+    month: "2026-12",
+    locationIds: ["loc-as"],
+    templates,
+    existingSchedules: [],
+    specialServices: [{
+      service_date: "2027-01-01",
+      location_id: "loc-as",
+      service_name: "New Year Service",
+      start_time: "10:00",
+      end_time: "12:00",
+    }],
+  });
+  assertEqual(result.ok, false, "A custom service outside the planning month must be rejected.");
+  if (!result.ok) assertEqual(result.reason, "invalid_special_service", "The validation error should identify invalid special service input.");
+});
+
 Deno.test("monthly generation scopes templates to selected locations", () => {
   const result = buildMonthlyScheduleSlots({
     month: "2026-11",
