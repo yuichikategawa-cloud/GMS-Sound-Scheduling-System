@@ -387,6 +387,23 @@ Deno.test("monthly optimizer excludes manual-only servants from automatic alloca
   assertEqual(result.assignments[0].servant_id, "automatic", "Manual-only servants must remain available for manual selection but not auto-assignment.");
 });
 
+Deno.test("monthly optimizer distinguishes manual-only roster entries from an inactive roster", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const manualOnly = optimizeMonthlyAssignments({
+    ...baseInput([slot], [createServant("manual-a"), createServant("manual-b")]),
+    autoAssignmentExcludedServantIds: ["manual-a", "manual-b"],
+  });
+  if (!manualOnly.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(manualOnly.unfilledPositions.map((position) => position.reason), ["no_auto_assignable_servants", "no_auto_assignable_servants"], "Active manual-only servants must not be reported as inactive.");
+
+  const inactive = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("inactive-a", false), createServant("inactive-b", false)],
+  ));
+  if (!inactive.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(inactive.unfilledPositions.map((position) => position.reason), ["no_active_servants", "no_active_servants"], "An all-inactive roster must be identified separately.");
+});
+
 Deno.test("monthly optimizer freezes a service when a preserved assignment already violates a hard conflict", () => {
   const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
     { role: "FOH", servant_id: "cross-church-servant" },
