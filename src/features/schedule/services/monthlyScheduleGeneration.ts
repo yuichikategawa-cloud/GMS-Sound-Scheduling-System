@@ -238,10 +238,10 @@ export function buildMonthlyScheduleSlots(
   // any date, including public holidays and special church events.
   for (const special of input.specialServices ?? []) {
     const key = naturalKey(special.service_date, special.location_id, special.service_name);
-    const validDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(special.service_date) &&
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(special.service_date) &&
       special.service_date >= monthStart && special.service_date <= monthEnd;
-    const start = /^([01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$/.test(special.start_time);
-    const end = /^([01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?$/.test(special.end_time);
+    const start = /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(special.start_time);
+    const end = /^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(special.end_time);
     if (!validDate || !locationIds.has(special.location_id) || !special.service_name.trim() ||
         !start || !end || special.start_time >= special.end_time || representedKeys.has(key)) {
       return {
