@@ -431,7 +431,7 @@ export default function MonthlySmartScheduler({
           <div className="monthly-smart-preview-heading">
             <div>
               <h3>Proposed schedule · {month}</h3>
-              <p>Generated assignments are proposals only. Every existing assignment remains locked.</p>
+              <p>Generated assignments are proposals only. Existing assignments remain locked; dropdowns can adjust proposed roles without saving them.</p>
             </div>
             <span className="monthly-smart-preview-status">Preview only</span>
           </div>
@@ -448,6 +448,7 @@ export default function MonthlySmartScheduler({
             <span><b>{preview.result.generatedAssistantCount}</b> optional Assistants proposed</span>
             <span><b>{preview.result.skippedServiceCount}</b> services frozen or skipped</span>
             <span><b>{preview.result.declinedAssignmentCount}</b> declined assignments preserved</span>
+            <span><b>{preview.slots.reduce((count, slot) => count + slot.assignments.filter((assignment) => assignment.preview_manual).length, 0)}</b> manual preview adjustments</span>
           </div>
 
           <div className="monthly-smart-section">
@@ -473,6 +474,9 @@ export default function MonthlySmartScheduler({
                               generated={generated?.get(role)}
                               unfilled={unfilled?.get(role)}
                               includeAssistant={includeAssistant}
+                              candidateOptions={candidateOptionsByRole.get(slot.key + "|" + role) ?? []}
+                              servants={servants}
+                              onManualChange={(servantId) => handleManualChange(slot.key, role, servantId)}
                             />
                           </td>
                         ))}
