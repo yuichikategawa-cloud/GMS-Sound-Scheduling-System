@@ -4,7 +4,8 @@
     "deploymentEnabled": {
       "**": false,
       "main": true,
-      "develop": false
+      "develop": false,
+      "feat/monthly-smart-scheduler-engine": true
     }
   }
 }
