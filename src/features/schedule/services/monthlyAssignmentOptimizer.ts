@@ -27,6 +27,7 @@ export type MonthlyUnfilledPositionReason =
   | "pending_request"
   | "preexisting_conflict"
   | "no_active_servants"
+  | "no_auto_assignable_servants"
   | "unavailable"
   | "serving_preference"
   | "cross_church_conflict"
@@ -449,7 +450,7 @@ function scoreCandidate(
 }
 
 function unfilledReason(
-  activeServants: readonly Servant[],
+  assignableServants: readonly Servant[],
   slot: MonthlyScheduleSlot,
   role: Role,
   baseCommitments: readonly AssignmentCommitment[],
@@ -459,7 +460,7 @@ function unfilledReason(
   if (slot.blocked_reason === "published") return "published_service";
   if (slot.blocked_reason === "pending_request") return "pending_request";
   if (slot.blocked_reason === "preexisting_conflict") return "preexisting_conflict";
-  if (!activeServants.length) return "no_active_servants";
+  if (!assignableServants.length) return "no_auto_assignable_servants";
 
   const reasonCounts: Record<BlockReason, number> = {
     inactive: 0,
@@ -470,7 +471,7 @@ function unfilledReason(
     overlap: 0,
   };
 
-  for (const servant of activeServants) {
+  for (const servant of assignableServants) {
     for (const reason of getBlockReasons(
       servant,
       slot,
@@ -523,8 +524,9 @@ export function optimizeMonthlyAssignments(
   if (!input.slots.length) return { ok: false, reason: "no_service_slots" };
 
   const excludedServantIds = new Set(input.autoAssignmentExcludedServantIds ?? []);
-  const activeServants = input.servants.filter((servant) =>
-    servant.active === true && !excludedServantIds.has(servant.id)
+  const allActiveServants = input.servants.filter((servant) => servant.active === true);
+  const activeServants = allActiveServants.filter((servant) =>
+    !excludedServantIds.has(servant.id)
   );
   const month = input.slots[0].service_date.slice(0, 7);
   const baseCommitments = buildExistingCommitments(input);
