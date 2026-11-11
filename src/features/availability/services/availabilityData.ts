@@ -32,6 +32,7 @@ export interface AvailabilityWorkspaceData {
   preferences: ServingPreferenceRecord[];
   deadline: string;
   optionalErrors: string[];
+  generationErrors: string[];
 }
 
 /** Loads Availability-owned reads and materializes the two-year recurring-rule view. */
@@ -62,6 +63,9 @@ export async function loadAvailabilityWorkspaceData(
   const explicitAvailability = availabilityResult.error ? [] : (availabilityResult.data ?? []);
   const preferences = preferencesResult.error ? [] : (preferencesResult.data ?? []);
   const deadline = deadlineResult.error ? "" : (deadlineResult.data?.value ?? "");
+  const generationErrors = [availabilityResult, rulesResult, preferencesResult]
+    .filter(result => result.error)
+    .map(result => result.error?.message ?? "Availability data required for schedule generation could not be loaded.");
   const optionalErrors = [availabilityResult, rulesResult, preferencesResult, deadlineResult]
     .filter(result => result.error)
     .map(result => result.error?.message ?? "Availability data could not be loaded.");
@@ -72,5 +76,6 @@ export async function loadAvailabilityWorkspaceData(
     preferences,
     deadline,
     optionalErrors,
+    generationErrors,
   };
 }
