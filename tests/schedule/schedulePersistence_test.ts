@@ -13,6 +13,9 @@ import {
   updateAssignmentConfirmation,
   notifyAdminAssignmentConfirmation,
   replaceGeneratedSchedulesAtomically,
+  applyMonthlySchedulePlan,
+  type MonthlyPlanApplyClient,
+  type MonthlyPlanApplyInput,
   type SchedulePersistenceClient,
   type SchedulePersistenceResponse,
   type SchedulePersistenceRow,
@@ -185,6 +188,74 @@ Deno.test("schedule generation replace mode is blocked from bypassing the atomic
       !result.error.message.includes("temporarily disabled")) {
     throw new Error("Replace mode must return a clear safety error.");
   }
+});
+
+Deno.test("monthly schedule plan persistence calls only the additive admin RPC", async () => {
+  const calls: unknown[] = [];
+  const response = {
+    data: { created_schedules: 1, inserted_assignments: 2, schedule_ids: ["schedule-new"] },
+    error: null,
+  };
+  const client: MonthlyPlanApplyClient = {
+    rpc: async (name, args) => {
+      calls.push({ name, args });
+      return response;
+    },
+  };
+  const input: MonthlyPlanApplyInput = {
+    monthStart: "2026-12-01",
+    expectedState: [{
+      template_id: "template-1",
+      schedule_id: null,
+      service_date: "2026-12-05",
+      location_id: "loc-as",
+      service_name: "Saturday Service",
+      start_time: "16:00",
+      end_time: "18:00",
+      expected_status: "new",
+      assignments: [],
+    }],
+    assignments: [{
+      service_date: "2026-12-05",
+      location_id: "loc-as",
+      service_name: "Saturday Service",
+      role: "FOH",
+      servant_id: "servant-foh",
+    }],
+    acknowledgedPreferNot: true,
+  };
+
+  const result = await applyMonthlySchedulePlan(client, input);
+  assertEqual(calls, [{
+    name: "admin_apply_monthly_schedule_plan",
+    args: {
+      p_month_start: "2026-12-01",
+      p_expected_state: input.expectedState,
+      p_plan: input.assignments,
+      p_acknowledged_prefer_not: true,
+    },
+  }], "The monthly plan must use the dedicated additive-only RPC and preserve the exact reviewed snapshot.");
+  assertSame(result, response, "Monthly apply data and error values must pass through unchanged.");
+});
+
+Deno.test("monthly schedule plan persistence returns database errors without fallback writes", async () => {
+  const databaseError = { code: "P0001", message: "The monthly preview is stale." };
+  const calls: unknown[] = [];
+  const client: MonthlyPlanApplyClient = {
+    rpc: async (name, args) => {
+      calls.push({ name, args });
+      return { data: null, error: databaseError };
+    },
+  };
+  const result = await applyMonthlySchedulePlan(client, {
+    monthStart: "2026-12-01",
+    expectedState: [],
+    assignments: [],
+    acknowledgedPreferNot: false,
+  });
+
+  assertSame(result.error, databaseError, "A stale-preview rejection must remain visible to the administrator.");
+  assertEqual(calls.length, 1, "A rejected monthly plan must never fall back to direct table writes.");
 });
 
 Deno.test("schedule deletion filters by the requested schedule ID", async () => {
