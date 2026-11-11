@@ -70,7 +70,10 @@ BEGIN
     RAISE EXCEPTION 'Every expected service snapshot must include its assignment array';
   END IF;
 
-  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_expected_slots (
+  -- Drop any caller-precreated same-name temp relation before using it.
+  -- This function is SECURITY DEFINER; never trust session temp objects.
+  DROP TABLE IF EXISTS pg_temp.gms_monthly_expected_slots;
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_slots (
     template_id uuid NOT NULL,
     schedule_id uuid,
     service_date date NOT NULL,
@@ -83,7 +86,10 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_expected_assignments (
+  -- Drop any caller-precreated same-name temp relation before using it.
+  -- This function is SECURITY DEFINER; never trust session temp objects.
+  DROP TABLE IF EXISTS pg_temp.gms_monthly_expected_assignments;
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_assignments (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -93,7 +99,10 @@ BEGIN
     confirmation_status text NOT NULL
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_plan (
+  -- Drop any caller-precreated same-name temp relation before using it.
+  -- This function is SECURITY DEFINER; never trust session temp objects.
+  DROP TABLE IF EXISTS pg_temp.gms_monthly_plan;
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_plan (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -102,7 +111,10 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name, role)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_created_slots (
+  -- Drop any caller-precreated same-name temp relation before using it.
+  -- This function is SECURITY DEFINER; never trust session temp objects.
+  DROP TABLE IF EXISTS pg_temp.gms_monthly_created_slots;
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_created_slots (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -111,7 +123,10 @@ BEGIN
     UNIQUE (schedule_id)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE IF NOT EXISTS pg_temp.gms_monthly_final_assignments (
+  -- Drop any caller-precreated same-name temp relation before using it.
+  -- This function is SECURITY DEFINER; never trust session temp objects.
+  DROP TABLE IF EXISTS pg_temp.gms_monthly_final_assignments;
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_final_assignments (
     schedule_id uuid NOT NULL,
     service_date date NOT NULL,
     location_id uuid NOT NULL,
