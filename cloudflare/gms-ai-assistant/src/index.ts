@@ -39,11 +39,11 @@ interface Env {
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
-export const DAILY_GMS_MODEL_CALL_LIMIT = 3;
+export const DAILY_GMS_MODEL_CALL_LIMIT = 1;
 export const DAILY_ADMIN_MODEL_CALL_LIMIT = 1;
 const MAX_REQUEST_BYTES = 12_288;
-const MAX_SNAPSHOT_BYTES = 9_000;
-const MAX_COMPLETION_TOKENS = 300;
+const MAX_SNAPSHOT_BYTES = 6_000;
+const MAX_COMPLETION_TOKENS = 200;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const ROLE_VALUES = ["FOH", "Monitor", "Assistant"];
 const AVAILABILITY_VALUES = ["available", "unavailable", "prefer_not", "unknown"];
