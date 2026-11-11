@@ -187,8 +187,6 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111113446_gms_monthly_schedule_plan_apply.sql
       - name: Harden monthly RPC temporary tables in staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111114149_gms_monthly_schedule_plan_temp_table_hardening.sql
-      - name: Add special service support and servant role qualifications
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111163911_gms_special_service_and_servant_role_qualifications.sql
       - name: Add one-off special services and servant role qualifications
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111163911_gms_special_service_and_servant_role_qualifications.sql
       - name: Apply bulk-assignment pending-request guard migration to staging
