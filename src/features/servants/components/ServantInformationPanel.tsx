@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import "./ServantInformationPanel.css";
 import type { ReactNode } from "react";
 import { ChevronDown, Plus, X } from "lucide-react";
-import type { Location, ScheduleView, Servant } from "../../../types";
+import type { Location, Role, ScheduleView, Servant } from "../../../types";
 import { displayList, errorText } from "../../../shared/formatters";
 
 type ServantInformationPanelProps = {
@@ -16,6 +16,7 @@ type ServantInformationPanelProps = {
   requests: any[];
   onAdd: () => void;
   onToggle: (servant: Servant) => void;
+  onSaveRoles: (servant: Servant, roles: Role[]) => Promise<boolean>;
   onLink: (servant: Servant, userId: string, verifiedNij: string) => Promise<boolean>;
 };
 
@@ -29,6 +30,7 @@ export default function ServantInformationPanel({
   requests,
   onAdd,
   onToggle,
+  onSaveRoles,
   onLink,
 }: ServantInformationPanelProps) {
   const [query, setQuery] = useState("");
@@ -48,6 +50,10 @@ export default function ServantInformationPanel({
   const [linkBusy, setLinkBusy] = useState<Record<string, boolean>>({});
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
   const [linkingServant, setLinkingServant] = useState<Servant | null>(null);
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, Role[]>>({});
+  const [roleBusy, setRoleBusy] = useState<Record<string, boolean>>({});
+  const soundRoles: Role[] = ["FOH", "Monitor", "Assistant"];
+
 
   useEffect(() => {
     if (!linkingServant) return;
@@ -134,6 +140,31 @@ export default function ServantInformationPanel({
   const toggle = (id: string) => setExpanded(current =>
     current.includes(id) ? current.filter(value => value !== id) : [...current, id]
   );
+
+  const saveRoles = async (servant: Servant) => {
+    const roles = roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles;
+    setRoleBusy((current) => ({ ...current, [servant.id]: true }));
+    try {
+      const saved = await onSaveRoles(servant, roles);
+      if (saved) {
+        setRoleDrafts((current) => {
+          const next = { ...current };
+          delete next[servant.id];
+          return next;
+        });
+      }
+    } finally {
+      setRoleBusy((current) => ({ ...current, [servant.id]: false }));
+    }
+  };
+
+  const toggleQualifiedRole = (servant: Servant, role: Role, checked: boolean) => {
+    const current = roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles;
+    const next = checked
+      ? [...new Set([...current, role])]
+      : current.filter((item) => item !== role);
+    setRoleDrafts((drafts) => ({ ...drafts, [servant.id]: next }));
+  };
 
   const submitLink = async (servant: Servant) => {
     const userId = linkChoices[servant.id] ?? "";
@@ -338,6 +369,35 @@ export default function ServantInformationPanel({
                     <button className={`btn tiny servant-status-toggle ${servant.active ? "danger" : "primary"}`} onClick={() => onToggle(servant)}>
                       {servant.active ? "Deactivate servant" : "Activate servant"}
                     </button>
+                  </div>
+                  <div className="servant-role-qualification">
+                    <h4>Sound role qualifications</h4>
+                    <p>Choose which positions this servant may receive in Smart Scheduling.</p>
+                    <div className="servant-role-qualification-options">
+                      {soundRoles.map((role) => {
+                        const selected = roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles;
+                        return (
+                          <label key={role}>
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(role)}
+                              onChange={(event) => toggleQualifiedRole(servant, role, event.target.checked)}
+                            />
+                            <span>{role}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles).length === 0 && (
+                      <small className="servant-role-empty-warning">No qualified sound roles: automatic scheduling will not select this servant.</small>
+                    )}
+                    <button
+                      type="button"
+                      className="btn tiny primary"
+                      disabled={roleBusy[servant.id] || JSON.stringify([...(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles)].sort()) === JSON.stringify([...(servant.qualified_roles ?? soundRoles)].sort())}
+                      onClick={() => void saveRoles(servant)}
+                    >{roleBusy[servant.id] ? "Saving…" : "Save sound roles"}</button>
+                  </div>
                   </div>
                 </div>
               )}
