@@ -46,6 +46,8 @@ jobs:
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+      - name: Run read-only December pilot against the inspected Staging snapshot
+        run: deno test --no-lock tests/schedule/monthlyScheduleStagingPilot_test.ts
       - name: Test historical servant roster mapping
         run: deno test --no-lock tests/schedule/historicalRosterProfiles_test.ts
       - name: Test schedule persistence RPC adapters
