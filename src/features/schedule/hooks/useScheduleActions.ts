@@ -4,7 +4,7 @@ import { today, fmtDate, errorText, dayNameForTemplate } from "../../../shared/f
 import { ROLES } from "../constants";
 import { validateScheduleAssignment } from "../services/assignmentValidation";
 import { buildWeekendScheduleRows } from "../services/weekendGeneration";
-import { archiveScheduleServiceTemplate, createScheduleLocation, deleteLocationSchedules, deleteScheduleById, saveBulkScheduleAssignments, saveScheduleWithAssignments, updateSchedulePublication, upsertGeneratedSchedules, upsertScheduleServiceTemplate } from "../services/schedulePersistence";
+import { applyMonthlySchedulePlan as persistMonthlySchedulePlan, archiveScheduleServiceTemplate, createScheduleLocation, deleteLocationSchedules, deleteScheduleById, saveBulkScheduleAssignments, saveScheduleWithAssignments, updateSchedulePublication, upsertGeneratedSchedules, upsertScheduleServiceTemplate, type MonthlyPlanApplyInput } from "../services/schedulePersistence";
 
 type ScheduleModalMode = "schedule" | "person" | null;
 type AskAction = (title: string, message: string, confirmLabel?: string, danger?: boolean) => Promise<boolean>;
@@ -169,6 +169,29 @@ export function useScheduleActions({
     finally{setLoading(false);}
   }
 
+  async function applyMonthlyPlan(input: MonthlyPlanApplyInput): Promise<boolean> {
+    if (!client || !isAdmin) return false;
+    setLoading(true);
+    setMessage("");
+    setScheduleError("");
+    try {
+      const { data, error } = await persistMonthlySchedulePlan(client, input);
+      if (error) throw error;
+      const created = data?.created_schedules ?? 0;
+      const inserted = data?.inserted_assignments ?? 0;
+      await loadData();
+      setMessage(
+        `Monthly plan applied: ${created} draft service(s) created and ${inserted} new assignment(s) inserted. All new assignments are pending confirmation. Review coverage, then publish separately.`
+      );
+      return true;
+    } catch (error) {
+      setScheduleError(errorText(error));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function deleteAllLocationSchedules(locationId:string){
     if(!client||!isAdmin||!locationId)return;
     const allChurches=locationId==="__all_churches__";
@@ -262,7 +285,7 @@ export function useScheduleActions({
 
   return {
     saveSchedule, generateWeekend, deleteSchedule, publishSchedule,
-    bulkSetLocationStatus, applyBulkAssignments, deleteAllLocationSchedules,
+    bulkSetLocationStatus, applyBulkAssignments, applyMonthlyPlan, deleteAllLocationSchedules,
     addLocation, addRecurringTemplate, addServiceTemplate, archiveServiceTemplate
   };
 }
