@@ -25,8 +25,9 @@ The Worker intentionally imposes much lower limits than Cloudflare's free allowa
 
 - Maximum **1 model inference across all GMS administrators per UTC day**.
 - Maximum **1 model inference per administrator per UTC day**.
+- Maximum **10 Worker requests across GMS per UTC day** and **3 requests per administrator per UTC day**, including cache hits.
 - Identical requests are cached for 24 hours; a cache hit does not invoke the model.
-- Maximum 12 KB request body and **6 KB normalized scheduling snapshot**.
+- Maximum **8 KB streamed request body** and **6 KB normalized scheduling snapshot**.
 - At most **3 sampled services per church** and 8 workload rows are sent to AI.
 - Maximum **200 completion tokens** per model response.
 - No retries, no automatic fallback, no paid-model selection, no AI Gateway, and no browser-side model key.
