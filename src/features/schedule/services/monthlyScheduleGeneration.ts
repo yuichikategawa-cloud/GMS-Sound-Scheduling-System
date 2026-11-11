@@ -9,6 +9,7 @@ export type MonthlyScheduleSlotAssignment = {
   servant_id: string;
   servant_name: string;
   confirmation_status?: string;
+  preview_manual?: boolean;
 };
 
 export type MonthlyScheduleSlot = {
