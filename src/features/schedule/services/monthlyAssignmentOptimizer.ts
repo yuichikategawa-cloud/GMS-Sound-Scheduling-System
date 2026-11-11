@@ -87,6 +87,7 @@ export type MonthlyAssignmentOptimizerResult =
       unfilledPositions: MonthlyUnfilledPosition[];
       workloads: MonthlyServantWorkload[];
       warnings: string[];
+      preferNotWarnings: string[];
       lockedAssignmentCount: number;
       generatedAssignmentCount: number;
       requiredPositionCount: number;
@@ -565,6 +566,7 @@ export function optimizeMonthlyAssignments(
   const preexistingConflictSlots = new Map<string, string[]>();
   const unfilledPositions: MonthlyUnfilledPosition[] = [];
   const warnings: string[] = [];
+  const preferNotWarnings: string[] = [];
   const positionList: RolePosition[] = [];
   const lockedAssignmentCount = input.slots.reduce(
     (count, slot) => count + slot.assignments.length,
@@ -799,7 +801,7 @@ export function optimizeMonthlyAssignments(
       chosen.position.slot.service_date,
       input.availability,
     ) === "prefer_not") {
-      warnings.push(
+      preferNotWarnings.push(
         selectedServant.full_name + " prefers not to serve on " +
         chosen.position.slot.service_date + " (" + chosen.position.slot.service_name + ").",
       );
@@ -950,6 +952,7 @@ export function optimizeMonthlyAssignments(
     unfilledPositions,
     workloads,
     warnings: [...new Set(warnings)],
+    preferNotWarnings: [...new Set(preferNotWarnings)],
     lockedAssignmentCount,
     generatedAssignmentCount: generatedAssignments.length,
     requiredPositionCount,
