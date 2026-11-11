@@ -1,6 +1,9 @@
 /// <reference lib="deno.ns" />
 
-import { mapHistoricalRosterProfiles } from "../../src/features/schedule/services/historicalRosterProfiles.ts";
+import {
+  mapHistoricalRosterProfiles,
+  normalizeHistoricalLocationName,
+} from "../../src/features/schedule/services/historicalRosterProfiles.ts";
 import type { Servant } from "../../src/types.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
@@ -14,6 +17,11 @@ function assertEqual(actual: unknown, expected: unknown, message: string): void 
 function servant(id: string, full_name: string, active = true): Servant {
   return { id, full_name, active, auth_user_id: null };
 }
+
+Deno.test("historical GMS Tangerang records normalize to the current GMS Alam Sutera location", () => {
+  assertEqual(normalizeHistoricalLocationName("GMS Tangerang"), "GMS Alam Sutera", "The previous church name must be treated as the same historical location.");
+  assertEqual(normalizeHistoricalLocationName(" GMS BSD "), "GMS BSD", "Other location names should remain unchanged apart from whitespace trimming.");
+});
 
 Deno.test("historical roster maps primary roles by normalized full name, not spreadsheet row key", () => {
   const result = mapHistoricalRosterProfiles([
