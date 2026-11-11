@@ -32,14 +32,9 @@ Deno.test("shared date helpers use local calendar dates without UTC midnight shi
     throw new Error("today() must return a YYYY-MM-DD local date.");
   }
 
-  const date = "2026-11-07";
-  const expected = new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date + "T12:00:00"));
-  assertEqual(fmtDate(date), expected, "fmtDate must preserve the established local-noon display format.");
+  assertEqual(fmtDate("2026-11-07"), "07-November-2026", "Shared date display must use a two-digit day and full month name.");
+  assertEqual(fmtDate("2026-12-25"), "25-December-2026", "Christmas dates must use the requested DD-MONTH-YYYY format.");
+  assertEqual(fmtDate("invalid"), "invalid", "Invalid date values must remain unchanged.");
 });
 
 Deno.test("shared time helper truncates seconds and safely handles empty input", () => {
