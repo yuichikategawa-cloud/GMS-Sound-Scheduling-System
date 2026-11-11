@@ -39,8 +39,8 @@ interface Env {
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
-const DAILY_GMS_MODEL_CALL_LIMIT = 3;
-const DAILY_ADMIN_MODEL_CALL_LIMIT = 1;
+export const DAILY_GMS_MODEL_CALL_LIMIT = 3;
+export const DAILY_ADMIN_MODEL_CALL_LIMIT = 1;
 const MAX_REQUEST_BYTES = 12_288;
 const MAX_SNAPSHOT_BYTES = 9_000;
 const MAX_COMPLETION_TOKENS = 300;
@@ -133,11 +133,11 @@ function isRole(value: unknown): value is string {
   return typeof value === "string" && ROLE_VALUES.includes(value);
 }
 
-function validateSnapshot(value: unknown): SafeSnapshot | null {
+export function validateSnapshot(value: unknown): SafeSnapshot | null {
   if (!isRecord(value)) return null;
   if (typeof value.month !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(value.month)) return null;
   if (!isRecord(value.summary) || !Array.isArray(value.churches) || !Array.isArray(value.workload)) return null;
-  if (value.churches.length < 1 || value.churches.length > 5 || value.workload.length > 12) return null;
+  if (value.churches.length < 1 || value.churches.length > 5 || value.workload.length > 8) return null;
 
   const summaryFields = [
     "serviceCount",
@@ -157,7 +157,7 @@ function validateSnapshot(value: unknown): SafeSnapshot | null {
   for (const rawChurch of value.churches) {
     if (!isRecord(rawChurch) || typeof rawChurch.label !== "string" ||
         !/^Church [1-5]$/.test(rawChurch.label) || !Array.isArray(rawChurch.services) ||
-        rawChurch.services.length > 5 || !Array.isArray(rawChurch.vacancySummary) ||
+        rawChurch.services.length > 3 || !Array.isArray(rawChurch.vacancySummary) ||
         rawChurch.vacancySummary.length > 12 ||
         !isIntegerInRange(rawChurch.totalServiceCount, 0, 100) ||
         !isIntegerInRange(rawChurch.omittedServiceCount, 0, 100)) return null;
@@ -281,7 +281,7 @@ function validateSnapshot(value: unknown): SafeSnapshot | null {
   };
 }
 
-function extractModelText(value: unknown): string {
+export function extractModelText(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (!isRecord(value)) return "";
   if (typeof value.response === "string") return value.response.trim();
