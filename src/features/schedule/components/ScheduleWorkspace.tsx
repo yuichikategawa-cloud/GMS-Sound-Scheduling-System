@@ -41,7 +41,7 @@ type ScheduleWorkspaceProps = {
 export default function ScheduleWorkspace({
   workspace, isAdmin, schedules, requests, servants, availability, preferences,
   scheduleGenerationErrors, locations, templates, loading, myServant, onOpenNewSchedule,
-  onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
+  onAddLocation, onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
   onDeleteLocationSchedules, onApplyBulkAssignments, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
   onDeleteTemplate, onExportCsv, onExportScheduleHistory,
