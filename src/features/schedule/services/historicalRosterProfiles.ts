@@ -251,7 +251,10 @@ export function mapHistoricalRosterProfiles(
 
   return {
     profiles,
-    autoAssignmentExcludedServantIds,
+    autoAssignmentExcludedServantIds: [...new Set([
+      ...autoAssignmentExcludedServantIds,
+      ...ambiguousManualOnlyServantIds,
+    ])].sort(),
     matchedPrimaryRoleNames,
     unmatchedPrimaryRoleNames,
     matchedManualOnlyNames,
