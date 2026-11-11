@@ -14,6 +14,7 @@ import {
 } from "../services/monthlyAssignmentOptimizer";
 import type { MonthlyScheduleSlot } from "../services/monthlyScheduleGeneration";
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
+import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import "./MonthlySmartScheduler.css";
 
 type SuccessfulOptimizerResult = Extract<MonthlyAssignmentOptimizerResult, { ok: true }>;
@@ -35,9 +36,15 @@ type MonthlySmartSchedulerProps = {
   preferences: ServingPreferenceRecord[];
   requests: ServingRequestRecord[];
   inputErrors: string[];
+  onApplyPlan: (input: MonthlyPlanApplyInput) => Promise<boolean>;
 };
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
+
+function applicableSlotsForApply(preview: PreviewData): MonthlyScheduleSlot[] {
+  const frozen = new Set(preview.result.frozenScheduleKeys);
+  return preview.baseSlots.filter((slot) => !frozen.has(slot.key));
+}
 
 function applyManualOverrides(
   baseSlots: readonly MonthlyScheduleSlot[],
@@ -172,6 +179,7 @@ export default function MonthlySmartScheduler({
   preferences,
   requests,
   inputErrors,
+  onApplyPlan,
 }: MonthlySmartSchedulerProps) {
   const [month, setMonth] = useState(nextMonthKey);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
@@ -179,6 +187,7 @@ export default function MonthlySmartScheduler({
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [acknowledgedPreferNot, setAcknowledgedPreferNot] = useState(false);
+  const [applying, setApplying] = useState(false);
   const initializedLocations = useRef(false);
 
   useEffect(() => {
@@ -272,6 +281,77 @@ export default function MonthlySmartScheduler({
       result: optimized.result,
       manualOverrides,
     });
+  };
+
+  const applyReviewedPlan = async () => {
+    if (!preview || applying || inputErrors.length) return;
+    setError("");
+
+    const frozenKeys = new Set(preview.result.frozenScheduleKeys);
+    const applicableSlots = preview.baseSlots.filter((slot) => !frozenKeys.has(slot.key));
+    if (!applicableSlots.length) {
+      setError("Every selected service is frozen or skipped. Resolve those services manually before applying a monthly plan.");
+      return;
+    }
+
+    const expectedState: MonthlyPlanExpectedSlot[] = [];
+    for (const slot of applicableSlots) {
+      const persistedAssignments = slot.assignments.filter((assignment) => !assignment.preview_manual);
+      if (persistedAssignments.some((assignment) => !assignment.id)) {
+        setError("An existing assignment is missing its database ID. Refresh the workspace and generate a new preview before applying.");
+        return;
+      }
+      expectedState.push({
+        template_id: slot.template_id,
+        schedule_id: slot.schedule_id,
+        service_date: slot.service_date,
+        location_id: slot.location_id,
+        service_name: slot.service_name,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        expected_status: slot.schedule_id ? "draft" : "new",
+        assignments: persistedAssignments.map((assignment) => ({
+          id: assignment.id!,
+          role: assignment.role,
+          servant_id: assignment.servant_id,
+          confirmation_status: assignment.confirmation_status === "confirmed" ||
+              assignment.confirmation_status === "declined"
+            ? assignment.confirmation_status
+            : "pending",
+        })),
+      });
+    }
+
+    const applicableKeys = new Set(applicableSlots.map((slot) => slot.key));
+    const assignments: MonthlyPlanAssignment[] = preview.result.assignments
+      .filter((assignment) => applicableKeys.has(assignment.schedule_key))
+      .map((assignment) => ({
+        service_date: assignment.service_date,
+        location_id: assignment.location_id,
+        service_name: assignment.service_name,
+        role: assignment.role,
+        servant_id: assignment.servant_id,
+      }));
+
+    const payload: MonthlyPlanApplyInput = {
+      monthStart: month + "-01",
+      expectedState,
+      assignments,
+      acknowledgedPreferNot,
+    };
+
+    setApplying(true);
+    try {
+      const applied = await onApplyPlan(payload);
+      if (!applied) {
+        setError("The database did not apply this plan. Review the administrator message, refresh the schedule, and generate a new preview if any data changed.");
+        return;
+      }
+      setPreview(null);
+      setAcknowledgedPreferNot(false);
+    } finally {
+      setApplying(false);
+    }
   };
 
   const handleManualChange = (scheduleKey: string, role: Role, servantId: string) => {
@@ -604,17 +684,27 @@ export default function MonthlySmartScheduler({
           <div className="monthly-smart-save-notice">
             <Clock3 size={16}/>
             <div>
-              <b>Preview-only stage</b>
-              <p>The scheduler has not written to Supabase. Applying the proposal will be enabled after the additive-only database transaction is implemented and tested in Staging. Publishing will remain a separate administrator action.</p>
+              <b>Draft application · no publishing</b>
+              <p>Applying creates any missing service rows as drafts and inserts assignments only into vacant roles. Existing assignments and confirmation states are checked and preserved. The database revalidates the reviewed snapshot before writing. Publishing remains a separate administrator action.</p>
             </div>
           </div>
           <button
             type="button"
             className="btn primary"
-            disabled
-            title="Database-safe apply is planned for the next implementation phase."
+            disabled={
+              applying ||
+              Boolean(inputErrors.length) ||
+              !applicableSlotsForApply(preview).length ||
+              (preview.result.preferNotWarnings.length > 0 && !acknowledgedPreferNot)
+            }
+            onClick={() => void applyReviewedPlan()}
+            title={
+              preview.result.preferNotWarnings.length > 0 && !acknowledgedPreferNot
+                ? "Acknowledge the prefer-not assignments before applying."
+                : "Apply the reviewed additive-only draft plan."
+            }
           >
-            Apply generated assignments · coming after database safeguards
+            {applying ? "Applying monthly draft plan…" : `Apply ${preview.result.generatedAssignmentCount} proposed assignment(s) to drafts`}
           </button>
         </div>
       )}
