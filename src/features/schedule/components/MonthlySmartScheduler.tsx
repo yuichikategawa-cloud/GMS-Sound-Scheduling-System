@@ -300,8 +300,13 @@ export default function MonthlySmartScheduler({
   const candidateOptionsByRole = useMemo(() => {
     const map = new Map<string, Servant[]>();
     if (!preview) return map;
+    const preexistingConflictKeys = new Set(
+      preview.result.unfilledPositions
+        .filter((position) => position.reason === "preexisting_conflict")
+        .map((position) => position.schedule_key)
+    );
     for (const slot of preview.slots) {
-      if (slot.blocked_reason) continue;
+      if (slot.blocked_reason || preexistingConflictKeys.has(slot.key)) continue;
       for (const role of ROLES) {
         if (role === "Assistant" && !includeAssistant) continue;
         if (slot.assignments.some((assignment) => assignment.role === role && !assignment.preview_manual)) {
