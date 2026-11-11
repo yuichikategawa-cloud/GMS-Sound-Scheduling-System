@@ -23,9 +23,20 @@ export type HistoricalRosterMapping = {
 
 const HISTORY_AS_OF = "2026-11-01";
 
+/** The workbook's April 2025 "GMS Tangerang" entries are the same location as GMS Alam Sutera. */
+export const HISTORICAL_LOCATION_ALIASES: Readonly<Record<string, string>> = {
+  "GMS Tangerang": "GMS Alam Sutera",
+};
+
+export function normalizeHistoricalLocationName(value: string): string {
+  const name = value.trim();
+  return HISTORICAL_LOCATION_ALIASES[name] ?? name;
+}
+
 /**
  * Aggregated from History Sound Serving.xlsx:
  * 1,286 unique service slots between 2025-04-05 and 2026-11-01.
+ * "GMS Tangerang" rows from April 2025 are included under the GMS Alam Sutera location alias.
  * Role columns are the source of truth after grouping by date, church,
  * service name and time. Assistant 2 is excluded because GMS currently
  * stores one Assistant role per service.
