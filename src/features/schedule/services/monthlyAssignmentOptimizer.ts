@@ -97,6 +97,7 @@ export type MonthlyAssignmentOptimizerResult =
       generatedAssistantCount: number;
       unfilledOptionalAssistantCount: number;
       skippedServiceCount: number;
+      frozenScheduleKeys: string[];
       declinedAssignmentCount: number;
     }
   | {
@@ -1056,6 +1057,10 @@ export function optimizeMonthlyAssignments(
     generatedAssistantCount,
     unfilledOptionalAssistantCount,
     skippedServiceCount,
+    frozenScheduleKeys: [...new Set([
+      ...input.slots.filter((slot) => slot.blocked_reason !== null).map((slot) => slot.key),
+      ...preexistingConflictSlots.keys(),
+    ])].sort(),
     declinedAssignmentCount,
   };
 }
