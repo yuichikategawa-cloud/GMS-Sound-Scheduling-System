@@ -41,7 +41,7 @@ const validSnapshot = {
         servingDays: 3,
         eligibleOpportunities: 8,
         recent60DayAssignments: 2,
-        roleHistoryCount: 3,
+        currentMonthRoleAssignments: 3,
       }],
       vacancies: [{
         role: "Monitor",
