@@ -36,6 +36,7 @@ DECLARE
   v_cross uuid;
   v_overlap uuid;
   v_restricted uuid;
+  v_role_limited uuid;
 
   v_template_existing uuid;
   v_template_new uuid;
@@ -120,6 +121,9 @@ BEGIN
   SELECT id INTO v_cross FROM public.servants WHERE full_name = v_prefix || '_cross';
   SELECT id INTO v_overlap FROM public.servants WHERE full_name = v_prefix || '_overlap';
   SELECT id INTO v_restricted FROM public.servants WHERE full_name = v_prefix || '_restricted';
+  INSERT INTO public.servants(full_name, active, qualified_roles)
+  VALUES (v_prefix || '_role_limited', true, ARRAY['FOH']::text[])
+  RETURNING id INTO v_role_limited;
 
   INSERT INTO public.service_templates(
     location_id, day_of_week, service_name, start_time, end_time, active
@@ -747,7 +751,103 @@ BEGIN
     PERFORM set_config('request.jwt.claim.sub', v_admin::text, true);
   END IF;
 
-  RAISE NOTICE 'Monthly schedule plan Staging regression passed: additive inserts, locked confirmation preservation, new-service race, manual assignment race, confirmation race, explicit/recurring unavailable, prefer-not acknowledgement, cross-church, overlap, saved service scope and admin authorization.';
+  -- ONE-OFF SPECIAL SERVICE: a Friday public-holiday service has no
+  -- weekend template, but may be added as a new draft monthly service.
+  v_expected := jsonb_build_array(jsonb_build_object(
+    'template_id', NULL, 'schedule_id', NULL,
+    'service_date', '2099-12-25', 'location_id', v_alam,
+    'service_name', v_prefix || '_christmas',
+    'start_time', '10:00', 'end_time', '12:00',
+    'expected_status', 'new_special', 'assignments', '[]'::jsonb
+  ));
+  v_plan := jsonb_build_array(jsonb_build_object(
+    'service_date', '2099-12-25', 'location_id', v_alam,
+    'service_name', v_prefix || '_christmas',
+    'role', 'FOH', 'servant_id', v_new_foh
+  ));
+  SELECT public.admin_apply_monthly_schedule_plan(
+    DATE '2099-12-01', v_expected, v_plan, false
+  ) INTO v_result;
+
+  IF v_result->>'created_schedules' <> '1'
+     OR v_result->>'inserted_assignments' <> '1'
+     OR NOT EXISTS (
+       SELECT 1
+       FROM public.schedules s
+       JOIN public.assignments a ON a.schedule_id=s.id
+       WHERE s.service_date=DATE '2099-12-25'
+         AND s.location_id=v_alam
+         AND s.service_name=v_prefix || '_christmas'
+         AND s.status='draft'
+         AND a.role='FOH'
+         AND a.servant_id=v_new_foh
+         AND a.confirmation_status='pending'
+     ) THEN
+    RAISE EXCEPTION 'A weekday special service was not created as an additive draft';
+  END IF;
+
+  -- ROLE QUALIFICATION: browser input cannot assign a servant outside their
+  -- administrator-approved role list. The failed attempt must fully roll back.
+  v_expected := jsonb_build_array(jsonb_build_object(
+    'template_id', NULL, 'schedule_id', NULL,
+    'service_date', '2099-12-25', 'location_id', v_alam,
+    'service_name', v_prefix || '_role_guard',
+    'start_time', '13:00', 'end_time', '14:00',
+    'expected_status', 'new_special', 'assignments', '[]'::jsonb
+  ));
+  v_plan := jsonb_build_array(jsonb_build_object(
+    'service_date', '2099-12-25', 'location_id', v_alam,
+    'service_name', v_prefix || '_role_guard',
+    'role', 'Monitor', 'servant_id', v_role_limited
+  ));
+
+  BEGIN
+    PERFORM public.admin_apply_monthly_schedule_plan(
+      DATE '2099-12-01', v_expected, v_plan, false
+    );
+    RAISE EXCEPTION USING ERRCODE = 'ZX911',
+      MESSAGE = 'Monthly plan unexpectedly assigned a servant to an unqualified sound role';
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_message = MESSAGE_TEXT;
+    IF v_message <> 'A selected servant is not qualified for the proposed sound role' THEN
+      RAISE EXCEPTION 'Unexpected role qualification result: %', v_message;
+    END IF;
+  END;
+
+  IF EXISTS (
+    SELECT 1 FROM public.schedules
+    WHERE service_date=DATE '2099-12-25'
+      AND location_id=v_alam
+      AND service_name=v_prefix || '_role_guard'
+  ) THEN
+    RAISE EXCEPTION 'Unqualified role rejection did not roll back the new special service';
+  END IF;
+
+  -- A role the servant is qualified for may still be applied to a special slot.
+  v_plan := jsonb_build_array(jsonb_build_object(
+    'service_date', '2099-12-25', 'location_id', v_alam,
+    'service_name', v_prefix || '_role_guard',
+    'role', 'FOH', 'servant_id', v_role_limited
+  ));
+  SELECT public.admin_apply_monthly_schedule_plan(
+    DATE '2099-12-01', v_expected, v_plan, false
+  ) INTO v_result;
+
+  IF v_result->>'created_schedules' <> '1'
+     OR v_result->>'inserted_assignments' <> '1'
+     OR NOT EXISTS (
+       SELECT 1 FROM public.schedules s
+       JOIN public.assignments a ON a.schedule_id=s.id
+       WHERE s.service_date=DATE '2099-12-25'
+         AND s.location_id=v_alam
+         AND s.service_name=v_prefix || '_role_guard'
+         AND a.role='FOH'
+         AND a.servant_id=v_role_limited
+     ) THEN
+    RAISE EXCEPTION 'A qualified FOH role assignment did not apply after the rejected Monitor role';
+  END IF;
+
+  RAISE NOTICE 'Monthly schedule plan Staging regression passed: additive inserts, special service insert, servant role qualification, locked confirmation preservation, new-service race, manual assignment race, confirmation race, explicit/recurring unavailable, prefer-not acknowledgement, cross-church, overlap, saved service scope and admin authorization.';
 END;
 $monthly_schedule_plan_apply$;
 
