@@ -21,6 +21,9 @@ export type AiSchedulingSnapshot = {
   };
   churches: Array<{
     label: string;
+    totalServiceCount: number;
+    omittedServiceCount: number;
+    vacancySummary: Array<{ role: Role; reason: string; count: number }>;
     services: Array<{
       label: string;
       date: string;
@@ -141,9 +144,7 @@ export function buildAiSchedulingSnapshot(input: {
         a.service_name.localeCompare(b.service_name)
       );
 
-    return {
-      label: churchLabels.get(locationId) ?? "Church",
-      services: churchSlots.map((slot) => {
+    const allServices = churchSlots.map((slot) => {
         const assignments = slot.assignments.map((assignment) => {
           const workload = workloadById.get(assignment.servant_id);
           const servant = servantsById.get(assignment.servant_id);
@@ -195,7 +196,31 @@ export function buildAiSchedulingSnapshot(input: {
             blockedCandidateCount: vacancy.blocked_candidate_count,
           })),
         };
-      }),
+      });
+    const priorityServices = allServices.slice().sort((a, b) =>
+      (b.vacancies.length - a.vacancies.length) ||
+      (Number(b.special) - Number(a.special)) ||
+      (Number(a.frozen) - Number(b.frozen)) ||
+      a.date.localeCompare(b.date) ||
+      a.startTime.localeCompare(b.startTime)
+    );
+    const sampledServices = priorityServices.slice(0, 5).sort((a, b) =>
+      a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
+    );
+    const vacancyCounts = new Map<string, { role: Role; reason: string; count: number }>();
+    for (const vacancy of input.unfilledPositions.filter((item) => item.location_id === locationId)) {
+      const key = vacancy.role + "|" + vacancy.reason;
+      const current = vacancyCounts.get(key) ?? { role: vacancy.role, reason: vacancy.reason, count: 0 };
+      current.count += 1;
+      vacancyCounts.set(key, current);
+    }
+
+    return {
+      label: churchLabels.get(locationId) ?? "Church",
+      totalServiceCount: churchSlots.length,
+      omittedServiceCount: Math.max(0, churchSlots.length - sampledServices.length),
+      vacancySummary: [...vacancyCounts.values()].slice(0, 12),
+      services: sampledServices,
     };
   });
 
@@ -221,7 +246,7 @@ export function buildAiSchedulingSnapshot(input: {
       frozenServices: input.slots.filter((slot) => slot.blocked_reason !== null).length,
     },
     churches,
-    workload: input.workloads.map((workload) => ({
+    workload: input.workloads.slice().sort((a, b) => b.utilization - a.utilization).slice(0, 12).map((workload) => ({
       servant: servantLabels.get(workload.servant_id) ?? "Unlisted servant",
       totalAssignments: workload.total_assignments,
       servingDays: workload.serving_days,
