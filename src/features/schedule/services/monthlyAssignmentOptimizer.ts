@@ -111,6 +111,7 @@ type AssignmentCommitment = {
   end_time: string;
   role: Role;
   servant_id: string;
+  confirmation_status?: string;
   source: "existing" | "generated";
 };
 
@@ -205,6 +206,7 @@ function buildExistingCommitments(
         end_time: schedule.end_time,
         role: assignment.role,
         servant_id: assignment.servant_id,
+        confirmation_status: assignment.confirmation_status,
         source: "existing",
       });
     }
@@ -340,9 +342,13 @@ function roleProfileFor(
   derivedRoleCounts: ReadonlyMap<string, Record<Role, number>>,
 ): MonthlyHistoricalServantProfile {
   const supplied = inputProfiles.get(servantId);
-  const roleCounts = supplied?.role_counts ??
-    derivedRoleCounts.get(servantId) ??
-    { FOH: 0, Monitor: 0, Assistant: 0 };
+  const suppliedRoleCounts = supplied?.role_counts ?? {};
+  const currentRoleCounts = derivedRoleCounts.get(servantId) ?? { FOH: 0, Monitor: 0, Assistant: 0 };
+  const roleCounts: Record<Role, number> = {
+    FOH: Math.max(suppliedRoleCounts.FOH ?? 0, currentRoleCounts.FOH),
+    Monitor: Math.max(suppliedRoleCounts.Monitor ?? 0, currentRoleCounts.Monitor),
+    Assistant: Math.max(suppliedRoleCounts.Assistant ?? 0, currentRoleCounts.Assistant),
+  };
   const primaryRole = supplied?.primary_role ??
     ALL_ROLES
       .filter((role) => (roleCounts[role] ?? 0) > 0)
@@ -372,7 +378,7 @@ function deriveRecentRoleCounts(
   for (const schedule of schedules) {
     if (schedule.service_date < cutoff || schedule.service_date >= monthStart) continue;
     for (const assignment of schedule.assignments) {
-      if (!assignment.servant_id) continue;
+      if (!assignment.servant_id || assignment.confirmation_status === "declined") continue;
       const counts = result.get(assignment.servant_id) ?? { FOH: 0, Monitor: 0, Assistant: 0 };
       counts[assignment.role] += 1;
       result.set(assignment.servant_id, counts);
@@ -413,26 +419,29 @@ function scoreCandidate(
   availability: readonly AssignmentAvailabilityEntry[],
   month: string,
 ): number {
-  const monthAssignments = commitments.filter((item) =>
+  const workloadCommitments = commitments.filter((item) =>
+    item.confirmation_status !== "declined"
+  );
+  const monthAssignments = workloadCommitments.filter((item) =>
     item.servant_id === servant.id && item.service_date.startsWith(month)
   ).length;
   const opportunityCount = Math.max(1, opportunities.get(servant.id)?.size ?? 0);
   const utilization = monthAssignments / opportunityCount;
 
   const recentStart = dateMinusDays(position.slot.service_date, 60);
-  const recent = commitments.filter((item) =>
+  const recent = workloadCommitments.filter((item) =>
     item.servant_id === servant.id &&
     item.service_date >= recentStart &&
     item.service_date < position.slot.service_date
   );
   const recentDays = new Set(recent.map((item) => item.service_date)).size;
-  const sameDayAssignments = commitments.filter((item) =>
+  const sameDayAssignments = workloadCommitments.filter((item) =>
     item.servant_id === servant.id && item.service_date === position.slot.service_date
   ).length;
   const consecutiveWeekends = calculateConsecutiveWeekends(
     servant.id,
     position.slot.service_date,
-    commitments,
+    workloadCommitments,
   );
 
   const profile = roleProfileFor(servant.id, profiles, derivedRoleCounts);
@@ -837,7 +846,9 @@ export function optimizeMonthlyAssignments(
     }
   }
 
-  const monthCommitments = finalCommitments.filter((item) => item.service_date.startsWith(month));
+  const monthCommitments = finalCommitments.filter((item) =>
+    item.service_date.startsWith(month) && item.confirmation_status !== "declined"
+  );
   const workloads: MonthlyServantWorkload[] = activeServants
     .map((servant) => {
       const servantMonth = monthCommitments.filter((item) => item.servant_id === servant.id);
