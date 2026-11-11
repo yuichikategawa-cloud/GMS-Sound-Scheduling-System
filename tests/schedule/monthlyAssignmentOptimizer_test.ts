@@ -624,6 +624,42 @@ Deno.test("monthly optimizer treats manual preview selections as generated, not 
   assertEqual(result.workloads.find((item) => item.servant_id === "manual-foh")?.generated_assignments, 1, "A preview-only choice is included in proposed workload.");
 });
 
+Deno.test("monthly optimizer assigns each role only to servants qualified for that role", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const fohOnly = { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] };
+  const monitorOnly = { ...createServant("monitor-only"), qualified_roles: ["Monitor" as Role] };
+  const result = optimizeMonthlyAssignments(baseInput([slot], [fohOnly, monitorOnly]));
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.map((item) => [item.role, item.servant_id]), [
+    ["FOH", "foh-only"],
+    ["Monitor", "monitor-only"],
+  ], "A servant may only receive a role explicitly listed in their qualifications.");
+});
+
+Deno.test("monthly optimizer reports a role qualification gap instead of assigning an unqualified servant", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const fohOnly = { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] };
+  const result = optimizeMonthlyAssignments(baseInput([slot], [fohOnly]));
+
+  if (!result.ok) throw new Error("Expected a valid partial preview.");
+  assertEqual(result.assignments.map((item) => item.role), ["FOH"], "The qualified FOH position should be filled.");
+  assertEqual(result.unfilledPositions.find((item) => item.role === "Monitor")?.reason, "role_not_qualified", "An unqualified Monitor vacancy should be explained clearly.");
+});
+
+Deno.test("monthly manual candidate lookup filters by role qualifications", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const candidates = getMonthlyAssignmentCandidates(baseInput(
+    [slot],
+    [
+      { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] },
+      { ...createServant("monitor-only"), qualified_roles: ["Monitor" as Role] },
+    ],
+  ), slot, "Monitor");
+
+  assertEqual(candidates.map((item) => item.id), ["monitor-only"], "Manual preview dropdowns must not offer a servant who is not qualified for the selected role.");
+});
+
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
   const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
   const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
