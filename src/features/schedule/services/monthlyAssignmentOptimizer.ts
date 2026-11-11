@@ -945,6 +945,7 @@ export function optimizeMonthlyAssignments(
       otherCommitments,
       input.availability,
       input.preferences,
+      generated.role,
     ).filter((reason) => reason !== "already_in_service" || !otherCommitments.some((item) =>
       item.servant_id === servant.id &&
       (item.schedule_id && item.schedule_id === slot.schedule_id || item.slot_key === slot.key)
