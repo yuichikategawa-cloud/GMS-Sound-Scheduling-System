@@ -39,6 +39,33 @@ type MonthlySmartSchedulerProps = {
 
 const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
+function applyManualOverrides(
+  baseSlots: readonly MonthlyScheduleSlot[],
+  overrides: ManualOverrides,
+  servants: readonly Servant[],
+): MonthlyScheduleSlot[] {
+  const servantNames = new Map(servants.map((servant) => [servant.id, servant.full_name]));
+  return baseSlots.map((slot) => {
+    const selected = overrides[slot.key] ?? {};
+    const additions = ROLES.flatMap((role) => {
+      const servantId = selected[role];
+      if (!servantId || slot.assignments.some((assignment) => assignment.role === role)) {
+        return [];
+      }
+      const servantName = servantNames.get(servantId);
+      if (!servantName) return [];
+      return [{
+        role,
+        servant_id: servantId,
+        servant_name: servantName,
+        confirmation_status: "pending",
+        preview_manual: true,
+      }];
+    });
+    return additions.length ? { ...slot, assignments: [...slot.assignments, ...additions] } : slot;
+  });
+}
+
 function nextMonthKey(): string {
   const date = new Date();
   date.setDate(1);
