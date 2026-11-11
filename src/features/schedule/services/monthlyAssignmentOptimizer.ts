@@ -38,7 +38,8 @@ export type MonthlyUnfilledPositionReason =
   | "cross_church_conflict"
   | "overlapping_service"
   | "serving_restriction"
-  | "no_eligible_candidate";
+  | "no_eligible_candidate"
+  | "role_not_qualified";
 
 export type MonthlyUnfilledPosition = {
   schedule_key: string;
@@ -132,7 +133,8 @@ type BlockReason =
   | "serving_preference"
   | "already_in_service"
   | "cross_church"
-  | "overlap";
+  | "overlap"
+  | "role_not_qualified";
 
 const REQUIRED_ROLES: Role[] = ["FOH", "Monitor"];
 const ALL_ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
@@ -294,15 +296,23 @@ function availabilityStatus(
   return "unknown";
 }
 
+function isRoleQualified(servant: Servant, role: Role): boolean {
+  const qualified = servant.qualified_roles;
+  // Missing values in legacy data preserve the historical all-role behavior.
+  return !Array.isArray(qualified) || qualified.includes(role);
+}
+
 function getBlockReasons(
   servant: Servant,
   slot: MonthlyScheduleSlot,
   commitments: readonly AssignmentCommitment[],
   availability: readonly AssignmentAvailabilityEntry[],
   preferences: readonly ServingPreferenceRule[],
+  role?: Role,
 ): BlockReason[] {
   const reasons: BlockReason[] = [];
   if (servant.active !== true) reasons.push("inactive");
+  if (role && !isRoleQualified(servant, role)) reasons.push("role_not_qualified");
 
   if (availabilityStatus(servant.id, slot.service_date, availability) === "unavailable") {
     reasons.push("unavailable");
@@ -508,6 +518,7 @@ function unfilledReason(
     already_in_service: 0,
     cross_church: 0,
     overlap: 0,
+    role_not_qualified: 0,
   };
 
   for (const servant of assignableServants) {
@@ -517,11 +528,13 @@ function unfilledReason(
       baseCommitments,
       availability,
       preferences,
+      role,
     )) {
       reasonCounts[reason] += 1;
     }
   }
 
+  if (reasonCounts.role_not_qualified === assignableServants.length) return "role_not_qualified";
   if (reasonCounts.unavailable === assignableServants.length) return "unavailable";
   if (reasonCounts.serving_preference === assignableServants.length) return "serving_preference";
   if (reasonCounts.cross_church === assignableServants.length) return "cross_church_conflict";
@@ -537,12 +550,13 @@ function unfilledReason(
 function countBlockedCandidates(
   activeServants: readonly Servant[],
   slot: MonthlyScheduleSlot,
+  role: Role,
   commitments: readonly AssignmentCommitment[],
   availability: readonly AssignmentAvailabilityEntry[],
   preferences: readonly ServingPreferenceRule[],
 ): number {
   return activeServants.filter((servant) =>
-    getBlockReasons(servant, slot, commitments, availability, preferences).length > 0
+    getBlockReasons(servant, slot, commitments, availability, preferences, role).length > 0
   ).length;
 }
 
@@ -575,6 +589,7 @@ export function getMonthlyAssignmentCandidates(
       commitments,
       input.availability,
       input.preferences,
+      role,
     ).length === 0)
     .sort((first, second) =>
       first.full_name.localeCompare(second.full_name) || first.id.localeCompare(second.id)
@@ -658,6 +673,9 @@ export function optimizeMonthlyAssignments(
         input.availability,
         input.preferences,
       );
+      if (!isRoleQualified(servant, assignment.role)) {
+        conflicts.push(assignment.servant_name + " is not currently qualified for " + assignment.role + ".");
+      }
       if (reasons.length) {
         conflicts.push(
           assignment.servant_name + " has an existing " + reasons.join(", ") + " conflict."
@@ -748,9 +766,14 @@ export function optimizeMonthlyAssignments(
 
   // Count additional services the servant could practically take, once per
   // service even when both FOH and Monitor are vacant.
-  const candidateSlots = new Map<string, MonthlyScheduleSlot>();
-  for (const position of positionList) candidateSlots.set(position.slot.key, position.slot);
-  for (const [slotKey, slot] of candidateSlots) {
+  const candidateSlots = new Map<string, { slot: MonthlyScheduleSlot; roles: Set<Role> }>();
+  for (const position of positionList) {
+    const entry = candidateSlots.get(position.slot.key) ?? { slot: position.slot, roles: new Set<Role>() };
+    entry.roles.add(position.role);
+    candidateSlots.set(position.slot.key, entry);
+  }
+  for (const [slotKey, entry] of candidateSlots) {
+    const { slot, roles } = entry;
     for (const servant of activeServants) {
       const alreadyCommittedHere = slot.assignments.some((assignment) =>
         assignment.servant_id === servant.id &&
@@ -764,6 +787,7 @@ export function optimizeMonthlyAssignments(
         input.availability,
         input.preferences,
       ).length) continue;
+      if (![...roles].some((role) => isRoleQualified(servant, role))) continue;
       addOpportunity(servant.id, slotKey);
     }
   }
@@ -784,6 +808,7 @@ export function optimizeMonthlyAssignments(
           currentCommitments,
           input.availability,
           input.preferences,
+          position.role,
         ).length === 0
       );
       return { position, candidates };
@@ -829,6 +854,7 @@ export function optimizeMonthlyAssignments(
         blocked_candidate_count: countBlockedCandidates(
           activeServants,
           chosen.position.slot,
+          chosen.position.role,
           currentCommitments,
           input.availability,
           input.preferences,
