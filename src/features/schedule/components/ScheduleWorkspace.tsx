@@ -20,6 +20,8 @@ type ScheduleWorkspaceProps = {
   templates: any[];
   loading: boolean;
   myServant: Servant | undefined;
+  aiWorkerUrl?: string;
+  aiAccessToken?: string;
   onOpenNewSchedule: () => void;
   onAddLocation: () => void;
   onAddRecurringTemplate: () => void;
@@ -42,7 +44,7 @@ type ScheduleWorkspaceProps = {
 
 export default function ScheduleWorkspace({
   workspace, isAdmin, schedules, requests, servants, availability, preferences,
-  scheduleGenerationErrors, locations, templates, loading, myServant, onOpenNewSchedule,
+  scheduleGenerationErrors, locations, templates, loading, myServant, aiWorkerUrl, aiAccessToken, onOpenNewSchedule,
   onAddLocation, onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
   onDeleteLocationSchedules, onApplyBulkAssignments, onApplyMonthlyPlan, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
@@ -94,7 +96,7 @@ export default function ScheduleWorkspace({
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
             <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
-            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} onApplyPlan={onApplyMonthlyPlan}/>
+            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
             <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
           </section>
           <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "calendar"}>
