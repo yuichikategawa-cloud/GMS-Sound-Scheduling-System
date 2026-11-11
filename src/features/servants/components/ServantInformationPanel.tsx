@@ -373,30 +373,36 @@ export default function ServantInformationPanel({
                   <div className="servant-role-qualification">
                     <h4>Sound role qualifications</h4>
                     <p>Choose which positions this servant may receive in Smart Scheduling.</p>
-                    <div className="servant-role-qualification-options">
-                      {soundRoles.map((role) => {
-                        const selected = roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles;
-                        return (
-                          <label key={role}>
-                            <input
-                              type="checkbox"
-                              checked={selected.includes(role)}
-                              onChange={(event) => toggleQualifiedRole(servant, role, event.target.checked)}
-                            />
-                            <span>{role}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles).length === 0 && (
-                      <small className="servant-role-empty-warning">No qualified sound roles: automatic scheduling will not select this servant.</small>
+                    {!isAdmin ? (
+                      <p><b>Qualified roles:</b> {(servant.qualified_roles ?? soundRoles).join(", ") || "None"}</p>
+                    ) : (
+                      <>
+                        <div className="servant-role-qualification-options">
+                          {soundRoles.map((role) => {
+                            const selected = roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles;
+                            return (
+                              <label key={role}>
+                                <input
+                                  type="checkbox"
+                                  checked={selected.includes(role)}
+                                  onChange={(event) => toggleQualifiedRole(servant, role, event.target.checked)}
+                                />
+                                <span>{role}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles).length === 0 && (
+                          <small className="servant-role-empty-warning">No qualified sound roles: automatic scheduling will not select this servant.</small>
+                        )}
+                        <button
+                          type="button"
+                          className="btn tiny primary"
+                          disabled={roleBusy[servant.id] || JSON.stringify([...(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles)].sort()) === JSON.stringify([...(servant.qualified_roles ?? soundRoles)].sort())}
+                          onClick={() => void saveRoles(servant)}
+                        >{roleBusy[servant.id] ? "Saving…" : "Save sound roles"}</button>
+                      </>
                     )}
-                    <button
-                      type="button"
-                      className="btn tiny primary"
-                      disabled={roleBusy[servant.id] || JSON.stringify([...(roleDrafts[servant.id] ?? servant.qualified_roles ?? soundRoles)].sort()) === JSON.stringify([...(servant.qualified_roles ?? soundRoles)].sort())}
-                      onClick={() => void saveRoles(servant)}
-                    >{roleBusy[servant.id] ? "Saving…" : "Save sound roles"}</button>
                   </div>
                 </div>
               )}
