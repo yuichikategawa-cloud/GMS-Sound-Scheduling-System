@@ -485,6 +485,53 @@ Deno.test("monthly optimizer preserves declined assignments but reports them as 
   assertEqual(result.workloads.some((workload) => workload.servant_id === "declined-servant"), false, "Declined assignment is excluded from workload.");
 });
 
+Deno.test("monthly optimizer avoids assigning the same servant on both days of a weekend when an alternative exists", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const schedules = [
+    createSchedule("saturday-existing", "2026-11-07", "loc-as", "Saturday Service", "16:00", "18:00", [
+      { role: "FOH", servant_id: "served-saturday" },
+    ]),
+  ];
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("served-saturday"),
+      createServant("fresh-weekend"),
+    ]),
+    schedules,
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "fresh-weekend", "A fresh candidate should be preferred over a servant already assigned Saturday.");
+});
+
+Deno.test("monthly workload history excludes declined assignments from the recent 60-day display", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "locked-foh" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const oldDeclined = createSchedule("declined-old", "2026-10-25", "loc-as", "Prior Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "declined-servant" },
+  ]);
+  oldDeclined.assignments[0].confirmation_status = "declined";
+
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-foh"),
+      createServant("locked-monitor"),
+      createServant("declined-servant"),
+    ]),
+    schedules: [oldDeclined],
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const workload = result.workloads.find((item) => item.servant_id === "declined-servant");
+  assertEqual(workload?.recent_60_day_assignments, 0, "Declined assignments must not inflate recent workload.");
+  assertEqual(workload?.recent_60_day_days, 0, "Declined assignments must not count as recent serving days.");
+});
+
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
   const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
   const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
