@@ -219,6 +219,10 @@ export default function MonthlySmartScheduler({
 
   const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
   const unmatchedHistorical = historicalRoster.unmatchedHistoricalNames;
+  const ambiguousManualOnlyServants = historicalRoster.ambiguousManualOnlyServantIds.map((id) => {
+    const servant = servants.find((item) => item.id === id);
+    return servant ? `${servant.full_name} (${id})` : id;
+  });
   const canReview = !inputErrors.length && selectedLocationIds.length > 0 && Boolean(month);
 
   const runOptimizer = (baseSlots: MonthlyScheduleSlot[], manualOverrides: ManualOverrides) => {
@@ -627,7 +631,7 @@ export default function MonthlySmartScheduler({
             ) : <p className="monthly-smart-muted">No active servants had an eligible position in this preview.</p>}
           </div>
 
-          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || preview.result.preferNotWarnings.length > 0 || unmatchedManualOnly.length > 0 || unmatchedHistorical.length > 0 || historicalRoster.ambiguousNames.length > 0) && (
+          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || preview.result.preferNotWarnings.length > 0 || unmatchedManualOnly.length > 0 || unmatchedHistorical.length > 0 || historicalRoster.ambiguousNames.length > 0 || ambiguousManualOnlyServants.length > 0) && (
             <div className="monthly-smart-section monthly-smart-issues">
               <h4>Review required</h4>
               {preview.result.unfilledPositions.length > 0 && (
@@ -675,7 +679,13 @@ export default function MonthlySmartScheduler({
               {historicalRoster.ambiguousNames.length > 0 && (
                 <div className="monthly-smart-alert is-caution">
                   <AlertTriangle size={16}/>
-                  <span>Historical names with multiple current servant matches: {historicalRoster.ambiguousNames.join(", ")}. These role preferences and exclusions were not mapped.</span>
+                  <span>Historical names with multiple current servant matches: {historicalRoster.ambiguousNames.join(", ")}. The historical role profile was not assigned to one person because the current directory has duplicate exact names.</span>
+                </div>
+              )}
+              {ambiguousManualOnlyServants.length > 0 && (
+                <div className="monthly-smart-alert is-caution">
+                  <AlertTriangle size={16}/>
+                  <span>Ambiguous manual-only roster matches are excluded from automatic allocation until the servant directory is reconciled: {ambiguousManualOnlyServants.join(", ")}.</span>
                 </div>
               )}
             </div>
