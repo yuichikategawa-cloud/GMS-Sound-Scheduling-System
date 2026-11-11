@@ -103,6 +103,10 @@ jobs:
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+      - name: Test historical roster profiles and location aliases
+        run: deno test --no-lock tests/schedule/historicalRosterProfiles_test.ts
+      - name: Test monthly schedule persistence adapter
+        run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
       - name: Test schedule persistence operations
         run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
       - name: Test Schedule dashboard and history data loading
@@ -185,6 +189,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261118000000_gms_anonymous_public_privilege_hardening.sql
       - name: Apply authenticated TRUNCATE hardening migration to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261109112851_revoke_authenticated_public_truncate.sql
+      - name: Apply additive monthly schedule plan RPC to staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261119000000_gms_monthly_schedule_plan_apply.sql
       - name: Run rollback-only assignment-confirmation notification idempotency regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
@@ -203,6 +209,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/expired_serving_action_guards.sql
       - name: Run rollback-only authenticated TRUNCATE privilege regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/authenticated_truncate_privileges.sql
+      - name: Run rollback-only monthly schedule plan additive apply regression
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/monthly_schedule_plan_apply.sql
 
   frontend:
     runs-on: ubuntu-latest
