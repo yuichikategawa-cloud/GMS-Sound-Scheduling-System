@@ -459,6 +459,7 @@ export default function App() {
           onUnpublishLocation={id=>void scheduleActions.bulkSetLocationStatus(id,"draft")}
           onDeleteLocationSchedules={id=>void scheduleActions.deleteAllLocationSchedules(id)}
           onApplyBulkAssignments={scheduleActions.applyBulkAssignments}
+          onApplyMonthlyPlan={scheduleActions.applyMonthlyPlan}
           onEditSchedule={schedule=>{setScheduleError("");setEditing(schedule);setModal("schedule");}}
           onPublishSchedule={scheduleActions.publishSchedule}
           onDeleteSchedule={scheduleActions.deleteSchedule}
