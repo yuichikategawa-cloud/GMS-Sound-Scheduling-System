@@ -1,6 +1,7 @@
 /// <reference lib="deno.ns" />
 
 import {
+  getMonthlyAssignmentCandidates,
   optimizeMonthlyAssignments,
   type MonthlyAssignmentOptimizerInput,
 } from "../../src/features/schedule/services/monthlyAssignmentOptimizer.ts";
@@ -558,6 +559,68 @@ Deno.test("monthly fairness counts preserved existing service assignments as pra
   assertEqual(workload?.existing_assignments, 1, "The preserved historical-month commitment remains part of total workload.");
   assertEqual(workload?.eligible_opportunities, 2, "The existing commitment and a new eligible service both count as practical opportunities.");
   assertEqual(workload?.utilization, 0.5, "One preserved assignment across two practical opportunities should produce 50% utilization.");
+});
+
+Deno.test("monthly manual preview candidate lookup excludes hard conflicts and manual-only roster members", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [
+      createServant("locked-monitor"),
+      createServant("unavailable"),
+      createServant("manual-only"),
+      createServant("available"),
+    ],
+  );
+  input.availability = [
+    { servant_id: "unavailable", service_date: "2026-11-08", status: "unavailable" },
+  ];
+  input.autoAssignmentExcludedServantIds = ["manual-only"];
+
+  const candidates = getMonthlyAssignmentCandidates(input, slot, "FOH");
+  assertEqual(candidates.map((servant) => servant.id), ["available"], "Manual preview selection should offer only live, auto-assignable, conflict-free candidates.");
+});
+
+Deno.test("monthly manual preview candidates retain the current role selection while allowing alternatives", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "manual-selected" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  slot.assignments[0].preview_manual = true;
+
+  const candidates = getMonthlyAssignmentCandidates(
+    baseInput([slot], [
+      createServant("manual-selected"),
+      createServant("locked-monitor"),
+      createServant("alternative"),
+    ]),
+    slot,
+    "FOH",
+  );
+
+  assertEqual(candidates.map((servant) => servant.id), ["alternative", "manual-selected"], "The currently selected manual servant remains selectable, but another locked role blocks that servant.");
+});
+
+Deno.test("monthly optimizer treats manual preview selections as generated, not preserved database assignments", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "manual-foh" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  slot.assignments[0].preview_manual = true;
+  const result = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("manual-foh"), createServant("locked-monitor")],
+  ));
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.lockedAssignmentCount, 1, "Only the persisted Monitor assignment is locked.");
+  assertEqual(result.generatedAssignmentCount, 1, "The manual preview choice is a generated plan item.");
+  assertEqual(result.assignments[0].preview_manual, true, "The result keeps manual preview provenance.");
+  assertEqual(result.filledRequiredPositionCount, 2, "Manual preview choices count once toward required coverage.");
+  assertEqual(result.workloads.find((item) => item.servant_id === "manual-foh")?.existing_assignments, 0, "A preview-only choice is not reported as an existing persisted assignment.");
+  assertEqual(result.workloads.find((item) => item.servant_id === "manual-foh")?.generated_assignments, 1, "A preview-only choice is included in proposed workload.");
 });
 
 Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
