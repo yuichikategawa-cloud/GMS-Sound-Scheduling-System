@@ -546,6 +546,41 @@ function countBlockedCandidates(
 }
 
 /**
+ * Returns current live candidates for one vacant role in the preview.
+ * The position's own current selection is removed from conflict state before
+ * evaluating alternatives; all other locked assignments and manual preview
+ * edits remain in force. Automatic proposals are intentionally recalculated
+ * after a manual selection rather than treated as commitments here.
+ */
+export function getMonthlyAssignmentCandidates(
+  input: MonthlyAssignmentOptimizerInput,
+  slot: MonthlyScheduleSlot,
+  role: Role,
+): Servant[] {
+  if (input.dataErrors?.some(Boolean) || slot.blocked_reason) return [];
+
+  const excludedServantIds = new Set(input.autoAssignmentExcludedServantIds ?? []);
+  const activeServants = input.servants.filter((servant) =>
+    servant.active === true && !excludedServantIds.has(servant.id)
+  );
+  const commitments = buildExistingCommitments(input).filter((item) =>
+    !(item.slot_key === slot.key && item.role === role)
+  );
+
+  return activeServants
+    .filter((servant) => getBlockReasons(
+      servant,
+      slot,
+      commitments,
+      input.availability,
+      input.preferences,
+    ).length === 0)
+    .sort((first, second) =>
+      first.full_name.localeCompare(second.full_name) || first.id.localeCompare(second.id)
+    );
+}
+
+/**
  * Allocates vacant FOH and Monitor positions first, then optional Assistant
  * positions. Existing assignments are never removed or replaced.
  *
