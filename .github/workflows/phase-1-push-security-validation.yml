@@ -191,6 +191,8 @@ jobs:
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261109112851_revoke_authenticated_public_truncate.sql
       - name: Apply additive monthly schedule plan RPC to staging
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261119000000_gms_monthly_schedule_plan_apply.sql
+      - name: Harden monthly RPC temporary tables in staging
+        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261119120000_gms_monthly_schedule_plan_temp_table_hardening.sql
       - name: Run rollback-only assignment-confirmation notification idempotency regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
