@@ -4,7 +4,7 @@ import "./ServantInformationPanel.css";
 import type { ReactNode } from "react";
 import { ChevronDown, Plus, X } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant } from "../../../types";
-import { displayList, errorText } from "../../../shared/formatters";
+import { displayList, errorText, fmtDate } from "../../../shared/formatters";
 
 type ServantInformationPanelProps = {
   isAdmin: boolean;
@@ -363,7 +363,7 @@ export default function ServantInformationPanel({
                     <p><b>CG Leader:</b> {value({ servant, profile }, "cg_leader_name") || "—"}</p>
                     <p><b>Leader phone(s):</b> {displayList(value({ servant, profile }, "leader_phone_numbers")) || "—"}</p>
                     <p><b>Account:</b> {profile?.username || "No username linked"}</p>
-                    <p><b>Profile verified:</b> {profile?.last_verified_at ? new Date(profile.last_verified_at).toLocaleDateString() : "Not yet verified"}</p>
+                    <p><b>Profile verified:</b> {profile?.last_verified_at ? fmtDate(new Date(profile.last_verified_at).toLocaleDateString("en-CA")) : "Not yet verified"}</p>
                     <p><b>Serving status:</b> {servant.active ? "Active" : "Inactive"}</p>
 
                     <button className={`btn tiny servant-status-toggle ${servant.active ? "danger" : "primary"}`} onClick={() => onToggle(servant)}>
