@@ -19,6 +19,7 @@ export type HistoricalRosterMapping = {
   unmatchedManualOnlyNames: string[];
   unmatchedHistoricalNames: string[];
   ambiguousNames: string[];
+  ambiguousManualOnlyServantIds: string[];
 };
 
 const HISTORY_AS_OF = "2026-11-01";
@@ -208,14 +209,21 @@ export function mapHistoricalRosterProfiles(
   const unmatchedManualOnlyNames: string[] = [];
   const unmatchedHistoricalNames: string[] = [];
   const ambiguousNames: string[] = [];
+  const ambiguousManualOnlyServantIds: string[] = [];
 
   for (const entry of readHistoricalWorkloadRows()) {
     const matches = servantsByName.get(normalizeName(entry.name)) ?? [];
     const isManualOnly = MANUAL_ONLY_NAMES.has(entry.name);
 
     if (matches.length !== 1) {
-      if (matches.length > 1) ambiguousNames.push(entry.name);
-      else if (isManualOnly) unmatchedManualOnlyNames.push(entry.name);
+      if (matches.length > 1) {
+        ambiguousNames.push(entry.name);
+        if (isManualOnly) {
+          // If an exact manual-only label matches duplicate live records,
+          // exclude every ambiguous match rather than guessing which UUID is correct.
+          ambiguousManualOnlyServantIds.push(...matches.map((servant) => servant.id));
+        }
+      } else if (isManualOnly) unmatchedManualOnlyNames.push(entry.name);
       else {
         unmatchedHistoricalNames.push(entry.name);
         if (entry.primary_role) unmatchedPrimaryRoleNames.push(entry.name);
@@ -250,5 +258,6 @@ export function mapHistoricalRosterProfiles(
     unmatchedManualOnlyNames,
     unmatchedHistoricalNames,
     ambiguousNames,
+    ambiguousManualOnlyServantIds: [...new Set(ambiguousManualOnlyServantIds)].sort(),
   };
 }
