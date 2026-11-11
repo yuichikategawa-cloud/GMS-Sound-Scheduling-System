@@ -398,7 +398,6 @@ export default function ServantInformationPanel({
                       onClick={() => void saveRoles(servant)}
                     >{roleBusy[servant.id] ? "Saving…" : "Save sound roles"}</button>
                   </div>
-                  </div>
                 </div>
               )}
             </article>
