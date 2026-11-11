@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ScheduleView } from "../../../types";
-import { isScheduleUpcoming, today } from "../../../shared/formatters";
+import { fmtDate, isScheduleUpcoming, today } from "../../../shared/formatters";
 
 export type CalendarView = "week" | "month";
 export type AdminScheduleView = "overview" | "assignments" | "calendar";
@@ -89,7 +89,7 @@ export function useScheduleWorkspace({
         key = monday.toLocaleDateString("en-CA");
         const sunday = new Date(monday);
         sunday.setDate(monday.getDate() + 6);
-        label = `Week of ${monday.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${sunday.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        label = `Week of ${fmtDate(monday.toLocaleDateString("en-CA"))} – ${fmtDate(sunday.toLocaleDateString("en-CA"))}`;
       }
       const existing = buckets.get(key) ?? { key, label, groups: [] };
       existing.groups.push(group);
