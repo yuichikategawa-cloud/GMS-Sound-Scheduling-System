@@ -8,6 +8,7 @@ on:
       - "src/features/schedule/services/monthly*.ts"
       - "src/features/schedule/services/historicalRosterProfiles.ts"
       - "src/features/schedule/components/MonthlySmartScheduler.*"
+      - "src/features/servants/**"
       - "src/features/schedule/components/ScheduleWorkspace.tsx"
       - "src/features/schedule/hooks/useScheduleActions.ts"
       - "src/features/schedule/services/schedulePersistence.ts"
@@ -18,8 +19,10 @@ on:
       - "tests/schedule/monthly*_test.ts"
       - "tests/schedule/historicalRosterProfiles_test.ts"
       - "tests/schedule/schedulePersistence_test.ts"
+      - "tests/servants/servantManagement_test.ts"
       - "tests/availability/availabilityData_test.ts"
       - "supabase/migrations/20261111113446_gms_monthly_schedule_plan_apply.sql"
+      - "supabase/migrations/20261111153000_gms_special_service_and_servant_role_qualifications.sql"
       - "supabase/tests/monthly_schedule_plan_apply.sql"
       - "tests/app/dashboardData_test.ts"
       - "tests/app/dashboardState_test.ts"
@@ -46,6 +49,8 @@ jobs:
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+      - name: Test servant management and role qualification persistence
+        run: deno test --no-lock tests/servants/servantManagement_test.ts
       - name: Run read-only December pilot against the inspected Staging snapshot
         run: deno test --no-lock tests/schedule/monthlyScheduleStagingPilot_test.ts
       - name: Test historical servant roster mapping
