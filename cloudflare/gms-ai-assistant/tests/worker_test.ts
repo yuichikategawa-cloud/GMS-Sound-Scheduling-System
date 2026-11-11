@@ -84,7 +84,7 @@ Deno.test("Worker rejects service samples that exceed the prompt-size policy", (
 });
 
 Deno.test("Worker hard-codes small daily inference budgets", () => {
-  assert(DAILY_GMS_MODEL_CALL_LIMIT === 3, "GMS-wide model calls must be capped at three per UTC day.");
+  assert(DAILY_GMS_MODEL_CALL_LIMIT === 1, "GMS-wide model calls must be capped at one per UTC day.");
   assert(DAILY_ADMIN_MODEL_CALL_LIMIT === 1, "Each administrator must be capped at one model call per UTC day.");
 });
 
