@@ -9,12 +9,18 @@ on:
       - "src/features/schedule/services/historicalRosterProfiles.ts"
       - "src/features/schedule/components/MonthlySmartScheduler.*"
       - "src/features/schedule/components/ScheduleWorkspace.tsx"
+      - "src/features/schedule/hooks/useScheduleActions.ts"
+      - "src/features/schedule/services/schedulePersistence.ts"
       - "src/features/availability/services/availabilityData.ts"
       - "src/app/services/dashboardData.ts"
       - "src/app/state/dashboardState.ts"
       - "src/App.tsx"
       - "tests/schedule/monthly*_test.ts"
+      - "tests/schedule/historicalRosterProfiles_test.ts"
+      - "tests/schedule/schedulePersistence_test.ts"
       - "tests/availability/availabilityData_test.ts"
+      - "supabase/migrations/20261119000000_gms_monthly_schedule_plan_apply.sql"
+      - "supabase/tests/monthly_schedule_plan_apply.sql"
       - "tests/app/dashboardData_test.ts"
       - "tests/app/dashboardState_test.ts"
       - "package.json"
@@ -41,6 +47,8 @@ jobs:
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
       - name: Test historical servant roster mapping
         run: deno test --no-lock tests/schedule/historicalRosterProfiles_test.ts
+      - name: Test schedule persistence RPC adapters
+        run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
       - name: Test availability data readiness
         run: deno test --no-lock tests/availability/availabilityData_test.ts
       - name: Test dashboard scheduler readiness propagation
