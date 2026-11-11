@@ -1,10 +1,11 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
-import type { Servant } from "../../../types";
+import type { Role, Servant } from "../../../types";
 import { errorText } from "../../../shared/formatters";
 import {
   createServantRecord,
   linkServantAccountRecord,
   setServantActive,
+  setServantQualifiedRoles,
 } from "../services/servantManagement";
 
 type ServantModalMode = "schedule" | "person" | null;
@@ -78,5 +79,18 @@ export function useServantActions({
     else await loadData();
   }
 
-  return { linkServantAccount, savePerson, togglePerson };
+  async function saveServantRoles(servant: Servant, roles: Role[]): Promise<boolean> {
+    if (!client || !isAdmin) return false;
+    const uniqueRoles = [...new Set(roles)];
+    const { error } = await setServantQualifiedRoles(client, servant.id, uniqueRoles);
+    if (error) {
+      setMessage(errorText(error));
+      return false;
+    }
+    await loadData();
+    setMessage(`Qualified sound roles updated for ${servant.full_name}.`);
+    return true;
+  }
+
+  return { linkServantAccount, savePerson, togglePerson, saveServantRoles };
 }
