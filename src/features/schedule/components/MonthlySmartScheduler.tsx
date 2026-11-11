@@ -15,6 +15,7 @@ import {
 import type { MonthlyScheduleSlot, MonthlySpecialServiceInput } from "../services/monthlyScheduleGeneration";
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
+import { fmtDate } from "../../../shared/formatters";
 import "./MonthlySmartScheduler.css";
 
 type SuccessfulOptimizerResult = Extract<MonthlyAssignmentOptimizerResult, { ok: true }>;
@@ -80,14 +81,6 @@ function nextMonthKey(): string {
   return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
 }
 
-function displayDate(value: string): string {
-  const [year, month, day] = value.split("-").map(Number);
-  const monthName = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-  ][month - 1];
-  return monthName ? `${String(day).padStart(2, "0")}-${monthName}-${year}` : value;
-}
 
 function reasonLabel(reason: MonthlyUnfilledPosition["reason"]): string {
   const labels: Record<MonthlyUnfilledPosition["reason"], string> = {
@@ -660,7 +653,7 @@ export default function MonthlySmartScheduler({
           <div className="monthly-smart-special-list">
             {specialServices.map((service, index) => (
               <div className="monthly-smart-special-chip" key={service.service_date + "|" + service.location_id + "|" + service.service_name}>
-                <span><b>{displayDate(service.service_date)}</b> · {locationNames.get(service.location_id)} · {service.service_name} · {service.start_time}–{service.end_time}</span>
+                <span><b>{fmtDate(service.service_date)}</b> · {locationNames.get(service.location_id)} · {service.service_name} · {service.start_time}–{service.end_time}</span>
                 <button type="button" aria-label={"Remove " + service.service_name} onClick={() => { setSpecialServices((current) => current.filter((_, i) => i !== index)); setPreview(null); }}>Remove</button>
               </div>
             ))}
@@ -715,7 +708,7 @@ export default function MonthlySmartScheduler({
               <div className="monthly-smart-church-group" key={location.id}>
                 <div className="monthly-smart-church-heading">
                   <h5>{location.name}</h5>
-                  <span>{slots.length} services · {displayDate(slots[0].service_date)} to {displayDate(slots[slots.length - 1].service_date)}</span>
+                  <span>{slots.length} services · {fmtDate(slots[0].service_date)} to {fmtDate(slots[slots.length - 1].service_date)}</span>
                 </div>
                 <div className="monthly-smart-table-wrap">
                   <table className="monthly-smart-table">
@@ -728,7 +721,7 @@ export default function MonthlySmartScheduler({
                         const unfilled = unfilledBySlot.get(slot.key);
                         return (
                           <tr key={slot.key}>
-                            <td><b>{displayDate(slot.service_date)}</b><small>{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</small></td>
+                            <td><b>{fmtDate(slot.service_date)}</b><small>{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</small></td>
                             <td>
                               <b>{slot.service_name}</b>
                               {slot.status === "new_special" && <small className="monthly-smart-special-label">One-off special service</small>}
@@ -765,7 +758,7 @@ export default function MonthlySmartScheduler({
               <div className="monthly-smart-table-wrap">
                 <table className="monthly-smart-workload-table">
                   <thead>
-                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th><th>History to 01-November-2026</th></tr>
+                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th><th>History to Sun, Nov 1, 2026</th></tr>
                   </thead>
                   <tbody>
                     {preview.result.workloads.map((workload) => (
@@ -795,7 +788,7 @@ export default function MonthlySmartScheduler({
                   <ul>
                     {preview.result.unfilledPositions.slice(0, 30).map((item, index) => (
                       <li key={item.schedule_key + "|" + item.role + "|" + index}>
-                        <b>{displayDate(item.service_date)} · {locationNames.get(item.location_id) ?? "Unknown church"} · {item.service_name} · {item.role}</b>
+                        <b>{fmtDate(item.service_date)} · {locationNames.get(item.location_id) ?? "Unknown church"} · {item.service_name} · {item.role}</b>
                         <span>{reasonLabel(item.reason)}</span>
                       </li>
                     ))}
