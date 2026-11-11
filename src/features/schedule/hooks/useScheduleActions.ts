@@ -185,7 +185,7 @@ export function useScheduleActions({
       );
       return true;
     } catch (error) {
-      setScheduleError(errorText(error));
+      setMessage(`Monthly plan application failed: ${errorText(error)}`);
       return false;
     } finally {
       setLoading(false);
