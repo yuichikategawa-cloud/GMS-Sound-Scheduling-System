@@ -41,7 +41,9 @@ interface Env {
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
 export const DAILY_GMS_MODEL_CALL_LIMIT = 1;
 export const DAILY_ADMIN_MODEL_CALL_LIMIT = 1;
-const MAX_REQUEST_BYTES = 12_288;
+export const DAILY_GMS_REQUEST_LIMIT = 10;
+export const DAILY_ADMIN_REQUEST_LIMIT = 3;
+const MAX_REQUEST_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 6_000;
 const MAX_COMPLETION_TOKENS = 200;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -321,6 +323,34 @@ function utcDay(now = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
+
+/** Reads at most the configured number of bytes and cancels oversized streams. */
+export async function readBoundedBody(request: Request, maximumBytes: number): Promise<string | null> {
+  const reader = request.body?.getReader();
+  if (!reader) return "";
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maximumBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
+}
+
 /**
  * SQLite-backed Durable Object. A single named instance serializes GMS-wide
  * reservations, making the three-inference daily budget atomic across admins.
@@ -335,6 +365,12 @@ export class AiBudgetGuard {
     );
     this.sql.exec(
       "CREATE TABLE IF NOT EXISTS gms_ai_global_usage (day_key TEXT PRIMARY KEY, calls INTEGER NOT NULL)"
+    );
+    this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_user_requests (day_key TEXT NOT NULL, user_key TEXT NOT NULL, requests INTEGER NOT NULL, PRIMARY KEY (day_key, user_key))"
+    );
+    this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_global_requests (day_key TEXT PRIMARY KEY, requests INTEGER NOT NULL)"
     );
     this.sql.exec(
       "CREATE TABLE IF NOT EXISTS gms_ai_cache (cache_key TEXT PRIMARY KEY, explanation TEXT NOT NULL, expires_at INTEGER NOT NULL)"
@@ -358,6 +394,35 @@ export class AiBudgetGuard {
           typeof body.cacheKey !== "string" || !/^[a-f0-9]{64}$/.test(body.cacheKey)) {
         return Response.json({ error: "invalid_internal_request" }, { status: 400 });
       }
+
+      // Count every Worker/guard request, including cache reads, before any
+      // response path. This limits free Worker, Durable Object and Supabase calls.
+      const userRequests = this.sql.exec<{ requests: number }>(
+        "SELECT requests FROM gms_ai_user_requests WHERE day_key = ? AND user_key = ? LIMIT 1",
+        body.dayKey,
+        body.userKey,
+      ).toArray()[0]?.requests ?? 0;
+      const globalRequests = this.sql.exec<{ requests: number }>(
+        "SELECT requests FROM gms_ai_global_requests WHERE day_key = ? LIMIT 1",
+        body.dayKey,
+      ).toArray()[0]?.requests ?? 0;
+
+      if (globalRequests >= DAILY_GMS_REQUEST_LIMIT) {
+        return Response.json({ allowed: false, reason: "gms_request_limit" }, { status: 429 });
+      }
+      if (userRequests >= DAILY_ADMIN_REQUEST_LIMIT) {
+        return Response.json({ allowed: false, reason: "admin_request_limit" }, { status: 429 });
+      }
+
+      this.sql.exec(
+        "INSERT INTO gms_ai_user_requests (day_key, user_key, requests) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET requests = requests + 1",
+        body.dayKey,
+        body.userKey,
+      );
+      this.sql.exec(
+        "INSERT INTO gms_ai_global_requests (day_key, requests) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET requests = requests + 1",
+        body.dayKey,
+      );
 
       const now = Date.now();
       this.sql.exec("DELETE FROM gms_ai_cache WHERE expires_at <= ?", now);
@@ -490,16 +555,19 @@ export default {
     if (contentLength > MAX_REQUEST_BYTES) {
       return jsonResponse({ error: "request_too_large" }, 413, allowedOrigin);
     }
+    if (!(request.headers.get("Content-Type") ?? "").toLowerCase().startsWith("application/json")) {
+      return jsonResponse({ error: "json_required" }, 415, allowedOrigin);
+    }
     const admin = await authenticateAdmin(request, env).catch(() => null);
     if (!admin) return jsonResponse({ error: "unauthorized" }, 401, allowedOrigin);
 
-    let rawBody: string;
+    let rawBody: string | null;
     try {
-      rawBody = await request.text();
+      rawBody = await readBoundedBody(request, MAX_REQUEST_BYTES);
     } catch {
       return jsonResponse({ error: "invalid_request" }, 400, allowedOrigin);
     }
-    if (new TextEncoder().encode(rawBody).length > MAX_REQUEST_BYTES) {
+    if (rawBody === null) {
       return jsonResponse({ error: "request_too_large" }, 413, allowedOrigin);
     }
 
@@ -545,7 +613,7 @@ export default {
       return jsonResponse({
         error: "daily_free_limit_reached",
         reason: reservation.reason ?? "daily_limit",
-        limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT },
+        limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT },
       }, 429, allowedOrigin);
     }
 
@@ -600,7 +668,7 @@ export default {
     return jsonResponse({
       explanation,
       cached: false,
-      limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT },
+      limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT },
     }, 200, allowedOrigin);
   },
 };
