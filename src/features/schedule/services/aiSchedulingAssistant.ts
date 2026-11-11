@@ -204,7 +204,7 @@ export function buildAiSchedulingSnapshot(input: {
       a.date.localeCompare(b.date) ||
       a.startTime.localeCompare(b.startTime)
     );
-    const sampledServices = priorityServices.slice(0, 5).sort((a, b) =>
+    const sampledServices = priorityServices.slice(0, 3).sort((a, b) =>
       a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
     );
     const vacancyCounts = new Map<string, { role: Role; reason: string; count: number }>();
@@ -246,7 +246,7 @@ export function buildAiSchedulingSnapshot(input: {
       frozenServices: input.slots.filter((slot) => slot.blocked_reason !== null).length,
     },
     churches,
-    workload: input.workloads.slice().sort((a, b) => b.utilization - a.utilization).slice(0, 12).map((workload) => ({
+    workload: input.workloads.slice().sort((a, b) => b.utilization - a.utilization).slice(0, 8).map((workload) => ({
       servant: servantLabels.get(workload.servant_id) ?? "Unlisted servant",
       totalAssignments: workload.total_assignments,
       servingDays: workload.serving_days,
