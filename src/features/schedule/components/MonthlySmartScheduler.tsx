@@ -51,6 +51,7 @@ function reasonLabel(reason: MonthlyUnfilledPosition["reason"]): string {
     published_service: "Published service · review manually",
     pending_request: "Pending swap/replacement · resolve first",
     preexisting_conflict: "Existing assignment has a hard conflict",
+    declined_assignment: "Assigned servant declined · review or replace manually",
     no_active_servants: "No active servants in the directory",
     no_auto_assignable_servants: "No servants eligible for automatic assignment",
     unavailable: "All candidates marked unavailable",
@@ -81,7 +82,7 @@ function GeneratedOrExistingRole({
     return (
       <div className="monthly-role-value is-locked">
         <b>{existing.servant_name}</b>
-        <small><span className="monthly-lock-dot"/> Preserved · locked</small>
+        <small><span className="monthly-lock-dot"/> Preserved · {existing.confirmation_status === "declined" ? "declined" : "locked"}</small>
       </div>
     );
   }
@@ -149,7 +150,8 @@ export default function MonthlySmartScheduler({
     return [...ids];
   }, [requests]);
 
-    const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
+  const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
+  const unmatchedHistorical = historicalRoster.unmatchedHistoricalNames;
   const canReview = !inputErrors.length && selectedLocationIds.length > 0 && Boolean(month);
 
   const generatePreview = () => {
@@ -326,6 +328,7 @@ export default function MonthlySmartScheduler({
             <span><b>{preview.result.lockedAssignmentCount}</b> preserved assignments</span>
             <span><b>{preview.result.generatedAssistantCount}</b> optional Assistants proposed</span>
             <span><b>{preview.result.skippedServiceCount}</b> services frozen or skipped</span>
+            <span><b>{preview.result.declinedAssignmentCount}</b> existing declined assignments preserved
           </div>
 
           <div className="monthly-smart-section">
@@ -368,7 +371,7 @@ export default function MonthlySmartScheduler({
               <div className="monthly-smart-table-wrap">
                 <table className="monthly-smart-workload-table">
                   <thead>
-                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th></tr>
+                    <tr><th>Servant</th><th>Existing</th><th>Generated</th><th>Total</th><th>Days</th><th>Eligible service opportunities</th><th>Utilization</th><th>Last 60 days</th><th>History to 01-11-2026</th></tr>
                   </thead>
                   <tbody>
                     {preview.result.workloads.map((workload) => (
@@ -380,7 +383,7 @@ export default function MonthlySmartScheduler({
                         <td>{workload.serving_days}</td>
                         <td>{workload.eligible_opportunities}</td>
                         <td>{Math.round(workload.utilization * 100)}%</td>
-                        <td>{workload.recent_60_day_assignments} assignments · {workload.recent_60_day_days} days</td>
+                        <td>{workload.recent_60_day_assignments} assignments · {workload.recent_60_day_days} days</td><td>{workload.historical_assignments} assignments · {workload.historical_serving_days} days</td>
                       </tr>
                     ))}
                   </tbody>
@@ -389,7 +392,7 @@ export default function MonthlySmartScheduler({
             ) : <p className="monthly-smart-muted">No active servants had an eligible position in this preview.</p>}
           </div>
 
-          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || unmatchedManualOnly.length > 0 || historicalRoster.ambiguousNames.length > 0) && (
+          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || preview.result.preferNotWarnings.length > 0 || unmatchedManualOnly.length > 0 || unmatchedHistorical.length > 0 || historicalRoster.ambiguousNames.length > 0) && (
             <div className="monthly-smart-section monthly-smart-issues">
               <h4>Review required</h4>
               {preview.result.unfilledPositions.length > 0 && (
@@ -408,8 +411,14 @@ export default function MonthlySmartScheduler({
               )}
               {preview.result.warnings.length > 0 && (
                 <div className="monthly-smart-issue-group">
-                  <b>Soft-preference warnings</b>
+                  <b>Operational warnings</b>
                   <ul>{preview.result.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+                </div>
+              )}
+              {preview.result.preferNotWarnings.length > 0 && (
+                <div className="monthly-smart-issue-group">
+                  <b>Prefer-not assignments · admin acknowledgement required</b>
+                  <ul>{preview.result.preferNotWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
                   <label className="monthly-smart-checkbox monthly-smart-acknowledgement">
                     <input type="checkbox" checked={acknowledgedPreferNot} onChange={(event) => setAcknowledgedPreferNot(event.target.checked)}/>
                     <span>I reviewed the prefer-not assignments and understand these servants have a saved preference not to serve on those dates.</span>
@@ -420,6 +429,12 @@ export default function MonthlySmartScheduler({
                 <div className="monthly-smart-alert is-caution">
                   <AlertTriangle size={16}/>
                   <span>Manual-only roster names not matched to the current GMS servant directory: {unmatchedManualOnly.join(", ")}. Reconcile these names before applying a plan.</span>
+                </div>
+              )}
+              {unmatchedHistorical.length > 0 && (
+                <div className="monthly-smart-alert is-caution">
+                  <AlertTriangle size={16}/>
+                  <span>Historical names not matched to the current GMS servant directory: {unmatchedHistorical.slice(0, 20).join(", ")}{unmatchedHistorical.length > 20 ? ` and ${unmatchedHistorical.length - 20} more` : ""}. These names were not fuzzy-matched and their historical preferences were not applied.</span>
                 </div>
               )}
               {historicalRoster.ambiguousNames.length > 0 && (
