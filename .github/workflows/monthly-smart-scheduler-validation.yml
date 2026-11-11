@@ -9,6 +9,10 @@ on:
       - "src/features/schedule/services/historicalRosterProfiles.ts"
       - "src/features/schedule/components/MonthlySmartScheduler.*"
       - "src/features/servants/**"
+      - "src/features/auth/components/MemberProfilePanel.tsx"
+      - "src/features/audit/components/AuditPanel.tsx"
+      - "src/features/requests/components/RequestsPanel.tsx"
+      - "src/features/requests/components/ServantInbox.tsx"
       - "src/features/schedule/components/ScheduleWorkspace.tsx"
       - "src/features/schedule/hooks/useScheduleActions.ts"
       - "src/features/schedule/services/schedulePersistence.ts"
@@ -47,6 +51,8 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Test shared date and timestamp formatters
+        run: deno test --no-lock tests/shared/formatters_test.ts
       - name: Test monthly slot generation
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer
