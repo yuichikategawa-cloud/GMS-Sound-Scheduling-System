@@ -147,11 +147,11 @@ const HISTORICAL_PRIMARY_ROLES: Readonly<Record<string, Role>> = {
 const MANUAL_ONLY_NAMES = new Set(["David Karel", "Deddy", "Kevin Award"]);
 
 function normalizeName(value: string): string {
-  return value.trim().toLocaleLowerCase("en-US").replace(/\\s+/g, " ");
+  return value.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ");
 }
 
 function readHistoricalWorkloadRows(): HistoricalRosterProfile[] {
-  return HISTORICAL_WORKLOAD_ROWS.split("\\n").map((line) => {
+  return HISTORICAL_WORKLOAD_ROWS.split("\n").map((line) => {
     const [name, foh, monitor, assistant, assignments, servingDays] = line.split("|");
     return {
       name,
