@@ -102,14 +102,14 @@ export type MonthlyPlanExpectedAssignment = {
 };
 
 export type MonthlyPlanExpectedSlot = {
-  template_id: string;
+  template_id: string | null;
   schedule_id: string | null;
   service_date: string;
   location_id: string;
   service_name: string;
   start_time: string;
   end_time: string;
-  expected_status: "new" | "draft";
+  expected_status: "new" | "new_special" | "draft";
   assignments: MonthlyPlanExpectedAssignment[];
 };
 
