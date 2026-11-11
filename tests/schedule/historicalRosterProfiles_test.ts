@@ -69,7 +69,8 @@ Deno.test("historical roster reports unmatched and ambiguous names without guess
     servant("uuid-c", "Deddy Two"),
   ]);
 
-  assertEqual(result.autoAssignmentExcludedServantIds, [], "Ambiguous names must not silently exclude an arbitrary ID.");
+  assertEqual(result.autoAssignmentExcludedServantIds, ["uuid-a", "uuid-b"], "All duplicate exact matches for a manual-only name must be excluded from auto assignment.");
+  assertEqual(result.ambiguousManualOnlyServantIds, ["uuid-a", "uuid-b"], "The preview should report which ambiguous IDs were safely excluded.");
   assertEqual(result.ambiguousNames, ["David Karel"], "Duplicate normalized directory names must be surfaced.");
   assertEqual(result.unmatchedManualOnlyNames, ["Deddy", "Kevin Award"], "Unmatched manual-only names must be surfaced for admin reconciliation.");
 });
