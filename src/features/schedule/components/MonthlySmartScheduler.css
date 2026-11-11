@@ -192,3 +192,66 @@
   .monthly-smart-metrics strong{font-size:21px}
   .monthly-smart-save-notice{font-size:10px}
 }
+
+
+.monthly-smart-special-service{
+  border:1px solid var(--border-color,#dbe2ee);
+  border-radius:12px;
+  padding:14px;
+  margin-top:14px;
+  background:var(--surface,#fff);
+}
+.monthly-smart-special-heading{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px
+}
+.monthly-smart-special-heading p{
+  margin:4px 0 0;color:var(--text-muted,#667085);font-size:12px;line-height:1.5
+}
+.monthly-smart-special-heading>span,.monthly-smart-special-label{
+  color:#7552b5;font-size:10px;font-weight:700
+}
+.monthly-smart-special-fields{
+  display:grid;grid-template-columns:repeat(6,minmax(110px,1fr));gap:10px;align-items:end
+}
+.monthly-smart-special-fields label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:650}
+.monthly-smart-special-fields label>span{color:var(--text-muted,#667085)}
+.monthly-smart-special-fields input,.monthly-smart-special-fields select{
+  width:100%;min-width:0;min-height:36px;border:1px solid var(--border-color,#dbe2ee);
+  border-radius:8px;padding:6px 8px;background:var(--input-bg,#fff);color:var(--text-primary,#1f2937)
+}
+.monthly-smart-special-fields .monthly-smart-special-name{grid-column:span 2}
+.monthly-smart-special-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.monthly-smart-special-chip{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;
+  border-radius:8px;background:var(--surface-muted,#f5f7fb);font-size:11px
+}
+.monthly-smart-special-chip button{
+  border:0;background:transparent;color:var(--danger,#b42318);font-weight:700;cursor:pointer
+}
+.monthly-smart-church-group{margin-top:14px;border:1px solid var(--border-color,#dbe2ee);border-radius:12px;overflow:hidden}
+.monthly-smart-church-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;
+  background:var(--surface-muted,#f5f7fb);border-bottom:1px solid var(--border-color,#dbe2ee)
+}
+.monthly-smart-church-heading h5{margin:0;font-size:14px}
+.monthly-smart-church-heading span{font-size:11px;color:var(--text-muted,#667085)}
+.monthly-smart-church-group .monthly-smart-table-wrap{border:0;border-radius:0;margin:0}
+.monthly-smart-church-group .monthly-smart-table{margin:0}
+.monthly-smart-special-label,.monthly-smart-lock-label{display:block;margin-top:3px;font-size:10px}
+.monthly-smart-lock-label{color:var(--text-muted,#667085)}
+:root[data-theme="dark"] .monthly-smart-special-service,
+:root[data-theme="dark"] .monthly-smart-church-group{background:#111d30;border-color:#35455e}
+:root[data-theme="dark"] .monthly-smart-special-fields input,
+:root[data-theme="dark"] .monthly-smart-special-fields select{background:#17243a;color:#eef3fa;border-color:#455a75}
+:root[data-theme="dark"] .monthly-smart-special-chip,
+:root[data-theme="dark"] .monthly-smart-church-heading{background:#1a2940;border-color:#35455e}
+@media(max-width:900px){
+  .monthly-smart-special-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .monthly-smart-special-fields .monthly-smart-special-name{grid-column:span 2}
+}
+@media(max-width:540px){
+  .monthly-smart-special-heading,.monthly-smart-church-heading{align-items:flex-start;flex-direction:column}
+  .monthly-smart-special-fields{grid-template-columns:1fr 1fr}
+  .monthly-smart-special-fields .monthly-smart-special-name{grid-column:span 2}
+  .monthly-smart-special-chip{align-items:flex-start;flex-direction:column}
+}
