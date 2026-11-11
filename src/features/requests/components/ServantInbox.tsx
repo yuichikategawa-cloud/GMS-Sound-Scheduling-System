@@ -1,7 +1,7 @@
 import { ClipboardCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import "./RequestsInbox.css";
-import { fmtDate } from "../../../shared/formatters";
+import { fmtDate, fmtDateTime } from "../../../shared/formatters";
 import type { ScheduleView, ServingNotificationRecord } from "../../../types";
 import type { ServingRequestReadMarker, ServingRequestRecord } from "../services/requestData";
 
@@ -17,7 +17,7 @@ export default function ServantInbox({requests,schedules,reads,onRead,notificati
       <div className="inbox-item-icon"><ClipboardCheck size={19}/></div>
       <div className="inbox-item-body">
         <div className="inbox-item-title"><b>{n.title}</b><span className="inbox-status approved">{n.is_read ? "Read" : "New"}</span></div>
-        <p>{n.body}</p><small>{new Date(n.created_at).toLocaleString()}</small>
+        <p>{n.body}</p><small>{fmtDateTime(n.created_at)}</small>
       </div>
     </article>
   ))}
