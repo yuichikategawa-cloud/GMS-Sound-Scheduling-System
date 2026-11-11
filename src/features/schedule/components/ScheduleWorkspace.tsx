@@ -4,6 +4,7 @@ import type { Location, ScheduleView, Servant } from "../../../types";
 import type { ScheduleWorkspaceState } from "../hooks/useScheduleWorkspace";
 import { AssignmentOverview, BulkAssignmentCenter, ChurchBulkActions, GeneratePanel } from "./ScheduleManagementPanels";
 import { DailySummary, MyScheduleSummary, MyUpcomingAssignments } from "./ScheduleDisplayComponents";
+import MonthlySmartScheduler from "./MonthlySmartScheduler";
 
 type ScheduleWorkspaceProps = {
   workspace: ScheduleWorkspaceState;
@@ -13,6 +14,7 @@ type ScheduleWorkspaceProps = {
   servants: Servant[];
   availability: any[];
   preferences: any[];
+  scheduleGenerationErrors: string[];
   locations: Location[];
   templates: any[];
   loading: boolean;
@@ -38,7 +40,7 @@ type ScheduleWorkspaceProps = {
 
 export default function ScheduleWorkspace({
   workspace, isAdmin, schedules, requests, servants, availability, preferences,
-  locations, templates, loading, myServant, onOpenNewSchedule, onAddLocation,
+  scheduleGenerationErrors, locations, templates, loading, myServant, onOpenNewSchedule,
   onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
   onDeleteLocationSchedules, onApplyBulkAssignments, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
@@ -90,6 +92,7 @@ export default function ScheduleWorkspace({
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
             <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
+            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors}/>
             <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
           </section>
           <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "calendar"}>
