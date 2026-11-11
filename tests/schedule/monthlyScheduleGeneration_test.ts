@@ -61,6 +61,7 @@ Deno.test("monthly generation expands active Saturday and Sunday templates for t
   assertEqual(result.weekendCount, 5, "The month should contain five represented weekends.");
   assertEqual(result.slots[0].service_date, "2026-11-01", "Slots should be ordered by service date.");
   assertEqual(result.slots[0].service_name, "Sunday Service", "Sunday templates should map to Sundays.");
+  assertEqual(result.slots[0].template_id, "sun-as", "Every service slot should retain the template ID for database revalidation.");
   assertEqual(result.slots[1].service_date, "2026-11-07", "The first Saturday should be included.");
 });
 
