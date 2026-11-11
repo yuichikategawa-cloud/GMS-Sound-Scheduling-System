@@ -9,9 +9,9 @@ import {
   optimizeMonthlyAssignments,
   type MonthlyAssignmentOptimizerResult,
   type MonthlyGeneratedAssignment,
-  type MonthlyScheduleSlot,
   type MonthlyUnfilledPosition,
 } from "../services/monthlyAssignmentOptimizer";
+import type { MonthlyScheduleSlot } from "../services/monthlyScheduleGeneration";
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import "./MonthlySmartScheduler.css";
 
