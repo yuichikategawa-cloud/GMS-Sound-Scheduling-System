@@ -452,6 +452,8 @@ export default function App() {
           preferences={servingPreferences} locations={locations} templates={templates}
           scheduleGenerationErrors={scheduleGenerationErrors}
           loading={loading} myServant={myServant}
+          aiWorkerUrl={import.meta.env.VITE_GMS_AI_WORKER_URL as string | undefined}
+          aiAccessToken={session?.access_token as string | undefined}
           onOpenNewSchedule={()=>{setScheduleError("");setEditing(null);setModal("schedule");}}
           onAddLocation={scheduleActions.addLocation}
           onAddRecurringTemplate={scheduleActions.addRecurringTemplate}
