@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import "./RequestsInbox.css";
-import { fmtDate } from "../../../shared/formatters";
+import { fmtDate, fmtDateTime } from "../../../shared/formatters";
 import type { ScheduleView, Servant, ServingNotificationRecord } from "../../../types";
 import type { ServingRequestRecord } from "../services/requestData";
 
@@ -56,7 +56,7 @@ export default function RequestsPanel({
                 <div className="inbox-item-body">
                   <b>{notification.title}</b>
                   <p>{notification.body}</p>
-                  <small>{new Date(notification.created_at).toLocaleString()}</small>
+                  <small>{fmtDateTime(notification.created_at)}</small>
                 </div>
                 <span className="inbox-status approved">
                   {notification.is_read ? "Read" : "New"}
