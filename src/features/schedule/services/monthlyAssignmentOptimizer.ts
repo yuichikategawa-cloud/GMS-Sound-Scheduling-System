@@ -7,6 +7,9 @@ export type MonthlyHistoricalServantProfile = {
   servant_id: string;
   primary_role?: Role | null;
   role_counts?: Partial<Record<Role, number>>;
+  historical_assignments?: number;
+  historical_serving_days?: number;
+  history_as_of?: string;
 };
 
 export type MonthlyGeneratedAssignment = {
@@ -58,6 +61,8 @@ export type MonthlyServantWorkload = {
   utilization: number;
   recent_60_day_assignments: number;
   recent_60_day_days: number;
+  historical_assignments: number;
+  historical_serving_days: number;
   role_counts: Record<Role, number>;
   prefer_not_assignments: number;
 };
@@ -433,6 +438,13 @@ function scoreCandidate(
   const primaryRolePenalty = profile.primary_role && profile.primary_role !== position.role
     ? 2
     : 0;
+  // Historical spreadsheet workload is a low-weight long-term balancing prior.
+  // The live 60-day schedule history above remains the stronger, current signal.
+  const longTermHistoryPenalty = Math.min(
+    3,
+    (profile.historical_assignments ?? 0) / 80 +
+      (profile.historical_serving_days ?? 0) / 80,
+  );
   const preferNotPenalty = availabilityStatus(
     servant.id,
     position.slot.service_date,
@@ -446,6 +458,7 @@ function scoreCandidate(
     consecutiveWeekends * 4 +
     roleExperiencePenalty +
     primaryRolePenalty +
+    longTermHistoryPenalty +
     preferNotPenalty;
 }
 
