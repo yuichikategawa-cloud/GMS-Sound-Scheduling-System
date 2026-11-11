@@ -70,7 +70,7 @@ BEGIN
     RAISE EXCEPTION 'Every expected service snapshot must include its assignment array';
   END IF;
 
-  CREATE TEMPORARY TABLE gms_monthly_expected_slots (
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_slots (
     template_id uuid NOT NULL,
     schedule_id uuid,
     service_date date NOT NULL,
@@ -83,7 +83,7 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE gms_monthly_expected_assignments (
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_assignments (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -93,7 +93,7 @@ BEGIN
     confirmation_status text NOT NULL
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE gms_monthly_plan (
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_plan (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -102,7 +102,7 @@ BEGIN
     PRIMARY KEY (service_date, location_id, service_name, role)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE gms_monthly_created_slots (
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_created_slots (
     service_date date NOT NULL,
     location_id uuid NOT NULL,
     service_name text NOT NULL,
@@ -111,7 +111,7 @@ BEGIN
     UNIQUE (schedule_id)
   ) ON COMMIT DROP;
 
-  CREATE TEMPORARY TABLE gms_monthly_final_assignments (
+  CREATE TEMPORARY TABLE pg_temp.gms_monthly_final_assignments (
     schedule_id uuid NOT NULL,
     service_date date NOT NULL,
     location_id uuid NOT NULL,
@@ -159,7 +159,7 @@ BEGIN
     WHERE e.template_id IS NULL
        OR e.service_date < p_month_start
        OR e.service_date >= v_month_end
-       OR pg_catalog.extract(dow FROM e.service_date) NOT IN (0, 6)
+       OR extract(dow FROM e.service_date) NOT IN (0, 6)
        OR e.service_name IS NULL
        OR e.service_name = ''
        OR e.start_time >= e.end_time
@@ -409,7 +409,7 @@ BEGIN
        OR t.active IS DISTINCT FROM true
        OR t.location_id IS DISTINCT FROM e.location_id
        OR t.service_name IS DISTINCT FROM e.service_name
-       OR t.day_of_week IS DISTINCT FROM pg_catalog.extract(dow FROM e.service_date)::smallint
+       OR t.day_of_week IS DISTINCT FROM extract(dow FROM e.service_date)::smallint
        OR (
          e.expected_status = 'new'
          AND (
