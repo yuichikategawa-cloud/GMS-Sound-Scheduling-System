@@ -442,6 +442,11 @@ function scoreCandidate(
   const sameDayAssignments = workloadCommitments.filter((item) =>
     item.servant_id === servant.id && item.service_date === position.slot.service_date
   ).length;
+  const currentWeekendAssignments = workloadCommitments.filter((item) =>
+    item.servant_id === servant.id &&
+    item.service_date !== position.slot.service_date &&
+    dateWeekStart(item.service_date) === dateWeekStart(position.slot.service_date)
+  ).length;
   const consecutiveWeekends = calculateConsecutiveWeekends(
     servant.id,
     position.slot.service_date,
@@ -471,6 +476,7 @@ function scoreCandidate(
     recent.length * 0.65 +
     recentDays * 1.4 +
     sameDayAssignments * 9 +
+    currentWeekendAssignments * 6 +
     consecutiveWeekends * 4 +
     roleExperiencePenalty +
     primaryRolePenalty +
@@ -878,6 +884,7 @@ export function optimizeMonthlyAssignments(
       const recentStart = dateMinusDays(month + "-01", 60);
       const recent = finalCommitments.filter((item) =>
         item.servant_id === servant.id &&
+        item.confirmation_status !== "declined" &&
         item.service_date >= recentStart &&
         item.service_date < month + "-01"
       );
