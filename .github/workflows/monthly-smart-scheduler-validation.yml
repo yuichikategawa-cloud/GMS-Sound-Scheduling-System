@@ -1,0 +1,46 @@
+name: Monthly Smart Scheduler validation
+
+on:
+  push:
+    branches:
+      - feat/monthly-smart-scheduler-engine
+    paths:
+      - "src/features/schedule/services/monthly*.ts"
+      - "tests/schedule/monthly*_test.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - ".github/workflows/monthly-smart-scheduler-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deno-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test monthly slot generation
+        run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
+      - name: Test monthly assignment optimizer
+        run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Type-check and build
+        run: npm run build
