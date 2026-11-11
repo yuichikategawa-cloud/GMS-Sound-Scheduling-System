@@ -1,6 +1,9 @@
 import {
   DAILY_ADMIN_MODEL_CALL_LIMIT,
+  DAILY_ADMIN_REQUEST_LIMIT,
   DAILY_GMS_MODEL_CALL_LIMIT,
+  DAILY_GMS_REQUEST_LIMIT,
+  readBoundedBody,
   extractModelText,
   validateSnapshot,
 } from "../src/index.ts";
@@ -86,10 +89,31 @@ Deno.test("Worker rejects service samples that exceed the prompt-size policy", (
 Deno.test("Worker hard-codes small daily inference budgets", () => {
   assert(DAILY_GMS_MODEL_CALL_LIMIT === 1, "GMS-wide model calls must be capped at one per UTC day.");
   assert(DAILY_ADMIN_MODEL_CALL_LIMIT === 1, "Each administrator must be capped at one model call per UTC day.");
+  assert(DAILY_GMS_REQUEST_LIMIT === 10, "GMS-wide Worker requests must be capped at ten per UTC day.");
+  assert(DAILY_ADMIN_REQUEST_LIMIT === 3, "Each administrator must be capped at three Worker requests per UTC day.");
 });
 
 Deno.test("Worker extracts supported plain-text responses only", () => {
   assert(extractModelText({ response: "Coverage is strong." }) === "Coverage is strong.", "Workers AI response objects should be supported.");
   assert(extractModelText({ choices: [{ message: { content: "Review one vacancy." } }] }) === "Review one vacancy.", "OpenAI-compatible response shapes should be supported.");
   assert(extractModelText({ response: 42 }) === "", "Unexpected response types should fail closed.");
+});
+
+
+Deno.test("Worker bounds request streams before JSON parsing", async () => {
+  const acceptedRequest = new Request("https://example.workers.dev/v1/explain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: '{"ok":true}',
+  });
+  const accepted = await readBoundedBody(acceptedRequest, 32);
+  assert(accepted === '{"ok":true}', "Bodies below the byte ceiling should be read.");
+
+  const rejectedRequest = new Request("https://example.workers.dev/v1/explain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "x".repeat(33),
+  });
+  const rejected = await readBoundedBody(rejectedRequest, 32);
+  assert(rejected === null, "Oversized request streams must be cancelled and rejected.");
 });
