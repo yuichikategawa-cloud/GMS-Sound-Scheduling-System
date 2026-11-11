@@ -61,6 +61,7 @@ function createLoaders(overrides: Record<string, unknown> = {}) {
         preferences: [{ id: "preference-1" }],
         deadline: "2026-11-07",
         optionalErrors: [],
+        generationErrors: [],
       };
     },
     loadServingRequestData: async (...args: unknown[]) => {
@@ -128,6 +129,7 @@ Deno.test("dashboard loading composes feature data and maps shared Schedule view
     "The active user's member profile must be selected from the optional directory.");
   assertEqual(result.notificationPrefs, { new_assignments: false },
     "A successful preference row must pass through unchanged.");
+  assertEqual(result.scheduleGenerationErrors, [], "Successful required scheduler input reads should leave generation ready.");
 });
 
 Deno.test("dashboard loading keeps optional-data warnings and empty fallbacks independent", async () => {
@@ -143,6 +145,7 @@ Deno.test("dashboard loading keeps optional-data warnings and empty fallbacks in
       preferences: [],
       deadline: "",
       optionalErrors: ["Recurring availability unavailable."],
+      generationErrors: ["Recurring availability unavailable."],
     }),
     loadServingRequestData: async () => ({
       requests: { data: null, error: optionalError },
@@ -176,6 +179,8 @@ Deno.test("dashboard loading keeps optional-data warnings and empty fallbacks in
   }, "Missing or failed preferences must retain all-enabled defaults.");
   assertEqual(result.optionalErrors.length, 8,
     "Dashboard must report every optional data failure, including Availability summaries.");
+  assertEqual(result.scheduleGenerationErrors, ["Recurring availability unavailable.", optionalError.message, optionalError.message],
+    "Monthly generation readiness must fail closed on critical Availability, template and pending-request reads.");
 });
 
 Deno.test("dashboard loading fails when a required Schedule or Servants query fails", async () => {
