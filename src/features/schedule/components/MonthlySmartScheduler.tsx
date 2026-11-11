@@ -213,6 +213,23 @@ export default function MonthlySmartScheduler({
     );
   }, [locations]);
 
+  useEffect(() => {
+    if (!selectedLocationIds.length) {
+      setSpecialServiceLocation("");
+      return;
+    }
+    if (!selectedLocationIds.includes(specialServiceLocation)) {
+      setSpecialServiceLocation(selectedLocationIds[0]);
+    }
+  }, [selectedLocationIds, specialServiceLocation]);
+
+  const specialServiceDateMax = useMemo(() => {
+    if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(month)) return undefined;
+    const [year, monthNumber] = month.split("-").map(Number);
+    const lastDay = new Date(year, monthNumber, 0).getDate();
+    return month + "-" + String(lastDay).padStart(2, "0");
+  }, [month]);
+
   const historicalRoster = useMemo(
     () => mapHistoricalRosterProfiles(servants),
     [servants],
@@ -616,7 +633,7 @@ export default function MonthlySmartScheduler({
         <div className="monthly-smart-special-fields">
           <label>
             <span>Service date</span>
-            <input type="date" value={specialServiceDate} min={month + "-01"} max={month ? month + "-31" : undefined} onChange={(event) => setSpecialServiceDate(event.target.value)}/>
+            <input type="date" value={specialServiceDate} min={month + "-01"} max={specialServiceDateMax} onChange={(event) => setSpecialServiceDate(event.target.value)}/>
           </label>
           <label>
             <span>Church</span>
