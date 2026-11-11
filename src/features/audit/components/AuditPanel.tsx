@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ClipboardCheck, Download } from "lucide-react";
+import { fmtDateTime } from "../../../shared/formatters";
 import "./AuditPanel.css";
 
 export default function AuditPanel({
@@ -40,7 +41,7 @@ export default function AuditPanel({
               <div>
                 <b>{log.action} · {log.table_name}</b>
                 <small>Record: {log.record_id}</small>
-                <small>{new Date(log.created_at).toLocaleString()}</small>
+                <small>{fmtDateTime(log.created_at)}</small>
               </div>
               <span>{log.actor_id ? "User " + String(log.actor_id).slice(0, 8) : "System"}</span>
             </div>)}
