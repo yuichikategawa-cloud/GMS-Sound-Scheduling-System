@@ -327,9 +327,8 @@ export default function MonthlySmartScheduler({
           <div className="monthly-smart-secondary-metrics">
             <span><b>{preview.result.lockedAssignmentCount}</b> preserved assignments</span>
             <span><b>{preview.result.generatedAssistantCount}</b> optional Assistants proposed</span>
-            <span><b>{preview.result.declinedAssignmentCount}</b> declined assignments preserved
             <span><b>{preview.result.skippedServiceCount}</b> services frozen or skipped</span>
-            <span><b>{preview.result.declinedAssignmentCount}</b> existing declined assignments preserved
+            <span><b>{preview.result.declinedAssignmentCount}</b> declined assignments preserved</span>
           </div>
 
           <div className="monthly-smart-section">
