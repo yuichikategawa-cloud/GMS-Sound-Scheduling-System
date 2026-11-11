@@ -145,7 +145,7 @@ export function buildAiSchedulingSnapshot(input: {
       );
 
     const allServices = churchSlots.map((slot) => {
-        const assignments = slot.assignments.map((assignment) => {
+        const assignments: AiSchedulingSnapshot["churches"][number]["services"][number]["assignments"] = slot.assignments.map((assignment) => {
           const workload = workloadById.get(assignment.servant_id);
           const servant = servantsById.get(assignment.servant_id);
           const isManual = Boolean(assignment.preview_manual);
