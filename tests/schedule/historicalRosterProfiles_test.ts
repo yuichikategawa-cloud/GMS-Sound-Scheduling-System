@@ -22,9 +22,23 @@ Deno.test("historical roster maps primary roles by normalized full name, not spr
   ]);
 
   assertEqual(result.profiles, [
-    { servant_id: "uuid-suluh", primary_role: "FOH" },
-    { servant_id: "uuid-frans", primary_role: "Assistant" },
-  ], "Names should normalize case and whitespace while servant active state remains untouched.");
+    {
+      servant_id: "uuid-suluh",
+      primary_role: "FOH",
+      role_counts: { FOH: 161, Monitor: 2, Assistant: 9 },
+      historical_assignments: 172,
+      historical_serving_days: 59,
+      history_as_of: "2026-11-01",
+    },
+    {
+      servant_id: "uuid-frans",
+      primary_role: "Assistant",
+      role_counts: { FOH: 0, Monitor: 11, Assistant: 74 },
+      historical_assignments: 85,
+      historical_serving_days: 31,
+      history_as_of: "2026-11-01",
+    },
+  ], "Names should normalize case and whitespace and carry historical role/workload counts without importing live active status.");
   assertEqual(result.matchedPrimaryRoleNames, ["Suluh Andrilla", "Fransiskus Adrian Lesmana"], "Primary-role roster entries should be mapped.");
 });
 
@@ -57,6 +71,8 @@ Deno.test("historical inactive color is not used to override current servant act
     servant("uuid-yoga", "Yoga", true),
   ]);
 
-  assertEqual(result.profiles.length, 0, "Names marked inactive in the workbook have no primary-role color.");
+  assertEqual(result.profiles.length, 1, "A name marked inactive in the workbook still maps to history when the live servant remains active.");
+  assertEqual(result.profiles[0].servant_id, "uuid-yoga", "The exact current servant identity should receive the historical profile.");
+  assertEqual(result.profiles[0].role_counts, { FOH: 28, Monitor: 7, Assistant: 9 }, "Historical assignments should be mapped even without a color-coded primary role.");
   assertEqual(result.autoAssignmentExcludedServantIds, [], "Historical inactive status must not be imported as a live hard block.");
 });
