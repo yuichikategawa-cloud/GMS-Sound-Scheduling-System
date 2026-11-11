@@ -451,6 +451,7 @@ function scoreCandidate(
 
 function unfilledReason(
   assignableServants: readonly Servant[],
+  allActiveServants: readonly Servant[],
   slot: MonthlyScheduleSlot,
   role: Role,
   baseCommitments: readonly AssignmentCommitment[],
@@ -460,6 +461,7 @@ function unfilledReason(
   if (slot.blocked_reason === "published") return "published_service";
   if (slot.blocked_reason === "pending_request") return "pending_request";
   if (slot.blocked_reason === "preexisting_conflict") return "preexisting_conflict";
+  if (!allActiveServants.length) return "no_active_servants";
   if (!assignableServants.length) return "no_auto_assignable_servants";
 
   const reasonCounts: Record<BlockReason, number> = {
@@ -483,12 +485,12 @@ function unfilledReason(
     }
   }
 
-  if (reasonCounts.unavailable === activeServants.length) return "unavailable";
-  if (reasonCounts.serving_preference === activeServants.length) return "serving_preference";
-  if (reasonCounts.cross_church === activeServants.length) return "cross_church_conflict";
-  if (reasonCounts.overlap === activeServants.length) return "overlapping_service";
+  if (reasonCounts.unavailable === assignableServants.length) return "unavailable";
+  if (reasonCounts.serving_preference === assignableServants.length) return "serving_preference";
+  if (reasonCounts.cross_church === assignableServants.length) return "cross_church_conflict";
+  if (reasonCounts.overlap === assignableServants.length) return "overlapping_service";
   if (
-    reasonCounts.serving_preference + reasonCounts.unavailable === activeServants.length &&
+    reasonCounts.serving_preference + reasonCounts.unavailable === assignableServants.length &&
     reasonCounts.serving_preference > 0
   ) return "serving_restriction";
 
@@ -679,6 +681,7 @@ export function optimizeMonthlyAssignments(
         required: chosen.position.required,
         reason: unfilledReason(
           activeServants,
+          allActiveServants,
           chosen.position.slot,
           chosen.position.role,
           currentCommitments,
