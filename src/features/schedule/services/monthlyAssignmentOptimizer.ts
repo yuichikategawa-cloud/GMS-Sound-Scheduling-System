@@ -334,10 +334,22 @@ function roleProfileFor(
   derivedRoleCounts: ReadonlyMap<string, Record<Role, number>>,
 ): MonthlyHistoricalServantProfile {
   const supplied = inputProfiles.get(servantId);
-  if (supplied) return supplied;
+  const roleCounts = supplied?.role_counts ??
+    derivedRoleCounts.get(servantId) ??
+    { FOH: 0, Monitor: 0, Assistant: 0 };
+  const primaryRole = supplied?.primary_role ??
+    ALL_ROLES
+      .filter((role) => (roleCounts[role] ?? 0) > 0)
+      .sort((first, second) =>
+        (roleCounts[second] ?? 0) - (roleCounts[first] ?? 0) ||
+        ALL_ROLES.indexOf(first) - ALL_ROLES.indexOf(second)
+      )[0] ??
+    null;
+
   return {
     servant_id: servantId,
-    role_counts: derivedRoleCounts.get(servantId) ?? { FOH: 0, Monitor: 0, Assistant: 0 },
+    primary_role: primaryRole,
+    role_counts: roleCounts,
   };
 }
 
