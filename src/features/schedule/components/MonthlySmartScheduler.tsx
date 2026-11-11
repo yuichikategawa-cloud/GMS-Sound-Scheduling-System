@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CalendarDays, CheckCircle2, Clock3, WandSparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type { AvailabilityRecord } from "../../availability/services/recurringAvailability";
 import type { ServingPreferenceRecord } from "../../availability/services/availabilityData";
@@ -149,8 +149,7 @@ export default function MonthlySmartScheduler({
     return [...ids];
   }, [requests]);
 
-  const hasPreferNotWarnings = Boolean(preview?.result.warnings.length);
-  const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
+    const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
   const canReview = !inputErrors.length && selectedLocationIds.length > 0 && Boolean(month);
 
   const generatePreview = () => {
