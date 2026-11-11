@@ -4,6 +4,17 @@
 
 BEGIN;
 
+-- Simulate an authenticated PostgREST caller pre-creating the names that the
+-- SECURITY DEFINER RPC uses for its private staging relations. The function
+-- must drop these session-owned objects and build its own trusted structures.
+SET LOCAL ROLE authenticated;
+CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_slots(attacker_payload text);
+CREATE TEMPORARY TABLE pg_temp.gms_monthly_expected_assignments(attacker_payload text);
+CREATE TEMPORARY TABLE pg_temp.gms_monthly_plan(attacker_payload text);
+CREATE TEMPORARY TABLE pg_temp.gms_monthly_created_slots(attacker_payload text);
+CREATE TEMPORARY TABLE pg_temp.gms_monthly_final_assignments(attacker_payload text);
+RESET ROLE;
+
 DO $monthly_schedule_plan_apply$
 DECLARE
   v_admin uuid;
