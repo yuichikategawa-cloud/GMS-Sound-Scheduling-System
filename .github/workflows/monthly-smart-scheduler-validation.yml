@@ -27,6 +27,7 @@ on:
       - "package-lock.json"
       - "tsconfig*.json"
       - ".github/workflows/monthly-smart-scheduler-validation.yml"
+      - ".github/workflows/phase-1-push-security-validation.yml"
 
 permissions:
   contents: read
