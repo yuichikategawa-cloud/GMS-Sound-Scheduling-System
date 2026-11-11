@@ -515,6 +515,11 @@ BEGIN
     PERFORM public.gms_lock_availability_servants(NULL, v_lock.servant_id);
   END LOOP;
 
+  -- Preference rows have no servant-scoped write trigger/advisory lock.
+  -- A short SHARE table lock prevents a concurrent allow-list change from
+  -- slipping between final preference validation and assignment insertion.
+  LOCK TABLE public.servant_serving_preferences IN SHARE MODE;
+
   -- Share-lock servant rows so a concurrent deactivation cannot pass the
   -- final eligibility check while this transaction is applying the plan.
   PERFORM s.id
