@@ -2,6 +2,7 @@ import { BarChart3, CalendarDays, Users, Plus, Download, Search, ChevronDown } f
 import "./ScheduleWorkspace.css";
 import type { Location, ScheduleView, Servant } from "../../../types";
 import type { ScheduleWorkspaceState } from "../hooks/useScheduleWorkspace";
+import type { MonthlyPlanApplyInput } from "../services/schedulePersistence";
 import { AssignmentOverview, BulkAssignmentCenter, ChurchBulkActions, GeneratePanel } from "./ScheduleManagementPanels";
 import { DailySummary, MyScheduleSummary, MyUpcomingAssignments } from "./ScheduleDisplayComponents";
 import MonthlySmartScheduler from "./MonthlySmartScheduler";
@@ -26,6 +27,7 @@ type ScheduleWorkspaceProps = {
   onUnpublishLocation: (locationId: string) => void;
   onDeleteLocationSchedules: (locationId: string) => void;
   onApplyBulkAssignments: (rows: any[]) => Promise<boolean>;
+  onApplyMonthlyPlan: (input: MonthlyPlanApplyInput) => Promise<boolean>;
   onEditSchedule: (schedule: ScheduleView) => void;
   onPublishSchedule: (schedule: ScheduleView) => void;
   onDeleteSchedule: (schedule: ScheduleView) => void;
@@ -42,7 +44,7 @@ export default function ScheduleWorkspace({
   workspace, isAdmin, schedules, requests, servants, availability, preferences,
   scheduleGenerationErrors, locations, templates, loading, myServant, onOpenNewSchedule,
   onAddLocation, onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
-  onDeleteLocationSchedules, onApplyBulkAssignments, onEditSchedule,
+  onDeleteLocationSchedules, onApplyBulkAssignments, onApplyMonthlyPlan, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
   onDeleteTemplate, onExportCsv, onExportScheduleHistory,
   onConfirmAssignment, onSubmitServingRequest
@@ -92,7 +94,7 @@ export default function ScheduleWorkspace({
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
             <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
-            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors}/>
+            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} onApplyPlan={onApplyMonthlyPlan}/>
             <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
           </section>
           <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "calendar"}>
