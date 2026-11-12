@@ -6,8 +6,10 @@ export type Servant = {
   full_name: string;
   active: boolean;
   auth_user_id: string | null;
-  /** Roles this servant is approved to fill; omitted legacy values are treated as all roles. */
+  /** Compatibility union of roles qualified at one or more church locations. */
   qualified_roles?: Role[];
+  /** Authoritative role permissions keyed by church location ID. An empty array means no role is allowed at that church. */
+  qualified_roles_by_location?: Record<string, Role[]>;
 };
 export type Schedule = {
   id: string; service_date: string; location_id: string; service_name: string;
