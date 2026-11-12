@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import "./App.css";
 import { useBrowserLifecycle } from "./app/hooks/useBrowserLifecycle";
@@ -20,10 +20,10 @@ import Sidebar from "./app/components/Sidebar";
 import MobileNavigation from "./app/components/MobileNavigation";
 import AppHeader from "./app/components/AppHeader";
 import AppLayout from "./app/components/AppLayout";
-import AuthScreen, { type AuthMode } from "./features/auth/components/AuthScreen";
-import PasswordRecoveryScreen from "./features/auth/components/PasswordRecoveryScreen";
-import SupabaseSetupScreen from "./features/auth/components/SupabaseSetupScreen";
-import MemberProfilePanel from "./features/auth/components/MemberProfilePanel";
+import type { AuthMode } from "./features/auth/components/AuthScreen";
+
+
+
 import { useAuthenticationActions } from "./features/auth/hooks/useAuthenticationActions";
 import { startAuthSessionLifecycle } from "./features/auth/services/sessionLifecycle";
 import { loadMemberAccountProfile } from "./features/auth/services/memberProfile";
@@ -32,30 +32,53 @@ import { useMemberProfileActions } from "./features/auth/hooks/useMemberProfileA
 
 
 import { useAvailabilityActions } from "./features/availability/hooks/useAvailabilityActions";
-import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";
+
 
 import { useServantActions } from "./features/servants/hooks/useServantActions";
-import AddServantDialog from "./features/servants/components/AddServantDialog";
+
 import { buildServantAccountCandidates } from "./features/servants/services/servantDirectory";
 
 
-import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";
+
 import { useNotificationActions } from "./features/notifications/hooks/useNotificationActions";
 import { usePushNotificationActions } from "./features/notifications/hooks/usePushNotificationActions";
 import { useRequestActions } from "./features/requests/hooks/useRequestActions";
-import ServantInformationPanel from "./features/servants/components/ServantInformationPanel";
-import ServantInbox from "./features/requests/components/ServantInbox";
-import RequestsPanel from "./features/requests/components/RequestsPanel";
-import AuditPanel from "./features/audit/components/AuditPanel";
+
+
+
+
 
 import { useAuditActions } from "./features/audit/hooks/useAuditActions";
-import StatisticsPanel from "./features/statistics/components/StatisticsPanel";
+
 import { useScheduleExportActions } from "./features/schedule/hooks/useScheduleExportActions";
 import { useScheduleActions } from "./features/schedule/hooks/useScheduleActions";
 import { useScheduleWorkspace } from "./features/schedule/hooks/useScheduleWorkspace";
-import ScheduleWorkspace from "./features/schedule/components/ScheduleWorkspace";
-import { DirectSwapModal, ScheduleModal } from "./features/schedule/components/ScheduleDialogs";
 
+
+
+
+
+const AuthScreen = lazy(() => import("./features/auth/components/AuthScreen"));
+const PasswordRecoveryScreen = lazy(() => import("./features/auth/components/PasswordRecoveryScreen"));
+const SupabaseSetupScreen = lazy(() => import("./features/auth/components/SupabaseSetupScreen"));
+const MemberProfilePanel = lazy(() => import("./features/auth/components/MemberProfilePanel"));
+const AvailabilityWorkspace = lazy(() => import("./features/availability/components/AvailabilityWorkspace"));
+const AddServantDialog = lazy(() => import("./features/servants/components/AddServantDialog"));
+const PushNotificationSettings = lazy(() => import("./features/notifications/components/PushNotificationSettings"));
+const ServantInformationPanel = lazy(() => import("./features/servants/components/ServantInformationPanel"));
+const ServantInbox = lazy(() => import("./features/requests/components/ServantInbox"));
+const RequestsPanel = lazy(() => import("./features/requests/components/RequestsPanel"));
+const AuditPanel = lazy(() => import("./features/audit/components/AuditPanel"));
+const StatisticsPanel = lazy(() => import("./features/statistics/components/StatisticsPanel"));
+const ScheduleWorkspace = lazy(() => import("./features/schedule/components/ScheduleWorkspace"));
+const ScheduleModal = lazy(async () => {
+  const dialogs = await import("./features/schedule/components/ScheduleDialogs");
+  return { default: dialogs.ScheduleModal };
+});
+const DirectSwapModal = lazy(async () => {
+  const dialogs = await import("./features/schedule/components/ScheduleDialogs");
+  return { default: dialogs.DirectSwapModal };
+});
 
 export default function App() {
   const [session,setSession] = useState<any>(null);
@@ -374,10 +397,10 @@ export default function App() {
   });
 
 
-  if(!isSupabaseConfigured)return <SupabaseSetupScreen/>;
+  if(!isSupabaseConfigured)return <Suspense fallback={<div className="center-screen"><GmsLoader label="Loading setup screen…"/></div>}><SupabaseSetupScreen/></Suspense>;
   if(authLoading)return <div className="center-screen"><GmsLoader label={authMode==="reset"?"Preparing secure password recovery…":"Preparing your workspace…"}/></div>;
-  if(recoveryMode && session)return <PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/>;
-  if(!session)return <AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={authenticationActions.submitAuth} onSendPasswordReset={authenticationActions.sendPasswordReset}/>;
+  if(recoveryMode && session)return <Suspense fallback={<div className="center-screen"><GmsLoader label="Loading password recovery…"/></div>}><PasswordRecoveryScreen loading={authLoading} message={message} onSubmit={authenticationActions.updateRecoveredPassword}/></Suspense>;
+  if(!session)return <Suspense fallback={<div className="center-screen"><GmsLoader label="Loading sign-in…"/></div>}><AuthScreen mode={authMode} loading={authLoading} message={message} signupCgStatus={signupCgStatus} onModeChange={setAuthMode} onSignupCgStatusChange={setSignupCgStatus} onClearMessage={()=>setMessage("")} onResetSignupCgStatus={()=>setSignupCgStatus("")} onSubmitAuth={authenticationActions.submitAuth} onSendPasswordReset={authenticationActions.sendPasswordReset}/></Suspense>;
   if(!profile)return profileError
     ? <div className="center-screen"><section className="auth-card" role="alert" aria-live="polite">
         <h2>We couldn't load your profile</h2><p className="subtle">{profileError}</p>
@@ -438,14 +461,17 @@ export default function App() {
       overlays={
         <>
           {actionDialog&&<ActionDialog dialog={actionDialog} inputValue={actionDialogInput} onInputChange={setActionDialogInput} onClose={closeActionDialog}/> }
+          <Suspense fallback={<div className="dialog-loading"><GmsLoader label="Loading dialog…"/></div>}>
     {modal==="schedule"&&<ScheduleModal locations={locations} servants={servants.filter(s=>s.active)} availability={availability} preferences={servingPreferences} schedules={schedules} editing={editing} onClose={()=>{setScheduleError("");setModal(null);setEditing(null);}} onSave={scheduleActions.saveSchedule} error={scheduleError}/>}
     {modal==="person"&&<AddServantDialog onClose={()=>setModal(null)} onSave={servantActions.savePerson}/>}
     {swapDraft&&<DirectSwapModal source={swapDraft} schedules={schedules} servantId={myServant?.id??""} onClose={()=>setSwapDraft(null)} onSubmit={requestActions.submitDirectSwap}/>}
+          </Suspense>
         </>
       }
     >
 
         {!isAdmin&&memberProfile?.last_verified_at&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner app-message-banner" role="status" aria-live="polite"><span>{message}</span><button className="icon-btn" aria-label="Dismiss message" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
+        <Suspense fallback={<div className="workspace-loading"><GmsLoader label="Loading workspace…"/></div>}>
         {tab==="schedule" ? <ScheduleWorkspace
           workspace={scheduleWorkspace} isAdmin={isAdmin} schedules={schedules}
           requests={requests} servants={servants} availability={availability}
@@ -471,6 +497,7 @@ export default function App() {
           onExportCsv={scheduleExportActions.exportCsv} onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}
           onConfirmAssignment={assignmentConfirmationActions.confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
         />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onSaveRoles={servantActions.saveServantRoles} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={statisticsSchedules} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={memberProfileActions.saveProfile}/>:null}
+        </Suspense>
       </AppLayout>
   );
 }
