@@ -107,6 +107,7 @@ function reasonLabel(reason: MonthlyUnfilledPosition["reason"]): string {
     cross_church_conflict: "Candidates already assigned at another church",
     consecutive_day_conflict: "Candidates served on the previous or next calendar day",
     daily_service_limit: "Candidates already have four services on this day",
+    service_sequence_gap: "Would create a gap in the servant’s numbered service sequence",
     overlapping_service: "Candidates have overlapping services",
     serving_restriction: "Availability and serving restrictions exclude candidates",
     no_eligible_candidate: "No eligible candidate remains",
