@@ -80,7 +80,7 @@ function createFakeClient(
             },
           };
         },
-        select: columns => {
+        select: (columns: "*") => {
           calls.select.push(columns);
           return {
             order: async (column: "full_name") => {
