@@ -60,21 +60,21 @@ function createFakeClient(
       calls.from.push(tableName);
       if (tableName === "servant_location_roles") {
         return {
-          select: columns => {
+          select: (columns: "*") => {
             calls.select.push(columns);
             return locationRoleRecordsResponse;
           },
         };
       }
       return {
-        insert: async values => {
+        insert: async (values: { full_name: string; active: true }) => {
           calls.insert.push(values);
           return response;
         },
-        update: values => {
+        update: (values: { active: boolean } | { qualified_roles: import("../../src/types.ts").Role[] }) => {
           calls.update.push(values);
           return {
-            eq: async (column, value) => {
+            eq: async (column: "id", value: string) => {
               calls.eq.push({ column, value });
               return response;
             },
@@ -83,7 +83,7 @@ function createFakeClient(
         select: columns => {
           calls.select.push(columns);
           return {
-            order: async column => {
+            order: async (column: "full_name") => {
               calls.order.push(column);
               return recordsResponse;
             },
