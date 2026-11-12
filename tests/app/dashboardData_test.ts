@@ -16,7 +16,10 @@ function assertSame(actual: unknown, expected: unknown, message: string): void {
 }
 
 const now = new Date("2026-11-06T12:00:00.000Z");
-const locations = [{ id: "location-1", name: "North Campus" }];
+const locations = [
+  { id: "location-1", name: "North Campus" },
+  { id: "location-2", name: "South Campus" },
+];
 const servants = [{ id: "servant-1", full_name: "Ada", active: true, auth_user_id: "user-1" }];
 const scheduleData = {
   locations: { data: locations, error: null },
@@ -52,6 +55,16 @@ function createLoaders(overrides: Record<string, unknown> = {}) {
     loadServantRecords: async (...args: unknown[]) => {
       calls.push({ loader: "servants", args });
       return { data: servants, error: null };
+    },
+    loadServantLocationRoleRecords: async (...args: unknown[]) => {
+      calls.push({ loader: "servant-location-roles", args });
+      return {
+        data: [
+          { servant_id: "servant-1", location_id: "location-1", role: "FOH" as const },
+          { servant_id: "servant-1", location_id: "location-2", role: "Monitor" as const },
+        ],
+        error: null,
+      };
     },
     loadAvailabilityWorkspaceData: async (...args: unknown[]) => {
       calls.push({ loader: "availability", args });
@@ -105,6 +118,7 @@ Deno.test("dashboard loading composes feature data and maps shared Schedule view
     "requests",
     "schedule",
     "servants",
+    "servant-location-roles",
   ], "Dashboard loading must call each feature data boundary.");
   assertEqual(calls.find(call => call.loader === "notifications")?.args.slice(1), [
     "2026-10-07T12:00:00.000Z",
@@ -114,6 +128,10 @@ Deno.test("dashboard loading composes feature data and maps shared Schedule view
     "2026-10-23T12:00:00.000Z",
     "Audit data must retain its 14-day cutoff.");
   assertEqual(result.locations, locations, "Dashboard must return required location data.");
+  assertEqual(result.servants[0].qualified_roles_by_location, {
+    "location-1": ["FOH"],
+    "location-2": ["Monitor"],
+  }, "The servant role map must hydrate church-specific qualification rows.");
   assertEqual(result.schedules[0], {
     ...scheduleData.schedules.data[0],
     location_name: "North Campus",
