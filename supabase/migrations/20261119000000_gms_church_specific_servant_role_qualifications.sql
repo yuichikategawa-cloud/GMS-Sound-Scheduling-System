@@ -195,6 +195,11 @@ CREATE TRIGGER gms_enforce_servant_location_role
   FOR EACH ROW
   EXECUTE FUNCTION public.gms_enforce_servant_location_role();
 
+-- The trigger invokes this SECURITY DEFINER function automatically; callers
+-- must not be able to invoke the helper directly.
+REVOKE ALL ON FUNCTION public.gms_enforce_servant_location_role()
+  FROM PUBLIC, anon, authenticated;
+
 COMMENT ON TABLE public.servant_location_roles IS
   'Administrator-managed sound role qualifications for each servant at each church location.';
 COMMENT ON FUNCTION public.gms_enforce_servant_location_role() IS
