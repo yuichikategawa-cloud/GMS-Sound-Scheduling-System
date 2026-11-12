@@ -43,6 +43,7 @@ on:
       - "supabase/migrations/20261111113446_gms_monthly_schedule_plan_apply.sql"
       - "supabase/migrations/20261111163911_gms_special_service_and_servant_role_qualifications.sql"
       - "supabase/migrations/20261112104554_gms_church_specific_servant_role_qualifications.sql"
+# Church-specific qualifications migration filename is kept in sync with the applied staging version.
       - "supabase/tests/monthly_schedule_plan_apply.sql"
       - "tests/app/dashboardData_test.ts"
       - "tests/app/dashboardState_test.ts"
