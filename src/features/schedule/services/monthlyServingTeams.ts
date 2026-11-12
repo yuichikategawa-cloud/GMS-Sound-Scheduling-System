@@ -176,7 +176,7 @@ export function buildMonthlyServingTeamGroups(input: {
     const first = sorted[0];
     const locationName = locationNames.get(first.location_id) ?? "";
     const weekNumber = weekNumberFor(first.service_date);
-    const sundaySlots = sorted.filter((slot) => new Date(slot.service_date + "T12:00:00").getDay() === 0);
+    const numberedServiceSlots = sorted;
     const saturdaySlots = sorted.filter((slot) => new Date(slot.service_date + "T12:00:00").getDay() === 6);
 
     if (normalizedName(locationName).includes("alam sutera") && saturdaySlots.length) {
@@ -204,7 +204,7 @@ export function buildMonthlyServingTeamGroups(input: {
     const definitions = serviceNumberGroups(pattern);
     if (!definitions.length) continue;
 
-    const numberedSlots = sundaySlots
+    const numberedSlots = numberedServiceSlots
       .map((slot) => ({ slot, number: serviceNumber(slot.service_name) }))
       .filter((item): item is { slot: MonthlyScheduleSlot; number: number } => item.number !== null);
     for (let index = 0; index < definitions.length; index += 1) {
@@ -286,6 +286,10 @@ export function applyMonthlyServingTeamAssignments(input: {
           .map((assignment) => ({ slot, assignment }))
       );
       const fixedIds = [...new Set(currentAssignments.map((item) => item.assignment.servant_id))];
+      if (currentAssignments.some((item) => item.assignment.confirmation_status === "declined")) {
+        warnings.push(group.label + " · " + role + ": a servant declined this role in the team. Existing assignments were preserved and the role was not shared automatically.");
+        continue;
+      }
       if (fixedIds.length > 1) {
         warnings.push(group.label + " · " + role + ": existing or manually selected servants differ. Those assignments were preserved; the role remains individually assigned for this team.");
         continue;
@@ -318,7 +322,7 @@ export function applyMonthlyServingTeamAssignments(input: {
       const eligibleCandidates = [...candidateIds]
         .map((id) => servantById.get(id))
         .filter((servant): servant is NonNullable<typeof servant> => Boolean(servant) && servant!.active === true)
-        .filter((servant) => missingSlots.every((slot) =>
+        .filter((servant) => groupSlots.every((slot) =>
           getMonthlyAssignmentCandidates(candidateInput, slot, role).some((candidate) => candidate.id === servant.id)
         ));
 
