@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Church, Pencil, Trash2, X, ChevronDown, AlertTriangle, Info, EyeOff, Send, CheckCircle2, CalendarDays } from "lucide-react";
-import type { Location, ScheduleView, Servant } from "../../../types";
+import type { Location, Role, ScheduleView, Servant } from "../../../types";
 import { today, fmtDate, shortTime } from "../../../shared/formatters";
 import { ROLES } from "../constants";
 
