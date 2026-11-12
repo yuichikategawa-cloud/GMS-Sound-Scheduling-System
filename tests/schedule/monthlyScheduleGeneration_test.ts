@@ -243,3 +243,28 @@ Deno.test("monthly generation does not mutate templates, schedules or request ID
   buildMonthlyScheduleSlots(input);
   assertEqual(JSON.stringify(input), before, "The builder must not mutate its source collections.");
 });
+
+
+Deno.test("monthly generation includes a complete seven-service Christmas lineup as separate one-off slots", () => {
+  const lineup = Array.from({ length: 7 }, (_, index) => ({
+    service_date: "2026-12-25",
+    location_id: "loc-as",
+    service_name: "Christmas Special Service - Service " + (index + 1),
+    start_time: String(7 + index * 2).padStart(2, "0") + ":00",
+    end_time: String(9 + index * 2).padStart(2, "0") + ":00",
+  }));
+  const result = buildMonthlyScheduleSlots({
+    month: "2026-12",
+    locationIds: ["loc-as"],
+    templates,
+    existingSchedules: [],
+    specialServices: lineup,
+  });
+
+  if (!result.ok) throw new Error("A complete Christmas service lineup should be accepted.");
+  const christmas = result.slots.filter((slot) => slot.service_date === "2026-12-25");
+  assertEqual(christmas.length, 7, "All seven special services should be created as separate preview slots.");
+  assertEqual(christmas.map((slot) => slot.service_name), lineup.map((service) => service.service_name), "The generated lineup should keep the numbered service names.");
+  assertEqual(christmas.map((slot) => [slot.start_time, slot.end_time]), lineup.map((service) => [service.start_time, service.end_time]), "The generated lineup should preserve each service's template time.");
+  assertEqual(christmas.every((slot) => slot.template_id === null && slot.status === "new_special"), true, "The lineup should consist of one-off special services without creating recurring templates.");
+});
