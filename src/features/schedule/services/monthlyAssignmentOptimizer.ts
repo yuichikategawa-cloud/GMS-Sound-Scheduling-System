@@ -297,10 +297,17 @@ function availabilityStatus(
   return "unknown";
 }
 
-function isRoleQualified(servant: Servant, role: Role): boolean {
-  const qualified = servant.qualified_roles;
-  // Missing values in legacy data preserve the historical all-role behavior.
-  return !Array.isArray(qualified) || qualified.includes(role);
+function isRoleQualified(servant: Servant, role: Role, locationId: string): boolean {
+  const byLocation = servant.qualified_roles_by_location;
+  if (byLocation) {
+    // An explicit empty/missing church entry is a hard "not qualified" result.
+    const qualifiedAtLocation = byLocation[locationId];
+    return Array.isArray(qualifiedAtLocation) && qualifiedAtLocation.includes(role);
+  }
+  const legacyRoles = servant.qualified_roles;
+  // Preserve the old global behavior only for legacy/test inputs that have not
+  // been hydrated with the church-specific role matrix.
+  return !Array.isArray(legacyRoles) || legacyRoles.includes(role);
 }
 
 function getBlockReasons(
@@ -313,7 +320,7 @@ function getBlockReasons(
 ): BlockReason[] {
   const reasons: BlockReason[] = [];
   if (servant.active !== true) reasons.push("inactive");
-  if (role && !isRoleQualified(servant, role)) reasons.push("role_not_qualified");
+  if (role && !isRoleQualified(servant, role, slot.location_id)) reasons.push("role_not_qualified");
 
   if (availabilityStatus(servant.id, slot.service_date, availability) === "unavailable") {
     reasons.push("unavailable");
@@ -675,7 +682,7 @@ export function optimizeMonthlyAssignments(
         input.availability,
         input.preferences,
       );
-      if (!isRoleQualified(servant, assignment.role)) {
+      if (!isRoleQualified(servant, assignment.role, slot.location_id)) {
         conflicts.push(assignment.servant_name + " is not currently qualified for " + assignment.role + ".");
       }
       if (reasons.length) {
@@ -789,7 +796,7 @@ export function optimizeMonthlyAssignments(
         input.availability,
         input.preferences,
       ).length) continue;
-      if (![...roles].some((role) => isRoleQualified(servant, role))) continue;
+      if (![...roles].some((role) => isRoleQualified(servant, role, slot.location_id))) continue;
       addOpportunity(servant.id, slotKey);
     }
   }
