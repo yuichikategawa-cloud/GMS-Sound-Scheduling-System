@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, WandSparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type { AvailabilityRecord } from "../../availability/services/recurringAvailability";
 import type { ServingPreferenceRecord } from "../../availability/services/availabilityData";
@@ -681,17 +681,19 @@ export default function MonthlySmartScheduler({
 
   return (
     <section className="monthly-smart-scheduler">
-      <div className="monthly-smart-header">
-        <div className="monthly-smart-title">
-          <span className="monthly-smart-icon"><WandSparkles size={18}/></span>
-          <div>
-            <h2>Monthly Smart Scheduler</h2>
-            <p>Generate a balanced proposal from the active weekend templates, availability and serving history.</p>
+      <details className="monthly-smart-disclosure" open>
+        <summary className="monthly-smart-header monthly-smart-disclosure-summary">
+          <div className="monthly-smart-title">
+            <span className="monthly-smart-icon"><WandSparkles size={18}/></span>
+            <div>
+              <h2>Monthly Smart Scheduler</h2>
+              <p>Generate a balanced proposal from the active weekend templates, availability and serving history.</p>
+            </div>
           </div>
-        </div>
-        <span className="monthly-smart-admin-only">Admin planning tool</span>
-      </div>
-
+          <span className="monthly-smart-admin-only">Admin planning tool</span>
+          <ChevronDown className="monthly-smart-collapse-icon" size={19} aria-hidden="true"/>
+        </summary>
+        <div className="monthly-smart-content">
       {inputErrors.length > 0 && (
         <div className="monthly-smart-alert is-blocking" role="alert">
           <AlertTriangle size={16}/>
@@ -1085,6 +1087,8 @@ export default function MonthlySmartScheduler({
           </button>
         </div>
       )}
+        </div>
+      </details>
     </section>
   );
 }
