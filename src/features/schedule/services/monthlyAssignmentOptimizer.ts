@@ -37,6 +37,8 @@ export type MonthlyUnfilledPositionReason =
   | "unavailable"
   | "serving_preference"
   | "cross_church_conflict"
+  | "consecutive_day_conflict"
+  | "daily_service_limit"
   | "overlapping_service"
   | "serving_restriction"
   | "no_eligible_candidate"
@@ -135,9 +137,12 @@ type BlockReason =
   | "already_in_service"
   | "cross_church"
   | "overlap"
+  | "consecutive_day"
+  | "daily_service_limit"
   | "role_not_qualified";
 
 const REQUIRED_ROLES: Role[] = ["FOH", "Monitor"];
+const MAX_SERVICES_PER_DAY = 4;
 const ALL_ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
 function dateMinusDays(date: string, days: number): string {
@@ -310,6 +315,12 @@ function isRoleQualified(servant: Servant, role: Role, locationId: string): bool
   return !Array.isArray(legacyRoles) || legacyRoles.includes(role);
 }
 
+function commitmentServiceKey(commitment: AssignmentCommitment): string {
+  return commitment.schedule_id
+    ? "schedule:" + commitment.schedule_id
+    : "slot:" + commitment.slot_key;
+}
+
 function getBlockReasons(
   servant: Servant,
   slot: MonthlyScheduleSlot,
@@ -328,6 +339,33 @@ function getBlockReasons(
 
   if (hasPreferenceRestriction(servant.id, slot, preferences)) {
     reasons.push("serving_preference");
+  }
+
+  const previousDay = dateMinusDays(slot.service_date, 1);
+  const nextDay = dateMinusDays(slot.service_date, -1);
+  const servedOnAdjacentDay = commitments.some((commitment) =>
+    commitment.servant_id === servant.id &&
+    commitment.confirmation_status !== "declined" &&
+    (commitment.service_date === previousDay || commitment.service_date === nextDay)
+  );
+  if (servedOnAdjacentDay) reasons.push("consecutive_day");
+
+  const sameDayServiceKeys = new Set(
+    commitments
+      .filter((commitment) =>
+        commitment.servant_id === servant.id &&
+        commitment.service_date === slot.service_date &&
+        commitment.confirmation_status !== "declined"
+      )
+      .map(commitmentServiceKey),
+  );
+  if (
+    !sameDayServiceKeys.has(
+      slot.schedule_id ? "schedule:" + slot.schedule_id : "slot:" + slot.key
+    ) &&
+    sameDayServiceKeys.size >= MAX_SERVICES_PER_DAY
+  ) {
+    reasons.push("daily_service_limit");
   }
 
   for (const commitment of commitments) {
@@ -526,6 +564,8 @@ function unfilledReason(
     already_in_service: 0,
     cross_church: 0,
     overlap: 0,
+    consecutive_day: 0,
+    daily_service_limit: 0,
     role_not_qualified: 0,
   };
 
@@ -546,6 +586,8 @@ function unfilledReason(
   if (reasonCounts.unavailable === assignableServants.length) return "unavailable";
   if (reasonCounts.serving_preference === assignableServants.length) return "serving_preference";
   if (reasonCounts.cross_church === assignableServants.length) return "cross_church_conflict";
+  if (reasonCounts.consecutive_day === assignableServants.length) return "consecutive_day_conflict";
+  if (reasonCounts.daily_service_limit === assignableServants.length) return "daily_service_limit";
   if (reasonCounts.overlap === assignableServants.length) return "overlapping_service";
   if (
     reasonCounts.serving_preference + reasonCounts.unavailable === assignableServants.length &&
