@@ -18,4 +18,4 @@ new_sqlite_classes = ["AiBudgetGuard"]
 
 # Leave disabled until the Cloudflare account is confirmed to be on Workers Free.
 [vars]
-GMS_AI_ENABLED = "false"
+GMS_AI_ENABLED = "true"
