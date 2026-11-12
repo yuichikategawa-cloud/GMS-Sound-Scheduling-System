@@ -4,11 +4,14 @@ import {
   createServantRecord,
   linkServantAccountRecord,
   loadServantRecords,
+  loadServantLocationRoleRecords,
+  setServantLocationRoles,
   setServantActive,
   setServantQualifiedRoles,
   type ServantManagementClient,
   type ServantManagementResponse,
   type ServantRecordsResponse,
+  type ServantLocationRoleRecordsResponse,
 } from "../../src/features/servants/services/servantManagement.ts";
 import type { Servant } from "../../src/types.ts";
 
@@ -37,6 +40,7 @@ interface RecordedCalls {
 function createFakeClient(
   response: ServantManagementResponse = { error: null },
   recordsResponse: ServantRecordsResponse = { data: [], error: null },
+  locationRoleRecordsResponse: ServantLocationRoleRecordsResponse = { data: [], error: null },
 ): {
   client: ServantManagementClient;
   calls: RecordedCalls;
@@ -54,6 +58,14 @@ function createFakeClient(
   const client: ServantManagementClient = {
     from(tableName) {
       calls.from.push(tableName);
+      if (tableName === "servant_location_roles") {
+        return {
+          select: columns => {
+            calls.select.push(columns);
+            return locationRoleRecordsResponse;
+          },
+        };
+      }
       return {
         insert: async values => {
           calls.insert.push(values);
@@ -87,6 +99,42 @@ function createFakeClient(
 
   return { client, calls };
 }
+
+Deno.test("servant management loads church-specific role permission rows", async () => {
+  const roleRows = [
+    { servant_id: "servant-1", location_id: "karawaci", role: "FOH" as const },
+    { servant_id: "servant-1", location_id: "alam", role: "Monitor" as const },
+  ];
+  const response = { data: roleRows, error: null };
+  const { client, calls } = createFakeClient({ error: null }, { data: [], error: null }, response);
+  const result = await loadServantLocationRoleRecords(client);
+
+  assertEqual(calls.from, ["servant_location_roles"], "Church qualifications must load from the normalized permission table.");
+  assertEqual(calls.select, ["*"], "The loader must retrieve the complete permission rows.");
+  assertSame(result, response, "Permission records and database errors must pass through unchanged.");
+});
+
+Deno.test("servant management replaces a complete deduplicated church role matrix through the guarded admin RPC", async () => {
+  const { client, calls } = createFakeClient();
+  await setServantLocationRoles(client, "servant-123", {
+    karawaci: ["FOH", "FOH"],
+    alam: ["Monitor"],
+    bsd: [],
+  });
+
+  assertEqual(calls.rpc, [{
+    functionName: "admin_set_servant_location_roles",
+    args: {
+      p_servant_id: "servant-123",
+      p_roles_by_location: {
+        karawaci: ["FOH"],
+        alam: ["Monitor"],
+        bsd: [],
+      },
+    },
+  }], "The admin RPC must receive the full church matrix with duplicate roles removed.");
+  assertEqual(calls.from, [], "The role matrix must be saved transactionally through its admin RPC.");
+});
 
 Deno.test("servant management loads all servant columns ordered by full name", async () => {
   const servantRows: Servant[] = [
