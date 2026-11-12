@@ -947,3 +947,92 @@ Deno.test("declined assignments do not count toward consecutive-day or daily ser
     "Declined service assignments are not actual service commitments and must not block eligibility.",
   );
 });
+
+
+Deno.test("monthly optimizer allows a fourth consecutive service but blocks returning after a skipped service", () => {
+  const abe = createServant("abe");
+  const firstThree = [1, 2, 3].map((number) =>
+    createSchedule(
+      "christmas-" + number,
+      "2026-12-25",
+      "loc-as",
+      "Christmas Special Service - Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: abe.id }],
+    )
+  );
+  const fourth = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 4",
+    "13:00",
+    "15:00",
+  );
+  const fifth = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 5",
+    "15:00",
+    "17:00",
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fourth], [abe]), schedules: firstThree },
+      fourth,
+      "FOH",
+    ).map((servant) => servant.id),
+    [abe.id],
+    "A servant who served Services 1–3 may continue with Service 4 as one uninterrupted block.",
+  );
+
+  const serviceFourTaken = createSchedule(
+    "christmas-4-taken",
+    "2026-12-25",
+    "loc-as",
+    "Christmas Special Service - Service 4",
+    "13:00",
+    "15:00",
+    [{ role: "FOH", servant_id: "another-servant" }],
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fifth], [abe]), schedules: [...firstThree, serviceFourTaken] },
+      fifth,
+      "FOH",
+    ),
+    [],
+    "A servant assigned to Services 1–3 cannot return for Service 5 after being skipped for Service 4, even though the daily cap is not reached.",
+  );
+});
+
+Deno.test("monthly optimizer explains when a numbered service would split a servant's continuous block", () => {
+  const abe = createServant("abe");
+  const target = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 5",
+    "15:00",
+    "17:00",
+  );
+  const priorServices = [1, 2, 3, 4].map((number) =>
+    createSchedule(
+      "christmas-sequence-" + number,
+      "2026-12-25",
+      "loc-as",
+      "Christmas Special Service - Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: number === 4 ? "another-servant" : abe.id }],
+    )
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [abe]),
+    schedules: priorServices,
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map((position) => position.reason),
+    ["service_sequence_gap", "service_sequence_gap"],
+    "The preview should explain that the remaining roles cannot be assigned by skipping Service 4 and returning at Service 5.",
+  );
+});
