@@ -1,11 +1,17 @@
+import { lazy, Suspense } from "react";
 import { BarChart3, CalendarDays, Users, Plus, Download, Search, ChevronDown } from "lucide-react";
 import "./ScheduleWorkspace.css";
 import type { Location, ScheduleView, Servant } from "../../../types";
 import type { ScheduleWorkspaceState } from "../hooks/useScheduleWorkspace";
 import type { MonthlyPlanApplyInput } from "../services/schedulePersistence";
-import { AssignmentOverview, BulkAssignmentCenter, ChurchBulkActions, GeneratePanel } from "./ScheduleManagementPanels";
-import { DailySummary, MyScheduleSummary, MyUpcomingAssignments } from "./ScheduleDisplayComponents";
-import MonthlySmartScheduler from "./MonthlySmartScheduler";
+const AssignmentOverview = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.AssignmentOverview })));
+const BulkAssignmentCenter = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.BulkAssignmentCenter })));
+const ChurchBulkActions = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.ChurchBulkActions })));
+const GeneratePanel = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.GeneratePanel })));
+const DailySummary = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.DailySummary })));
+const MyScheduleSummary = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.MyScheduleSummary })));
+const MyUpcomingAssignments = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.MyUpcomingAssignments })));
+const MonthlySmartScheduler = lazy(() => import("./MonthlySmartScheduler"));
 
 type ScheduleWorkspaceProps = {
   workspace: ScheduleWorkspaceState;
@@ -71,6 +77,7 @@ export default function ScheduleWorkspace({
   };
 
   return (
+    <Suspense fallback={<div className="workspace-loading"><span className="spinner" aria-hidden="true"/>Loading schedule tools…</div>}>
     <>
       {!isAdmin && <MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id ?? ""}/>}
       {!isAdmin && <MyUpcomingAssignments items={myUpcomingSchedules} servantId={myServant?.id ?? ""} onConfirm={onConfirmAssignment} onRequest={onSubmitServingRequest}/>}
@@ -82,10 +89,10 @@ export default function ScheduleWorkspace({
             <button type="button" role="tab" aria-selected={adminScheduleView === "assignments"} className={adminScheduleView === "assignments" ? "selected" : ""} onClick={() => setAdminScheduleView("assignments")}><Users size={16}/> Assignments</button>
             <button type="button" role="tab" aria-selected={adminScheduleView === "calendar"} className={adminScheduleView === "calendar" ? "selected" : ""} onClick={() => setAdminScheduleView("calendar")}><CalendarDays size={16}/> Calendar</button>
           </div>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "overview"}>
+          {adminScheduleView === "overview" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule overview">
             <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability}/>
-          </section>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "assignments"}>
+          </section>}
+          {adminScheduleView === "assignments" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Assignment management">
             <div className="toolbar assignment-workspace-heading">
               <div><h2>Assignment management</h2><p className="subtle">Create services, manage church-wide actions and assign servants across multiple services.</p></div>
               <div className="toolbar-actions assignment-management-actions">
@@ -98,8 +105,8 @@ export default function ScheduleWorkspace({
             <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
             <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
             <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
-          </section>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "calendar"}>
+          </section>}
+          {adminScheduleView === "calendar" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule calendar">
             <div className="toolbar calendar-workspace-heading">
               <div><h2>Schedule calendar</h2><p className="subtle">Browse the daily schedule by church. Use Assignments to edit, publish or remove individual services.</p></div>
               <div className="toolbar-actions">
@@ -123,7 +130,7 @@ export default function ScheduleWorkspace({
               <summary><span><b>{calendarView === "week" ? "Weekly calendar" : "Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
               {calendarSections.length > 0 ? calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={isAdmin}/>)}</div></section>) : <div className="empty-state"><b>No published schedules match these filters.</b><p>Draft and unpublished schedules remain available in Assignment management.</p></div>}
             </details>
-          </section>
+          </section>}
         </>
       ) : (
         <>
@@ -151,5 +158,6 @@ export default function ScheduleWorkspace({
         </>
       )}
     </>
+    </Suspense>
   );
 }
