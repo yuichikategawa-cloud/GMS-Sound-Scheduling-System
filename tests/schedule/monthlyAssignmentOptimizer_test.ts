@@ -670,3 +670,68 @@ Deno.test("monthly optimizer is deterministic and does not mutate its inputs", (
   assertEqual(JSON.stringify(input), before, "Optimizer inputs must not be mutated.");
   assertEqual(first, second, "The same inputs must produce the same plan.");
 });
+
+
+Deno.test("monthly optimizer applies church-specific qualifications instead of the compatibility role union", () => {
+  const timothy: Servant = {
+    ...createServant("timothy"),
+    qualified_roles: ["FOH", "Monitor"],
+    qualified_roles_by_location: {
+      "loc-karawaci": ["FOH"],
+      "loc-as": ["Monitor"],
+      "loc-bsd": [],
+    },
+  };
+
+  const karawaci = createSlot("2026-11-08", "Service 1", "09:00", "11:00", [], "loc-karawaci");
+  const alamMonitor = createSlot("2026-11-15", "Service 1", "09:00", "11:00", [], "loc-as");
+  const bsd = createSlot("2026-11-22", "Service 1", "09:00", "11:00", [], "loc-bsd");
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([karawaci], [timothy]), karawaci, "FOH").map(item => item.id),
+    ["timothy"],
+    "Timothy should be an FOH candidate at GMS Karawaci.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([alamMonitor], [timothy]), alamMonitor, "Monitor").map(item => item.id),
+    ["timothy"],
+    "Timothy should be a Monitor candidate at GMS Alam Sutera.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([alamMonitor], [timothy]), alamMonitor, "FOH"),
+    [],
+    "Timothy must not be offered as FOH at GMS Alam Sutera.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([karawaci], [timothy]), karawaci, "Monitor"),
+    [],
+    "Timothy must not be offered as Monitor at GMS Karawaci.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([bsd], [timothy]), bsd, "FOH"),
+    [],
+    "An explicit empty role list must make Timothy ineligible at GMS BSD despite the compatibility union.",
+  );
+});
+
+Deno.test("monthly optimizer leaves a church role unfilled when a servant is not qualified at that location", () => {
+  const timothy: Servant = {
+    ...createServant("timothy"),
+    qualified_roles: ["FOH", "Monitor"],
+    qualified_roles_by_location: {
+      "loc-karawaci": ["FOH"],
+      "loc-as": ["Monitor"],
+      "loc-bsd": [],
+    },
+  };
+  const bsd = createSlot("2026-11-22", "Service 1", "09:00", "11:00", [], "loc-bsd");
+  const result = optimizeMonthlyAssignments(baseInput([bsd], [timothy]));
+
+  if (!result.ok) throw new Error("Expected a valid partial preview.");
+  assertEqual(result.assignments, [], "No role should be assigned at a church where the servant has no qualification.");
+  assertEqual(
+    result.unfilledPositions.map(item => [item.role, item.reason]),
+    [["FOH", "role_not_qualified"], ["Monitor", "role_not_qualified"]],
+    "The preview should explain the location-specific qualification gap.",
+  );
+});
