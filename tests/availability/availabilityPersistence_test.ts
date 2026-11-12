@@ -100,7 +100,9 @@ const recurringRule: AvailabilityRulePayload = {
   effective_until: null,
   weekday: 6,
   ordinal: 2,
-  notes: "Weekly restriction",
+  weekdays: [1, 3],
+  interval_weeks: 2,
+  notes: "Custom weekly restriction",
 };
 
 const servingPreference: ServingPreferencePayload = {
