@@ -149,10 +149,11 @@ export function buildAiSchedulingSnapshot(input: {
           const workload = workloadById.get(assignment.servant_id);
           const servant = servantsById.get(assignment.servant_id);
           const isManual = Boolean(assignment.preview_manual);
+          const isTeamProposal = Boolean(assignment.preview_team);
           return {
             servant: servantLabels.get(assignment.servant_id) ?? "Unlisted servant",
             role: assignment.role,
-            source: isManual ? "manual_preview" as const : "existing" as const,
+            source: isManual ? "manual_preview" as const : isTeamProposal ? "proposed" as const : "existing" as const,
             qualifiedRoles: servant?.qualified_roles ?? ROLES,
             availability: getAvailability(assignment.servant_id, slot.service_date),
             totalAssignments: workload?.total_assignments ?? 0,
