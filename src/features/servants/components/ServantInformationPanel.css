@@ -390,3 +390,136 @@
 .servant-role-empty-warning{display:block;margin-bottom:10px;color:#b54708;font-size:11px}
 :root[data-theme="dark"] .servant-role-qualification{background:#19283e;border-color:#405571}
 :root[data-theme="dark"] .servant-role-qualification-options label{background:#142136;border-color:#405571;color:#edf2fa}
+
+
+/* Sound role qualifications are a dedicated full-width section below the
+   three information columns, not an orphaned fourth grid cell. */
+.servant-record-detail>.servant-role-qualification{
+  grid-column:1 / -1;
+  display:grid;
+  gap:13px;
+  min-width:0;
+  padding:16px 18px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:12px;
+  background:var(--surface-muted,#f7f9fc);
+}
+.servant-role-qualification-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.servant-role-qualification-heading>div{min-width:0}
+.servant-role-qualification-eyebrow{
+  display:block;
+  margin-bottom:4px;
+  color:var(--accent-hover,#5968c9);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.servant-role-qualification h4{margin:0 0 4px;font-size:13px}
+.servant-role-qualification>p,
+.servant-role-qualification-heading p{
+  margin:0;
+  color:var(--text-muted,#667085);
+  font-size:11px;
+  line-height:1.45;
+}
+.servant-role-qualification-count{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:999px;
+  background:var(--surface,#fff);
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  font-weight:700;
+}
+.servant-role-qualification-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.servant-role-qualification-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0;
+}
+.servant-role-qualification-options label{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:7px 13px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:9px;
+  background:var(--surface,#fff);
+  color:var(--text-secondary,#475467);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.servant-role-qualification-options label.is-selected{
+  border-color:var(--accent,#6673d3);
+  background:var(--accent-soft,#eef0ff);
+  color:var(--accent-hover,#4d56ad);
+}
+.servant-role-qualification-options input{
+  width:14px;
+  height:14px;
+  margin:0;
+  accent-color:var(--accent,#5968c9);
+}
+.servant-role-qualification-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-left:auto;
+}
+.servant-role-empty-warning{
+  max-width:300px;
+  margin:0;
+  color:var(--status-warning-text,#9a5b12);
+  font-size:10px;
+  line-height:1.4;
+}
+.servant-role-readonly-list{display:flex;flex-wrap:wrap;gap:7px}
+.servant-role-readonly-list span{
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--accent-soft,#eef0ff);
+  color:var(--accent-hover,#4d56ad);
+  font-size:11px;
+  font-weight:700;
+}
+:root[data-theme="dark"] .servant-record-detail>.servant-role-qualification{
+  background:#19283e;border-color:#405571
+}
+:root[data-theme="dark"] .servant-role-qualification-count{
+  background:#142136;border-color:#405571;color:#d3dbea
+}
+:root[data-theme="dark"] .servant-role-qualification-options label{
+  background:#142136;border-color:#405571;color:#edf2fa
+}
+:root[data-theme="dark"] .servant-role-qualification-options label.is-selected{
+  background:#29375d;border-color:#7887e0;color:#dce2ff
+}
+:root[data-theme="dark"] .servant-role-readonly-list span{
+  background:#29375d;color:#dce2ff
+}
+@media(max-width:600px){
+  .servant-role-qualification{padding:13px}
+  .servant-role-qualification-heading{align-items:flex-start;flex-direction:column}
+  .servant-role-qualification-controls{align-items:flex-start;flex-direction:column}
+  .servant-role-qualification-options{width:100%}
+  .servant-role-qualification-options label{flex:1 1 auto;justify-content:center}
+  .servant-role-qualification-actions{width:100%;justify-content:space-between;margin:0}
+}
