@@ -71,6 +71,25 @@ Deno.test("Worker validates the allowlisted, anonymized scheduling snapshot", ()
   assert(validated?.churches[0].services[0].assignments[0].servant === "Servant 1", "Anonymous servant labels should be retained.");
 });
 
+
+Deno.test("Worker accepts the latest hard-constraint vacancy reasons from the scheduler", () => {
+  const reasons = [
+    "consecutive_day_conflict",
+    "daily_service_limit",
+    "service_sequence_gap",
+  ];
+
+  for (const reason of reasons) {
+    const snapshot = structuredClone(validSnapshot) as typeof validSnapshot;
+    snapshot.churches[0].vacancySummary[0].reason = reason;
+    snapshot.churches[0].services[0].vacancies[0].reason = reason;
+    assert(
+      validateSnapshot(snapshot) !== null,
+      "The Worker must accept the current scheduler vacancy reason: " + reason,
+    );
+  }
+});
+
 Deno.test("Worker rejects direct servant names and arbitrary user-entered text", () => {
   const invalid = structuredClone(validSnapshot) as typeof validSnapshot;
   invalid.churches[0].services[0].assignments[0].servant = "Jane Doe";
