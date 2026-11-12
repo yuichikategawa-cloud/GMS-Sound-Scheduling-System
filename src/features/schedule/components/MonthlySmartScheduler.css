@@ -581,7 +581,7 @@
 :root[data-theme="dark"] .monthly-smart-secondary-metrics,
 :root[data-theme="dark"] .monthly-smart-table td>small,
 :root[data-theme="dark"] .monthly-smart-workload-table td>small,
-:root[data-theme="dark"] .monthly-smart-role-value.is-locked>small,
+:root[data-theme="dark"] .monthly-role-value.is-locked>small,
 :root[data-theme="dark"] .monthly-role-value.is-optional>small,
 :root[data-theme="dark"] .monthly-smart-church-heading span,
 :root[data-theme="dark"] .monthly-smart-special-heading p,
@@ -599,7 +599,7 @@
 :root[data-theme="dark"] .monthly-smart-ai-result>small,
 :root[data-theme="dark"] .monthly-smart-rule-summary b,
 :root[data-theme="dark"] .monthly-smart-lock-label{
-  color:var(--text-secondary,#b5c1d5)!important;
+  color:#c5d2e5!important;
 }
 :root[data-theme="dark"] .monthly-smart-special-label{
   color:#d1c5ff!important;
