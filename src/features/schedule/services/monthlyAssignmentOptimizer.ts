@@ -39,6 +39,7 @@ export type MonthlyUnfilledPositionReason =
   | "cross_church_conflict"
   | "consecutive_day_conflict"
   | "daily_service_limit"
+  | "service_sequence_gap"
   | "overlapping_service"
   | "serving_restriction"
   | "no_eligible_candidate"
@@ -139,6 +140,7 @@ type BlockReason =
   | "overlap"
   | "consecutive_day"
   | "daily_service_limit"
+  | "service_sequence_gap"
   | "role_not_qualified";
 
 const REQUIRED_ROLES: Role[] = ["FOH", "Monitor"];
@@ -315,6 +317,38 @@ function isRoleQualified(servant: Servant, role: Role, locationId: string): bool
   return !Array.isArray(legacyRoles) || legacyRoles.includes(role);
 }
 
+function numberedServiceIndex(serviceName: string): number | null {
+  const match = /(?:^| - )Service ([1-9]\\d*)$/i.exec(serviceName.trim());
+  return match ? Number(match[1]) : null;
+}
+
+function createsServiceSequenceGap(
+  servantId: string,
+  slot: MonthlyScheduleSlot,
+  commitments: readonly AssignmentCommitment[],
+): boolean {
+  const candidateNumber = numberedServiceIndex(slot.service_name);
+  if (candidateNumber === null) return false;
+
+  const assignedNumbers = new Set<number>();
+  for (const commitment of commitments) {
+    if (
+      commitment.servant_id !== servantId ||
+      commitment.service_date !== slot.service_date ||
+      commitment.location_id !== slot.location_id ||
+      commitment.confirmation_status === "declined"
+    ) continue;
+    const number = numberedServiceIndex(commitment.service_name);
+    if (number !== null) assignedNumbers.add(number);
+  }
+
+  assignedNumbers.add(candidateNumber);
+  const ordered = [...assignedNumbers].sort((first, second) => first - second);
+  return ordered.some((number, index) =>
+    index > 0 && number - ordered[index - 1] > 1
+  );
+}
+
 function commitmentServiceKey(commitment: AssignmentCommitment): string {
   return commitment.schedule_id
     ? "schedule:" + commitment.schedule_id
@@ -366,6 +400,10 @@ function getBlockReasons(
     sameDayServiceKeys.size >= MAX_SERVICES_PER_DAY
   ) {
     reasons.push("daily_service_limit");
+  }
+
+  if (createsServiceSequenceGap(servant.id, slot, commitments)) {
+    reasons.push("service_sequence_gap");
   }
 
   for (const commitment of commitments) {
@@ -566,6 +604,7 @@ function unfilledReason(
     overlap: 0,
     consecutive_day: 0,
     daily_service_limit: 0,
+    service_sequence_gap: 0,
     role_not_qualified: 0,
   };
 
@@ -588,6 +627,7 @@ function unfilledReason(
   if (reasonCounts.cross_church === assignableServants.length) return "cross_church_conflict";
   if (reasonCounts.consecutive_day === assignableServants.length) return "consecutive_day_conflict";
   if (reasonCounts.daily_service_limit === assignableServants.length) return "daily_service_limit";
+  if (reasonCounts.service_sequence_gap === assignableServants.length) return "service_sequence_gap";
   if (reasonCounts.overlap === assignableServants.length) return "overlapping_service";
   if (
     reasonCounts.serving_preference + reasonCounts.unavailable === assignableServants.length &&
