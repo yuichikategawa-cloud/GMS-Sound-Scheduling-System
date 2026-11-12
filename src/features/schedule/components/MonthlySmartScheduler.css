@@ -288,3 +288,210 @@
 :root[data-theme="dark"] .monthly-smart-ai-free-label{background:#183a2c;color:#9ce1b8}
 :root[data-theme="dark"] .monthly-smart-ai-result{background:#1a2940;border-color:#35455e}
 :root[data-theme="dark"] .monthly-smart-ai-result pre{color:#eaf0fa}
+
+
+/* Center the optional AI adviser within the preview instead of stretching its
+   button and helper copy across opposite sides of the card. */
+.monthly-smart-ai-panel{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+}
+.monthly-smart-ai-inner{
+  display:grid;
+  justify-items:center;
+  width:min(100%,820px);
+  gap:12px;
+  text-align:center;
+}
+.monthly-smart-ai-copy{
+  flex:initial;
+  width:100%;
+  max-width:720px;
+  align-items:center;
+}
+.monthly-smart-ai-title{justify-content:center}
+.monthly-smart-ai-copy p,.monthly-smart-ai-copy>small{text-align:center}
+.monthly-smart-ai-button{justify-self:center;align-self:center}
+.monthly-smart-ai-muted{max-width:680px;text-align:center}
+.monthly-smart-ai-error,.monthly-smart-ai-result{width:100%;box-sizing:border-box;text-align:left}
+.monthly-smart-ai-result{text-align:left}
+.monthly-smart-ai-result>div{text-align:left}
+
+/* Weekly, per-church team rotation controls. */
+.monthly-smart-team-rotation{
+  margin-top:14px;
+  padding:15px;
+  border:1px solid var(--border-color,#dbe2ee);
+  border-radius:12px;
+  background:var(--surface,#fff);
+}
+.monthly-smart-team-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.monthly-smart-team-heading b{font-size:13px}
+.monthly-smart-team-heading p{
+  margin:4px 0 0;
+  max-width:760px;
+  color:var(--text-muted,#667085);
+  font-size:11px;
+  line-height:1.5;
+}
+.monthly-smart-team-heading>span{
+  flex:0 0 auto;
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  font-weight:700;
+}
+.monthly-smart-team-week-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+.monthly-smart-team-week{
+  display:grid;
+  grid-template-columns:minmax(120px,.85fr) minmax(0,1.3fr);
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding:10px;
+  border:1px solid var(--border-color,#dbe2ee);
+  border-radius:9px;
+  background:var(--surface-muted,#f7f9fc);
+}
+.monthly-smart-team-week>span{display:grid;gap:3px;min-width:0}
+.monthly-smart-team-week>span b{font-size:11px}
+.monthly-smart-team-week>span small{
+  color:var(--text-muted,#667085);
+  font-size:10px;
+}
+.monthly-smart-team-week select{
+  width:100%;
+  min-width:0;
+  min-height:37px;
+  padding:7px 9px;
+  border:1px solid var(--border-color,#dbe2ee);
+  border-radius:8px;
+  background:var(--input-bg,#fff);
+  color:var(--text-primary,#1f2937);
+  font-size:11px;
+}
+.monthly-smart-team-note{
+  display:block;
+  margin-top:10px;
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.45;
+}
+.monthly-smart-team-chip{
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  margin-top:4px;
+  padding:3px 6px;
+  border-radius:5px;
+  background:var(--accent-soft,#eef0ff);
+  color:var(--accent-hover,#4d56ad);
+  font-size:9px!important;
+  font-weight:700;
+}
+.monthly-smart-team-warnings{
+  display:grid;
+  gap:5px;
+  margin:12px 0;
+  padding:10px 12px;
+  border:1px solid var(--status-warning-border,#e8cb93);
+  border-radius:9px;
+  background:var(--status-warning-bg,#fff8e9);
+  color:var(--status-warning-text,#885d15);
+}
+.monthly-smart-team-warnings b{font-size:11px}
+.monthly-smart-team-warnings small{font-size:10px;line-height:1.4}
+:root[data-theme="dark"] .monthly-smart-team-rotation{
+  background:#111d30;border-color:#35455e
+}
+:root[data-theme="dark"] .monthly-smart-team-week{
+  background:#1a2940;border-color:#35455e
+}
+:root[data-theme="dark"] .monthly-smart-team-week select{
+  background:#17243a;color:#eef3fa;border-color:#455a75
+}
+:root[data-theme="dark"] .monthly-smart-team-chip{
+  background:#26365c;color:#c5ccff
+}
+:root[data-theme="dark"] .monthly-smart-team-warnings{
+  background:#382f20;border-color:#6d5630;color:#f3d79d
+}
+
+/* Single service versus whole-lineup special-service controls. */
+.monthly-smart-special-mode{
+  display:inline-flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:0 0 12px;
+  padding:4px;
+  border:1px solid var(--border-color,#dbe2ee);
+  border-radius:9px;
+  background:var(--surface-muted,#f5f7fb);
+}
+.monthly-smart-special-mode button{
+  min-height:32px;
+  padding:6px 11px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  color:var(--text-muted,#667085);
+  font-size:11px;
+  font-weight:650;
+  cursor:pointer;
+}
+.monthly-smart-special-mode button.selected{
+  background:var(--surface,#fff);
+  color:var(--text-primary,#1f2937);
+  box-shadow:0 1px 3px rgba(16,24,40,.12);
+}
+.monthly-smart-special-fields.is-lineup{
+  grid-template-columns:repeat(5,minmax(110px,1fr));
+}
+.monthly-smart-special-lineup-summary{
+  display:grid;
+  gap:3px;
+  align-self:center;
+  min-width:0;
+  color:var(--text-primary,#1f2937);
+  font-size:11px;
+}
+.monthly-smart-special-lineup-summary small{
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.4;
+}
+:root[data-theme="dark"] .monthly-smart-special-mode{
+  background:#1a2940;border-color:#35455e
+}
+:root[data-theme="dark"] .monthly-smart-special-mode button.selected{
+  background:#263a58;color:#eef3fa
+}
+:root[data-theme="dark"] .monthly-smart-special-lineup-summary{color:#eef3fa}
+@media(max-width:900px){
+  .monthly-smart-team-week-grid{grid-template-columns:1fr}
+  .monthly-smart-special-fields.is-lineup{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .monthly-smart-special-fields.is-lineup .monthly-smart-special-name{grid-column:span 2}
+  .monthly-smart-special-lineup-summary{grid-column:span 2}
+}
+@media(max-width:540px){
+  .monthly-smart-ai-panel{padding:14px}
+  .monthly-smart-ai-title{gap:6px}
+  .monthly-smart-team-heading{flex-direction:column}
+  .monthly-smart-team-week{grid-template-columns:1fr}
+  .monthly-smart-special-mode{display:flex;width:100%}
+  .monthly-smart-special-mode button{flex:1 1 0}
+  .monthly-smart-special-fields.is-lineup{grid-template-columns:1fr 1fr}
+  .monthly-smart-special-fields.is-lineup .monthly-smart-special-name,
+  .monthly-smart-special-lineup-summary{grid-column:span 2}
+}
