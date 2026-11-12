@@ -28,7 +28,7 @@ on:
       - "src/features/availability/hooks/useAvailabilityActions.ts"
       - "tests/availability/availabilityPersistence_test.ts"
       - "tests/availability/recurringAvailability_test.ts"
-      - "supabase/migrations/20261119000000_gms_custom_weekly_availability_rules.sql"
+      - "supabase/migrations/20261112092936_gms_custom_weekly_availability_rules.sql"
       - "src/shared/formatters.ts"
       - "src/app/services/dashboardData.ts"
       - "src/app/state/dashboardState.ts"
