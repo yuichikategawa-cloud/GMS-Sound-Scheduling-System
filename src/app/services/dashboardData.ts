@@ -119,7 +119,14 @@ export async function loadDashboardData(
   const scheduleGenerationErrors = [
     ...availabilityDataRes.generationErrors,
     ...(servantLocationRolesRes.error
-      ? [servantLocationRolesRes.error instanceof Error
+      ? [(
+        typeof servantLocationRolesRes.error === "object" &&
+        servantLocationRolesRes.error !== null &&
+        "message" in servantLocationRolesRes.error &&
+        typeof servantLocationRolesRes.error.message === "string"
+      )
+        ? servantLocationRolesRes.error.message
+        : servantLocationRolesRes.error instanceof Error
         ? servantLocationRolesRes.error.message
         : "Church-specific servant qualifications could not be loaded. Smart Scheduling is unavailable until they can be verified."]
       : []),
