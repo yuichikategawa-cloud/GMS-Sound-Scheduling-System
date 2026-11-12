@@ -264,6 +264,47 @@ export default function App() {
 
   useEffect(()=>{if(profile) void loadData();},[profile]);
 
+  // Keep feature routes split from the entry bundle, but warm their chunks after
+  // the first workspace is ready so a first navigation does not wait on a cold download.
+  useEffect(() => {
+    if (!profile || !session?.user?.id) return;
+    const connection = (navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }).connection;
+    if (connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType ?? "")) return;
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      const preloads: Array<Promise<unknown>> = [
+        import("./features/availability/components/AvailabilityWorkspace"),
+      ];
+      if (isAdmin) {
+        preloads.push(
+          import("./features/servants/components/ServantInformationPanel"),
+          import("./features/statistics/components/StatisticsPanel"),
+          import("./features/audit/components/AuditPanel"),
+          import("./features/requests/components/RequestsPanel"),
+          import("./features/schedule/components/MonthlySmartScheduler"),
+          import("./features/schedule/components/ScheduleManagementPanels"),
+          import("./features/schedule/components/ScheduleDisplayComponents"),
+        );
+      } else {
+        preloads.push(
+          import("./features/requests/components/ServantInbox"),
+          import("./features/auth/components/MemberProfilePanel"),
+        );
+      }
+      void Promise.allSettled(preloads);
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [profile?.id, session?.user?.id, isAdmin]);
+
+
   async function installGmsApp(){
     if(installPrompt){try{await installPrompt.prompt();await installPrompt.userChoice;}catch(e){console.warn("PWA install prompt was not completed",e);}finally{clearInstallPrompt();}return;}
     const ua=navigator.userAgent.toLowerCase();
