@@ -5,7 +5,7 @@ import {
   createServantRecord,
   linkServantAccountRecord,
   setServantActive,
-  setServantQualifiedRoles,
+  setServantLocationRoles,
 } from "../services/servantManagement";
 
 type ServantModalMode = "schedule" | "person" | null;
@@ -79,18 +79,26 @@ export function useServantActions({
     else await loadData();
   }
 
-  async function saveServantRoles(servant: Servant, roles: Role[]): Promise<boolean> {
+  async function saveServantLocationRoles(
+    servant: Servant,
+    rolesByLocation: Record<string, Role[]>,
+  ): Promise<boolean> {
     if (!client || !isAdmin) return false;
-    const uniqueRoles = [...new Set(roles)];
-    const { error } = await setServantQualifiedRoles(client, servant.id, uniqueRoles);
+    const normalized = Object.fromEntries(
+      Object.entries(rolesByLocation).map(([locationId, roles]) => [
+        locationId,
+        [...new Set(roles)],
+      ]),
+    );
+    const { error } = await setServantLocationRoles(client, servant.id, normalized);
     if (error) {
       setMessage(errorText(error));
       return false;
     }
     await loadData();
-    setMessage(`Qualified sound roles updated for ${servant.full_name}.`);
+    setMessage(`Church-specific sound role qualifications updated for ${servant.full_name}.`);
     return true;
   }
 
-  return { linkServantAccount, savePerson, togglePerson, saveServantRoles };
+  return { linkServantAccount, savePerson, togglePerson, saveServantLocationRoles };
 }
