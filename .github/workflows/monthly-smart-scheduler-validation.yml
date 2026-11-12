@@ -65,6 +65,8 @@ jobs:
         run: deno check cloudflare/gms-ai-assistant/src/index.ts
       - name: Test monthly slot generation
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
+      - name: Test weekly church serving team patterns
+        run: deno test --no-lock tests/schedule/monthlyServingTeams_test.ts
       - name: Test monthly assignment optimizer
         run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
       - name: Test servant management and role qualification persistence
