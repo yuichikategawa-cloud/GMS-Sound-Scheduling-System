@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - feat/monthly-smart-scheduler-engine
+      - feat/free-cloudflare-ai-scheduler
     paths:
       - "src/features/schedule/services/monthly*.ts"
+      - "src/features/schedule/services/aiSchedulingAssistant.ts"
+      - "cloudflare/gms-ai-assistant/**"
       - "src/features/schedule/services/historicalRosterProfiles.ts"
       - "src/features/schedule/components/MonthlySmartScheduler.*"
+      - "src/features/schedule/components/ScheduleWorkspace.tsx"
+      - "src/App.tsx"
       - "src/features/servants/**"
       - "src/features/auth/components/MemberProfilePanel.tsx"
       - "src/features/audit/components/AuditPanel.tsx"
@@ -22,6 +27,7 @@ on:
       - "src/app/state/dashboardState.ts"
       - "src/App.tsx"
       - "tests/schedule/monthly*_test.ts"
+      - "tests/schedule/aiSchedulingAssistant_test.ts"
       - "tests/schedule/historicalRosterProfiles_test.ts"
       - "tests/schedule/schedulePersistence_test.ts"
       - "tests/servants/servantManagement_test.ts"
@@ -53,6 +59,10 @@ jobs:
           deno-version: v2.x
       - name: Test shared date and timestamp formatters
         run: deno test --no-lock tests/shared/formatters_test.ts
+      - name: Test free AI scheduling context and worker guard
+        run: deno test --no-lock tests/schedule/aiSchedulingAssistant_test.ts cloudflare/gms-ai-assistant/tests/worker_test.ts
+      - name: Type-check free Cloudflare Worker source
+        run: deno check cloudflare/gms-ai-assistant/src/index.ts
       - name: Test monthly slot generation
         run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
       - name: Test monthly assignment optimizer

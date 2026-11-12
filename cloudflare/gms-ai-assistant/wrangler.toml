@@ -1,0 +1,21 @@
+name = "gms-ai-assistant"
+main = "src/index.ts"
+compatibility_date = "2026-11-11"
+workers_dev = true
+
+# Workers AI native binding only. No AI Gateway or third-party provider route.
+[ai]
+binding = "AI"
+
+# A single SQLite-backed Durable Object atomically enforces the GMS-wide daily cap.
+[[durable_objects.bindings]]
+name = "AI_GUARD"
+class_name = "AiBudgetGuard"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AiBudgetGuard"]
+
+# Leave disabled until the Cloudflare account is confirmed to be on Workers Free.
+[vars]
+GMS_AI_ENABLED = "false"
