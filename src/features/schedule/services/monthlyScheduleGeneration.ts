@@ -10,6 +10,7 @@ export type MonthlyScheduleSlotAssignment = {
   servant_name: string;
   confirmation_status?: string;
   preview_manual?: boolean;
+  preview_team?: boolean;
 };
 
 export type MonthlyScheduleSlot = {
