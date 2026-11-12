@@ -1224,3 +1224,156 @@
 @media(max-width:430px){
   .bulk-servant-picker .bulk-servant-list{grid-template-columns:minmax(0,1fr)!important}
 }
+
+
+/* Bulk per-day selection and paginated availability records. */
+.bulk-servant-picker-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.bulk-servant-select-all{
+  flex:0 0 auto;
+  min-height:30px;
+  padding:5px 10px;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  background:var(--surface-muted);
+  color:var(--brand);
+  font-size:11px;
+  font-weight:750;
+}
+.bulk-servant-select-all:hover{border-color:var(--brand);background:var(--surface)}
+.availability-record-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:10px 0 12px;
+  padding:10px 12px;
+  border:1px solid var(--border-subtle);
+  border-radius:10px;
+  background:var(--surface-muted);
+  color:var(--text-secondary);
+  font-size:11px;
+}
+.availability-record-pagination>div{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+.availability-record-pagination>div>span{
+  min-width:76px;
+  text-align:center;
+  color:var(--text-primary);
+  font-weight:700;
+  font-variant-numeric:tabular-nums;
+}
+.availability-record-pagination button{
+  min-height:32px!important;
+  padding:6px 10px!important;
+  font-size:11px!important;
+}
+.availability-record-pagination button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+/* Custom weekly recurrence: weekday toggles and interval picker. */
+.rule-custom-weekly{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:minmax(140px,.7fr) minmax(0,2fr);
+  align-items:start;
+  gap:13px;
+  padding:13px;
+  border:1px solid var(--border-subtle);
+  border-radius:11px;
+  background:var(--surface-muted);
+}
+.rule-custom-weekly>div{display:grid;gap:8px;min-width:0}
+.rule-custom-weekly b{
+  color:var(--text-subtle);
+  font-size:11px;
+  font-weight:750;
+}
+.rule-custom-weekly select{
+  box-sizing:border-box;
+  width:100%;
+  min-height:42px;
+  border:1px solid var(--border-strong);
+  border-radius:9px;
+  padding:9px 11px;
+  background:var(--surface);
+  color:var(--text-primary);
+  font-size:13px;
+}
+.rule-custom-weekdays>div{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+.rule-custom-weekdays label{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  min-height:34px;
+  padding:6px 10px;
+  border:1px solid var(--border-strong);
+  border-radius:8px;
+  background:var(--surface);
+  color:var(--text-primary);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.rule-custom-weekdays input{
+  width:14px!important;
+  height:14px!important;
+  min-height:14px!important;
+  margin:0;
+  accent-color:var(--brand);
+}
+.rule-custom-weekdays small{
+  color:var(--text-secondary);
+  font-size:10px;
+  line-height:1.4;
+}
+@media(max-width:760px){
+  .rule-custom-weekly{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+  .bulk-servant-picker-heading{align-items:flex-start;flex-direction:column}
+  .bulk-servant-select-all{width:100%}
+  .availability-record-pagination{align-items:flex-start;flex-direction:column}
+  .availability-record-pagination>div{width:100%;justify-content:space-between}
+  .availability-record-pagination button{flex:1}
+  .rule-custom-weekdays>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rule-custom-weekdays label{justify-content:flex-start}
+}
+:root[data-theme="dark"] .bulk-servant-select-all{
+  border-color:var(--border-strong);
+  background:var(--surface-muted);
+  color:var(--accent-hover);
+}
+:root[data-theme="dark"] .availability-record-pagination{
+  background:var(--surface-muted);
+  border-color:var(--border-strong);
+  color:var(--text-secondary);
+}
+:root[data-theme="dark"] .availability-record-pagination>div>span{color:var(--text-primary)}
+:root[data-theme="dark"] .rule-custom-weekly{
+  background:var(--surface-muted);
+  border-color:var(--border-strong);
+}
+:root[data-theme="dark"] .rule-custom-weekly select,
+:root[data-theme="dark"] .rule-custom-weekdays label{
+  background:var(--surface);
+  border-color:var(--border-strong);
+  color:var(--text-primary);
+}
+:root[data-theme="dark"] .rule-custom-weekly b,
+:root[data-theme="dark"] .rule-custom-weekdays small{color:var(--text-secondary)}
