@@ -8,7 +8,7 @@ import {
   type MonthlyAssignmentOptimizerInput,
 } from "../../src/features/schedule/services/monthlyAssignmentOptimizer.ts";
 import type { MonthlyScheduleSlot } from "../../src/features/schedule/services/monthlyScheduleGeneration.ts";
-import type { Location, Servant } from "../../src/types.ts";
+import type { Location, Role, Servant } from "../../src/types.ts";
 
 function assertEqual(actual: unknown, expected: unknown, message: string): void {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
@@ -188,4 +188,78 @@ Deno.test("team grouping falls back to independent optimization when a shared se
   const teamPlan = applyMonthlyServingTeamAssignments({ optimizerInput, slots, baseline, groups });
   assertEqual(teamPlan.slots.every((slot) => slot.assignments.every((assignment) => !assignment.preview_team)), true, "No shared assignment should be invented when the role is not eligible across every service.");
   assert(teamPlan.warnings.some((warning) => warning.includes("no single qualified and available servant")), "The preview should explain why team grouping could not be applied.");
+});
+
+
+Deno.test("shared serving teams never push one servant beyond four distinct services in a day", () => {
+  const slots = Array.from({ length: 7 }, (_, index) =>
+    createSlot(
+      alam.id,
+      "2026-12-13",
+      "Service " + (index + 1),
+      String(7 + index * 2).padStart(2, "0") + ":00",
+    )
+  );
+  const servants = [
+    { ...createServant("joshua"), qualified_roles: ["FOH"] as Role[] },
+    { ...createServant("alternative"), qualified_roles: ["FOH"] as Role[] },
+  ];
+  const optimizerInput: Omit<MonthlyAssignmentOptimizerInput, "slots"> = {
+    servants,
+    availability: [],
+    preferences: [],
+    schedules: [],
+    includeAssistant: false,
+  };
+  const baseline = optimizeMonthlyAssignments({ ...optimizerInput, slots });
+  if (!baseline.ok) throw new Error("Expected baseline optimizer to produce a preview.");
+
+  const groups = buildMonthlyServingTeamGroups({
+    slots,
+    locations,
+    patternsByWeek: { "alam|2": "alam_two" },
+  });
+  assertEqual(groups.map((group) => group.slotKeys.length), [3, 4], "The test must exercise the same 3-service and 4-service team split shown in the preview.");
+
+  const teamPlan = applyMonthlyServingTeamAssignments({
+    optimizerInput,
+    slots,
+    baseline,
+    groups,
+  });
+  const firstTeamServantIds = new Set(
+    teamPlan.slots
+      .filter((slot) => slot.service_name === "Service 1" || slot.service_name === "Service 2" || slot.service_name === "Service 3")
+      .map((slot) => slot.assignments.find((assignment) => assignment.role === "FOH")?.servant_id)
+  );
+  const secondTeamServantIds = new Set(
+    teamPlan.slots
+      .filter((slot) => ["Service 4", "Service 5", "Service 6", "Service 7"].includes(slot.service_name))
+      .map((slot) => slot.assignments.find((assignment) => assignment.role === "FOH")?.servant_id)
+  );
+
+  assertEqual(firstTeamServantIds.size, 1, "Services 1–3 should share one FOH servant.");
+  assertEqual(secondTeamServantIds.size, 1, "Services 4–7 should share one FOH servant.");
+  assert(
+    [...firstTeamServantIds][0] !== [...secondTeamServantIds][0],
+    "The second team must use a different servant when reusing the first would exceed the daily four-service cap.",
+  );
+
+  const servicesByServant = new Map<string, Set<string>>();
+  for (const slot of teamPlan.slots) {
+    for (const assignment of slot.assignments) {
+      const keys = servicesByServant.get(assignment.servant_id) ?? new Set<string>();
+      keys.add(slot.key);
+      servicesByServant.set(assignment.servant_id, keys);
+    }
+  }
+  for (const [servantId, serviceKeys] of servicesByServant) {
+    assert(
+      serviceKeys.size <= 4,
+      servantId + " must never receive more than four distinct service slots on 13 December 2026.",
+    );
+  }
+
+  const finalResult = optimizeMonthlyAssignments({ ...optimizerInput, slots: teamPlan.slots });
+  assertEqual(finalResult.ok, true, "The final optimizer must accept the two team assignments after validating the daily cap.");
 });
