@@ -523,3 +523,39 @@
   .servant-role-qualification-options label{flex:1 1 auto;justify-content:center}
   .servant-role-qualification-actions{width:100%;justify-content:space-between;margin:0}
 }
+
+
+/* Restore the qualification card's full light-mode separation in dark mode.
+   The broad servant-detail rule above removes borders/padding from all direct
+   children; this equally-specific, later rule intentionally opts this card out. */
+:root[data-theme="dark"] .servant-record-detail>.servant-role-qualification{
+  display:grid!important;
+  min-width:0!important;
+  padding:16px 18px!important;
+  border:1px solid var(--border-strong,#465773)!important;
+  border-radius:12px!important;
+  background:var(--surface-muted,#202f46)!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.16)!important;
+  color:var(--text-primary,#f2f5fb)!important;
+}
+:root[data-theme="dark"] .servant-role-qualification-heading p{
+  color:var(--text-secondary,#b5c1d5)!important;
+}
+:root[data-theme="dark"] .servant-role-qualification-eyebrow{
+  color:var(--accent-hover,#a9a2ff)!important;
+}
+.servant-role-qualification-options label.is-selected{
+  border-color:var(--focus-border,#818cf8);
+  background:var(--accent-soft,#eef2ff);
+  color:var(--accent-hover,#4338ca);
+}
+.servant-role-qualification-options input{accent-color:var(--accent-primary,#4f46e5)}
+:root[data-theme="dark"] .servant-role-qualification-options label.is-selected{
+  border-color:var(--focus-border,#9b91ff)!important;
+  background:var(--accent-soft,#393b72)!important;
+  color:var(--accent-hover,#a9a2ff)!important;
+}
+:root[data-theme="dark"] .servant-role-readonly-list span{
+  background:var(--accent-soft,#393b72)!important;
+  color:var(--accent-hover,#a9a2ff)!important;
+}
