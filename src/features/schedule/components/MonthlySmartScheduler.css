@@ -495,3 +495,148 @@
   .monthly-smart-special-fields.is-lineup .monthly-smart-special-name,
   .monthly-smart-special-lineup-summary{grid-column:span 2}
 }
+
+
+/* A single disclosure wraps the entire monthly scheduler, including its
+   generated service-by-service review and apply controls. */
+.monthly-smart-disclosure{
+  display:grid;
+  gap:16px;
+  min-width:0;
+}
+.monthly-smart-disclosure-summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-direction:row;
+  gap:12px;
+  min-width:0;
+  padding:0 0 14px;
+  border:0;
+  border-bottom:1px solid var(--border-subtle,var(--line,#dce3ee));
+  cursor:pointer;
+  list-style:none;
+}
+.monthly-smart-disclosure-summary::-webkit-details-marker{display:none}
+.monthly-smart-disclosure-summary::marker{content:""}
+.monthly-smart-disclosure-summary .monthly-smart-title{flex:1;min-width:0}
+.monthly-smart-collapse-icon{
+  flex:none;
+  width:34px;
+  height:34px;
+  padding:7px;
+  border:1px solid var(--border-strong,#dfe4ec);
+  border-radius:9px;
+  background:var(--accent-soft,#eef2ff);
+  color:var(--accent-hover,#4338ca);
+  transition:transform .18s ease,background .18s ease;
+}
+.monthly-smart-disclosure[open]>.monthly-smart-disclosure-summary .monthly-smart-collapse-icon{
+  transform:rotate(180deg);
+}
+.monthly-smart-disclosure-summary:focus-visible{
+  outline:3px solid var(--focus-border,#818cf8);
+  outline-offset:4px;
+  border-radius:8px;
+}
+.monthly-smart-content{
+  display:grid;
+  gap:16px;
+  min-width:0;
+}
+
+/* Align the special-service selected state with the app's Schedule tabs. */
+.monthly-smart-special-mode button.selected{
+  border:1px solid var(--focus-border,#818cf8);
+  background:var(--accent-soft,#eef2ff);
+  color:var(--accent-hover,#4338ca);
+  box-shadow:0 1px 3px rgba(24,35,70,.08);
+}
+.monthly-smart-checkbox input{accent-color:var(--accent-primary,#4f46e5)}
+.monthly-role-select:focus{
+  outline:3px solid var(--focus-ring,rgba(79,70,229,.18));
+  outline-offset:1px;
+  border-color:var(--focus-border,#818cf8);
+}
+:root[data-theme="dark"] .monthly-smart-disclosure-summary{
+  border-bottom-color:var(--border-strong,#465773);
+}
+:root[data-theme="dark"] .monthly-smart-collapse-icon{
+  background:var(--accent-soft,#393b72);
+  border-color:var(--focus-border,#9b91ff);
+  color:var(--accent-hover,#a9a2ff);
+}
+:root[data-theme="dark"] .monthly-smart-special-mode button{
+  color:#c8d3e5;
+}
+:root[data-theme="dark"] .monthly-smart-special-mode button.selected{
+  background:var(--accent-soft,#393b72);
+  border-color:var(--focus-border,#9b91ff);
+  color:var(--accent-hover,#a9a2ff);
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+}
+
+/* Improve secondary-text readability throughout Assignment > Monthly Smart
+   Scheduler in dark mode without changing semantic status colours. */
+:root[data-theme="dark"] .monthly-smart-secondary-metrics,
+:root[data-theme="dark"] .monthly-smart-table td>small,
+:root[data-theme="dark"] .monthly-smart-workload-table td>small,
+:root[data-theme="dark"] .monthly-smart-role-value.is-locked>small,
+:root[data-theme="dark"] .monthly-role-value.is-optional>small,
+:root[data-theme="dark"] .monthly-smart-church-heading span,
+:root[data-theme="dark"] .monthly-smart-special-heading p,
+:root[data-theme="dark"] .monthly-smart-special-fields label>span,
+:root[data-theme="dark"] .monthly-smart-special-lineup-summary small,
+:root[data-theme="dark"] .monthly-smart-special-mode button:not(.selected),
+:root[data-theme="dark"] .monthly-smart-team-heading p,
+:root[data-theme="dark"] .monthly-smart-team-heading>span,
+:root[data-theme="dark"] .monthly-smart-team-week>span small,
+:root[data-theme="dark"] .monthly-smart-team-note,
+:root[data-theme="dark"] .monthly-smart-ai-copy p,
+:root[data-theme="dark"] .monthly-smart-ai-copy>small,
+:root[data-theme="dark"] .monthly-smart-ai-muted,
+:root[data-theme="dark"] .monthly-smart-ai-result>div span,
+:root[data-theme="dark"] .monthly-smart-ai-result>small,
+:root[data-theme="dark"] .monthly-smart-rule-summary b,
+:root[data-theme="dark"] .monthly-smart-lock-label{
+  color:var(--text-secondary,#b5c1d5)!important;
+}
+:root[data-theme="dark"] .monthly-smart-special-label{
+  color:#d1c5ff!important;
+}
+:root[data-theme="dark"] .monthly-smart-secondary-metrics b{
+  color:var(--text-primary,#f2f5fb)!important;
+}
+:root[data-theme="dark"] .monthly-role-value.is-locked>small{color:#d0daeb!important}
+:root[data-theme="dark"] .monthly-role-value.is-generated>small{color:#a5edc9!important}
+:root[data-theme="dark"] .monthly-role-value>small.is-manual{color:#d1ccff!important}
+:root[data-theme="dark"] .monthly-role-value.is-unfilled>small{color:#ffd0a9!important}
+:root[data-theme="dark"] .monthly-smart-team-chip{
+  background:var(--accent-soft,#393b72)!important;
+  color:var(--accent-hover,#d0cbff)!important;
+}
+:root[data-theme="dark"] .monthly-role-select{
+  background:var(--surface-control,#111c2e)!important;
+  border-color:var(--border-strong,#465773)!important;
+  color:var(--text-primary,#f2f5fb)!important;
+}
+@media(max-width:520px){
+  .monthly-smart-disclosure-summary{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:8px;
+    align-items:center;
+  }
+  .monthly-smart-disclosure-summary .monthly-smart-title{
+    grid-column:1;
+    grid-row:1;
+    align-items:flex-start;
+  }
+  .monthly-smart-disclosure-summary .monthly-smart-admin-only{
+    display:none;
+  }
+  .monthly-smart-collapse-icon{
+    grid-column:2;
+    grid-row:1;
+  }
+}
