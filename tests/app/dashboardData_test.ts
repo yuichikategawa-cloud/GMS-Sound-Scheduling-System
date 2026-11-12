@@ -117,8 +117,8 @@ Deno.test("dashboard loading composes feature data and maps shared Schedule view
     "notifications",
     "requests",
     "schedule",
-    "servants",
     "servant-location-roles",
+    "servants",
   ], "Dashboard loading must call each feature data boundary.");
   assertEqual(calls.find(call => call.loader === "notifications")?.args.slice(1), [
     "2026-10-07T12:00:00.000Z",
