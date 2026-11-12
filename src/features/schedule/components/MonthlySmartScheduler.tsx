@@ -17,6 +17,13 @@ import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfile
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import { fmtDate } from "../../../shared/formatters";
 import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation } from "../services/aiSchedulingAssistant";
+import {
+  applyMonthlyServingTeamAssignments,
+  buildMonthlyServingTeamGroups,
+  buildMonthlyServingTeamWeeks,
+  type MonthlyServingTeamGroup,
+  type MonthlyServingTeamPattern,
+} from "../services/monthlyServingTeams";
 import "./MonthlySmartScheduler.css";
 
 type SuccessfulOptimizerResult = Extract<MonthlyAssignmentOptimizerResult, { ok: true }>;
@@ -27,6 +34,8 @@ type PreviewData = {
   slots: MonthlyScheduleSlot[];
   result: SuccessfulOptimizerResult;
   manualOverrides: ManualOverrides;
+  teamGroups: MonthlyServingTeamGroup[];
+  teamWarnings: string[];
 };
 
 type MonthlySmartSchedulerProps = {
@@ -124,7 +133,7 @@ function GeneratedOrExistingRole({
   onManualChange: (servantId: string) => void;
 }) {
   const selected = slot.assignments.find((assignment) => assignment.role === role);
-  if (selected && !selected.preview_manual) {
+  if (selected && !selected.preview_manual && !selected.preview_team) {
     return (
       <div className="monthly-role-value is-locked">
         <b>{selected.servant_name}</b>
@@ -147,9 +156,11 @@ function GeneratedOrExistingRole({
   return (
     <div className="monthly-role-value">
       <b>{selectedName || "Unfilled"}</b>
-      <small className={selected?.preview_manual ? "is-manual" : generated ? "is-generated" : "is-unfilled"}>
+      <small className={selected?.preview_manual ? "is-manual" : generated || selected?.preview_team ? "is-generated" : "is-unfilled"}>
         {selected?.preview_manual
           ? "Manual selection · preview only"
+          : selected?.preview_team
+          ? "Shared serving team · preview only"
           : generated
           ? "Auto-generated · preview only"
           : unfilled
@@ -188,11 +199,14 @@ export default function MonthlySmartScheduler({
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [includeAssistant, setIncludeAssistant] = useState(true);
   const [specialServices, setSpecialServices] = useState<MonthlySpecialServiceInput[]>([]);
+  const [specialServiceMode, setSpecialServiceMode] = useState<"single" | "lineup">("single");
+  const [specialServiceLineupDay, setSpecialServiceLineupDay] = useState(0);
   const [specialServiceDate, setSpecialServiceDate] = useState(nextMonthKey() + "-25");
   const [specialServiceLocation, setSpecialServiceLocation] = useState("");
   const [specialServiceName, setSpecialServiceName] = useState("");
   const [specialServiceStart, setSpecialServiceStart] = useState("10:00");
   const [specialServiceEnd, setSpecialServiceEnd] = useState("12:00");
+  const [teamPatternOverrides, setTeamPatternOverrides] = useState<Record<string, MonthlyServingTeamPattern>>({});
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [acknowledgedPreferNot, setAcknowledgedPreferNot] = useState(false);
@@ -224,6 +238,24 @@ export default function MonthlySmartScheduler({
       setSpecialServiceLocation(selectedLocationIds[0]);
     }
   }, [selectedLocationIds, specialServiceLocation]);
+
+  const specialServiceLineupTemplates = useMemo(() => templates
+    .filter((template) => template.location_id === specialServiceLocation && template.active !== false && Number(template.day_of_week) === specialServiceLineupDay)
+    .slice()
+    .sort((a, b) => a.start_time.localeCompare(b.start_time) || a.service_name.localeCompare(b.service_name)),
+  [templates, specialServiceLocation, specialServiceLineupDay]);
+
+  const teamPatternWeeks = useMemo(() => buildMonthlyServingTeamWeeks({
+    month,
+    locations,
+    templates,
+    selectedLocationIds,
+  }), [month, locations, templates, selectedLocationIds]);
+
+  const patternsByWeek = useMemo(() => Object.fromEntries(teamPatternWeeks.map((week) => [
+    week.key,
+    teamPatternOverrides[week.key] ?? week.defaultPattern,
+  ])) as Record<string, MonthlyServingTeamPattern>, [teamPatternWeeks, teamPatternOverrides]);
 
   const specialServiceDateMax = useMemo(() => {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return undefined;
@@ -257,8 +289,7 @@ export default function MonthlySmartScheduler({
 
   const runOptimizer = (baseSlots: MonthlyScheduleSlot[], manualOverrides: ManualOverrides) => {
     const slots = applyManualOverrides(baseSlots, manualOverrides, servants);
-    const result = optimizeMonthlyAssignments({
-      slots,
+    const optimizerInput = {
       servants,
       availability,
       preferences,
@@ -267,8 +298,26 @@ export default function MonthlySmartScheduler({
       autoAssignmentExcludedServantIds: historicalRoster.autoAssignmentExcludedServantIds,
       includeAssistant,
       dataErrors: inputErrors,
+    };
+    const baseline = optimizeMonthlyAssignments({ ...optimizerInput, slots });
+    if (!baseline.ok) return { slots, result: baseline, teamGroups: [], teamWarnings: [] };
+
+    const teamGroups = buildMonthlyServingTeamGroups({ slots, locations, patternsByWeek });
+    const teamPlan = applyMonthlyServingTeamAssignments({
+      optimizerInput,
+      slots,
+      baseline,
+      groups: teamGroups,
     });
-    return { slots, result };
+    const result = teamPlan.assignedGroupCount
+      ? optimizeMonthlyAssignments({ ...optimizerInput, slots: teamPlan.slots })
+      : baseline;
+    return {
+      slots: teamPlan.slots,
+      result,
+      teamGroups,
+      teamWarnings: teamPlan.warnings,
+    };
   };
 
   const generatePreview = () => {
@@ -322,6 +371,8 @@ export default function MonthlySmartScheduler({
       slots: optimized.slots,
       result: optimized.result,
       manualOverrides,
+      teamGroups: optimized.teamGroups,
+      teamWarnings: optimized.teamWarnings,
     });
   };
 
@@ -452,6 +503,8 @@ export default function MonthlySmartScheduler({
       slots: recalculated.slots,
       result: recalculated.result,
       manualOverrides: nextOverrides,
+      teamGroups: recalculated.teamGroups,
+      teamWarnings: recalculated.teamWarnings,
     });
   };
 
@@ -467,7 +520,7 @@ export default function MonthlySmartScheduler({
       if (slot.blocked_reason || preexistingConflictKeys.has(slot.key)) continue;
       for (const role of ROLES) {
         if (role === "Assistant" && !includeAssistant) continue;
-        if (slot.assignments.some((assignment) => assignment.role === role && !assignment.preview_manual)) {
+        if (slot.assignments.some((assignment) => assignment.role === role && !assignment.preview_manual && !assignment.preview_team)) {
           continue;
         }
         map.set(slot.key + "|" + role, getMonthlyAssignmentCandidates({
@@ -511,6 +564,14 @@ export default function MonthlySmartScheduler({
     [locations],
   );
 
+  const servingTeamBySlot = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of preview?.teamGroups ?? []) {
+      for (const key of group.slotKeys) map.set(key, group.label);
+    }
+    return map;
+  }, [preview]);
+
   const previewChurchGroups = useMemo(() => {
     if (!preview) return [];
     return locations
@@ -532,31 +593,53 @@ export default function MonthlySmartScheduler({
   const addSpecialService = () => {
     const normalizedName = specialServiceName.trim();
     if (!normalizedName || !specialServiceLocation || !specialServiceDate ||
-        !specialServiceDate.startsWith(month + "-") ||
-        specialServiceStart >= specialServiceEnd) {
-      setError("Enter a service name, selected church, valid date in the planning month and valid start/end times.");
+        !specialServiceDate.startsWith(month + "-")) {
+      setError("Enter a service name, selected church and valid date in the planning month.");
       return;
     }
-    const key = [specialServiceDate, specialServiceLocation, normalizedName].join("|");
-    const duplicate = specialServices.some((service) =>
-      [service.service_date, service.location_id, service.service_name.trim()].join("|") === key
-    ) || schedules.some((schedule) =>
-      schedule.service_date === specialServiceDate &&
-      schedule.location_id === specialServiceLocation &&
-      schedule.service_name.trim() === normalizedName
+
+    let additions: MonthlySpecialServiceInput[];
+    if (specialServiceMode === "lineup") {
+      if (!specialServiceLineupTemplates.length) {
+        setError("The selected church has no active templates for that service day.");
+        return;
+      }
+      additions = specialServiceLineupTemplates.map((template) => ({
+        service_date: specialServiceDate,
+        location_id: specialServiceLocation,
+        service_name: normalizedName + " - " + template.service_name,
+        start_time: template.start_time.slice(0, 5),
+        end_time: template.end_time.slice(0, 5),
+      }));
+    } else {
+      if (specialServiceStart >= specialServiceEnd) {
+        setError("The service end time must be later than its start time.");
+        return;
+      }
+      additions = [{
+        service_date: specialServiceDate,
+        location_id: specialServiceLocation,
+        service_name: normalizedName,
+        start_time: specialServiceStart,
+        end_time: specialServiceEnd,
+      }];
+    }
+
+    const existingKeys = new Set([
+      ...specialServices.map((service) => [service.service_date, service.location_id, service.service_name.trim()].join("|")),
+      ...schedules.map((schedule) => [schedule.service_date, schedule.location_id, schedule.service_name.trim()].join("|")),
+    ]);
+    const additionKeys = additions.map((service) =>
+      [service.service_date, service.location_id, service.service_name.trim()].join("|")
     );
-    if (duplicate) {
-      setError("A service with this date, church and name already exists.");
+    if (new Set(additionKeys).size !== additionKeys.length || additionKeys.some((key) => existingKeys.has(key))) {
+      setError("One or more services in this lineup already exist for that date and church. No services were added.");
       return;
     }
-    setSpecialServices((current) => [...current, {
-      service_date: specialServiceDate,
-      location_id: specialServiceLocation,
-      service_name: normalizedName,
-      start_time: specialServiceStart,
-      end_time: specialServiceEnd,
-    }].sort((first, second) =>
+
+    setSpecialServices((current) => [...current, ...additions].sort((first, second) =>
       first.service_date.localeCompare(second.service_date) ||
+      first.location_id.localeCompare(second.location_id) ||
       first.start_time.localeCompare(second.start_time)
     ));
     setSpecialServiceName("");
@@ -628,6 +711,7 @@ export default function MonthlySmartScheduler({
             setMonth(nextMonth);
             setSpecialServiceDate(nextMonth ? nextMonth + "-25" : "");
             setSpecialServices([]);
+            setTeamPatternOverrides({});
             setPreview(null);
           }} disabled={Boolean(inputErrors.length)}/>
         </label>
@@ -664,6 +748,38 @@ export default function MonthlySmartScheduler({
         </label>
       </div>
 
+      {teamPatternWeeks.length > 0 && (
+        <section className="monthly-smart-team-rotation" aria-labelledby="monthly-smart-team-heading">
+          <div className="monthly-smart-team-heading">
+            <div>
+              <b id="monthly-smart-team-heading">Weekly serving team rotation</b>
+              <p>Choose the serving-team pattern for each church and week. Members selected for one team will be reused across that team's services when qualified and available.</p>
+            </div>
+            <span>{teamPatternWeeks.length} weekly configurations</span>
+          </div>
+          <div className="monthly-smart-team-week-grid">
+            {teamPatternWeeks.map((week) => (
+              <label className="monthly-smart-team-week" key={week.key}>
+                <span><b>{week.location.name}</b><small>{week.label}</small></span>
+                <select
+                  value={patternsByWeek[week.key]}
+                  onChange={(event) => {
+                    setTeamPatternOverrides((current) => ({
+                      ...current,
+                      [week.key]: event.target.value as MonthlyServingTeamPattern,
+                    }));
+                    setPreview(null);
+                  }}
+                >
+                  {week.options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+            ))}
+          </div>
+          <small className="monthly-smart-team-note">GMS Alam Sutera AOG Teen and AOG Youth always share one serving team. VSS remains a separate service.</small>
+        </section>
+      )}
+
       <div className="monthly-smart-special-service">
         <div className="monthly-smart-special-heading">
           <div>
@@ -672,7 +788,11 @@ export default function MonthlySmartScheduler({
           </div>
           <span>Special service</span>
         </div>
-        <div className="monthly-smart-special-fields">
+        <div className="monthly-smart-special-mode" role="group" aria-label="Special service creation mode">
+          <button type="button" className={specialServiceMode === "single" ? "selected" : ""} aria-pressed={specialServiceMode === "single"} onClick={() => setSpecialServiceMode("single")}>Single service</button>
+          <button type="button" className={specialServiceMode === "lineup" ? "selected" : ""} aria-pressed={specialServiceMode === "lineup"} onClick={() => setSpecialServiceMode("lineup")}>Generate full church lineup</button>
+        </div>
+        <div className={"monthly-smart-special-fields" + (specialServiceMode === "lineup" ? " is-lineup" : "")}>
           <label>
             <span>Service date</span>
             <input type="date" value={specialServiceDate} min={month + "-01"} max={specialServiceDateMax} onChange={(event) => setSpecialServiceDate(event.target.value)}/>
@@ -684,19 +804,42 @@ export default function MonthlySmartScheduler({
               {locations.filter((location) => selectedLocationIds.includes(location.id)).map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
             </select>
           </label>
-          <label className="monthly-smart-special-name">
-            <span>Service name</span>
-            <input value={specialServiceName} onChange={(event) => setSpecialServiceName(event.target.value)} placeholder="e.g. Christmas Service"/>
-          </label>
-          <label>
-            <span>Starts</span>
-            <input type="time" value={specialServiceStart} onChange={(event) => setSpecialServiceStart(event.target.value)}/>
-          </label>
-          <label>
-            <span>Ends</span>
-            <input type="time" value={specialServiceEnd} onChange={(event) => setSpecialServiceEnd(event.target.value)}/>
-          </label>
-          <button type="button" className="btn secondary" onClick={addSpecialService}>Add service</button>
+          {specialServiceMode === "lineup" ? (
+            <>
+              <label>
+                <span>Copy service lineup</span>
+                <select value={specialServiceLineupDay} onChange={(event) => setSpecialServiceLineupDay(Number(event.target.value))}>
+                  <option value={0}>Sunday lineup</option>
+                  <option value={6}>Saturday lineup</option>
+                </select>
+              </label>
+              <label className="monthly-smart-special-name">
+                <span>Special service name prefix</span>
+                <input value={specialServiceName} onChange={(event) => setSpecialServiceName(event.target.value)} placeholder="e.g. Christmas Special Service"/>
+              </label>
+              <div className="monthly-smart-special-lineup-summary">
+                <b>{specialServiceLineupTemplates.length} services will be generated</b>
+                <small>{specialServiceLineupTemplates.map((template) => template.service_name).join(" · ") || "No active lineup for this church"}</small>
+              </div>
+              <button type="button" className="btn secondary" disabled={!specialServiceLineupTemplates.length} onClick={addSpecialService}>Add {specialServiceLineupTemplates.length} services</button>
+            </>
+          ) : (
+            <>
+              <label className="monthly-smart-special-name">
+                <span>Service name</span>
+                <input value={specialServiceName} onChange={(event) => setSpecialServiceName(event.target.value)} placeholder="e.g. Christmas Service"/>
+              </label>
+              <label>
+                <span>Starts</span>
+                <input type="time" value={specialServiceStart} onChange={(event) => setSpecialServiceStart(event.target.value)}/>
+              </label>
+              <label>
+                <span>Ends</span>
+                <input type="time" value={specialServiceEnd} onChange={(event) => setSpecialServiceEnd(event.target.value)}/>
+              </label>
+              <button type="button" className="btn secondary" onClick={addSpecialService}>Add service</button>
+            </>
+          )}
         </div>
         {specialServices.length > 0 && (
           <div className="monthly-smart-special-list">
@@ -744,6 +887,7 @@ export default function MonthlySmartScheduler({
           </div>
 
           <section className="monthly-smart-ai-panel" aria-labelledby="monthly-smart-ai-heading">
+            <div className="monthly-smart-ai-inner">
             <div className="monthly-smart-ai-copy">
               <div className="monthly-smart-ai-title">
                 <WandSparkles size={17}/>
@@ -759,7 +903,14 @@ export default function MonthlySmartScheduler({
             {!aiWorkerUrl && <small className="monthly-smart-ai-muted">Not connected yet. The feature stays disabled until a free-only Cloudflare Worker URL is configured.</small>}
             {aiError && <p className="monthly-smart-ai-error" role="alert">{aiError}</p>}
             {aiExplanation && <div className="monthly-smart-ai-result" role="status"><div><b>AI analysis</b>{aiCached && <span>Cached result · no model call used</span>}</div><pre>{aiExplanation}</pre><small>Advice only. The AI cannot edit assignments or publish schedules; the existing optimizer and database remain authoritative.</small></div>}
+            </div>
           </section>
+          {preview.teamWarnings.length > 0 && (
+            <div className="monthly-smart-team-warnings" role="status">
+              <b>Serving-team review</b>
+              {preview.teamWarnings.map((warning) => <small key={warning}>{warning}</small>)}
+            </div>
+          )}
           <div className="monthly-smart-secondary-metrics">
             <span><b>{preview.result.lockedAssignmentCount}</b> preserved assignments</span>
             <span><b>{preview.result.generatedAssistantCount}</b> optional Assistants proposed</span>
@@ -790,6 +941,7 @@ export default function MonthlySmartScheduler({
                             <td><b>{fmtDate(slot.service_date)}</b><small>{slot.start_time.slice(0, 5)}–{slot.end_time.slice(0, 5)}</small></td>
                             <td>
                               <b>{slot.service_name}</b>
+                              {servingTeamBySlot.has(slot.key) && <small className="monthly-smart-team-chip">{servingTeamBySlot.get(slot.key)}</small>}
                               {slot.status === "new_special" && <small className="monthly-smart-special-label">One-off special service</small>}
                               {slot.template_id === null && slot.status !== "new_special" && <small className="monthly-smart-special-label">Existing custom service</small>}
                               {slot.blocked_reason && <small className="monthly-smart-lock-label">Preserved · {slot.blocked_reason === "published" ? "published" : "pending request"}</small>}
