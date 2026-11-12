@@ -318,7 +318,7 @@ function isRoleQualified(servant: Servant, role: Role, locationId: string): bool
 }
 
 function numberedServiceIndex(serviceName: string): number | null {
-  const match = /(?:^| - )Service ([1-9]\\d*)$/i.exec(serviceName.trim());
+  const match = /(?:^| - )Service ([1-9]\d*)$/i.exec(serviceName.trim());
   return match ? Number(match[1]) : null;
 }
 
