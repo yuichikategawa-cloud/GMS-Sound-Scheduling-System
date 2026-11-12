@@ -218,3 +218,25 @@ Deno.test("dashboard loading fails when a required Schedule or Servants query fa
   }
   assertSame(caught, requiredError, "Required dashboard query errors must propagate unchanged.");
 });
+
+
+Deno.test("dashboard blocks Smart Scheduling when church-specific qualification data cannot be verified", async () => {
+  const { loaders } = createLoaders({
+    loadServantLocationRoleRecords: async () => ({
+      data: null,
+      error: { message: "Permission matrix unavailable" },
+    }),
+  });
+  const result = await loadDashboardData({ client: "test" }, "user-1", loaders, now);
+
+  assertEqual(
+    result.scheduleGenerationErrors.some(error => error.includes("Permission matrix unavailable")),
+    true,
+    "A missing church-role dataset must block automatic scheduling rather than fall back to a broad global role list.",
+  );
+  assertEqual(
+    result.servants[0].qualified_roles_by_location,
+    { "location-1": [], "location-2": [] },
+    "A failed permission lookup must never grant default roles to a church.",
+  );
+});
