@@ -142,7 +142,7 @@ type BlockReason =
   | "role_not_qualified";
 
 const REQUIRED_ROLES: Role[] = ["FOH", "Monitor"];
-const MAX_SERVICES_PER_DAY = 4;
+export const MAX_SERVICES_PER_DAY = 4;
 const ALL_ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
 
 function dateMinusDays(date: string, days: number): string {
