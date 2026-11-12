@@ -22,6 +22,13 @@ on:
       - "src/features/schedule/hooks/useScheduleActions.ts"
       - "src/features/schedule/services/schedulePersistence.ts"
       - "src/features/availability/services/availabilityData.ts"
+      - "src/features/availability/services/availabilityPersistence.ts"
+      - "src/features/availability/services/recurringAvailability.ts"
+      - "src/features/availability/components/AvailabilityWorkspace.*"
+      - "src/features/availability/hooks/useAvailabilityActions.ts"
+      - "tests/availability/availabilityPersistence_test.ts"
+      - "tests/availability/recurringAvailability_test.ts"
+      - "supabase/migrations/20261112120000_gms_custom_weekly_availability_rules.sql"
       - "src/shared/formatters.ts"
       - "src/app/services/dashboardData.ts"
       - "src/app/state/dashboardState.ts"
@@ -79,6 +86,8 @@ jobs:
         run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
       - name: Test availability data readiness
         run: deno test --no-lock tests/availability/availabilityData_test.ts
+      - name: Test recurring availability patterns and persistence
+        run: deno test --no-lock tests/availability/recurringAvailability_test.ts tests/availability/availabilityPersistence_test.ts
       - name: Test dashboard scheduler readiness propagation
         run: deno test --no-lock tests/app/dashboardData_test.ts tests/app/dashboardState_test.ts
 
