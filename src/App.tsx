@@ -123,6 +123,15 @@ export default function App() {
     dispatchDashboardState({ type: "set-availability-deadline", value });
 
   const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox"|"requests">("schedule");
+  const previousTab = useRef(tab);
+  useEffect(() => {
+    if (previousTab.current !== tab) {
+      previousTab.current = tab;
+      // A page-specific result should not remain visible after navigating elsewhere.
+      setMessage("");
+    }
+  }, [tab]);
+
   const [swapDraft,setSwapDraft] = useState<ScheduleView|null>(null);
   const [theme,setTheme] = useState<"light"|"dark">(()=>{
     try { return window.localStorage.getItem("gms-sound-theme")==="dark"?"dark":"light"; }
