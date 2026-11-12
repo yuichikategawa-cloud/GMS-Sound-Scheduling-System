@@ -559,3 +559,107 @@
   background:var(--accent-soft,#393b72)!important;
   color:var(--accent-hover,#a9a2ff)!important;
 }
+
+
+/* Church-specific sound role qualification matrix. */
+.servant-location-role-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  min-width:0;
+}
+.servant-location-role-card{
+  display:grid;
+  align-content:start;
+  gap:12px;
+  min-width:0;
+  padding:13px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:11px;
+  background:var(--surface,#fff);
+}
+.servant-location-role-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.servant-location-role-heading b{
+  color:var(--text-primary,#1f2937);
+  font-size:12px;
+  line-height:1.35;
+}
+.servant-location-role-heading span{
+  flex:0 0 auto;
+  padding:4px 7px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:999px;
+  background:var(--surface-muted,#f7f9fc);
+  color:var(--text-muted,#667085);
+  font-size:9px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.servant-location-role-card .servant-role-qualification-options{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+}
+.servant-location-role-card .servant-role-qualification-options label{
+  justify-content:flex-start;
+  min-height:31px;
+  padding:6px 9px;
+}
+.servant-location-role-card .servant-role-readonly-list{
+  min-height:34px;
+  align-content:start;
+}
+.servant-location-role-card .servant-role-readonly-list small{
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.4;
+}
+.servant-location-role-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  padding-top:10px;
+  border-top:1px solid var(--border-color,#d8e0ec);
+}
+.servant-location-role-actions>small{
+  max-width:540px;
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.45;
+}
+:root[data-theme="dark"] .servant-location-role-card{
+  background:#142136;
+  border-color:#465773;
+}
+:root[data-theme="dark"] .servant-location-role-heading b{
+  color:var(--text-primary,#f2f5fb);
+}
+:root[data-theme="dark"] .servant-location-role-heading span{
+  background:#1d2b42;
+  border-color:#465773;
+  color:#c5d2e5;
+}
+:root[data-theme="dark"] .servant-location-role-card .servant-role-readonly-list small,
+:root[data-theme="dark"] .servant-location-role-actions>small{
+  color:#c5d2e5;
+}
+:root[data-theme="dark"] .servant-location-role-actions{
+  border-top-color:#465773;
+}
+@media(max-width:900px){
+  .servant-location-role-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .servant-location-role-grid{grid-template-columns:1fr}
+  .servant-location-role-actions{align-items:stretch;flex-direction:column}
+  .servant-location-role-actions .btn{width:100%}
+  .servant-location-role-card .servant-role-qualification-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .servant-location-role-card .servant-role-qualification-options label{justify-content:center;padding:6px 5px}
+}
