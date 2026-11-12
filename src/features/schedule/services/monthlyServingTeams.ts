@@ -1,6 +1,7 @@
 import type { Location, Role } from "../../../types.ts";
 import {
   getMonthlyAssignmentCandidates,
+  MAX_SERVICES_PER_DAY,
   type MonthlyAssignmentOptimizerInput,
   type MonthlyAssignmentOptimizerResult,
 } from "./monthlyAssignmentOptimizer.ts";
@@ -253,6 +254,44 @@ function groupHasOverlappingServices(slots: readonly MonthlyScheduleSlot[]): boo
   return false;
 }
 
+function canCoverTeamWithinDailyServiceLimit(input: {
+  schedules: MonthlyAssignmentOptimizerInput["schedules"];
+  currentSlots: readonly MonthlyScheduleSlot[];
+  proposedSlots: readonly MonthlyScheduleSlot[];
+  servantId: string;
+  serviceDate: string;
+}): boolean {
+  const serviceKeys = new Set<string>();
+
+  for (const schedule of input.schedules) {
+    if (
+      schedule.service_date !== input.serviceDate ||
+      !schedule.assignments.some((assignment) =>
+        assignment.servant_id === input.servantId &&
+        assignment.confirmation_status !== "declined"
+      )
+    ) continue;
+    serviceKeys.add("schedule:" + schedule.id);
+  }
+
+  for (const slot of input.currentSlots) {
+    if (
+      slot.service_date !== input.serviceDate ||
+      !slot.assignments.some((assignment) =>
+        assignment.servant_id === input.servantId &&
+        assignment.confirmation_status !== "declined"
+      )
+    ) continue;
+    serviceKeys.add(slot.schedule_id ? "schedule:" + slot.schedule_id : "slot:" + slot.key);
+  }
+
+  for (const slot of input.proposedSlots) {
+    serviceKeys.add(slot.schedule_id ? "schedule:" + slot.schedule_id : "slot:" + slot.key);
+  }
+
+  return serviceKeys.size <= MAX_SERVICES_PER_DAY;
+}
+
 /**
  * Seeds one shared, eligibility-checked servant per role into every service
  * belonging to a configured serving team. These are generated preview
@@ -319,15 +358,27 @@ export function applyMonthlyServingTeamAssignments(input: {
         )) : new Set<string>();
       }
 
-      const eligibleCandidates = [...candidateIds]
+      const individuallyEligibleCandidates = [...candidateIds]
         .map((id) => servantById.get(id))
         .filter((servant): servant is NonNullable<typeof servant> => Boolean(servant) && servant!.active === true)
-        .filter((servant) => groupSlots.every((slot) =>
+        .filter((servant) => missingSlots.every((slot) =>
           getMonthlyAssignmentCandidates(candidateInput, slot, role).some((candidate) => candidate.id === servant.id)
         ));
+      const eligibleCandidates = individuallyEligibleCandidates.filter((servant) =>
+        canCoverTeamWithinDailyServiceLimit({
+          schedules: input.optimizerInput.schedules,
+          currentSlots: workingSlots,
+          proposedSlots: missingSlots,
+          servantId: servant.id,
+          serviceDate: group.serviceDate,
+        })
+      );
 
       if (!eligibleCandidates.length) {
-        warnings.push(group.label + " · " + role + ": no single qualified and available servant can cover every service in this team. Individual optimization was used.");
+        const reason = individuallyEligibleCandidates.length
+          ? "the shared team would exceed the four-service daily limit for every candidate. Individual assignment was used."
+          : "no single qualified and available servant can cover every service in this team. Individual assignment was used.";
+        warnings.push(group.label + " · " + role + ": " + reason);
         continue;
       }
 
