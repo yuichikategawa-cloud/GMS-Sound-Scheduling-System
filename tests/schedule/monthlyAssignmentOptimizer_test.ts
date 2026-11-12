@@ -735,3 +735,215 @@ Deno.test("monthly optimizer leaves a church role unfilled when a servant is not
     "The preview should explain the location-specific qualification gap.",
   );
 });
+
+
+Deno.test("monthly optimizer blocks assignments on the previous or next calendar day across church locations", () => {
+  const servant = createServant("consecutive-day-servant");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const previousDay = createSchedule(
+    "previous-day",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  const nextDay = createSchedule(
+    "next-day",
+    "2026-11-09",
+    "loc-karawaci",
+    "Monday Service",
+    "19:00",
+    "21:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [previousDay] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [],
+    "A servant assigned on the previous calendar day must not be offered, even at another church.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [nextDay] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [],
+    "A servant assigned on the next calendar day must not be offered, even at another church.",
+  );
+});
+
+Deno.test("monthly optimizer permits serving again after one full calendar day of rest", () => {
+  const servant = createServant("rested-servant");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const twoDaysPrior = createSchedule(
+    "two-days-prior",
+    "2026-11-06",
+    "loc-bsd",
+    "Friday Service",
+    "19:00",
+    "21:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [twoDaysPrior] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "A non-consecutive assignment two calendar days earlier must remain eligible.",
+  );
+});
+
+Deno.test("monthly optimizer enforces a maximum of four distinct service slots per servant per day", () => {
+  const servant = createServant("daily-limit-servant");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const priorServices = [
+    createSchedule("service-1", "2026-11-08", "loc-as", "Service 1", "07:00", "09:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-2", "2026-11-08", "loc-as", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+    createSchedule("service-3", "2026-11-08", "loc-as", "Service 3", "11:00", "13:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-4", "2026-11-08", "loc-as", "Service 4", "13:00", "15:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+  ];
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: priorServices },
+      target,
+      "FOH",
+    ),
+    [],
+    "A fifth distinct service on the same calendar day must be blocked.",
+  );
+});
+
+Deno.test("monthly optimizer allows the fourth service but never a fifth on the same day", () => {
+  const servant = createServant("fourth-service-servant");
+  const fourth = createSlot("2026-11-08", "Service 4", "13:00", "15:00");
+  const priorServices = [
+    createSchedule("service-1", "2026-11-08", "loc-as", "Service 1", "07:00", "09:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-2", "2026-11-08", "loc-as", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+    createSchedule("service-3", "2026-11-08", "loc-as", "Service 3", "11:00", "13:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+  ];
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fourth], [servant]), schedules: priorServices },
+      fourth,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "Exactly four services in one day is still permitted.",
+  );
+});
+
+Deno.test("monthly optimizer reports a consecutive-day reason when that is the only blocker", () => {
+  const servant = createServant("consecutive-day-only");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const previousDay = createSchedule(
+    "previous-day-only",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [servant]),
+    schedules: [previousDay],
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map(position => position.reason),
+    ["consecutive_day_conflict", "consecutive_day_conflict"],
+    "Both required role vacancies should explain that the only servant served on an adjacent day.",
+  );
+});
+
+Deno.test("monthly optimizer reports the four-service daily limit as the vacancy reason", () => {
+  const servant = createServant("daily-limit-only");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const existingServices = [1, 2, 3, 4].map((number) =>
+    createSchedule(
+      "daily-service-" + number,
+      "2026-11-08",
+      "loc-as",
+      "Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: number % 2 ? "FOH" : "Monitor", servant_id: servant.id }],
+    )
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [servant]),
+    schedules: existingServices,
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map(position => position.reason),
+    ["daily_service_limit", "daily_service_limit"],
+    "The preview should explain that all remaining role slots exceed the four-service daily cap.",
+  );
+});
+
+Deno.test("declined assignments do not count toward consecutive-day or daily service limits", () => {
+  const servant = createServant("declined-does-not-count");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const declinedPrevious = createSchedule(
+    "declined-previous",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  declinedPrevious.assignments[0].confirmation_status = "declined";
+  const declinedServices = [1, 2, 3, 4].map((number) => {
+    const schedule = createSchedule(
+      "declined-service-" + number,
+      "2026-11-08",
+      "loc-as",
+      "Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: servant.id }],
+    );
+    schedule.assignments[0].confirmation_status = "declined";
+    return schedule;
+  });
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [declinedPrevious, ...declinedServices] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "Declined service assignments are not actual service commitments and must not block eligibility.",
+  );
+});
