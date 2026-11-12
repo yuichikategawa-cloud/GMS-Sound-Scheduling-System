@@ -7,7 +7,8 @@ export type RecurringAvailabilityPattern =
   | "sunday"
   | "second_week"
   | "nth_weekday"
-  | "month_edges";
+  | "month_edges"
+  | "custom_weekly";
 
 export interface RecurringAvailabilityRule {
   id?: string;
@@ -19,6 +20,8 @@ export interface RecurringAvailabilityRule {
   notes?: string | null;
   weekday?: string | number | null;
   ordinal?: string | number | null;
+  weekdays?: number[] | null;
+  interval_weeks?: string | number | null;
 }
 
 export interface AvailabilityRecord {
@@ -40,7 +43,7 @@ export interface VirtualAvailabilityRecord extends AvailabilityRecord {
 
 export type RecurringAvailabilityRuleValidation =
   | { ok: true }
-  | { ok: false; reason: "invalid_date_range" | "overlapping_rule" | "availability_conflict"; conflictDate?: string };
+  | { ok: false; reason: "invalid_date_range" | "invalid_pattern" | "overlapping_rule" | "availability_conflict"; conflictDate?: string };
 
 /**
  * Keeps the same local-noon date parsing and locale-based date formatting
@@ -48,6 +51,13 @@ export type RecurringAvailabilityRuleValidation =
  */
 function ruleDate(value: string): Date {
   return new Date(`${value}T12:00:00`);
+}
+
+function mondayWeekIndex(date: Date): number {
+  const weekday = date.getDay() === 0 ? 7 : date.getDay();
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - weekday + 1);
+  return Math.floor(Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate()) / 86400000);
 }
 
 function matchesPattern(rule: RecurringAvailabilityRule, date: Date): boolean {
@@ -60,6 +70,15 @@ function matchesPattern(rule: RecurringAvailabilityRule, date: Date): boolean {
   if (rule.pattern === "sunday") return day === 0;
   if (rule.pattern === "second_week") return dayOfMonth >= 8 && dayOfMonth <= 14;
   if (rule.pattern === "month_edges") return dayOfMonth <= 3 || dayOfMonth > lastDay - 3;
+  if (rule.pattern === "custom_weekly") {
+    const selectedDays = (rule.weekdays ?? []).map(Number);
+    const intervalWeeks = Number(rule.interval_weeks ?? 1);
+    if (!selectedDays.includes(day) || !Number.isInteger(intervalWeeks) || intervalWeeks < 1) return false;
+    const weeksFromAnchor = Math.floor(
+      (mondayWeekIndex(date) - mondayWeekIndex(ruleDate(rule.effective_from))) / 7,
+    );
+    return weeksFromAnchor >= 0 && weeksFromAnchor % intervalWeeks === 0;
+  }
   if (rule.pattern === "nth_weekday") {
     const ordinal = Math.ceil(dayOfMonth / 7);
     const isLast = dayOfMonth + 7 > lastDay;
@@ -159,6 +178,21 @@ export function validateRecurringAvailabilityRule(
     (hasEndDate && candidate.effective_until! < candidate.effective_from)
   ) {
     return { ok: false, reason: "invalid_date_range" };
+  }
+
+  if (
+    candidate.pattern === "custom_weekly" &&
+    (
+      !Array.isArray(candidate.weekdays) ||
+      candidate.weekdays.length === 0 ||
+      candidate.weekdays.some(day => !Number.isInteger(Number(day)) || Number(day) < 0 || Number(day) > 6) ||
+      new Set(candidate.weekdays.map(Number)).size !== candidate.weekdays.length ||
+      !Number.isInteger(Number(candidate.interval_weeks ?? 1)) ||
+      Number(candidate.interval_weeks ?? 1) < 1 ||
+      Number(candidate.interval_weeks ?? 1) > 52
+    )
+  ) {
+    return { ok: false, reason: "invalid_pattern" };
   }
 
   if (hasOverlappingRule(candidate, existingRules)) {
