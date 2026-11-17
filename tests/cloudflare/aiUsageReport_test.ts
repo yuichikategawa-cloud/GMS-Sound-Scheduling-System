@@ -481,3 +481,99 @@ Deno.test("AI explanation restores exact service names after sending anonymous s
   assert(sentSnapshot.churches[0].services[0].date === "2026-12-25", "The service date must be sent to the Worker.");
   assert(result.explanation.includes("2026-12-25 — Christmas Celebration Service — Monitor"), "The displayed explanation must restore the exact original service name.");
 });
+
+
+Deno.test("Cached AI explanations skip the Neuron ceiling but still respect the Workers request ceiling", async () => {
+  const originalFetch = globalThis.fetch;
+  let workersRequests = 75_000;
+  let modelCalls = 0;
+  const snapshot = {
+    month: "2026-11",
+    summary: {
+      serviceCount: 1,
+      requiredPositions: 0,
+      filledRequiredPositions: 0,
+      unfilledRequiredPositions: 0,
+      proposedAssignments: 0,
+      frozenServices: 0,
+    },
+    churches: [{
+      label: "Church 1",
+      totalServiceCount: 1,
+      omittedServiceCount: 0,
+      vacancySummary: [],
+      services: [{
+        label: "Service 1",
+        date: "2026-11-17",
+        startTime: "10:00",
+        endTime: "11:00",
+        special: false,
+        frozen: false,
+        assignments: [],
+        vacancies: [],
+      }],
+    }],
+    workload: [],
+  };
+  const guard = {
+    fetch: async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/reserve")) return Response.json({ allowed: true, cached: true, explanation: "Cached preview explanation." });
+      return Response.json({ error: "unexpected_internal_route" }, { status: 404 });
+    },
+  };
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
+    if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
+    if (url.endsWith("/graphql")) {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { query?: string };
+      if (body.query?.includes("aiInferenceAdaptiveGroups")) {
+        return Response.json({
+          data: { viewer: { accounts: [{ aiInferenceAdaptiveGroups: [{ sum: { totalNeurons: 9_000 } }] }] } },
+        });
+      }
+      return Response.json({
+        data: { viewer: { accounts: [{ workersInvocationsAdaptive: [{ sum: { requests: workersRequests } }] }] } },
+      });
+    }
+    return Response.json({ error: "unexpected_fetch" }, { status: 500 });
+  };
+
+  const makeRequest = () => new Request("https://worker.example/v1/explain", {
+    method: "POST",
+    headers: {
+      Origin: "https://gms-sound-scheduling-system-test123.vercel.app",
+      Authorization: "Bearer test-session-token",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ kind: "preview_explanation", snapshot }),
+  });
+  const env = {
+    AI_GUARD: { idFromName: () => "global", get: () => guard },
+    SUPABASE_URL: "https://supabase.example",
+    SUPABASE_ANON_KEY: "public-anon-key",
+    GMS_APP_ORIGIN: "https://gms.example",
+    GMS_AI_ENABLED: "true",
+    AI: { run: async () => { modelCalls += 1; return { response: "Unexpected inference." }; } },
+    CLOUDFLARE_ACCOUNT_ID: "account-id",
+    CLOUDFLARE_API_TOKEN: "test-token",
+  } as never;
+
+  try {
+    const atRequestLimit = await aiWorker.fetch(makeRequest(), env);
+    const atRequestLimitData = await atRequestLimit.json();
+    assert(atRequestLimit.status === 429, "Cached requests must still stop at the 75% Workers request ceiling.");
+    assert(atRequestLimitData.reason === "workers_request_safety_limit", "The request safety reason must be reported.");
+
+    workersRequests = 74_999;
+    const belowRequestLimit = await aiWorker.fetch(makeRequest(), env);
+    const cachedData = await belowRequestLimit.json();
+    assert(belowRequestLimit.status === 200 && cachedData.cached === true, "A cached response below the request ceiling should remain available.");
+    assert(cachedData.explanation === "Cached preview explanation.", "The cached explanation should be returned.");
+    assert(modelCalls === 0, "Cached explanations must not invoke the model or consume Neurons, even above the Neuron safety ceiling.");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
