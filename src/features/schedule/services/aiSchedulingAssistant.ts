@@ -56,8 +56,9 @@ export type AiSchedulingSnapshot = {
 };
 
 /**
- * Builds a deliberately anonymized AI context. Names, IDs, emails, contact
- * details, CG data, notes and authentication metadata never leave the browser.
+ * Builds a minimized AI context with church, servant and service display names
+ * so administrators can identify issues. IDs, emails, contact details, CG data,
+ * notes and authentication metadata are never sent to the AI provider.
  */
 export function buildAiSchedulingSnapshot(input: {
   month: string;
@@ -79,7 +80,7 @@ export function buildAiSchedulingSnapshot(input: {
   for (const workload of input.workloads) servantIds.add(workload.servant_id);
 
   const orderedServantIds = [...servantIds].sort();
-  const servantLabels = new Map(orderedServantIds.map((id, index) => [id, "Servant " + (index + 1)]));
+  const servantLabels = new Map(orderedServantIds.map((id) => [id, servantsById.get(id)?.full_name?.trim() || "Unknown servant"]));
   const servantsById = new Map(input.servants.map((servant) => [servant.id, servant]));
   const generatedBySlot = new Map<string, MonthlyGeneratedAssignment[]>();
   for (const assignment of input.generatedAssignments) {
@@ -99,7 +100,7 @@ export function buildAiSchedulingSnapshot(input: {
     ...input.locations.filter((location) => includedChurchIds.has(location.id)).map((location) => location.id),
     ...[...includedChurchIds].filter((id) => !input.locations.some((location) => location.id === id)),
   ];
-  const churchLabels = new Map(churchIds.map((id, index) => [id, "Church " + (index + 1)]));
+  const churchLabels = new Map(churchIds.map((id) => [id, input.locations.find((location) => location.id === id)?.name?.trim() || "Unknown church"]));
   const serviceLabels = new Map<string, string>();
   for (const locationId of churchIds) {
     const services = input.slots
@@ -110,7 +111,7 @@ export function buildAiSchedulingSnapshot(input: {
         a.start_time.localeCompare(b.start_time) ||
         a.service_name.localeCompare(b.service_name)
       );
-    services.forEach((slot, index) => serviceLabels.set(slot.key, "Service " + (index + 1)));
+    services.forEach((slot) => serviceLabels.set(slot.key, slot.service_name));
   }
 
   const getAvailability = (servantId: string, date: string) => {
