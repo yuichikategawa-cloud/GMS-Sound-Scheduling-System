@@ -399,7 +399,7 @@ export class AiBudgetGuard {
     }
 
     if (body.action === "reserve") {
-      if (typeof body.dayKey !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(body.dayKey) ||
+      if (typeof body.dayKey !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(body.dayKey) ||
           typeof body.userKey !== "string" || !/^[a-f0-9]{64}$/.test(body.userKey) ||
           typeof body.cacheKey !== "string" || !/^[a-f0-9]{64}$/.test(body.cacheKey) ||
           typeof body.requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.requestId)) {
@@ -483,14 +483,8 @@ export class AiBudgetGuard {
 
       this.sql.exec("DELETE FROM gms_ai_pending WHERE request_id = ?", body.requestId);
       if (body.action === "release") {
-        this.sql.exec(
-          "UPDATE gms_ai_user_requests SET requests = MAX(requests - 1, 0) WHERE day_key = ? AND user_key = ?",
-          pending.day_key, pending.user_key,
-        );
-        this.sql.exec(
-          "UPDATE gms_ai_global_requests SET requests = MAX(requests - 1, 0) WHERE day_key = ?",
-          pending.day_key,
-        );
+        // Failed attempts still count against the separate request-abuse ceiling;
+        // only the successful-inference counters are left untouched.
         return Response.json({ released: true });
       }
 
