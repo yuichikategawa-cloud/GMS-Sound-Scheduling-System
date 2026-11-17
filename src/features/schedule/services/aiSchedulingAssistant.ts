@@ -277,11 +277,11 @@ export async function requestAiSchedulingExplanation(
       const reasons: Record<string, string> = {
         gms_request_limit: "The GMS monthly AI request allowance has been reached. Please try again after the next monthly reset.",
         admin_request_limit: "Your monthly AI request allowance has been reached. Please try again after the next monthly reset.",
-        gms_daily_limit: "The GMS monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
-        admin_daily_limit: "Your monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
+        gms_monthly_limit: "The GMS monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
+        admin_monthly_limit: "Your monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
       };
       throw new Error((typeof payload.reason === "string" && reasons[payload.reason]) ||
-        "The free GMS AI daily limit has been reached. Try again after the UTC daily reset.");
+        "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.");
     }
     const messages: Record<number, string> = {
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
