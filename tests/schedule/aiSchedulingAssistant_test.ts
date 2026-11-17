@@ -172,6 +172,7 @@ Deno.test("Three-church monthly AI snapshot stays below the Worker payload ceili
       status: "new_special",
       assignments: servants3.slice(0, 3).map((member, roleIndex) => ({
         servant_id: member.id,
+        servant_name: member.full_name,
         role: (["FOH", "Monitor", "Assistant"] as const)[roleIndex],
         confirmation_status: "pending",
       })),
