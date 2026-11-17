@@ -86,17 +86,65 @@ function applyManualOverrides(
   });
 }
 
-function formatProviderNeuronUsage(usage: {
-  providerDailyNeurons: number | null;
-  providerUsageStatus: string;
-  limits: { workersAiNeuronsDaily?: number };
-}): string {
-  if (usage.providerDailyNeurons === null) {
-    return usage.providerUsageStatus === "not_configured" ? "Not connected yet" : usage.providerUsageStatus.replace(/_/g, " ");
-  }
-  const used = usage.providerDailyNeurons.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  const limit = usage.limits.workersAiNeuronsDaily?.toLocaleString() ?? "limit unavailable";
-  return `${usage.providerUsageStatus === "estimated" ? "≈" : ""}${used} / ${limit}`;
+function AiUsageAllowanceNote({
+  dailyNeurons,
+  providerStatus,
+  workersRequests,
+  workersRequestsStatus,
+  observabilityEvents,
+  observabilityEventsStatus,
+  limits,
+}: {
+  dailyNeurons: number | null;
+  providerStatus: string;
+  workersRequests: number | null;
+  workersRequestsStatus: string;
+  observabilityEvents: number | null;
+  observabilityEventsStatus: string;
+  limits: {
+    workersRequestsDaily: number;
+    workersRequestsDailySafety: number;
+    workersObservabilityEventsDaily: number;
+    workersAiNeuronsDaily: number;
+    workersAiNeuronsDailySafety: number;
+  };
+}) {
+  const statusText = (status: string) => ({
+    available: "Reported by Cloudflare.",
+    estimated: "Cloudflare adaptive analytics estimate; sampling may apply.",
+    not_configured: "Cloudflare account credentials are not configured.",
+    permission_denied: "The API token does not have the required permission.",
+    metric_not_returned: "Cloudflare did not return this metric.",
+    logs_not_available: "Workers Observability data is not available for this account or Worker.",
+    provider_unavailable: "Cloudflare's usage service is temporarily unavailable.",
+  }[status] ?? status.replace(/_/g, " "));
+
+  const metricValue = (value: number | null, status: string, limit: number) =>
+    value === null ? `— / ${limit.toLocaleString()}` :
+      `${status === "estimated" ? "≈" : ""}${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} / ${limit.toLocaleString()}`;
+
+  return (
+    <div className="monthly-smart-ai-allowance" aria-label="Cloudflare daily usage and GMS safety ceilings">
+      <div className="monthly-smart-ai-allowance-card is-neurons">
+        <span>Workers AI Neurons today</span>
+        <strong>{metricValue(dailyNeurons, providerStatus, limits.workersAiNeuronsDailySafety)}</strong>
+        <p>GMS safety ceiling: {limits.workersAiNeuronsDailySafety.toLocaleString()} Neurons/day (75% of Cloudflare's {limits.workersAiNeuronsDaily.toLocaleString()} Free allowance).</p>
+        <small>{statusText(providerStatus)} Neurons measure GPU compute, not tokens.</small>
+      </div>
+      <div className="monthly-smart-ai-allowance-card">
+        <span>Workers requests today</span>
+        <strong>{metricValue(workersRequests, workersRequestsStatus, limits.workersRequestsDailySafety)}</strong>
+        <p>GMS safety ceiling: {limits.workersRequestsDailySafety.toLocaleString()} requests/day (75% of Cloudflare's {limits.workersRequestsDaily.toLocaleString()} Free account allowance).</p>
+        <small>{statusText(workersRequestsStatus)} Counts are account-wide across Cloudflare Workers.</small>
+      </div>
+      <div className="monthly-smart-ai-allowance-card">
+        <span>Observability events today</span>
+        <strong>{metricValue(observabilityEvents, observabilityEventsStatus, limits.workersObservabilityEventsDaily)}</strong>
+        <p>Cloudflare Workers Logs allowance: {limits.workersObservabilityEventsDaily.toLocaleString()} events/day.</p>
+        <small>{statusText(observabilityEventsStatus)} Counts include only Workers with invocation logging enabled.</small>
+      </div>
+    </div>
+  );
 }
 
 function buildOverallAiSummary(snapshot: AiSchedulingSnapshot): string {
@@ -257,7 +305,13 @@ export default function MonthlySmartScheduler({
     month: string;
     global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number };
     admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>;
-    limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number; workersRequestsDaily?: number; workersObservabilityEventsDaily?: number; workersAiNeuronsDaily?: number };
+    limits: {
+      workersRequestsDaily: number;
+      workersRequestsDailySafety: number;
+      workersObservabilityEventsDaily: number;
+      workersAiNeuronsDaily: number;
+      workersAiNeuronsDailySafety: number;
+    };
     providerDailyNeurons: number | null;
     providerUsageDate: string | null;
     providerUsageStatus: string;
@@ -987,7 +1041,15 @@ export default function MonthlySmartScheduler({
       <section className="monthly-smart-ai-usage-entry" aria-label="AI usage reporting">
         <button type="button" className="btn secondary" disabled={aiUsageBusy || aiUsageCooldown > 0 || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()}>{aiUsageBusy ? "Refreshing AI usage…" : aiUsageCooldown > 0 ? `Refresh available in ${aiUsageCooldown}s` : "Refresh AI usage"}</button>
         {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
-        {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Cloudflare daily Neurons: {formatProviderNeuronUsage(aiUsage)} · Last refresh: {aiUsage.refreshedAt ? new Date(aiUsage.refreshedAt).toLocaleTimeString() : "—"}.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
+        {aiUsage && <AiUsageAllowanceNote
+          dailyNeurons={aiUsage.providerDailyNeurons}
+          providerStatus={aiUsage.providerUsageStatus}
+          workersRequests={aiUsage.workersRequestsToday}
+          workersRequestsStatus={aiUsage.workersRequestsStatus}
+          observabilityEvents={aiUsage.observabilityEventsToday}
+          observabilityEventsStatus={aiUsage.observabilityEventsStatus}
+          limits={aiUsage.limits}
+        />}
       </section>
 
       <div className="monthly-smart-actions">
@@ -1023,7 +1085,6 @@ export default function MonthlySmartScheduler({
                 <span className="monthly-smart-ai-free-label">Free pilot · hard capped</span>
               </div>
               <p>Get an explanation of coverage, role qualifications, vacancies and workload balance. Servant names and personal details are removed before the request leaves this browser.</p>
-              <small>Monthly allowance: up to 120 model calls across GMS and 60 per administrator, plus 600 requests across GMS and 200 per administrator. Cached results do not consume the monthly allowance.</small>
             </div>
             <div className="monthly-smart-ai-actions">
             
@@ -1033,9 +1094,8 @@ export default function MonthlySmartScheduler({
             {aiProgress && <small className="monthly-smart-ai-muted" aria-live="polite">{aiProgress}</small>}
             </div>
             {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
-            {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Provider daily Neurons: {formatProviderNeuronUsage(aiUsage)}.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
             {!aiWorkerUrl && <small className="monthly-smart-ai-muted">Not connected yet. The feature stays disabled until a free-only Cloudflare Worker URL is configured.</small>}
-            {aiError && <p className="monthly-smart-ai-error" role="alert">{aiError}</p>}
+            {aiError && aiError !== "The free AI service is currently disabled. Scheduling remains available without AI." && <p className="monthly-smart-ai-error" role="alert">{aiError}</p>}
             {aiExplanation && <div className="monthly-smart-ai-result" role="status"><div><b>AI analysis</b>{aiCached && <span>Cached result · no model call used</span>}</div><pre>{aiExplanation}</pre><small>Advice only. The AI cannot edit assignments or publish schedules; the existing optimizer and database remain authoritative.</small></div>}
             </div>
           </section>
