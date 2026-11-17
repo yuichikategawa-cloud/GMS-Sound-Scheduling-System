@@ -20,19 +20,19 @@ class FakeSql {
     const column = /SUM\(([a-z_]+)\)/.exec(query)?.[1];
     if (query.includes("SELECT refreshed_at")) {
       const value = this.cooldown.get(String(bindings[0]));
-      rows = (value === undefined ? [] : [{ refreshed_at: value }]) as T[];
+      rows = (value === undefined ? [] : [{ refreshed_at: value }]) as unknown as T[];
     } else if (query.includes("GROUP BY user_key") && table && column) {
       const totals = new Map<string, number>();
       for (const row of this.table(table)) {
         if (String(row.day_key).startsWith(month)) totals.set(String(row.user_key), (totals.get(String(row.user_key)) ?? 0) + Number(row[column] ?? 0));
       }
-      rows = [...totals].map(([user_key, total]) => ({ user_key, total })) as T[];
+      rows = [...totals].map(([user_key, total]) => ({ user_key, total })) as unknown as T[];
     } else if (query.includes("SELECT COALESCE(SUM(") && table && column) {
       const source = this.table(table);
       const total = source.filter((r) => String(r.day_key).startsWith(month)).reduce((sum, r) => sum + Number(r[column] ?? 0), 0);
-      rows = [{ total }] as T[];
+      rows = [{ total }] as unknown as T[];
     } else if (query.includes("SELECT COUNT(*) AS total FROM gms_ai_pending")) {
-      rows = [{ total: this.pending.filter((r) => r.day_key.startsWith(month)).length }] as T[];
+      rows = [{ total: this.pending.filter((r) => r.day_key.startsWith(month)).length }] as unknown as T[];
     } else if (query.includes("INSERT INTO gms_ai_usage_refresh_cooldown")) {
       this.cooldown.set(String(bindings[0]), Number(bindings[1]));
     }
@@ -168,7 +168,7 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
 
 
 Deno.test("AI explanation restores exact service names after sending anonymous service labels", async () => {
-  let sentBody: Record<string, unknown> | null = null;
+  const sentBody: { value: Record<string, unknown> | null } = { value: null };
   const snapshot = {
     month: "2026-12",
     summary: {
@@ -199,7 +199,7 @@ Deno.test("AI explanation restores exact service names after sending anonymous s
     "session-token",
     snapshot as never,
     async (_input, init) => {
-      sentBody = JSON.parse(String(init?.body));
+      sentBody.value = JSON.parse(String(init?.body));
       return Response.json({
         explanation: "2026-12-25 — Service 1 — Monitor: no eligible candidate was found.",
         cached: false,
@@ -207,7 +207,7 @@ Deno.test("AI explanation restores exact service names after sending anonymous s
     },
   );
 
-  const sentSnapshot = sentBody?.snapshot as { churches: Array<{ services: Array<{ label: string; date: string }> }> };
+  const sentSnapshot = sentBody.value?.snapshot as { churches: Array<{ services: Array<{ label: string; date: string }> }> };
   assert(sentSnapshot.churches[0].services[0].label === "Service 1", "Private service names must be aliased before sending to the Worker.");
   assert(sentSnapshot.churches[0].services[0].date === "2026-12-25", "The service date must be sent to the Worker.");
   assert(result.explanation.includes("2026-12-25 — Christmas Celebration Service — Monitor"), "The displayed explanation must restore the exact original service name.");
