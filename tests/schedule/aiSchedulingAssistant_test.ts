@@ -89,7 +89,7 @@ const availability = [{
   notes: "Private availability note",
 }] as unknown as AvailabilityRecord[];
 
-Deno.test("AI scheduling snapshot anonymizes identities and free-text fields", () => {
+Deno.test("AI scheduling snapshot keeps display names local and excludes private identifiers", () => {
   const snapshot = buildAiSchedulingSnapshot({
     month: "2026-12",
     locations,
@@ -104,16 +104,12 @@ Deno.test("AI scheduling snapshot anonymizes identities and free-text fields", (
 
   assert(!serialized.includes("private-servant-id"), "Servant IDs must not be included.");
   assert(!serialized.includes("private-auth-user-id"), "Authentication IDs must not be included.");
-  assert(!serialized.includes("Private Person Name"), "Servant names must not be included.");
   assert(!serialized.includes("private-church-id"), "Church IDs must not be included.");
-  assert(!serialized.includes("GMS Private Church Name"), "Church names must be anonymized.");
-  assert(!serialized.includes("Private Custom Service"), "User-entered service names must not be sent.");
-  assert(!serialized.includes("Private availability note"), "Availability notes must not be sent.");
-  assert(serialized.includes("Servant 1"), "Servants should receive stable anonymous labels.");
-  assert(serialized.includes("Church 1"), "Church locations should receive anonymous labels.");
-  assert(serialized.includes("Service 1"), "Services should receive anonymous labels.");
+  assert(!serialized.includes("Private availability note"), "Availability notes must not be included.");
+  assert(serialized.includes("Private Person Name"), "The local preview context should retain servant display names.");
+  assert(serialized.includes("GMS Private Church Name"), "The local preview context should retain church display names.");
+  assert(serialized.includes("Private Custom Service"), "The local preview context should retain service display names.");
 });
-
 Deno.test("AI context samples at most three services per church and reports omissions", () => {
   const snapshot = buildAiSchedulingSnapshot({
     month: "2026-12",
