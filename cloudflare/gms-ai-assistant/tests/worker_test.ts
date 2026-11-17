@@ -139,10 +139,10 @@ Deno.test("Worker rejects service samples that exceed the prompt-size policy", (
 });
 
 Deno.test("Worker enforces the approved monthly free AI budgets", () => {
-  assert(MONTHLY_GMS_MODEL_CALL_LIMIT === 60, "GMS-wide successful model calls must be capped at 60 per UTC month.");
-  assert(MONTHLY_ADMIN_MODEL_CALL_LIMIT === 30, "Each administrator must be capped at 30 successful model calls per UTC month.");
-  assert(MONTHLY_GMS_REQUEST_LIMIT === 300, "GMS-wide request attempts must be capped at 300 per UTC month.");
-  assert(MONTHLY_ADMIN_REQUEST_LIMIT === 100, "Each administrator must be capped at 100 request attempts per UTC month.");
+  assert(MONTHLY_GMS_MODEL_CALL_LIMIT === 120, "GMS-wide successful model calls must be capped at 120 per UTC month.");
+  assert(MONTHLY_ADMIN_MODEL_CALL_LIMIT === 60, "Each administrator must be capped at 60 successful model calls per UTC month.");
+  assert(MONTHLY_GMS_REQUEST_LIMIT === 600, "GMS-wide request attempts must be capped at 600 per UTC month.");
+  assert(MONTHLY_ADMIN_REQUEST_LIMIT === 200, "Each administrator must be capped at 200 request attempts per UTC month.");
 });
 
 Deno.test("Worker extracts supported plain-text responses only", () => {
