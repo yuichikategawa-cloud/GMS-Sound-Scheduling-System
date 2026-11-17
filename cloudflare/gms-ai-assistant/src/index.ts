@@ -677,10 +677,7 @@ export default {
     if (request.method !== "POST" || new URL(request.url).pathname !== "/v1/explain") {
       return jsonResponse({ error: "not_found" }, 404, allowedOrigin);
     }
-    if (env.GMS_AI_ENABLED !== "true") {
-      return jsonResponse({ error: "free_ai_disabled" }, 503, allowedOrigin);
-    }
-    if (!env.AI || !env.AI_GUARD || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    if (!env.AI_GUARD || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
       return jsonResponse({ error: "service_not_configured" }, 503, allowedOrigin);
     }
 
@@ -727,6 +724,8 @@ export default {
       }
     }
     if (requestBody.kind !== "preview_explanation") return jsonResponse({ error: "unsupported_request" }, 400, allowedOrigin);
+    if (env.GMS_AI_ENABLED !== "true") return jsonResponse({ error: "free_ai_disabled" }, 503, allowedOrigin);
+    if (!env.AI) return jsonResponse({ error: "service_not_configured" }, 503, allowedOrigin);
 
     const snapshot = validateSnapshot(requestBody.snapshot);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400, allowedOrigin);
