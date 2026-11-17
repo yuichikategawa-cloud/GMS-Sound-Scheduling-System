@@ -125,7 +125,7 @@ function isIntegerInRange(value: unknown, minimum: number, maximum: number): val
 }
 
 function isServantLabel(value: unknown): value is string {
-  return typeof value === "string" && /^Servant ([1-9][0-9]{0,2})$/.test(value);
+  return typeof value === "string" && value.trim().length > 0 && value.length <= 100 && !/[\\u0000-\\u001f]/.test(value);
 }
 
 function isRole(value: unknown): value is string {
@@ -155,7 +155,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
   const churches: SafeSnapshot["churches"] = [];
   for (const rawChurch of value.churches) {
     if (!isRecord(rawChurch) || typeof rawChurch.label !== "string" ||
-        !/^Church [1-5]$/.test(rawChurch.label) || !Array.isArray(rawChurch.services) ||
+        rawChurch.label.trim().length === 0 || rawChurch.label.length > 100 || /[\\u0000-\\u001f]/.test(rawChurch.label) || !Array.isArray(rawChurch.services) ||
         rawChurch.services.length > 3 || !Array.isArray(rawChurch.vacancySummary) ||
         rawChurch.vacancySummary.length > 12 ||
         !isIntegerInRange(rawChurch.totalServiceCount, 0, 100) ||
@@ -164,7 +164,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
     const services: SafeSnapshot["churches"][number]["services"] = [];
     for (const rawService of rawChurch.services) {
       if (!isRecord(rawService) ||
-          typeof rawService.label !== "string" || !/^Service [1-9][0-9]{0,2}$/.test(rawService.label) ||
+          typeof rawService.label !== "string" || rawService.label.trim().length === 0 || rawService.label.length > 100 || /[\\u0000-\\u001f]/.test(rawService.label) ||
           typeof rawService.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(rawService.date) ||
           typeof rawService.startTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(rawService.startTime) ||
           typeof rawService.endTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(rawService.endTime) ||
@@ -825,7 +825,7 @@ export default {
           "Give no more than three actionable recommendations.",
           "Never recommend bypassing eligibility, availability, cross-church, overlap, publication or database validation rules.",
           "Do not create, edit, publish or claim to have changed any schedule. This response is advisory only.",
-          "The snapshot uses anonymous labels such as Servant 1, Church 1 and Service 1. Keep these labels.",
+          "The snapshot includes church, servant and service display names to make recommendations actionable. Use the supplied names exactly. Never infer or invent names.",
           "State when the snapshot is incomplete because some service rows were omitted.",
           "Return plain text with short headings. Keep the response below 260 words.",
         ].join(" "),
