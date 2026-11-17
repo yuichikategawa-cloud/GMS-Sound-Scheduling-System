@@ -40,10 +40,10 @@ interface Env {
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
-export const MONTHLY_GMS_MODEL_CALL_LIMIT = 60;
-export const MONTHLY_ADMIN_MODEL_CALL_LIMIT = 30;
-export const MONTHLY_GMS_REQUEST_LIMIT = 300;
-export const MONTHLY_ADMIN_REQUEST_LIMIT = 100;
+export const MONTHLY_GMS_MODEL_CALL_LIMIT = 120;
+export const MONTHLY_ADMIN_MODEL_CALL_LIMIT = 60;
+export const MONTHLY_GMS_REQUEST_LIMIT = 600;
+export const MONTHLY_ADMIN_REQUEST_LIMIT = 200;
 const MAX_REQUEST_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 7_500;
 const MAX_COMPLETION_TOKENS = 768;
