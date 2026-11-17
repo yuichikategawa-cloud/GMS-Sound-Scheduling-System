@@ -160,6 +160,8 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
     assert(data.global.modelCalls === 6 && data.global.requests === 7, "The Worker must preserve global usage counters.");
     assert(data.limits.perAdminModelCalls === 60, "The Worker must preserve the limits contract.");
     assert(data.providerUsageStatus === "not_configured", "Missing provider credentials must be reported without failing usage.");
+    assert(data.workersRequestsStatus === "not_configured", "Missing provider credentials must leave Workers request analytics unavailable, not zero.");
+    assert(data.observabilityEventsStatus === "not_configured", "Missing provider credentials must leave Observability event analytics unavailable, not zero.");
     assert(typeof data.refreshedAt === "string", "The response must include a refresh timestamp.");
   } finally {
     globalThis.fetch = originalFetch;
@@ -209,11 +211,11 @@ Deno.test("AI usage Worker reports Durable Object usage failures without exposin
   }
 });
 
-Deno.test("AI usage Worker queries the current billing period and selects today's Workers AI neurons", async () => {
+Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observability event counts from Cloudflare", async () => {
   const originalFetch = globalThis.fetch;
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const requestedProviderRequest: { search?: string } = {};
+  const requested: { billing?: URL; graphql?: Record<string, unknown>; observability?: Record<string, unknown> } = {};
   const usage = {
     month: today.slice(0, 7),
     global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
@@ -228,30 +230,53 @@ Deno.test("AI usage Worker queries the current billing period and selects today'
       return Response.json({ error: "unexpected_internal_route" }, { status: 404 });
     },
   };
-  globalThis.fetch = async (input: RequestInfo | URL) => {
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
     if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
-    if (url.includes("/billable-usage")) {
-      requestedProviderRequest.search = new URL(url).search;
+    if (url.includes("/billable/usage")) {
+      requested.billing = new URL(url);
       return Response.json({
         success: true,
         result: [
           {
-            ServiceName: "Workers AI",
-            ServiceFamilyName: "Workers AI",
+            x_ProductFamilyName: "Workers",
+            x_BillableMetricName: "Workers AI Inference Neurons",
             ConsumedUnit: "Neurons",
-            ConsumedQuantity: 123,
+            ConsumedQuantity: 386.18,
             ChargePeriodStart: today + "T00:00:00Z",
           },
           {
-            ServiceName: "Workers AI",
-            ServiceFamilyName: "Workers AI",
+            x_ProductFamilyName: "Workers",
+            x_BillableMetricName: "Workers AI Inference Neurons",
             ConsumedUnit: "Neurons",
             ConsumedQuantity: 999,
             ChargePeriodStart: yesterday + "T00:00:00Z",
           },
         ],
+      });
+    }
+    if (url.endsWith("/graphql")) {
+      requested.graphql = JSON.parse(String(init?.body ?? "{}"));
+      return Response.json({
+        data: {
+          viewer: {
+            accounts: [{ workersInvocationsAdaptive: [{ sum: { requests: 177 } }] }],
+          },
+        },
+      });
+    }
+    if (url.includes("/workers/observability/telemetry/query")) {
+      requested.observability = JSON.parse(String(init?.body ?? "{}"));
+      return Response.json({
+        success: true,
+        result: {
+          calculations: [{
+            alias: "observabilityEvents",
+            calculation: "count",
+            aggregates: [{ value: 46, sampleInterval: 1 }],
+          }],
+        },
       });
     }
     return Response.json({ error: "unexpected_fetch" }, { status: 500 });
@@ -277,12 +302,17 @@ Deno.test("AI usage Worker queries the current billing period and selects today'
     } as never);
 
     const data = await response.json();
-    assert(response.status === 200, "Usage reporting must succeed with the current billing-period endpoint.");
-    assert(requestedProviderRequest.search !== undefined, "The Cloudflare billable-usage endpoint must be requested.");
-    assert(requestedProviderRequest.search === "", "The request must omit from/to bounds that can exclude the billing-cycle anchor day.");
-    assert(data.providerUsageStatus === "available", "A matching Workers AI neuron metric must be reported as available.");
-    assert(data.providerDailyNeurons === 123, "Only the current day's Workers AI neuron quantity must be included.");
-    assert(data.providerUsageDate === today, "The provider usage date must be today's UTC date.");
+    assert(response.status === 200, "Cloudflare metric failures must never break the GMS usage report.");
+    assert(requested.billing?.searchParams.get("from") === today && requested.billing?.searchParams.get("to") === today, "Workers AI Neurons must use the current UTC daily usage range.");
+    assert(data.providerUsageStatus === "available", "A Workers AI Neuron usage row must be recognized.");
+    assert(data.providerDailyNeurons === 386.18, "Only today's Workers AI Neurons must be summed.");
+    assert(requested.graphql?.variables && typeof requested.graphql.variables === "object", "Workers GraphQL account analytics must be queried.");
+    assert(data.workersRequestsToday === 177 && data.workersRequestsStatus === "estimated", "Account Workers requests must be returned as an adaptive analytics estimate.");
+    assert(requested.observability?.dry === true && requested.observability?.view === "calculations", "Observability must use a non-persisted aggregate query.");
+    assert(data.observabilityEventsToday === 46 && data.observabilityEventsStatus === "available", "Stored Observability event counts must be returned.");
+    assert(data.limits.workersRequestsDaily === 100_000, "The Workers request quota must be part of the usage contract.");
+    assert(data.limits.workersObservabilityEventsDaily === 200_000, "The Observability event quota must be part of the usage contract.");
+    assert(data.limits.workersAiNeuronsDaily === 10_000, "The Workers AI daily Neuron quota must be part of the usage contract.");
   } finally {
     globalThis.fetch = originalFetch;
   }

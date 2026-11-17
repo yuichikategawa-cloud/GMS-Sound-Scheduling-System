@@ -808,53 +808,195 @@ export default {
           return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
         }
 
+        const today = new Date().toISOString().slice(0, 10);
+        const now = new Date();
+        const startOfUtcDay = new Date(today + "T00:00:00.000Z");
         let providerDailyNeurons: number | null = null;
         let providerUsageDate: string | null = null;
         let providerUsageStatus = "not_configured";
+        let workersRequestsToday: number | null = null;
+        let workersRequestsStatus = "not_configured";
+        let observabilityEventsToday: number | null = null;
+        let observabilityEventsStatus = "not_configured";
+
         if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
-          const today = new Date().toISOString().slice(0, 10);
+          const authHeaders = {
+            Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
+            Accept: "application/json",
+          };
+
+          // Workers AI Neurons: use the newer daily usage endpoint first. It includes
+          // metered usage covered by free-tier allocations and is date-scoped.
           try {
-            // The V1 billable-usage endpoint requires the requested range to include
-            // the account billing-cycle anchor day. Omit date bounds to request the
-            // current billing period, then select today's charge rows locally.
-            const providerUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable-usage`);
-            const providerResponse = await fetch(providerUrl, {
-              headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, Accept: "application/json" },
-            });
-            if (providerResponse.ok) {
-              const providerPayload = await providerResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
-              const rows = Array.isArray(providerPayload.result) ? providerPayload.result : [];
-              const neuronRows = rows.filter((row) =>
-                /workers.?ai/i.test(String(row.ServiceName ?? "") + " " + String(row.ServiceFamilyName ?? "")) &&
-                /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? "")) &&
-                typeof row.ChargePeriodStart === "string" &&
-                row.ChargePeriodStart.slice(0, 10) === today
-              );
-              const total = neuronRows.reduce((sum, row) => {
-                const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
-                return Number.isFinite(quantity) ? sum + quantity : sum;
-              }, 0);
-              if (providerPayload.success && neuronRows.length > 0) {
-                providerDailyNeurons = total;
+            const usageUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable/usage`);
+            usageUrl.searchParams.set("from", today);
+            usageUrl.searchParams.set("to", today);
+            const usageResponse = await fetch(usageUrl, { headers: authHeaders });
+            if (usageResponse.ok) {
+              const usagePayload = await usageResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
+              const rows = Array.isArray(usagePayload.result) ? usagePayload.result : [];
+              const neuronRows = rows.filter((row) => {
+                const product = String(row.x_ProductFamilyName ?? "");
+                const metric = String(row.x_BillableMetricName ?? "") + " " +
+                  String(row.x_BillableMetricId ?? "") + " " + String(row.ChargeDescription ?? "");
+                return /workers.?ai/i.test(product + " " + metric) &&
+                  /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? "")) &&
+                  typeof row.ChargePeriodStart === "string" &&
+                  row.ChargePeriodStart.slice(0, 10) === today;
+              });
+              if (usagePayload.success && neuronRows.length > 0) {
+                providerDailyNeurons = neuronRows.reduce((sum, row) => {
+                  const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
+                  return Number.isFinite(quantity) ? sum + quantity : sum;
+                }, 0);
                 providerUsageDate = today;
                 providerUsageStatus = "available";
               } else {
                 providerUsageStatus = "metric_not_returned";
               }
             } else {
-              providerUsageStatus = providerResponse.status === 403 ? "permission_denied" : "provider_unavailable";
+              providerUsageStatus = usageResponse.status === 403 ? "permission_denied" :
+                usageResponse.status === 404 ? "v2_unavailable" : "provider_unavailable";
             }
           } catch (error) {
             const details = safeErrorDetails(error);
-            console.error("[gms-ai] provider_usage_fetch_failed", {
-              stage: "provider_usage",
+            console.error("[gms-ai] provider_neuron_usage_fetch_failed", {
+              stage: "provider_neurons",
               errorName: details.name,
               errorMessage: details.message,
             });
             providerUsageStatus = "provider_unavailable";
           }
+
+          // Workers requests: account-level GraphQL Analytics. The adaptive dataset
+          // can be sampled, so the UI labels this as an analytics estimate.
+          try {
+            const graphqlQuery = `query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
+              viewer {
+                accounts(filter: { accountTag: $accountTag }) {
+                  workersInvocationsAdaptive(limit: 1, filter: {
+                    datetime_geq: $datetimeStart,
+                    datetime_leq: $datetimeEnd
+                  }) {
+                    sum { requests }
+                  }
+                }
+              }
+            }`;
+            const graphqlResponse = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+              method: "POST",
+              headers: { ...authHeaders, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                query: graphqlQuery,
+                variables: {
+                  accountTag: env.CLOUDFLARE_ACCOUNT_ID,
+                  datetimeStart: startOfUtcDay.toISOString(),
+                  datetimeEnd: now.toISOString(),
+                },
+              }),
+            });
+            if (graphqlResponse.ok) {
+              const graphqlPayload = await graphqlResponse.json() as {
+                errors?: Array<{ message?: string }>;
+                data?: { viewer?: { accounts?: Array<{ workersInvocationsAdaptive?: Array<{ sum?: { requests?: number } }> }> } };
+              };
+              const account = graphqlPayload.data?.viewer?.accounts?.[0];
+              const rows = account?.workersInvocationsAdaptive;
+              if (!graphqlPayload.errors?.length && Array.isArray(rows) && rows.length > 0) {
+                workersRequestsToday = rows.reduce((sum, row) => {
+                  const value = Number(row.sum?.requests);
+                  return Number.isFinite(value) ? sum + value : sum;
+                }, 0);
+                workersRequestsStatus = "estimated";
+              } else {
+                workersRequestsStatus = "metric_not_returned";
+              }
+            } else {
+              workersRequestsStatus = graphqlResponse.status === 403 ? "permission_denied" : "provider_unavailable";
+            }
+          } catch (error) {
+            const details = safeErrorDetails(error);
+            console.error("[gms-ai] workers_requests_analytics_failed", {
+              stage: "workers_requests",
+              errorName: details.name,
+              errorMessage: details.message,
+            });
+            workersRequestsStatus = "provider_unavailable";
+          }
+
+          // Workers Observability event count: dry-run aggregate query. It reads
+          // already-stored logs; only Workers with invocation logging enabled are
+          // represented. sampleInterval > 1 means Cloudflare's result is estimated.
+          try {
+            const observabilityUrl = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/workers/observability/telemetry/query`;
+            const observabilityResponse = await fetch(observabilityUrl, {
+              method: "POST",
+              headers: { ...authHeaders, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                queryId: "gms-workers-observability-events-today",
+                timeframe: { from: startOfUtcDay.getTime(), to: now.getTime() },
+                view: "calculations",
+                chartType: "aggregate",
+                ignoreSeries: true,
+                dry: true,
+                parameters: {
+                  datasets: ["cloudflare-workers"],
+                  calculations: [{ operator: "count", alias: "observabilityEvents" }],
+                },
+              }),
+            });
+            if (observabilityResponse.ok) {
+              const observabilityPayload = await observabilityResponse.json() as {
+                errors?: Array<{ message?: string }>;
+                result?: { calculations?: Array<{ alias?: string; calculation?: string; aggregates?: Array<{ value?: number; sampleInterval?: number }> }> };
+              };
+              const calculations = observabilityPayload.result?.calculations;
+              const countCalculation = calculations?.find((item) =>
+                item.alias === "observabilityEvents" || item.calculation === "count"
+              );
+              const aggregates = countCalculation?.aggregates ?? [];
+              if (!observabilityPayload.errors?.length && aggregates.length > 0) {
+                observabilityEventsToday = aggregates.reduce((sum, aggregate) => {
+                  const value = Number(aggregate.value);
+                  return Number.isFinite(value) ? sum + value : sum;
+                }, 0);
+                const hasSampling = aggregates.some((aggregate) => Number(aggregate.sampleInterval ?? 1) > 1);
+                observabilityEventsStatus = hasSampling ? "estimated" : "available";
+              } else {
+                observabilityEventsStatus = "metric_not_returned";
+              }
+            } else {
+              observabilityEventsStatus = observabilityResponse.status === 403 ? "permission_denied" :
+                observabilityResponse.status === 404 ? "logs_not_available" : "provider_unavailable";
+            }
+          } catch (error) {
+            const details = safeErrorDetails(error);
+            console.error("[gms-ai] workers_observability_query_failed", {
+              stage: "observability_events",
+              errorName: details.name,
+              errorMessage: details.message,
+            });
+            observabilityEventsStatus = "provider_unavailable";
+          }
         }
-        return jsonResponse({ ...usage, providerDailyNeurons, providerUsageDate, providerUsageStatus, refreshedAt: new Date().toISOString() }, 200, allowedOrigin);
+
+        return jsonResponse({
+          ...usage,
+          providerDailyNeurons,
+          providerUsageDate,
+          providerUsageStatus,
+          workersRequestsToday,
+          workersRequestsStatus,
+          observabilityEventsToday,
+          observabilityEventsStatus,
+          limits: {
+            ...(isRecord(usage.limits) ? usage.limits : {}),
+            workersRequestsDaily: 100_000,
+            workersObservabilityEventsDaily: 200_000,
+            workersAiNeuronsDaily: 10_000,
+          },
+          refreshedAt: new Date().toISOString(),
+        }, 200, allowedOrigin);
       } catch {
         return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
       }
