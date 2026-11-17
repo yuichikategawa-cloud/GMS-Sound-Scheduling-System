@@ -906,6 +906,12 @@ export default function MonthlySmartScheduler({
 
       {error && <div className="monthly-smart-alert is-blocking" role="alert"><AlertTriangle size={16}/><span>{error}</span></div>}
 
+      <section className="monthly-smart-ai-usage-entry" aria-label="AI usage reporting">
+        <button type="button" className="btn secondary" disabled={aiUsageBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()}>{aiUsageBusy ? "Loading AI usage…" : "View monthly AI usage"}</button>
+        {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
+        {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Provider daily Neurons: not available through this report.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
+      </section>
+
       <div className="monthly-smart-actions">
         <button type="button" className="btn primary" disabled={!canReview} onClick={generatePreview}>
           <WandSparkles size={16}/> Generate monthly preview
