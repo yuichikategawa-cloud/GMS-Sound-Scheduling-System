@@ -916,7 +916,7 @@ export default function MonthlySmartScheduler({
                 <span className="monthly-smart-ai-free-label">Free pilot · hard capped</span>
               </div>
               <p>Get an explanation of coverage, role qualifications, vacancies and workload balance. Servant names and personal details are removed before the request leaves this browser.</p>
-              <small>Monthly allowance: up to 60 model calls across GMS and 30 per administrator, plus 300 requests across GMS and 100 per administrator. Cached results do not consume the monthly allowance.</small>
+              <small>Monthly allowance: up to 120 model calls across GMS and 60 per administrator, plus 600 requests across GMS and 200 per administrator. Cached results do not consume the monthly allowance.</small>
             </div>
             <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void explainPreviewWithAi()} title={!aiWorkerUrl || !aiAccessToken ? "The free Cloudflare Worker is not configured yet." : "Use the free daily AI allowance to explain this preview."}>
               <WandSparkles size={16}/>{aiBusy ? "Analyzing preview…" : aiExplanation ? "Refresh AI explanation" : "Explain preview with AI"}
