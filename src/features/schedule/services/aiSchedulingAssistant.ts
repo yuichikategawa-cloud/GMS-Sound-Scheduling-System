@@ -80,8 +80,8 @@ export function buildAiSchedulingSnapshot(input: {
   for (const workload of input.workloads) servantIds.add(workload.servant_id);
 
   const orderedServantIds = [...servantIds].sort();
-  const servantLabels = new Map(orderedServantIds.map((id) => [id, servantsById.get(id)?.full_name?.trim() || "Unknown servant"]));
   const servantsById = new Map(input.servants.map((servant) => [servant.id, servant]));
+  const servantLabels = new Map(orderedServantIds.map((id) => [id, servantsById.get(id)?.full_name?.trim() || "Unknown servant"]));
   const generatedBySlot = new Map<string, MonthlyGeneratedAssignment[]>();
   for (const assignment of input.generatedAssignments) {
     const items = generatedBySlot.get(assignment.schedule_key) ?? [];
