@@ -1,6 +1,7 @@
 import {
   buildAiSchedulingSnapshot,
   requestAiSchedulingExplanation,
+  resolveAiWorkerEndpoint,
 } from "../../src/features/schedule/services/aiSchedulingAssistant.ts";
 import type { AvailabilityRecord } from "../../src/features/availability/services/recurringAvailability.ts";
 import type { MonthlyScheduleSlot } from "../../src/features/schedule/services/monthlyScheduleGeneration.ts";
@@ -323,4 +324,23 @@ Deno.test("AI explanation client fails closed when the free quota has been reach
     message = error instanceof Error ? error.message : String(error);
   }
   assert(message.includes("free GMS AI monthly limit"), "Quota exhaustion should give a clear no-cost limit message.");
+});
+
+
+Deno.test("AI Worker endpoint normalization removes duplicate slashes and repeated route suffixes", () => {
+  assertEqual(
+    resolveAiWorkerEndpoint("https://gms-ai.example.workers.dev//v1/explain"),
+    "https://gms-ai.example.workers.dev/v1/explain",
+    "A doubled slash before the route must be normalized.",
+  );
+  assertEqual(
+    resolveAiWorkerEndpoint("https://gms-ai.example.workers.dev/v1/explain/v1/explain"),
+    "https://gms-ai.example.workers.dev/v1/explain",
+    "A repeated endpoint suffix must be collapsed.",
+  );
+  assertEqual(
+    resolveAiWorkerEndpoint("https://gms-ai.example.workers.dev/"),
+    "https://gms-ai.example.workers.dev/v1/explain",
+    "A base URL with a trailing slash must resolve to the canonical route.",
+  );
 });
