@@ -25,8 +25,8 @@ enabled = true
 invocation_logs = true
 head_sampling_rate = 1
 
-# Keep inference disabled while validating usage-report diagnostics.
-# The usage_report route remains available; preview_explanation fails closed.
-# Only enable after confirming the Cloudflare account is on Workers Free.
+# Re-enable free AI inference on the isolated staging Worker.
+# Provider analytics enforce the GMS 75% daily Neuron and request safety ceilings.
+# Production Worker configuration remains unchanged.
 [vars]
-GMS_AI_ENABLED = "false"
+GMS_AI_ENABLED = "true"
