@@ -104,7 +104,7 @@ function buildOverallAiSummary(snapshot: AiSchedulingSnapshot): string {
   for (const servant of snapshot.workload) {
     lines.push(`• ${servant.servant}: ${servant.totalAssignments} assignments across ${servant.servingDays} days · ${servant.utilizationPercent}% utilization`);
   }
-  return lines.join("\\n");
+  return lines.join("\n");
 }
 
 function nextMonthKey(): string {
