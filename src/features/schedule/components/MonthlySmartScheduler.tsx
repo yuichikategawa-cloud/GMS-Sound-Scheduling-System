@@ -228,7 +228,7 @@ export default function MonthlySmartScheduler({
     setAiUsageBusy(true);
     setAiUsageError("");
     try {
-      const response = await fetch(aiWorkerUrl.replace(/\\/$/, "") + "/v1/explain", {
+      const response = await fetch(aiWorkerUrl.replace(/\/$/, "") + "/v1/explain", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiAccessToken}` },
         body: JSON.stringify({ kind: "usage_report", month: new Date().toISOString().slice(0, 7) }),
