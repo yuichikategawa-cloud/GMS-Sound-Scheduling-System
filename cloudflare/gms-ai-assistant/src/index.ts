@@ -839,6 +839,24 @@ export default {
 
     const explanation = extractModelText(modelResult).slice(0, 4000);
     if (!explanation) {
+      const responseRecord = isRecord(modelResult) ? modelResult : null;
+      const responseChoices = responseRecord && Array.isArray(responseRecord.choices)
+        ? responseRecord.choices
+        : null;
+      const firstChoice = responseChoices?.[0];
+      const firstChoiceRecord = isRecord(firstChoice) ? firstChoice : null;
+      const responseMessage = firstChoiceRecord && isRecord(firstChoiceRecord.message)
+        ? firstChoiceRecord.message
+        : null;
+      console.error("[gms-ai] model_response_unrecognized", {
+        model: FREE_MODEL,
+        responseType: modelResult === null ? "null" : Array.isArray(modelResult) ? "array" : typeof modelResult,
+        responseKeys: responseRecord ? Object.keys(responseRecord).sort().slice(0, 24) : [],
+        hasResponse: Boolean(responseRecord && typeof responseRecord.response === "string"),
+        hasChoices: Boolean(responseChoices),
+        firstChoiceKeys: firstChoiceRecord ? Object.keys(firstChoiceRecord).sort().slice(0, 16) : [],
+        messageKeys: responseMessage ? Object.keys(responseMessage).sort().slice(0, 16) : [],
+      });
       const releaseResponse = await guard.fetch("https://gms-ai-budget.internal/release", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
