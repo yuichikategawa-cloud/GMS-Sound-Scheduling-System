@@ -167,6 +167,98 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
 });
 
 
+
+Deno.test("AI usage Worker reports Durable Object usage failures without exposing internals", async () => {
+  const originalFetch = globalThis.fetch;
+  const guard = {
+    fetch: async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/usage-refresh")) return Response.json({ allowed: true });
+      if (url.endsWith("/usage")) return Response.json({ error: "sqlite_unavailable" }, { status: 500 });
+      return Response.json({ error: "unexpected_internal_route" }, { status: 404 });
+    },
+  };
+  globalThis.fetch = async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
+    if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
+    return Response.json({ error: "unexpected_fetch" }, { status: 500 });
+  };
+  try {
+    const response = await aiWorker.fetch(new Request("https://worker.example/v1/explain", {
+      method: "POST",
+      headers: {
+        Origin: "https://gms-sound-scheduling-system-test123.vercel.app",
+        Authorization: "Bearer test-session-token",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ kind: "usage_report", month: "2026-11" }),
+    }), {
+      AI_GUARD: { idFromName: () => "global", get: () => guard },
+      SUPABASE_URL: "https://supabase.example",
+      SUPABASE_ANON_KEY: "public-anon-key",
+      GMS_APP_ORIGIN: "https://gms.example",
+      GMS_AI_ENABLED: "false",
+    } as never);
+    const data = await response.json();
+    assert(response.status === 503, "A failed Durable Object usage query must return 503.");
+    assert(data.error === "usage_report_unavailable", "The public error contract must remain stable.");
+    assert(!JSON.stringify(data).includes("sqlite_unavailable"), "Internal guard errors must not leak to clients.");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+Deno.test("AI usage Worker keeps usage report available when optional billing metrics throw", async () => {
+  const originalFetch = globalThis.fetch;
+  const usage = {
+    month: "2026-11",
+    global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
+    admins: [],
+    limits: { modelCalls: 120, perAdminModelCalls: 60, requests: 600, perAdminRequests: 200 },
+  };
+  const guard = {
+    fetch: async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/usage-refresh")) return Response.json({ allowed: true });
+      if (url.endsWith("/usage")) return Response.json(usage);
+      return Response.json({ error: "unexpected_internal_route" }, { status: 404 });
+    },
+  };
+  globalThis.fetch = async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
+    if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
+    if (url.includes("/billable-usage")) throw new Error("billing endpoint unavailable");
+    return Response.json({ error: "unexpected_fetch" }, { status: 500 });
+  };
+  try {
+    const response = await aiWorker.fetch(new Request("https://worker.example/v1/explain", {
+      method: "POST",
+      headers: {
+        Origin: "https://gms-sound-scheduling-system-test123.vercel.app",
+        Authorization: "Bearer test-session-token",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ kind: "usage_report", month: "2026-11" }),
+    }), {
+      AI_GUARD: { idFromName: () => "global", get: () => guard },
+      SUPABASE_URL: "https://supabase.example",
+      SUPABASE_ANON_KEY: "public-anon-key",
+      GMS_APP_ORIGIN: "https://gms.example",
+      GMS_AI_ENABLED: "false",
+      CLOUDFLARE_ACCOUNT_ID: "account-id",
+      CLOUDFLARE_API_TOKEN: "test-token",
+    } as never);
+    const data = await response.json();
+    assert(response.status === 200, "Optional billing failures must not fail usage reporting.");
+    assert(data.global.modelCalls === 2, "Usage counters must still be returned.");
+    assert(data.providerUsageStatus === "provider_unavailable", "Billing failure must be reported as optional provider data.");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 Deno.test("AI explanation restores exact service names after sending anonymous service labels", async () => {
   const sentBody: { value: Record<string, unknown> | null } = { value: null };
   const snapshot = {
