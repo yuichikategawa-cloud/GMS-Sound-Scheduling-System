@@ -243,6 +243,9 @@ export function resolveAiWorkerEndpoint(endpoint: string): string {
   const url = new URL(trimmed);
   url.search = "";
   url.hash = "";
+  // Normalize accidental duplicate path separators and repeated endpoint suffixes.
+  url.pathname = url.pathname.replace(/\/{2,}/g, "/");
+  url.pathname = url.pathname.replace(/(?:\/v1\/explain)+\/?$/, "/v1/explain");
   url.pathname = url.pathname.replace(/\/+$/, "");
   if (url.pathname.endsWith("/v1/explain")) return url.toString();
   if (url.pathname.endsWith("/v1")) url.pathname += "/explain";
