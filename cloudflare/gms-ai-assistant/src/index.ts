@@ -669,6 +669,32 @@ export default {
 
     if (!reservationResponse.ok) {
       const responseBody = await reservationResponse.text().catch(() => "");
+      if (reservationResponse.status === 429) {
+        let limitReason: string | null = null;
+        try {
+          const parsed: unknown = JSON.parse(responseBody);
+          if (isRecord(parsed) && parsed.allowed === false &&
+              typeof parsed.reason === "string" &&
+              ["gms_request_limit", "admin_request_limit", "gms_daily_limit", "admin_daily_limit"].includes(parsed.reason)) {
+            limitReason = parsed.reason;
+          }
+        } catch {
+          // Treat an unrecognized 429 as an internal guard failure below.
+        }
+        if (limitReason) {
+          console.info("[gms-ai] budget_limit_reached", { reason: limitReason });
+          return jsonResponse({
+            error: "daily_free_limit_reached",
+            reason: limitReason,
+            limits: {
+              gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT,
+              perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT,
+              gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT,
+              perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT,
+            },
+          }, 429, allowedOrigin);
+        }
+      }
       const guardCode = safeGuardErrorCode(responseBody);
       console.error("[gms-ai] budget_guard_http_error", {
         stage: "reserve",
