@@ -103,7 +103,7 @@ export default function ScheduleWorkspace({
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
             <details className="assignment-tools-menu" open>
-              <summary className="assignment-tools-summary">
+              <summary className="assignment-tools-summary" aria-label="Expand or collapse automatic and manual assignment tools">
                 <div>
                   <h2>Assignment center</h2>
                   <p>Automatic monthly planning first, followed by manual assignment and recurring service setup.</p>
