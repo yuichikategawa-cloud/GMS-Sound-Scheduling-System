@@ -740,54 +740,115 @@ export default {
       try {
         const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
         const userKey = await sha256("gms-cloudflare-usage-refresh");
-        const reservation = await guard.fetch("https://gms-ai-budget.internal/usage-refresh", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "reserve_usage_refresh", userKey, now: Date.now() }),
-        });
+        let reservation: Response;
+        try {
+          reservation = await guard.fetch("https://gms-ai-budget.internal/usage-refresh", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "reserve_usage_refresh", userKey, now: Date.now() }),
+          });
+        } catch (error) {
+          const details = safeErrorDetails(error);
+          console.error("[gms-ai] usage_refresh_transport_failed", {
+            stage: "usage_refresh",
+            errorName: details.name,
+            errorMessage: details.message,
+          });
+          return jsonResponse({ error: "usage_refresh_unavailable" }, 503, allowedOrigin);
+        }
         if (reservation.status === 429) {
           const limited = await reservation.json() as { retryAfterSeconds?: number };
           return jsonResponse({ error: "usage_refresh_rate_limited", retryAfterSeconds: limited.retryAfterSeconds ?? 60 }, 429, allowedOrigin);
         }
-        if (!reservation.ok) return jsonResponse({ error: "usage_refresh_unavailable" }, 503, allowedOrigin);
+        if (!reservation.ok) {
+          const body = await reservation.text().catch(() => "");
+          console.error("[gms-ai] usage_refresh_guard_http_error", {
+            stage: "usage_refresh",
+            status: reservation.status,
+            errorCode: safeGuardErrorCode(body) ?? "unrecognized_guard_response",
+            cfRay: reservation.headers.get("cf-ray") ?? undefined,
+          });
+          return jsonResponse({ error: "usage_refresh_unavailable" }, 503, allowedOrigin);
+        }
 
-        const response = await guard.fetch("https://gms-ai-budget.internal/usage", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "usage", monthKey }),
-        });
-        if (!response.ok) return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
-        const usage = await response.json() as Record<string, unknown>;
+        let response: Response;
+        try {
+          response = await guard.fetch("https://gms-ai-budget.internal/usage", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "usage", monthKey }),
+          });
+        } catch (error) {
+          const details = safeErrorDetails(error);
+          console.error("[gms-ai] usage_report_transport_failed", {
+            stage: "usage",
+            errorName: details.name,
+            errorMessage: details.message,
+          });
+          return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
+        }
+        if (!response.ok) {
+          const body = await response.text().catch(() => "");
+          console.error("[gms-ai] usage_report_guard_http_error", {
+            stage: "usage",
+            status: response.status,
+            errorCode: safeGuardErrorCode(body) ?? "unrecognized_guard_response",
+            cfRay: response.headers.get("cf-ray") ?? undefined,
+          });
+          return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
+        }
+        let usage: Record<string, unknown>;
+        try {
+          usage = await response.json() as Record<string, unknown>;
+        } catch (error) {
+          const details = safeErrorDetails(error);
+          console.error("[gms-ai] usage_report_invalid_json", {
+            stage: "usage",
+            errorName: details.name,
+            errorMessage: details.message,
+          });
+          return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
+        }
 
         let providerDailyNeurons: number | null = null;
         let providerUsageDate: string | null = null;
         let providerUsageStatus = "not_configured";
         if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
           const today = new Date().toISOString().slice(0, 10);
-          const providerUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable-usage`);
-          providerUrl.searchParams.set("from", today);
-          providerUrl.searchParams.set("to", today);
-          const providerResponse = await fetch(providerUrl, {
-            headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, Accept: "application/json" },
-          });
-          if (providerResponse.ok) {
-            const providerPayload = await providerResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
-            const rows = Array.isArray(providerPayload.result) ? providerPayload.result : [];
-            const neuronRows = rows.filter((row) =>
-              /workers.?ai/i.test(String(row.ServiceName ?? "") + " " + String(row.ServiceFamilyName ?? "")) &&
-              /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? ""))
-            );
-            const total = neuronRows.reduce((sum, row) => {
-              const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
-              return Number.isFinite(quantity) ? sum + quantity : sum;
-            }, 0);
-            if (providerPayload.success && neuronRows.length > 0) {
-              providerDailyNeurons = total;
-              providerUsageDate = today;
-              providerUsageStatus = "available";
+          try {
+            const providerUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable-usage`);
+            providerUrl.searchParams.set("from", today);
+            providerUrl.searchParams.set("to", today);
+            const providerResponse = await fetch(providerUrl, {
+              headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, Accept: "application/json" },
+            });
+            if (providerResponse.ok) {
+              const providerPayload = await providerResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
+              const rows = Array.isArray(providerPayload.result) ? providerPayload.result : [];
+              const neuronRows = rows.filter((row) =>
+                /workers.?ai/i.test(String(row.ServiceName ?? "") + " " + String(row.ServiceFamilyName ?? "")) &&
+                /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? ""))
+              );
+              const total = neuronRows.reduce((sum, row) => {
+                const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
+                return Number.isFinite(quantity) ? sum + quantity : sum;
+              }, 0);
+              if (providerPayload.success && neuronRows.length > 0) {
+                providerDailyNeurons = total;
+                providerUsageDate = today;
+                providerUsageStatus = "available";
+              } else {
+                providerUsageStatus = "metric_not_returned";
+              }
             } else {
-              providerUsageStatus = "metric_not_returned";
+              providerUsageStatus = providerResponse.status === 403 ? "permission_denied" : "provider_unavailable";
             }
-          } else {
-            providerUsageStatus = providerResponse.status === 403 ? "permission_denied" : "provider_unavailable";
+          } catch (error) {
+            const details = safeErrorDetails(error);
+            console.error("[gms-ai] provider_usage_fetch_failed", {
+              stage: "provider_usage",
+              errorName: details.name,
+              errorMessage: details.message,
+            });
+            providerUsageStatus = "provider_unavailable";
           }
         }
         return jsonResponse({ ...usage, providerDailyNeurons, providerUsageDate, providerUsageStatus, refreshedAt: new Date().toISOString() }, 200, allowedOrigin);
