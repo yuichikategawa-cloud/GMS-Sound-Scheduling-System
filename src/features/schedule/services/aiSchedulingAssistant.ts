@@ -247,26 +247,34 @@ export async function requestAiSchedulingExplanation(
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
   const privateNames = new Map<string, string>();
+  const aliasToDisplayName = new Map<string, string>();
   const safeSnapshot: AiSchedulingSnapshot = structuredClone(snapshot);
   const getServantAlias = (name: string) => {
-    if (!privateNames.has(name)) privateNames.set(name, "Servant " + (privateNames.size + 1));
+    if (!privateNames.has(name)) {
+      const alias = "Servant " + (privateNames.size + 1);
+      privateNames.set(name, alias);
+      aliasToDisplayName.set(alias, name);
+    }
     return privateNames.get(name)!;
   };
+  let serviceAliasIndex = 0;
   safeSnapshot.churches.forEach((church, churchIndex) => {
-    const churchName = church.label;
-    church.label = "Church " + (churchIndex + 1);
-    const serviceNames = new Map<string, string>();
-    church.services.forEach((service, serviceIndex) => {
-      serviceNames.set(service.label, "Service " + (serviceIndex + 1));
-      service.label = "Service " + (serviceIndex + 1);
-      service.assignments.forEach((assignment) => assignment.servant = getServantAlias(assignment.servant));
+    const churchAlias = "Church " + (churchIndex + 1);
+    aliasToDisplayName.set(churchAlias, church.label);
+    church.label = churchAlias;
+    church.services.forEach((service) => {
+      serviceAliasIndex += 1;
+      const serviceAlias = "Service " + serviceAliasIndex;
+      aliasToDisplayName.set(serviceAlias, service.label);
+      service.label = serviceAlias;
+      service.assignments.forEach((assignment) => {
+        assignment.servant = getServantAlias(assignment.servant);
+      });
     });
-    church.vacancySummary = church.vacancySummary;
-    // Keep a local-only lookup for translating the model's anonymous references.
-    privateNames.set("Church " + (churchIndex + 1), churchName);
-    for (const [name, alias] of serviceNames) privateNames.set(alias + "@" + churchIndex, name);
   });
-  safeSnapshot.workload.forEach((item) => item.servant = getServantAlias(item.servant));
+  safeSnapshot.workload.forEach((item) => {
+    item.servant = getServantAlias(item.servant);
+  });
   const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot: safeSnapshot });
   const requestBytes = new TextEncoder().encode(requestBody).byteLength;
   if (requestBytes > 7_500) {
@@ -319,19 +327,11 @@ export async function requestAiSchedulingExplanation(
     throw new Error("The AI service returned an empty explanation.");
   }
 
+  const restoredExplanation = [...aliasToDisplayName.entries()]
+    .sort(([a], [b]) => b.length - a.length)
+    .reduce((text, [alias, displayName]) => text.split(alias).join(displayName), payload.explanation);
   return {
-    explanation: [...privateNames.entries()]
-      .filter(([key]) => key.startsWith("Church ") || key.startsWith("Service "))
-      .reduce((text, [key, value]) => {
-        const alias = key.split("@")[0];
-        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        return text.replace(new RegExp(escapedAlias, "g"), value);
-      }, payload.explanation)
-      .replace(/Servant ([1-9][0-9]*)/g, (match) => {
-        const original = [...privateNames.entries()].find(([, alias]) => alias === match);
-        return original?.[0] ?? match;
-      })
-      .slice(0, 4000),
+    explanation: restoredExplanation.slice(0, 4000),
     cached: payload.cached === true,
   };
 }
