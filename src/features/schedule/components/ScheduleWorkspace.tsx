@@ -102,9 +102,32 @@ export default function ScheduleWorkspace({
               </div>
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
-            <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
-            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
-            <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
+            <details className="assignment-tools-menu" open>
+              <summary className="assignment-tools-summary">
+                <div>
+                  <h2>Assignment center</h2>
+                  <p>Automatic monthly planning first, followed by manual assignment and recurring service setup.</p>
+                </div>
+                <ChevronDown size={20} aria-hidden="true"/>
+              </summary>
+              <div className="assignment-tools-content">
+                <section className="assignment-tools-section assignment-tools-automatic" aria-label="Automatic assignment">
+                  <div className="assignment-tools-section-heading">
+                    <span className="assignment-tools-mode">Automatic assignment</span>
+                    <p>Build a balanced monthly proposal using availability, qualifications and serving history.</p>
+                  </div>
+                  <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
+                </section>
+                <section className="assignment-tools-section assignment-tools-manual" aria-label="Manual assignment">
+                  <div className="assignment-tools-section-heading">
+                    <span className="assignment-tools-mode">Manual assignment</span>
+                    <p>Choose servants yourself, copy previous assignments and manage recurring service templates.</p>
+                  </div>
+                  <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
+                  <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
+                </section>
+              </div>
+            </details>
           </section>}
           {adminScheduleView === "calendar" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule calendar">
             <div className="toolbar calendar-workspace-heading">
