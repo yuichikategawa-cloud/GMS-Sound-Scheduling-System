@@ -204,24 +204,32 @@ jobs:
           set -euo pipefail
           today="$(date -u +%Y-%m-%d)"
           response_file="$RUNNER_TEMP/cloudflare-workers-analytics.json"
-          query='query GmsWorkersRequestsCheck($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) { viewer { accounts(filter: { accountTag: $accountTag }) { workersInvocationsAdaptive(limit: 1, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) { sum { requests } } } } }'
+          query='query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) { viewer { accounts(filter: { accountTag: $accountTag }) { workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) { dimensions { scriptName } sum { requests } } } } }'
           http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
             --request POST https://api.cloudflare.com/client/v4/graphql \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             --header "Content-Type: application/json" \
             --data "$(jq -n --arg query "$query" --arg accountTag "$CLOUDFLARE_ACCOUNT_ID" --arg start "${today}T00:00:00.000Z" --arg end "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" '{query:$query,variables:{accountTag:$accountTag,datetimeStart:$start,datetimeEnd:$end}}')")"
           analytics_status="unavailable"
+          request_rows=0
+          request_total="unavailable"
           if [[ "$http_status" == "200" ]] && jq -e '((.errors // []) | length == 0) and ((.data.viewer.accounts // []) | length > 0)' "$response_file" >/dev/null; then
-            analytics_status="available"
+            request_rows="$(jq '[.data.viewer.accounts[0].workersInvocationsAdaptive[]?] | length' "$response_file")"
+            request_total="$(jq '[.data.viewer.accounts[0].workersInvocationsAdaptive[]?.sum.requests // 0] | add // 0' "$response_file")"
+            if [[ "$request_rows" -gt 0 ]]; then
+              analytics_status="estimated"
+            else
+              analytics_status="metric_not_returned"
+            fi
           elif [[ "$http_status" == "403" ]]; then
             analytics_status="permission_denied"
           fi
           echo "status=$analytics_status" >> "$GITHUB_OUTPUT"
-          echo "Cloudflare Account Analytics Read: $analytics_status (HTTP $http_status)"
+          echo "Cloudflare Account Analytics Read: $analytics_status (HTTP $http_status; rows $request_rows; requests $request_total)"
           {
             echo "### Cloudflare Workers request analytics"
             echo "- Account Analytics Read: $analytics_status."
-            echo "- Workers requests are sourced from Cloudflare's adaptive GraphQL dataset and are shown as estimates."
+            echo "- Workers requests today (adaptive estimate): $request_total across $request_rows script rows."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check Cloudflare Workers AI Neuron analytics
@@ -278,17 +286,30 @@ jobs:
             --header "Content-Type: application/json" \
             --data "$(jq -n --argjson from "$start_ms" --argjson to "$now_ms" '{queryId:"gms-workers-observability-permission-check",timeframe:{from:$from,to:$to},view:"calculations",chartType:"aggregate",ignoreSeries:true,dry:true,parameters:{datasets:["cloudflare-workers"],calculations:[{operator:"count",alias:"events"}]}}')")"
           observability_status="unavailable"
-          if [[ "$http_status" == "200" ]] && jq -e '.success == true and (.result | type == "object")' "$response_file" >/dev/null; then
-            observability_status="available"
+          event_count="unavailable"
+          sample_interval="unknown"
+          if [[ "$http_status" == "200" ]] && jq -e '.success == true and ((.result.calculations // []) | type == "array")' "$response_file" >/dev/null; then
+            event_count="$(jq '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.value] | add // 0' "$response_file")"
+            sample_interval="$(jq '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.sampleInterval] | max // 1' "$response_file")"
+            if jq -e '.result.calculations | length > 0' "$response_file" >/dev/null; then
+              if jq -e '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.sampleInterval // 1] | any(. > 1)' "$response_file" >/dev/null; then
+                observability_status="estimated"
+              else
+                observability_status="available"
+              fi
+            else
+              observability_status="metric_not_returned"
+            fi
           elif [[ "$http_status" == "403" ]]; then
             observability_status="permission_denied"
           fi
           echo "status=$observability_status" >> "$GITHUB_OUTPUT"
-          echo "Cloudflare Workers Observability query: $observability_status (HTTP $http_status)"
+          echo "Cloudflare Workers Observability query: $observability_status (HTTP $http_status; events $event_count; sample interval $sample_interval)"
           {
             echo "### Cloudflare Workers Observability"
             echo "- Workers Observability Write: $observability_status."
-            echo "- The permission check uses a dry-run aggregate query and does not save a query."
+            echo "- Events observed in the last hour (dry-run): $event_count."
+            echo "- Sample interval: $sample_interval (values above 1 indicate sampled estimates)."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check Cloudflare Billing Read permission
