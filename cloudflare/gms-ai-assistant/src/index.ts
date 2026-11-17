@@ -97,11 +97,6 @@ type SafeSnapshot = {
         source: string;
         qualifiedRoles: string[];
         availability: string;
-        totalAssignments: number;
-        servingDays: number;
-        eligibleOpportunities: number;
-        recent60DayAssignments: number;
-        currentMonthRoleAssignments: number;
       }>;
       vacancies: Array<{
         role: string;
@@ -115,9 +110,7 @@ type SafeSnapshot = {
     servant: string;
     totalAssignments: number;
     servingDays: number;
-    eligibleOpportunities: number;
     utilizationPercent: number;
-    recent60DayAssignments: number;
     roleCounts: Record<string, number>;
   }>;
 };
@@ -186,11 +179,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
             !Array.isArray(rawAssignment.qualifiedRoles) || rawAssignment.qualifiedRoles.length > 3 ||
             !rawAssignment.qualifiedRoles.every(isRole) ||
             typeof rawAssignment.availability !== "string" || !AVAILABILITY_VALUES.includes(rawAssignment.availability) ||
-            !isIntegerInRange(rawAssignment.totalAssignments, 0, 100) ||
-            !isIntegerInRange(rawAssignment.servingDays, 0, 100) ||
-            !isIntegerInRange(rawAssignment.eligibleOpportunities, 0, 200) ||
-            !isIntegerInRange(rawAssignment.recent60DayAssignments, 0, 100) ||
-            !isIntegerInRange(rawAssignment.currentMonthRoleAssignments, 0, 100)) return null;
+            ) return null;
 
         assignments.push({
           servant: rawAssignment.servant,
@@ -198,11 +187,6 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
           source: rawAssignment.source,
           qualifiedRoles: rawAssignment.qualifiedRoles as string[],
           availability: rawAssignment.availability,
-          totalAssignments: rawAssignment.totalAssignments as number,
-          servingDays: rawAssignment.servingDays as number,
-          eligibleOpportunities: rawAssignment.eligibleOpportunities as number,
-          recent60DayAssignments: rawAssignment.recent60DayAssignments as number,
-          currentMonthRoleAssignments: rawAssignment.currentMonthRoleAssignments as number,
         });
       }
 
@@ -256,9 +240,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
         seenServants.has(rawWorkload.servant) ||
         !isIntegerInRange(rawWorkload.totalAssignments, 0, 200) ||
         !isIntegerInRange(rawWorkload.servingDays, 0, 100) ||
-        !isIntegerInRange(rawWorkload.eligibleOpportunities, 0, 300) ||
         !isIntegerInRange(rawWorkload.utilizationPercent, 0, 1000) ||
-        !isIntegerInRange(rawWorkload.recent60DayAssignments, 0, 200) ||
         !isRecord(rawWorkload.roleCounts)) return null;
 
     const roleCounts: Record<string, number> = {};
@@ -271,9 +253,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
       servant: rawWorkload.servant,
       totalAssignments: rawWorkload.totalAssignments as number,
       servingDays: rawWorkload.servingDays as number,
-      eligibleOpportunities: rawWorkload.eligibleOpportunities as number,
       utilizationPercent: rawWorkload.utilizationPercent as number,
-      recent60DayAssignments: rawWorkload.recent60DayAssignments as number,
       roleCounts,
     });
   }
