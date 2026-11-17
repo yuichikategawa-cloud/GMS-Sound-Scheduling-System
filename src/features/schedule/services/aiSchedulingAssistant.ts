@@ -81,7 +81,6 @@ export function buildAiSchedulingSnapshot(input: {
   const orderedServantIds = [...servantIds].sort();
   const servantLabels = new Map(orderedServantIds.map((id, index) => [id, "Servant " + (index + 1)]));
   const servantsById = new Map(input.servants.map((servant) => [servant.id, servant]));
-  const workloadById = new Map(input.workloads.map((workload) => [workload.servant_id, workload]));
   const generatedBySlot = new Map<string, MonthlyGeneratedAssignment[]>();
   for (const assignment of input.generatedAssignments) {
     const items = generatedBySlot.get(assignment.schedule_key) ?? [];
@@ -136,7 +135,6 @@ export function buildAiSchedulingSnapshot(input: {
 
     const allServices = churchSlots.map((slot) => {
         const assignments: AiSchedulingSnapshot["churches"][number]["services"][number]["assignments"] = slot.assignments.map((assignment) => {
-          const workload = workloadById.get(assignment.servant_id);
           const servant = servantsById.get(assignment.servant_id);
           const isManual = Boolean(assignment.preview_manual);
           const isTeamProposal = Boolean(assignment.preview_team);
@@ -151,7 +149,6 @@ export function buildAiSchedulingSnapshot(input: {
 
         for (const assignment of generatedBySlot.get(slot.key) ?? []) {
           if (assignments.some((item) => item.role === assignment.role)) continue;
-          const workload = workloadById.get(assignment.servant_id);
           const servant = servantsById.get(assignment.servant_id);
           assignments.push({
             servant: servantLabels.get(assignment.servant_id) ?? "Unlisted servant",
