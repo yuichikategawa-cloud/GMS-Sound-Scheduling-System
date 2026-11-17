@@ -449,10 +449,10 @@ export class AiBudgetGuard {
         body.monthKey,
       ).toArray()[0]?.count ?? 0;
       if (globalCount + globalPending >= MONTHLY_GMS_MODEL_CALL_LIMIT) {
-        return Response.json({ allowed: false, reason: "gms_daily_limit" }, { status: 429 });
+        return Response.json({ allowed: false, reason: "gms_monthly_limit" }, { status: 429 });
       }
       if (userCount + userPending >= MONTHLY_ADMIN_MODEL_CALL_LIMIT) {
-        return Response.json({ allowed: false, reason: "admin_daily_limit" }, { status: 429 });
+        return Response.json({ allowed: false, reason: "admin_monthly_limit" }, { status: 429 });
       }
 
       // Reserve atomically; count the inference only after a successful model response.
@@ -704,7 +704,7 @@ export default {
           const parsed: unknown = JSON.parse(responseBody);
           if (isRecord(parsed) && parsed.allowed === false &&
               typeof parsed.reason === "string" &&
-              ["gms_request_limit", "admin_request_limit", "gms_daily_limit", "admin_daily_limit"].includes(parsed.reason)) {
+              ["gms_request_limit", "admin_request_limit", "gms_monthly_limit", "admin_monthly_limit"].includes(parsed.reason)) {
             limitReason = parsed.reason;
           }
         } catch {
@@ -713,7 +713,7 @@ export default {
         if (limitReason) {
           console.info("[gms-ai] budget_limit_reached", { reason: limitReason });
           return jsonResponse({
-            error: "daily_free_limit_reached",
+            error: "monthly_free_limit_reached",
             reason: limitReason,
             limits: {
               gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT,
@@ -788,7 +788,7 @@ export default {
     }
     if (reservation.allowed !== true) {
       return jsonResponse({
-        error: "daily_free_limit_reached",
+        error: "monthly_free_limit_reached",
         reason: reservation.reason ?? "daily_limit",
         limits: { gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT },
       }, 429, allowedOrigin);
