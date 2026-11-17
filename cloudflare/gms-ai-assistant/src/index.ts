@@ -277,7 +277,7 @@ export function extractContentParts(value: unknown): string {
   }).filter(Boolean).join("\\n").trim();
 }
 
-function extractModelText(value: unknown): string {
+export function extractModelText(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (!isRecord(value)) return "";
   if (typeof value.response === "string") return value.response.trim();
