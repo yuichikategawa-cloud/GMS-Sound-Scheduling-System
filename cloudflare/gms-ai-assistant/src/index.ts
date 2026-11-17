@@ -381,6 +381,7 @@ export async function readCloudflareDailyUsage(
   const neuronQuery = `query GmsWorkersAiNeuronsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
     viewer { accounts(filter: { accountTag: $accountTag }) {
       aiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) {
+        dimensions { datetimeHour }
         sum { totalNeurons }
       }
     } }
@@ -388,6 +389,7 @@ export async function readCloudflareDailyUsage(
   const requestQuery = `query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
     viewer { accounts(filter: { accountTag: $accountTag }) {
       workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) {
+        dimensions { scriptName }
         sum { requests }
       }
     } }
@@ -1087,29 +1089,6 @@ export default {
       return jsonResponse({ error: "snapshot_too_large" }, 413, allowedOrigin);
     }
 
-    if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
-      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
-    }
-    const providerUsage = await readCloudflareDailyUsage(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_API_TOKEN);
-    if (!providerUsage.ok) {
-      console.error("[gms-ai] provider_daily_safety_check_unavailable", { stage: "daily_safety_check" });
-      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
-    }
-    const dailyLimitReason = dailySafetyLimitReason(providerUsage);
-    if (dailyLimitReason) {
-      return jsonResponse({
-        error: "daily_free_limit_reached",
-        reason: dailyLimitReason,
-        usage: { providerDailyNeurons: providerUsage.neurons, workersRequestsToday: providerUsage.workersRequests },
-        limits: {
-          workersAiNeuronsDaily: CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
-          workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
-          workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
-          workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
-        },
-      }, 429, allowedOrigin);
-    }
-
     const userKey = await sha256(admin.id);
     const cacheKey = await sha256(userKey + "|" + snapshotJson);
     const requestId = crypto.randomUUID();
@@ -1209,6 +1188,43 @@ export default {
     }
     if (reservation.allowed !== true) {
       return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_denied" }, 503, allowedOrigin);
+    }
+
+    // A cached result requires no model inference, so serve it before applying
+    // the Neuron ceiling. The daily request ceiling still accounts for every
+    // invocation through Cloudflare's account-level adaptive analytics.
+    const releaseDailySafetyReservation = async () => {
+      const release = await guard.fetch("https://gms-ai-budget.internal/release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "release", requestId }),
+      }).catch(() => null);
+      if (!release?.ok) console.error("[gms-ai] daily_safety_reservation_release_failed", { stage: "daily_safety_check" });
+    };
+    if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
+      await releaseDailySafetyReservation();
+      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+    }
+    const providerUsage = await readCloudflareDailyUsage(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_API_TOKEN);
+    if (!providerUsage.ok) {
+      await releaseDailySafetyReservation();
+      console.error("[gms-ai] provider_daily_safety_check_unavailable", { stage: "daily_safety_check" });
+      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+    }
+    const dailyLimitReason = dailySafetyLimitReason(providerUsage);
+    if (dailyLimitReason) {
+      await releaseDailySafetyReservation();
+      return jsonResponse({
+        error: "daily_free_limit_reached",
+        reason: dailyLimitReason,
+        usage: { providerDailyNeurons: providerUsage.neurons, workersRequestsToday: providerUsage.workersRequests },
+        limits: {
+          workersAiNeuronsDaily: CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+          workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+          workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+          workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+        },
+      }, 429, allowedOrigin);
     }
 
     const messages = [
