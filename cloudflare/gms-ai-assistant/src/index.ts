@@ -265,15 +265,32 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
   };
 }
 
-export function extractModelText(value: unknown): string {
+export function extractContentParts(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (!Array.isArray(value)) return "";
+  return value.map((part) => {
+    if (typeof part === "string") return part;
+    if (!isRecord(part)) return "";
+    if (typeof part.text === "string") return part.text;
+    if (isRecord(part.text) && typeof part.text.value === "string") return part.text.value;
+    return "";
+  }).filter(Boolean).join("\\n").trim();
+}
+
+function extractModelText(value: unknown): string {
   if (typeof value === "string") return value.trim();
   if (!isRecord(value)) return "";
   if (typeof value.response === "string") return value.response.trim();
 
   const choices = value.choices;
   if (Array.isArray(choices) && isRecord(choices[0])) {
-    const message = choices[0].message;
-    if (isRecord(message) && typeof message.content === "string") return message.content.trim();
+    const choice = choices[0];
+    const message = choice.message;
+    if (isRecord(message)) {
+      const content = extractContentParts(message.content);
+      if (content) return content;
+    }
+    if (typeof choice.text === "string" && choice.text.trim()) return choice.text.trim();
   }
   return "";
 }
@@ -854,8 +871,20 @@ export default {
         responseKeys: responseRecord ? Object.keys(responseRecord).sort().slice(0, 24) : [],
         hasResponse: Boolean(responseRecord && typeof responseRecord.response === "string"),
         hasChoices: Boolean(responseChoices),
+        finishReason: firstChoiceRecord && typeof firstChoiceRecord.finish_reason === "string"
+          ? firstChoiceRecord.finish_reason
+          : null,
         firstChoiceKeys: firstChoiceRecord ? Object.keys(firstChoiceRecord).sort().slice(0, 16) : [],
         messageKeys: responseMessage ? Object.keys(responseMessage).sort().slice(0, 16) : [],
+        contentType: responseMessage
+          ? responseMessage.content === null ? "null" : Array.isArray(responseMessage.content) ? "array" : typeof responseMessage.content
+          : "missing",
+        contentPartTypes: responseMessage && Array.isArray(responseMessage.content)
+          ? responseMessage.content.slice(0, 8).map((part) => isRecord(part) ? {
+            type: typeof part.type === "string" ? part.type : null,
+            hasText: typeof part.text === "string" || (isRecord(part.text) && typeof part.text.value === "string"),
+          } : { type: typeof part, hasText: typeof part === "string" })
+          : [],
       });
       const releaseResponse = await guard.fetch("https://gms-ai-budget.internal/release", {
         method: "POST",
