@@ -1,4 +1,5 @@
 import { AiBudgetGuard, default as aiWorker } from "../../cloudflare/gms-ai-assistant/src/index.ts";
+import { requestAiSchedulingExplanation } from "../../src/features/schedule/services/aiSchedulingAssistant.ts";
 
 type Row = Record<string, string | number | null | undefined>;
 
@@ -163,4 +164,51 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+Deno.test("AI explanation restores exact service names after sending anonymous service labels", async () => {
+  let sentBody: Record<string, unknown> | null = null;
+  const snapshot = {
+    month: "2026-12",
+    summary: {
+      serviceCount: 1, requiredPositions: 2, filledRequiredPositions: 1,
+      unfilledRequiredPositions: 1, proposedAssignments: 0, frozenServices: 0,
+    },
+    churches: [{
+      label: "GMS Alam Sutera",
+      totalServiceCount: 1,
+      omittedServiceCount: 0,
+      vacancySummary: [{ role: "Monitor", reason: "role_not_qualified", count: 1 }],
+      services: [{
+        label: "Christmas Celebration Service",
+        date: "2026-12-25",
+        startTime: "09:00",
+        endTime: "11:00",
+        special: true,
+        frozen: false,
+        assignments: [{ servant: "Servant Name", role: "FOH", source: "proposed", qualifiedRoles: ["FOH"], availability: "available" }],
+        vacancies: [{ role: "Monitor", required: true, reason: "role_not_qualified", blockedCandidateCount: 1 }],
+      }],
+    }],
+    workload: [],
+  };
+
+  const result = await requestAiSchedulingExplanation(
+    "https://gms-ai-assistant.example.workers.dev",
+    "session-token",
+    snapshot as never,
+    async (_input, init) => {
+      sentBody = JSON.parse(String(init?.body));
+      return Response.json({
+        explanation: "2026-12-25 — Service 1 — Monitor: no eligible candidate was found.",
+        cached: false,
+      });
+    },
+  );
+
+  const sentSnapshot = sentBody?.snapshot as { churches: Array<{ services: Array<{ label: string; date: string }> }> };
+  assert(sentSnapshot.churches[0].services[0].label === "Service 1", "Private service names must be aliased before sending to the Worker.");
+  assert(sentSnapshot.churches[0].services[0].date === "2026-12-25", "The service date must be sent to the Worker.");
+  assert(result.explanation.includes("2026-12-25 — Christmas Celebration Service — Monitor"), "The displayed explanation must restore the exact original service name.");
 });
