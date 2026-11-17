@@ -228,6 +228,8 @@ export default function MonthlySmartScheduler({
   async function loadAiUsage() {
     if (!aiWorkerUrl || !aiAccessToken || aiUsageBusy || Date.now() < aiUsageCooldownUntil.current) return;
     setAiUsageBusy(true);
+    aiUsageCooldownUntil.current = Date.now() + 60_000;
+    setAiUsageCooldown(60);
     setAiUsageError("");
     try {
       const response = await fetch(aiWorkerUrl.replace(/\/$/, "") + "/v1/explain", {
