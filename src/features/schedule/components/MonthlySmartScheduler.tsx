@@ -217,6 +217,7 @@ export default function MonthlySmartScheduler({
   const [aiExplanation, setAiExplanation] = useState("");
   const [aiError, setAiError] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiProgress, setAiProgress] = useState("");
   const [aiCached, setAiCached] = useState(false);
   const [aiUsage, setAiUsage] = useState<{ month: string; global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number }; admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>; limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number }; providerDailyNeurons: number | null; providerUsageDate: string | null; providerUsageStatus: string; refreshedAt: string } | null>(null);
   const [aiUsageError, setAiUsageError] = useState("");
@@ -705,15 +706,17 @@ export default function MonthlySmartScheduler({
       const batchCount = Math.max(1, ...locations
         .filter((location) => selectedLocationIds.includes(location.id))
         .map((location) => Math.ceil(preview.slots.filter((slot) => slot.location_id === location.id).length / 3)));
-      // Each request analyzes up to three services per church. Bound the number
-      // of sequential free inferences so one click cannot consume the full quota.
-      const maximumBatchesPerAnalysis = 10;
+      // Each request analyzes up to three services per church. The Worker
+      // enforces the authoritative monthly request/model budgets across admins.
+      // Keep a local ceiling aligned with the per-admin monthly inference cap.
+      const maximumBatchesPerAnalysis = 60;
       if (batchCount > maximumBatchesPerAnalysis) {
-        throw new Error(`This month contains too many services for one safe AI analysis (${batchCount} batches; maximum ${maximumBatchesPerAnalysis}). No AI requests were sent and no schedule changes were made.`);
+        throw new Error(`This preview needs ${batchCount} analysis batches; the safe per-admin maximum is ${maximumBatchesPerAnalysis}. Narrow the selected churches or split the review across months. No AI requests were sent and no schedule changes were made.`);
       }
       const explanations: string[] = [];
       let allCached = true;
       for (let batchIndex = 0; batchIndex < batchCount; batchIndex += 1) {
+        setAiProgress(`Analyzing batch ${batchIndex + 1} of ${batchCount}…`);
         const snapshot = buildAiSchedulingSnapshot({
           month,
           locations,
@@ -731,8 +734,15 @@ export default function MonthlySmartScheduler({
       }
       setAiExplanation(explanations.join("\n\n"));
       setAiCached(allCached);
+      setAiProgress(`Completed ${batchCount} of ${batchCount} batches.`);
     } catch (error) {
-      setAiError(error instanceof Error ? error.message : "The free AI assistant is temporarily unavailable.");
+      if (explanations.length) {
+        setAiExplanation(explanations.join("\n\n"));
+        setAiCached(allCached);
+        setAiError(`Partial analysis: ${explanations.length} of ${batchCount} batches completed. ${error instanceof Error ? error.message : "The remaining batches could not be analyzed."}`);
+      } else {
+        setAiError(error instanceof Error ? error.message : "The free AI assistant is temporarily unavailable.");
+      }
     } finally {
       setAiBusy(false);
     }
@@ -926,7 +936,8 @@ export default function MonthlySmartScheduler({
 
       <section className="monthly-smart-ai-usage-entry" aria-label="AI usage reporting">
         <button type="button" className="btn secondary" disabled={aiUsageBusy || aiUsageCooldown > 0 || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()}>{aiUsageBusy ? "Refreshing AI usage…" : aiUsageCooldown > 0 ? `Refresh available in ${aiUsageCooldown}s` : "Refresh AI usage"}</button>
-        {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
+        {aiProgress && <small className="monthly-smart-ai-muted" aria-live="polite">{aiProgress}</small>}
+            {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
         {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Cloudflare daily Neurons: {aiUsage.providerDailyNeurons === null ? (aiUsage.providerUsageStatus === "not_configured" ? "Not connected yet" : aiUsage.providerUsageStatus) : aiUsage.providerDailyNeurons.toLocaleString()} · Last refresh: {aiUsage.refreshedAt ? new Date(aiUsage.refreshedAt).toLocaleTimeString() : "—"}.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
       </section>
 
