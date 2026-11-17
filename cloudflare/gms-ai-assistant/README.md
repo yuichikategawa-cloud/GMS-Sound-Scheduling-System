@@ -113,3 +113,21 @@ npx wrangler deploy --config cloudflare/gms-ai-assistant/wrangler.staging.toml
 ```
 
 After deployment, configure `VITE_GMS_AI_WORKER_URL` for the exact Vercel Preview branch to the staging Worker's `/v1/explain` endpoint. Never set this value for Production as part of the staging pilot.
+
+### Automated staging-only deployment
+
+The repository's Monthly Smart Scheduler validation workflow can deploy the isolated staging Worker after Deno tests and the frontend build both pass. It runs only for the branch `feature/ai-usage-report-diagnostics`.
+
+Configure these GitHub repository Actions secrets (never put their values in source control):
+
+- `CLOUDFLARE_API_TOKEN`: token scoped to edit Workers and deploy the staging Worker/its Durable Object migration.
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID.
+- `STAGING_SUPABASE_URL`: must equal `https://uurgomjrsvzfmcpsnitu.supabase.co`.
+- `STAGING_SUPABASE_ANON_KEY`: matching staging publishable key (must begin with `sb_publishable_`).
+
+Configure these GitHub repository Actions variables:
+
+- `STAGING_GMS_APP_ORIGIN`: the exact HTTPS origin of the GMS Preview deployment, under `gms-sound-scheduling-system-*.vercel.app`.
+- `CLOUDFLARE_WORKERS_FREE_CONFIRMED`: set to `true` only after confirming the Cloudflare account is on Workers Free.
+
+The workflow checks the staging Supabase project URL and the publishable-key format before deployment. If any required secret or the Workers Free confirmation variable is missing, it skips the deployment and lists only the missing setting names. It never prints secret values. The staging Worker remains configured with `GMS_AI_ENABLED=false`, so this deployment is for authenticated usage-report diagnostics and does not invoke the model.
