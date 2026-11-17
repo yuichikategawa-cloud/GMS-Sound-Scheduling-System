@@ -240,6 +240,11 @@ export async function requestAiSchedulingExplanation(
   snapshot: AiSchedulingSnapshot,
   fetcher: typeof fetch = fetch,
 ): Promise<{ explanation: string; cached: boolean }> {
+  const snapshotJson = JSON.stringify(snapshot);
+  const snapshotBytes = new TextEncoder().encode(snapshotJson).byteLength;
+  if (snapshotBytes > 5_600) {
+    throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
+  }
   const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot });
   const requestBytes = new TextEncoder().encode(requestBody).byteLength;
   if (requestBytes > 7_500) {
