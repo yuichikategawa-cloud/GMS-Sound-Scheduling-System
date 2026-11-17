@@ -209,6 +209,85 @@ Deno.test("AI usage Worker reports Durable Object usage failures without exposin
   }
 });
 
+Deno.test("AI usage Worker queries the current billing period and selects today's Workers AI neurons", async () => {
+  const originalFetch = globalThis.fetch;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  let requestedProviderUrl: URL | null = null;
+  const usage = {
+    month: today.slice(0, 7),
+    global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
+    admins: [],
+    limits: { modelCalls: 120, perAdminModelCalls: 60, requests: 600, perAdminRequests: 200 },
+  };
+  const guard = {
+    fetch: async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.endsWith("/usage-refresh")) return Response.json({ allowed: true });
+      if (url.endsWith("/usage")) return Response.json(usage);
+      return Response.json({ error: "unexpected_internal_route" }, { status: 404 });
+    },
+  };
+  globalThis.fetch = async (input: RequestInfo | URL) => {
+    const url = String(input);
+    if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
+    if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
+    if (url.includes("/billable-usage")) {
+      requestedProviderUrl = new URL(url);
+      return Response.json({
+        success: true,
+        result: [
+          {
+            ServiceName: "Workers AI",
+            ServiceFamilyName: "Workers AI",
+            ConsumedUnit: "Neurons",
+            ConsumedQuantity: 123,
+            ChargePeriodStart: today + "T00:00:00Z",
+          },
+          {
+            ServiceName: "Workers AI",
+            ServiceFamilyName: "Workers AI",
+            ConsumedUnit: "Neurons",
+            ConsumedQuantity: 999,
+            ChargePeriodStart: yesterday + "T00:00:00Z",
+          },
+        ],
+      });
+    }
+    return Response.json({ error: "unexpected_fetch" }, { status: 500 });
+  };
+
+  try {
+    const response = await aiWorker.fetch(new Request("https://worker.example/v1/explain", {
+      method: "POST",
+      headers: {
+        Origin: "https://gms-sound-scheduling-system-test123.vercel.app",
+        Authorization: "Bearer test-session-token",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ kind: "usage_report", month: today.slice(0, 7) }),
+    }), {
+      AI_GUARD: { idFromName: () => "global", get: () => guard },
+      SUPABASE_URL: "https://supabase.example",
+      SUPABASE_ANON_KEY: "public-anon-key",
+      GMS_APP_ORIGIN: "https://gms.example",
+      GMS_AI_ENABLED: "false",
+      CLOUDFLARE_ACCOUNT_ID: "account-id",
+      CLOUDFLARE_API_TOKEN: "test-token",
+    } as never);
+
+    const data = await response.json();
+    assert(response.status === 200, "Usage reporting must succeed with the current billing-period endpoint.");
+    assert(requestedProviderUrl !== null, "The Cloudflare billable-usage endpoint must be requested.");
+    assert(requestedProviderUrl?.search === "", "The request must omit from/to bounds that can exclude the billing-cycle anchor day.");
+    assert(data.providerUsageStatus === "available", "A matching Workers AI neuron metric must be reported as available.");
+    assert(data.providerDailyNeurons === 123, "Only the current day's Workers AI neuron quantity must be included.");
+    assert(data.providerUsageDate === today, "The provider usage date must be today's UTC date.");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 Deno.test("AI usage Worker keeps usage report available when optional billing metrics throw", async () => {
   const originalFetch = globalThis.fetch;
   const usage = {
