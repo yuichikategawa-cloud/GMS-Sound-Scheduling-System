@@ -322,7 +322,7 @@ function jsonResponse(
 }
 
 export function isMonthKey(value: unknown): value is string {
-  return typeof value === "string" && /^\\d{4}-(0[1-9]|1[0-2])$/.test(value);
+  return typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
 function utcMonth(now = new Date()): string {
