@@ -678,7 +678,12 @@ export default {
       reason?: string;
     };
     try {
-      reservation = await reservationResponse.json() as typeof reservation;
+      reservation = await reservationResponse.json() as {
+        allowed?: boolean;
+        cached?: boolean;
+        explanation?: string;
+        reason?: string;
+      };
     } catch (error) {
       const details = safeErrorDetails(error);
       console.error("[gms-ai] budget_guard_invalid_json", {
