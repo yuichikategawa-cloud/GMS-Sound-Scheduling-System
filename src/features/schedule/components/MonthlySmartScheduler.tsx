@@ -218,7 +218,7 @@ export default function MonthlySmartScheduler({
   const [aiError, setAiError] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiCached, setAiCached] = useState(false);
-  const [aiUsage, setAiUsage] = useState<{ month: string; global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number }; admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>; limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number }; providerDailyNeurons: number | null } | null>(null);
+  const [aiUsage, setAiUsage] = useState<{ month: string; global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number }; admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>; limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number }; providerDailyNeurons: number | null; providerUsageDate: string | null; providerUsageStatus: string; refreshedAt: string } | null>(null);
   const [aiUsageError, setAiUsageError] = useState("");
   const [aiUsageBusy, setAiUsageBusy] = useState(false);
   const [aiUsageCooldown, setAiUsageCooldown] = useState(0);
@@ -235,7 +235,7 @@ export default function MonthlySmartScheduler({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiAccessToken}` },
         body: JSON.stringify({ kind: "usage_report", month: new Date().toISOString().slice(0, 7) }),
       });
-      const payload = await response.json() as typeof aiUsage & { error?: string };
+      const payload = await response.json() as NonNullable<typeof aiUsage> & { error?: string; retryAfterSeconds?: number };
       if (response.status === 429) {
         const retry = Number(payload?.retryAfterSeconds ?? 60);
         aiUsageCooldownUntil.current = Date.now() + Math.max(1, retry) * 1000;
