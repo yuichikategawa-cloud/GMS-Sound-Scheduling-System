@@ -696,10 +696,33 @@ export default {
         }
       }
       const guardCode = safeGuardErrorCode(responseBody);
+      let bodyShape: string = "non_json";
+      let responseReason: string | null = null;
+      try {
+        const parsed: unknown = JSON.parse(responseBody);
+        if (isRecord(parsed)) {
+          bodyShape = Object.keys(parsed).sort().join(",").slice(0, 160) || "empty_object";
+          if (typeof parsed.reason === "string" && /^[a-zA-Z0-9_.-]{1,80}$/.test(parsed.reason)) {
+            responseReason = parsed.reason;
+          }
+        } else if (Array.isArray(parsed)) {
+          bodyShape = "json_array";
+        } else {
+          bodyShape = "json_primitive";
+        }
+      } catch {
+        // Record only the body shape; never log arbitrary response text.
+      }
       console.error("[gms-ai] budget_guard_http_error", {
         stage: "reserve",
         status: reservationResponse.status,
         errorCode: guardCode ?? "unrecognized_guard_response",
+        reason: responseReason ?? undefined,
+        bodyShape,
+        bodyBytes: new TextEncoder().encode(responseBody).length,
+        contentType: reservationResponse.headers.get("content-type") ?? "missing",
+        retryAfter: reservationResponse.headers.get("retry-after") ?? undefined,
+        cfRay: reservationResponse.headers.get("cf-ray") ?? undefined,
       });
       return jsonResponse({
         error: "free_budget_guard_unavailable",
