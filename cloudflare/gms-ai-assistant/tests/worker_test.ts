@@ -1,8 +1,9 @@
 import {
-  MONTHLY_ADMIN_MODEL_CALL_LIMIT,
-  MONTHLY_ADMIN_REQUEST_LIMIT,
-  MONTHLY_GMS_MODEL_CALL_LIMIT,
-  MONTHLY_GMS_REQUEST_LIMIT,
+  CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+  CLOUDFLARE_WORKERS_OBSERVABILITY_EVENTS_DAILY_LIMIT,
+  CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+  GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+  GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
   readBoundedBody,
   resolveAllowedOrigin,
   extractModelText,
@@ -138,11 +139,12 @@ Deno.test("Worker rejects service samples that exceed the prompt-size policy", (
   assert(validateSnapshot(invalid) === null, "More than three sample services per church must be rejected.");
 });
 
-Deno.test("Worker enforces the approved monthly free AI budgets", () => {
-  assert(MONTHLY_GMS_MODEL_CALL_LIMIT === 120, "GMS-wide successful model calls must be capped at 120 per UTC month.");
-  assert(MONTHLY_ADMIN_MODEL_CALL_LIMIT === 60, "Each administrator must be capped at 60 successful model calls per UTC month.");
-  assert(MONTHLY_GMS_REQUEST_LIMIT === 600, "GMS-wide request attempts must be capped at 600 per UTC month.");
-  assert(MONTHLY_ADMIN_REQUEST_LIMIT === 200, "Each administrator must be capped at 200 request attempts per UTC month.");
+Deno.test("Worker exposes Cloudflare Free daily allowances and GMS safety ceilings", () => {
+  assert(CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT === 10_000, "Cloudflare Workers AI Neurons Free allowance must be 10,000 per UTC day.");
+  assert(GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT === 7_500, "GMS Neuron safety ceiling must be 75% of the daily allowance.");
+  assert(CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT === 100_000, "Cloudflare Workers Free request allowance must be 100,000 per UTC day.");
+  assert(GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT === 75_000, "GMS request safety ceiling must be 75% of the daily allowance.");
+  assert(CLOUDFLARE_WORKERS_OBSERVABILITY_EVENTS_DAILY_LIMIT === 200_000, "Cloudflare Workers Logs reference allowance must be 200,000 events per UTC day.");
 });
 
 Deno.test("Worker extracts supported plain-text responses only", () => {
