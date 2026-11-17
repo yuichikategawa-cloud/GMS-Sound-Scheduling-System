@@ -219,6 +219,7 @@ jobs:
             billing_status="permission_denied"
           fi
           echo "status=$billing_status" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Billing Read permission: $billing_status (HTTP $http_status)"
           {
             echo "### Cloudflare billing API permission"
             if [[ "$billing_status" == "available" ]]; then
