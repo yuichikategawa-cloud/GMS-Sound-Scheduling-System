@@ -16,7 +16,7 @@ import type { MonthlyScheduleSlot, MonthlySpecialServiceInput } from "../service
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import { fmtDate } from "../../../shared/formatters";
-import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation } from "../services/aiSchedulingAssistant";
+import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation, type AiSchedulingSnapshot } from "../services/aiSchedulingAssistant";
 import {
   applyMonthlyServingTeamAssignments,
   buildMonthlyServingTeamGroups,
@@ -84,6 +84,27 @@ function applyManualOverrides(
     });
     return additions.length ? { ...slot, assignments: [...slot.assignments, ...additions] } : slot;
   });
+}
+
+function buildOverallAiSummary(snapshot: AiSchedulingSnapshot): string {
+  const lines = [
+    `Overall monthly conditions · ${snapshot.month}`,
+    `${snapshot.summary.serviceCount} services · ${snapshot.summary.proposedAssignments} proposed assignments · ${snapshot.summary.filledRequiredPositions}/${snapshot.summary.requiredPositions} required positions filled · ${snapshot.summary.unfilledRequiredPositions} required positions unfilled · ${snapshot.summary.frozenServices} frozen services.`,
+    "",
+    "Vacancies by church",
+  ];
+  for (const church of snapshot.churches) {
+    const total = church.vacancySummary.reduce((sum, item) => sum + item.count, 0);
+    lines.push(`${church.label}: ${total} recorded vacancies`);
+    for (const item of church.vacancySummary) {
+      lines.push(`• ${item.role}: ${item.count} · ${item.reason.replaceAll("_", " ")}`);
+    }
+  }
+  lines.push("", "Highest workload servants (whole month)");
+  for (const servant of snapshot.workload) {
+    lines.push(`• ${servant.servant}: ${servant.totalAssignments} assignments across ${servant.servingDays} days · ${servant.utilizationPercent}% utilization`);
+  }
+  return lines.join("\\n");
 }
 
 function nextMonthKey(): string {
@@ -730,8 +751,9 @@ export default function MonthlySmartScheduler({
           availability,
           serviceBatchIndex: batchIndex,
         });
+        if (batchIndex === 0) overallSummary = buildOverallAiSummary(snapshot);
         const result = await requestAiSchedulingExplanation(aiWorkerUrl, aiAccessToken, snapshot);
-        explanations.push(`Service detail batch ${batchIndex + 1}/${batchCount}\n${result.explanation}`);
+        explanations.push(`Service findings · batch ${batchIndex + 1}/${batchCount}\n${result.explanation}`);
         allCached = allCached && result.cached;
       }
       setAiExplanation(explanations.join("\n\n"));
