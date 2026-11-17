@@ -661,19 +661,35 @@ export default function MonthlySmartScheduler({
     setAiExplanation("");
     setAiCached(false);
     try {
-      const snapshot = buildAiSchedulingSnapshot({
-        month,
-        locations,
-        slots: preview.slots,
-        generatedAssignments: preview.result.assignments,
-        unfilledPositions: preview.result.unfilledPositions,
-        workloads: preview.result.workloads,
-        servants,
-        availability,
-      });
-      const result = await requestAiSchedulingExplanation(aiWorkerUrl, aiAccessToken, snapshot);
-      setAiExplanation(result.explanation);
-      setAiCached(result.cached);
+      const batchCount = Math.max(1, ...locations
+        .filter((location) => selectedLocationIds.includes(location.id))
+        .map((location) => Math.ceil(preview.slots.filter((slot) => slot.location_id === location.id).length / 3)));
+      // Each request analyzes up to three services per church. Bound the number
+      // of sequential free inferences so one click cannot consume the full quota.
+      const maximumBatchesPerAnalysis = 8;
+      if (batchCount > maximumBatchesPerAnalysis) {
+        throw new Error(`This month contains too many services for one safe AI analysis (${batchCount} batches; maximum ${maximumBatchesPerAnalysis}). No AI requests were sent and no schedule changes were made.`);
+      }
+      const explanations: string[] = [];
+      let allCached = true;
+      for (let batchIndex = 0; batchIndex < batchCount; batchIndex += 1) {
+        const snapshot = buildAiSchedulingSnapshot({
+          month,
+          locations,
+          slots: preview.slots,
+          generatedAssignments: preview.result.assignments,
+          unfilledPositions: preview.result.unfilledPositions,
+          workloads: preview.result.workloads,
+          servants,
+          availability,
+          serviceBatchIndex: batchIndex,
+        });
+        const result = await requestAiSchedulingExplanation(aiWorkerUrl, aiAccessToken, snapshot);
+        explanations.push(`Service detail batch ${batchIndex + 1}/${batchCount}\n${result.explanation}`);
+        allCached = allCached && result.cached;
+      }
+      setAiExplanation(explanations.join("\n\n"));
+      setAiCached(allCached);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : "The free AI assistant is temporarily unavailable.");
     } finally {
