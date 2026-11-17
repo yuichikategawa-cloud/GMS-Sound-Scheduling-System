@@ -125,7 +125,7 @@ function isIntegerInRange(value: unknown, minimum: number, maximum: number): val
 }
 
 function isServantLabel(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0 && value.length <= 100 && !/[\u0000-\u001f]/.test(value);
+  return typeof value === "string" && /^Servant ([1-9][0-9]{0,2})$/.test(value);
 }
 
 function isRole(value: unknown): value is string {
