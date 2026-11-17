@@ -1184,6 +1184,27 @@ export default {
       return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_invalid_json" }, 503, allowedOrigin);
     }
     if (reservation.cached === true && typeof reservation.explanation === "string") {
+      // Cached replies avoid model inference and Neuron consumption, but still
+      // consume a Cloudflare Worker request. Enforce that account-level ceiling.
+      if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
+        return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+      }
+      const cachedUsage = await readCloudflareDailyUsage(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_API_TOKEN);
+      if (!cachedUsage.ok) {
+        console.error("[gms-ai] cached_request_safety_check_unavailable", { stage: "daily_request_safety_check" });
+        return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+      }
+      if (cachedUsage.workersRequests >= GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT) {
+        return jsonResponse({
+          error: "daily_free_limit_reached",
+          reason: "workers_request_safety_limit",
+          usage: { workersRequestsToday: cachedUsage.workersRequests },
+          limits: {
+            workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+            workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+          },
+        }, 429, allowedOrigin);
+      }
       return jsonResponse({ explanation: reservation.explanation, cached: true }, 200, allowedOrigin);
     }
     if (reservation.allowed !== true) {
