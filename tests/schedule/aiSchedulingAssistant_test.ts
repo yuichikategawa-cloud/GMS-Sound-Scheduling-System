@@ -215,7 +215,7 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
     async (input, init) => {
       capturedUrl = String(input);
       capturedInit = init;
-      return new Response(JSON.stringify({ explanation: "Coverage is strong; review the Monitor vacancy.", cached: true }), { status: 200 });
+      return new Response(JSON.stringify({ explanation: "Church 1, Service 1: Servant 1 should cover the Monitor vacancy.", cached: true }), { status: 200 });
     },
   );
 
@@ -224,6 +224,10 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
   const body = JSON.parse(String(capturedInit?.body));
   assertEqual(body.kind, "preview_explanation", "Only the supported analysis action should be sent.");
   assert(!JSON.stringify(body).includes("Private Person Name"), "The outgoing request must remain anonymized.");
+  assert(result.explanation.includes("GMS Private Church Name"), "Church aliases must be restored to readable names in the UI.");
+  assert(result.explanation.includes("Private Custom Service 0"), "Service aliases must be restored to readable names in the UI.");
+  assert(result.explanation.includes("Private Person Name"), "Servant aliases must be restored to readable names in the UI.");
+  assert(!result.explanation.includes("Church 1") && !result.explanation.includes("Service 1") && !result.explanation.includes("Servant 1"), "Internal aliases must not remain in the displayed explanation.");
   assertEqual(result.cached, true, "Cached responses should be identified.");
 });
 
