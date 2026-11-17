@@ -1,4 +1,13 @@
-import { AiBudgetGuard, default as aiWorker } from "../../cloudflare/gms-ai-assistant/src/index.ts";
+import {
+  AiBudgetGuard,
+  CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+  CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+  GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+  GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+  dailySafetyLimitReason,
+  readCloudflareDailyUsage,
+  default as aiWorker,
+} from "../../cloudflare/gms-ai-assistant/src/index.ts";
 import { requestAiSchedulingExplanation } from "../../src/features/schedule/services/aiSchedulingAssistant.ts";
 
 type Row = Record<string, string | number | null | undefined>;
@@ -89,7 +98,8 @@ Deno.test("AI usage Durable Object aggregates month totals and per-admin counter
   assert(data.global.cacheHits === 3, "Global cache-hit totals must be returned.");
   assert(data.global.pendingCalls === 1, "Pending calls must be counted for the selected month.");
   assert(data.admins.length === 2, "Per-admin usage rows must be aggregated.");
-  assert(data.limits.modelCalls === 120 && data.limits.perAdminModelCalls === 60, "Monthly limits must be included.");
+  assert(data.limits.workersAiNeuronsDailySafety === 7_500, "The GMS Neuron safety ceiling must be 75% of the Cloudflare daily allowance.");
+  assert(data.limits.workersRequestsDailySafety === 75_000, "The GMS Worker request safety ceiling must be 75% of the Cloudflare daily allowance.");
 });
 
 Deno.test("AI usage Durable Object rejects malformed months and enforces refresh cooldown", async () => {
@@ -120,7 +130,7 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
     month: "2026-11",
     global: { modelCalls: 6, requests: 7, cacheHits: 3, pendingCalls: 1 },
     admins: [{ admin: "Admin 1", modelCalls: 6, requests: 7, cacheHits: 3 }],
-    limits: { modelCalls: 120, perAdminModelCalls: 60, requests: 600, perAdminRequests: 200 },
+    limits: {},
   };
   const guard = {
     fetch: async (input: RequestInfo | URL) => {
@@ -158,7 +168,8 @@ Deno.test("AI usage Worker route returns the usage contract and provider status"
     assert(response.status === 200, "An authenticated admin should receive usage data.");
     assert(data.month === "2026-11", "The Worker must preserve the requested month.");
     assert(data.global.modelCalls === 6 && data.global.requests === 7, "The Worker must preserve global usage counters.");
-    assert(data.limits.perAdminModelCalls === 60, "The Worker must preserve the limits contract.");
+    assert(data.limits.workersAiNeuronsDailySafety === 7_500, "The Worker must expose the 75% Neuron safety ceiling.");
+    assert(data.limits.workersRequestsDailySafety === 75_000, "The Worker must expose the 75% request safety ceiling.");
     assert(data.providerUsageStatus === "not_configured", "Missing provider credentials must be reported without failing usage.");
     assert(data.workersRequestsStatus === "not_configured", "Missing provider credentials must leave Workers request analytics unavailable, not zero.");
     assert(data.observabilityEventsStatus === "not_configured", "Missing provider credentials must leave Observability event analytics unavailable, not zero.");
@@ -220,7 +231,7 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
     month: today.slice(0, 7),
     global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
     admins: [],
-    limits: { modelCalls: 120, perAdminModelCalls: 60, requests: 600, perAdminRequests: 200 },
+    limits: {},
   };
   const guard = {
     fetch: async (input: RequestInfo | URL) => {
@@ -312,13 +323,76 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
   }
 });
 
+
+Deno.test("Cloudflare daily safety ceilings are set to 75% of the published Free allowances", async () => {
+  assert(CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT === 10_000, "The published Workers AI Neuron allowance must remain visible.");
+  assert(CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT === 100_000, "The published Workers request allowance must remain visible.");
+  assert(GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT === 7_500, "The GMS Neuron safety limit must be 75% of 10,000.");
+  assert(GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT === 75_000, "The GMS request safety limit must be 75% of 100,000.");
+  assert(dailySafetyLimitReason({ neurons: 7_500, workersRequests: 1 }) === "workers_ai_neuron_safety_limit", "Neuron usage at the safety ceiling must stop inference.");
+  assert(dailySafetyLimitReason({ neurons: 1, workersRequests: 75_000 }) === "workers_request_safety_limit", "Worker request usage at the safety ceiling must stop inference.");
+  assert(dailySafetyLimitReason({ neurons: 7_499, workersRequests: 74_999 }) === null, "Usage below both safety ceilings must remain eligible.");
+});
+
+Deno.test("Cloudflare account analytics helper sums daily Neurons and Worker requests", async () => {
+  const fetcher: typeof fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body ?? "{}")) as { query?: string };
+    if (body.query?.includes("aiInferenceAdaptiveGroups")) {
+      return Response.json({
+        data: { viewer: { accounts: [{ aiInferenceAdaptiveGroups: [
+          { sum: { totalNeurons: 2_000.5 } },
+          { sum: { totalNeurons: 100 } },
+        ] }] } },
+      });
+    }
+    return Response.json({
+      data: { viewer: { accounts: [{ workersInvocationsAdaptive: [
+        { sum: { requests: 40_000 } },
+        { sum: { requests: 2_500 } },
+      ] }] } },
+    });
+  };
+  const result = await readCloudflareDailyUsage(
+    "account-id",
+    "test-token",
+    new Date("2026-11-17T12:00:00.000Z"),
+    fetcher,
+  );
+  assert(result.ok, "Both provider datasets must be available to enforce daily ceilings.");
+  if (result.ok) {
+    assert(result.neurons === 2_100.5, "Neuron totals must sum all hourly adaptive rows.");
+    assert(result.workersRequests === 42_500, "Workers request totals must sum all account script rows.");
+  }
+});
+
+Deno.test("AI budget guard no longer enforces fixed monthly model-call or request quotas", async () => {
+  const sql = new FakeSql();
+  sql.userUsage = [{ day_key: "2026-11", user_key: "a".repeat(64), calls: 120 }];
+  sql.globalUsage = [{ day_key: "2026-11", calls: 120 }];
+  sql.userRequests = [{ day_key: "2026-11", user_key: "a".repeat(64), requests: 200 }];
+  sql.globalRequests = [{ day_key: "2026-11", requests: 600 }];
+  const guard = new AiBudgetGuard({ storage: { sql } });
+  const response = await guard.fetch(new Request("https://internal/reserve", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "reserve",
+      monthKey: "2026-11",
+      userKey: "a".repeat(64),
+      cacheKey: "b".repeat(64),
+      requestId: "123e4567-e89b-12d3-a456-426614174000",
+    }),
+  }));
+  const data = await response.json();
+  assert(response.status === 200 && data.allowed === true, "The guard must allow requests beyond the former monthly fixed quotas; Cloudflare daily analytics now govern the safety ceilings.");
+});
+
 Deno.test("AI usage Worker keeps usage report available when optional billing metrics throw", async () => {
   const originalFetch = globalThis.fetch;
   const usage = {
     month: "2026-11",
     global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
     admins: [],
-    limits: { modelCalls: 120, perAdminModelCalls: 60, requests: 600, perAdminRequests: 200 },
+    limits: {},
   };
   const guard = {
     fetch: async (input: RequestInfo | URL) => {
