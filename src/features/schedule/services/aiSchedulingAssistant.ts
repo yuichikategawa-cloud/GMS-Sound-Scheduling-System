@@ -245,7 +245,7 @@ export async function requestAiSchedulingExplanation(
 ): Promise<{ explanation: string; cached: boolean }> {
   const snapshotJson = JSON.stringify(snapshot);
   const snapshotBytes = new TextEncoder().encode(snapshotJson).byteLength;
-  if (snapshotBytes > 5_600) {
+  if (snapshotBytes > 7_200) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
   const privateNames = new Map<string, string>();
@@ -279,7 +279,7 @@ export async function requestAiSchedulingExplanation(
   });
   const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot: safeSnapshot });
   const requestBytes = new TextEncoder().encode(requestBody).byteLength;
-  if (requestBytes > 7_500) {
+  if (requestBytes > 7_800) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
   const response = await fetcher(endpoint, {
@@ -318,7 +318,7 @@ export async function requestAiSchedulingExplanation(
     const messages: Record<number, string> = {
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
       403: "The AI assistant is not enabled for this account or application origin.",
-      413: "The AI analysis payload is too large. The preview was not changed; reduce the monthly preview details and try again.",
+      413: "The AI analysis payload is too large. No schedule changes were made; reduce the monthly preview details and try again.",
       429: "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
