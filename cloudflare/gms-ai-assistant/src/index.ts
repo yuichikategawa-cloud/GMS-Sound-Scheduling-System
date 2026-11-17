@@ -382,6 +382,9 @@ export class AiBudgetGuard {
     this.sql.exec(
       "CREATE TABLE IF NOT EXISTS gms_ai_cache (cache_key TEXT PRIMARY KEY, explanation TEXT NOT NULL, expires_at INTEGER NOT NULL)"
     );
+    this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_pending (request_id TEXT PRIMARY KEY, day_key TEXT NOT NULL, user_key TEXT NOT NULL)"
+    );
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -396,24 +399,32 @@ export class AiBudgetGuard {
     }
 
     if (body.action === "reserve") {
-      if (typeof body.dayKey !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(body.dayKey) ||
+      if (typeof body.dayKey !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(body.dayKey) ||
           typeof body.userKey !== "string" || !/^[a-f0-9]{64}$/.test(body.userKey) ||
-          typeof body.cacheKey !== "string" || !/^[a-f0-9]{64}$/.test(body.cacheKey)) {
+          typeof body.cacheKey !== "string" || !/^[a-f0-9]{64}$/.test(body.cacheKey) ||
+          typeof body.requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.requestId)) {
         return Response.json({ error: "invalid_internal_request" }, { status: 400 });
       }
 
-      // Count every Worker/guard request, including cache reads, before any
-      // response path. This limits free Worker, Durable Object and Supabase calls.
+      // Cache hits are free of inference and request-budget consumption.
+      const now = Date.now();
+      this.sql.exec("DELETE FROM gms_ai_cache WHERE expires_at <= ?", now);
+      const cached = this.sql.exec<{ explanation: string; expires_at: number }>(
+        "SELECT explanation, expires_at FROM gms_ai_cache WHERE cache_key = ? LIMIT 1",
+        body.cacheKey,
+      ).toArray()[0];
+      if (cached && cached.expires_at > now) {
+        return Response.json({ allowed: true, cached: true, explanation: cached.explanation });
+      }
+
       const userRequests = this.sql.exec<{ requests: number }>(
         "SELECT requests FROM gms_ai_user_requests WHERE day_key = ? AND user_key = ? LIMIT 1",
-        body.dayKey,
-        body.userKey,
+        body.dayKey, body.userKey,
       ).toArray()[0]?.requests ?? 0;
       const globalRequests = this.sql.exec<{ requests: number }>(
         "SELECT requests FROM gms_ai_global_requests WHERE day_key = ? LIMIT 1",
         body.dayKey,
       ).toArray()[0]?.requests ?? 0;
-
       if (globalRequests >= DAILY_GMS_REQUEST_LIMIT) {
         return Response.json({ allowed: false, reason: "gms_request_limit" }, { status: 429 });
       }
@@ -421,54 +432,77 @@ export class AiBudgetGuard {
         return Response.json({ allowed: false, reason: "admin_request_limit" }, { status: 429 });
       }
 
-      this.sql.exec(
-        "INSERT INTO gms_ai_user_requests (day_key, user_key, requests) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET requests = requests + 1",
-        body.dayKey,
-        body.userKey,
-      );
-      this.sql.exec(
-        "INSERT INTO gms_ai_global_requests (day_key, requests) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET requests = requests + 1",
-        body.dayKey,
-      );
-
-      const now = Date.now();
-      this.sql.exec("DELETE FROM gms_ai_cache WHERE expires_at <= ?", now);
-      const cached = this.sql.exec<{ explanation: string; expires_at: number }>(
-        "SELECT explanation, expires_at FROM gms_ai_cache WHERE cache_key = ? LIMIT 1",
-        body.cacheKey,
-      ).toArray()[0];
-
-      if (cached && cached.expires_at > now) {
-        return Response.json({ allowed: true, cached: true, explanation: cached.explanation });
-      }
-
       const userCount = this.sql.exec<{ calls: number }>(
         "SELECT calls FROM gms_ai_user_usage WHERE day_key = ? AND user_key = ? LIMIT 1",
-        body.dayKey,
-        body.userKey,
+        body.dayKey, body.userKey,
       ).toArray()[0]?.calls ?? 0;
       const globalCount = this.sql.exec<{ calls: number }>(
         "SELECT calls FROM gms_ai_global_usage WHERE day_key = ? LIMIT 1",
         body.dayKey,
       ).toArray()[0]?.calls ?? 0;
-
-      if (globalCount >= DAILY_GMS_MODEL_CALL_LIMIT) {
+      const userPending = this.sql.exec<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE day_key = ? AND user_key = ?",
+        body.dayKey, body.userKey,
+      ).toArray()[0]?.count ?? 0;
+      const globalPending = this.sql.exec<{ count: number }>(
+        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE day_key = ?",
+        body.dayKey,
+      ).toArray()[0]?.count ?? 0;
+      if (globalCount + globalPending >= DAILY_GMS_MODEL_CALL_LIMIT) {
         return Response.json({ allowed: false, reason: "gms_daily_limit" }, { status: 429 });
       }
-      if (userCount >= DAILY_ADMIN_MODEL_CALL_LIMIT) {
+      if (userCount + userPending >= DAILY_ADMIN_MODEL_CALL_LIMIT) {
         return Response.json({ allowed: false, reason: "admin_daily_limit" }, { status: 429 });
+      }
+
+      // Reserve atomically; count the inference only after a successful model response.
+      this.sql.exec(
+        "INSERT INTO gms_ai_user_requests (day_key, user_key, requests) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET requests = requests + 1",
+        body.dayKey, body.userKey,
+      );
+      this.sql.exec(
+        "INSERT INTO gms_ai_global_requests (day_key, requests) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET requests = requests + 1",
+        body.dayKey,
+      );
+      this.sql.exec(
+        "INSERT INTO gms_ai_pending (request_id, day_key, user_key) VALUES (?, ?, ?)",
+        body.requestId, body.dayKey, body.userKey,
+      );
+      return Response.json({ allowed: true, cached: false, requestId: body.requestId });
+    }
+
+    if (body.action === "commit" || body.action === "release") {
+      if (typeof body.requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.requestId)) {
+        return Response.json({ error: "invalid_internal_request" }, { status: 400 });
+      }
+      const pending = this.sql.exec<{ day_key: string; user_key: string }>(
+        "SELECT day_key, user_key FROM gms_ai_pending WHERE request_id = ? LIMIT 1",
+        body.requestId,
+      ).toArray()[0];
+      if (!pending) return Response.json({ error: "reservation_not_found" }, { status: 409 });
+
+      this.sql.exec("DELETE FROM gms_ai_pending WHERE request_id = ?", body.requestId);
+      if (body.action === "release") {
+        this.sql.exec(
+          "UPDATE gms_ai_user_requests SET requests = MAX(requests - 1, 0) WHERE day_key = ? AND user_key = ?",
+          pending.day_key, pending.user_key,
+        );
+        this.sql.exec(
+          "UPDATE gms_ai_global_requests SET requests = MAX(requests - 1, 0) WHERE day_key = ?",
+          pending.day_key,
+        );
+        return Response.json({ released: true });
       }
 
       this.sql.exec(
         "INSERT INTO gms_ai_user_usage (day_key, user_key, calls) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET calls = calls + 1",
-        body.dayKey,
-        body.userKey,
+        pending.day_key, pending.user_key,
       );
       this.sql.exec(
         "INSERT INTO gms_ai_global_usage (day_key, calls) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET calls = calls + 1",
-        body.dayKey,
+        pending.day_key,
       );
-      return Response.json({ allowed: true, cached: false });
+      return Response.json({ committed: true });
     }
 
     if (body.action === "cache") {
@@ -637,6 +671,7 @@ export default {
 
     const userKey = await sha256(admin.id);
     const cacheKey = await sha256(userKey + "|" + snapshotJson);
+    const requestId = crypto.randomUUID();
     let guard: DurableObjectStubLike;
     try {
       guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
@@ -655,7 +690,7 @@ export default {
       reservationResponse = await guard.fetch("https://gms-ai-budget.internal/reserve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reserve", dayKey: utcDay(), userKey, cacheKey }),
+        body: JSON.stringify({ action: "reserve", dayKey: utcDay(), userKey, cacheKey, requestId }),
       });
     } catch (error) {
       const details = safeErrorDetails(error);
@@ -795,13 +830,39 @@ export default {
         temperature: 0.2,
       });
     } catch {
-      // In particular, never retry through a paid model if Cloudflare returns
-      // the free-allocation (3036) or paid-plan-required (5035) error.
+      // Release the pending reservation and request attempt after a failed free inference.
+      const releaseResponse = await guard.fetch("https://gms-ai-budget.internal/release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "release", requestId }),
+      }).catch(() => null);
+      if (!releaseResponse?.ok) {
+        console.error("[gms-ai] budget_reservation_release_failed", { stage: "model_failure" });
+      }
+      // Never retry through a paid model.
       return jsonResponse({ error: "free_ai_quota_or_capacity_unavailable" }, 503, allowedOrigin);
     }
 
     const explanation = extractModelText(modelResult).slice(0, 4000);
-    if (!explanation) return jsonResponse({ error: "empty_ai_response" }, 502, allowedOrigin);
+    if (!explanation) {
+      const releaseResponse = await guard.fetch("https://gms-ai-budget.internal/release", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "release", requestId }),
+      }).catch(() => null);
+      if (!releaseResponse?.ok) console.error("[gms-ai] budget_reservation_release_failed", { stage: "empty_model_response" });
+      return jsonResponse({ error: "empty_ai_response" }, 502, allowedOrigin);
+    }
+
+    const commitResponse = await guard.fetch("https://gms-ai-budget.internal/commit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "commit", requestId }),
+    }).catch(() => null);
+    if (!commitResponse?.ok) {
+      console.error("[gms-ai] budget_reservation_commit_failed", { stage: "model_success" });
+      return jsonResponse({ error: "free_budget_commit_unavailable" }, 503, allowedOrigin);
+    }
 
     const cacheResponse = await guard.fetch("https://gms-ai-budget.internal/cache", {
       method: "POST",
