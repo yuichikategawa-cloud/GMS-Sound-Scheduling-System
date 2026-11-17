@@ -401,6 +401,12 @@ export class AiBudgetGuard {
       "CREATE TABLE IF NOT EXISTS gms_ai_cache (cache_key TEXT PRIMARY KEY, explanation TEXT NOT NULL, expires_at INTEGER NOT NULL)"
     );
     this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_user_cache_hits (day_key TEXT NOT NULL, user_key TEXT NOT NULL, hits INTEGER NOT NULL, PRIMARY KEY (day_key, user_key))"
+    );
+    this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_global_cache_hits (day_key TEXT PRIMARY KEY, hits INTEGER NOT NULL)"
+    );
+    this.sql.exec(
       "CREATE TABLE IF NOT EXISTS gms_ai_pending (request_id TEXT PRIMARY KEY, day_key TEXT NOT NULL, user_key TEXT NOT NULL)"
     );
   }
@@ -414,6 +420,38 @@ export class AiBudgetGuard {
     }
     if (!isRecord(body) || typeof body.action !== "string") {
       return Response.json({ error: "invalid_internal_request" }, { status: 400 });
+    }
+
+    if (body.action === "usage") {
+      if (typeof body.monthKey !== "string" || !/^\\d{4}-(0[1-9]|1[0-2])$/.test(body.monthKey)) {
+        return Response.json({ error: "invalid_internal_request" }, { status: 400 });
+      }
+      const global = (table: string, column: string) => this.sql.exec<{ total: number }>(
+        `SELECT COALESCE(SUM(${column}), 0) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ?`, body.monthKey,
+      ).toArray()[0]?.total ?? 0;
+      const perAdmin = (table: string, column: string) => this.sql.exec<{ user_key: string; total: number }>(
+        `SELECT user_key, SUM(${column}) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ? GROUP BY user_key`, body.monthKey,
+      ).toArray();
+      const calls = perAdmin("gms_ai_user_usage", "calls");
+      const requests = perAdmin("gms_ai_user_requests", "requests");
+      const cacheHits = perAdmin("gms_ai_user_cache_hits", "hits");
+      const admins = new Map<string, { modelCalls: number; requests: number; cacheHits: number }>();
+      for (const row of calls) admins.set(row.user_key, { ...(admins.get(row.user_key) ?? { modelCalls: 0, requests: 0, cacheHits: 0 }), modelCalls: row.total });
+      for (const row of requests) admins.set(row.user_key, { ...(admins.get(row.user_key) ?? { modelCalls: 0, requests: 0, cacheHits: 0 }), requests: row.total });
+      for (const row of cacheHits) admins.set(row.user_key, { ...(admins.get(row.user_key) ?? { modelCalls: 0, requests: 0, cacheHits: 0 }), cacheHits: row.total });
+      const hashedAdmins = [...admins.entries()].map(([userKey, usage], index) => ({ admin: `Admin ${index + 1}`, ...usage }));
+      return Response.json({
+        month: body.monthKey,
+        global: {
+          modelCalls: global("gms_ai_global_usage", "calls"),
+          requests: global("gms_ai_global_requests", "requests"),
+          cacheHits: global("gms_ai_global_cache_hits", "hits"),
+          pendingCalls: this.sql.exec<{ total: number }>("SELECT COUNT(*) AS total FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ?", body.monthKey).toArray()[0]?.total ?? 0,
+        },
+        admins: hashedAdmins,
+        limits: { modelCalls: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminModelCalls: MONTHLY_ADMIN_MODEL_CALL_LIMIT, requests: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequests: MONTHLY_ADMIN_REQUEST_LIMIT },
+        providerDailyNeurons: null,
+      });
     }
 
     if (body.action === "reserve") {
@@ -432,6 +470,8 @@ export class AiBudgetGuard {
         body.cacheKey,
       ).toArray()[0];
       if (cached && cached.expires_at > now) {
+        this.sql.exec("INSERT INTO gms_ai_user_cache_hits (day_key, user_key, hits) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET hits = hits + 1", body.monthKey, body.userKey);
+        this.sql.exec("INSERT INTO gms_ai_global_cache_hits (day_key, hits) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET hits = hits + 1", body.monthKey);
         return Response.json({ allowed: true, cached: true, explanation: cached.explanation });
       }
 
@@ -670,9 +710,23 @@ export default {
     } catch {
       return jsonResponse({ error: "invalid_json" }, 400, allowedOrigin);
     }
-    if (!isRecord(requestBody) || requestBody.kind !== "preview_explanation") {
-      return jsonResponse({ error: "unsupported_request" }, 400, allowedOrigin);
+    if (!isRecord(requestBody)) return jsonResponse({ error: "unsupported_request" }, 400, allowedOrigin);
+    if (requestBody.kind === "usage_report") {
+      const monthKey = typeof requestBody.month === "string" && /^\\d{4}-(0[1-9]|1[0-2])$/.test(requestBody.month) ? requestBody.month : utcMonth();
+      try {
+        const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
+        const response = await guard.fetch("https://gms-ai-budget.internal/usage", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "usage", monthKey }),
+        });
+        if (!response.ok) return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
+        const usage = await response.json() as Record<string, unknown>;
+        return jsonResponse(usage, 200, allowedOrigin);
+      } catch {
+        return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
+      }
     }
+    if (requestBody.kind !== "preview_explanation") return jsonResponse({ error: "unsupported_request" }, 400, allowedOrigin);
 
     const snapshot = validateSnapshot(requestBody.snapshot);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400, allowedOrigin);
