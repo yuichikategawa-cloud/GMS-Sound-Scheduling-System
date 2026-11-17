@@ -178,8 +178,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
             typeof rawAssignment.source !== "string" || !ASSIGNMENT_SOURCES.includes(rawAssignment.source) ||
             !Array.isArray(rawAssignment.qualifiedRoles) || rawAssignment.qualifiedRoles.length > 3 ||
             !rawAssignment.qualifiedRoles.every(isRole) ||
-            typeof rawAssignment.availability !== "string" || !AVAILABILITY_VALUES.includes(rawAssignment.availability) ||
-            ) return null;
+            typeof rawAssignment.availability !== "string" || !AVAILABILITY_VALUES.includes(rawAssignment.availability)) return null;
 
         assignments.push({
           servant: rawAssignment.servant,
