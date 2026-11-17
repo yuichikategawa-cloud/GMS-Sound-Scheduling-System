@@ -172,7 +172,66 @@ jobs:
         with:
           node-version: 22
 
+      - name: Verify Cloudflare API token authentication
+        id: cloudflare_auth
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$RUNNER_TEMP/cloudflare-token-verify.json"
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify)"
+          if [[ "$http_status" != "200" ]]; then
+            echo "::error::Cloudflare API token verification failed (HTTP $http_status)."
+            exit 1
+          fi
+          node --input-type=module - "$response_file" <<'NODE'
+          import { readFileSync } from "node:fs";
+          const payload = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          if (payload.success !== true || payload.result?.status !== "active") {
+            console.error("Cloudflare API token is not active.");
+            process.exit(1);
+          }
+          NODE
+          echo "Cloudflare API token is active."
+
+      - name: Check Cloudflare Billing Read permission
+        id: billing_access
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          today="$(date -u +%F)"
+          response_file="$RUNNER_TEMP/cloudflare-billable-usage.json"
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/billable-usage?from=$today&to=$today")"
+          billing_status="unavailable"
+          if [[ "$http_status" == "200" ]] && node --input-type=module - "$response_file" <<'NODE'
+          import { readFileSync } from "node:fs";
+          const payload = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          process.exit(payload.success === true && Array.isArray(payload.result) ? 0 : 1);
+          NODE
+          then
+            billing_status="available"
+          elif [[ "$http_status" == "403" ]]; then
+            billing_status="permission_denied"
+          fi
+          echo "status=$billing_status" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Cloudflare billing API permission"
+            if [[ "$billing_status" == "available" ]]; then
+              echo "- Billing Read permission: confirmed."
+            elif [[ "$billing_status" == "permission_denied" ]]; then
+              echo "- Billing Read permission: denied. Add Account > Billing > Read to the API token for provider usage metrics."
+            else
+              echo "- Billing API check: unavailable (HTTP $http_status). Core Worker deployment can still proceed; provider metrics will report unavailable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Install staging Worker secrets and deploy
+        id: deploy
         if: steps.preflight.outputs.ready == 'true'
         shell: bash
         run: |
@@ -181,13 +240,57 @@ jobs:
           printf '%s' "$STAGING_SUPABASE_URL" | npx --yes wrangler@4 secret put SUPABASE_URL --config "$config"
           printf '%s' "$STAGING_SUPABASE_ANON_KEY" | npx --yes wrangler@4 secret put SUPABASE_ANON_KEY --config "$config"
           printf '%s' "$STAGING_GMS_APP_ORIGIN" | npx --yes wrangler@4 secret put GMS_APP_ORIGIN --config "$config"
-          npx --yes wrangler@4 deploy --config "$config"
+          printf '%s' "$CLOUDFLARE_API_TOKEN" | npx --yes wrangler@4 secret put CLOUDFLARE_API_TOKEN --config "$config"
+          printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | npx --yes wrangler@4 secret put CLOUDFLARE_ACCOUNT_ID --config "$config"
+          npx --yes wrangler@4 deploy --config "$config" 2>&1 | tee "$RUNNER_TEMP/wrangler-deploy.log"
+          version_id="$(awk '/^Current Version ID:/ { print $4 }' "$RUNNER_TEMP/wrangler-deploy.log" | tail -n 1)"
+          if [[ -z "$version_id" ]]; then
+            echo "::error::Worker deployment completed without a readable version ID."
+            exit 1
+          fi
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
           {
             echo "### Isolated staging AI Worker deployed"
-            echo "- Worker name: `gms-ai-assistant-staging`"
-            echo "- Config: `wrangler.staging.toml`"
+            echo "- Worker name: gms-ai-assistant-staging"
+            echo "- Config: wrangler.staging.toml"
+            echo "- Version ID: $version_id"
             echo "- Supabase: GMS staging project only"
-            echo "- Model inference: disabled (`GMS_AI_ENABLED=false`)"
+            echo "- Cloudflare Billing Read: ${{ steps.billing_access.outputs.status }}"
+            echo "- Model inference: disabled (GMS_AI_ENABLED=false)"
             echo "- Production Worker and Production Supabase were not targeted."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify deployed staging Worker endpoint
+        if: steps.preflight.outputs.ready == 'true' && steps.deploy.outputs.version_id != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker_url="https://gms-ai-assistant-staging.yuichikategawa.workers.dev"
+          origin="$STAGING_GMS_APP_ORIGIN"
+
+          preflight_status="$(curl --silent --show-error --output "$RUNNER_TEMP/worker-options.txt" --write-out '%{http_code}' \
+            --request OPTIONS "$worker_url/v1/explain" \
+            --header "Origin: $origin" \
+            --header "Access-Control-Request-Method: POST" \
+            --header "Access-Control-Request-Headers: authorization,content-type")"
+          if [[ "$preflight_status" != "204" ]] || ! grep -Fqi "Access-Control-Allow-Origin: $origin" "$RUNNER_TEMP/worker-options.txt"; then
+            echo "::error::Staging Worker CORS preflight check failed (HTTP $preflight_status)."
+            exit 1
+          fi
+
+          auth_status="$(curl --silent --show-error --output "$RUNNER_TEMP/worker-auth.json" --write-out '%{http_code}' \
+            --request POST "$worker_url/v1/explain" \
+            --header "Origin: $origin" \
+            --header "Content-Type: application/json" \
+            --data '{"kind":"usage_report"}')"
+          if [[ "$auth_status" != "401" ]] || ! grep -Fq '"error":"unauthorized"' "$RUNNER_TEMP/worker-auth.json"; then
+            echo "::error::Staging Worker unauthenticated request guard returned an unexpected response (HTTP $auth_status)."
+            exit 1
+          fi
+          {
+            echo "### Staging Worker endpoint smoke test"
+            echo "- CORS preflight: passed (HTTP 204)."
+            echo "- Authentication guard: passed (HTTP 401 without a Supabase session)."
+            echo "- Full usage-report response requires an authenticated staging admin session."
           } >> "$GITHUB_STEP_SUMMARY"
 
