@@ -725,6 +725,7 @@ export default function MonthlySmartScheduler({
     setAiCached(false);
     setAiProgress("");
     const explanations: string[] = [];
+    let overallSummary = "";
     let allCached = true;
     let batchCount = 0;
     try {
@@ -756,12 +757,12 @@ export default function MonthlySmartScheduler({
         explanations.push(`Service findings · batch ${batchIndex + 1}/${batchCount}\n${result.explanation}`);
         allCached = allCached && result.cached;
       }
-      setAiExplanation(explanations.join("\n\n"));
+      setAiExplanation([overallSummary, ...explanations].filter(Boolean).join("\n\n"));
       setAiCached(allCached);
       setAiProgress(`Completed ${batchCount} of ${batchCount} batches.`);
     } catch (error) {
       if (explanations.length) {
-        setAiExplanation(explanations.join("\n\n"));
+        setAiExplanation([overallSummary, ...explanations].filter(Boolean).join("\n\n"));
         setAiCached(allCached);
         setAiError(`Partial analysis: ${explanations.length} of ${batchCount} batches completed. ${error instanceof Error ? error.message : "The remaining batches could not be analyzed."}`);
       } else {
