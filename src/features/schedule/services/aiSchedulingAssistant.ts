@@ -237,6 +237,19 @@ export function buildAiSchedulingSnapshot(input: {
   };
 }
 
+export function resolveAiWorkerEndpoint(endpoint: string): string {
+  const trimmed = endpoint.trim();
+  if (!trimmed) throw new Error("The free AI Worker URL is not configured.");
+  const url = new URL(trimmed);
+  url.search = "";
+  url.hash = "";
+  url.pathname = url.pathname.replace(/\\/+$/, "");
+  if (url.pathname.endsWith("/v1/explain")) return url.toString();
+  if (url.pathname.endsWith("/v1")) url.pathname += "/explain";
+  else url.pathname += "/v1/explain";
+  return url.toString();
+}
+
 export async function requestAiSchedulingExplanation(
   endpoint: string,
   accessToken: string,
@@ -282,10 +295,7 @@ export async function requestAiSchedulingExplanation(
   if (requestBytes > 7_800) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
-  const configuredEndpoint = endpoint.trim().replace(/\/+$/, "");
-  const requestEndpoint = configuredEndpoint.endsWith("/v1/explain")
-    ? configuredEndpoint
-    : configuredEndpoint + "/v1/explain";
+  const requestEndpoint = resolveAiWorkerEndpoint(endpoint);
   const response = await fetcher(requestEndpoint, {
     method: "POST",
     headers: {
