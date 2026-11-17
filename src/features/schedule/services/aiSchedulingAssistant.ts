@@ -159,11 +159,6 @@ export function buildAiSchedulingSnapshot(input: {
             source: assignment.preview_manual ? "manual_preview" : "proposed",
             qualifiedRoles: servant?.qualified_roles ?? ROLES,
             availability: getAvailability(assignment.servant_id, slot.service_date),
-            totalAssignments: workload?.total_assignments ?? 0,
-            servingDays: workload?.serving_days ?? 0,
-            eligibleOpportunities: workload?.eligible_opportunities ?? 0,
-            recent60DayAssignments: workload?.recent_60_day_assignments ?? 0,
-            currentMonthRoleAssignments: currentMonthRoleAssignments(assignment.servant_id, assignment.role),
           });
         }
 
