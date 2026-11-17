@@ -321,6 +321,10 @@ function jsonResponse(
   });
 }
 
+export function isMonthKey(value: unknown): value is string {
+  return typeof value === "string" && /^\\d{4}-(0[1-9]|1[0-2])$/.test(value);
+}
+
 function utcMonth(now = new Date()): string {
   return now.toISOString().slice(0, 7);
 }
@@ -445,7 +449,7 @@ export class AiBudgetGuard {
     }
 
     if (body.action === "usage") {
-      if (typeof body.monthKey !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.monthKey)) {
+      if (!isMonthKey(body.monthKey)) {
         return Response.json({ error: "invalid_internal_request" }, { status: 400 });
       }
       const monthKey = body.monthKey;
@@ -732,7 +736,7 @@ export default {
     }
     if (!isRecord(requestBody)) return jsonResponse({ error: "unsupported_request" }, 400, allowedOrigin);
     if (requestBody.kind === "usage_report") {
-      const monthKey = typeof requestBody.month === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(requestBody.month) ? requestBody.month : utcMonth();
+      const monthKey = isMonthKey(requestBody.month) ? requestBody.month : utcMonth();
       try {
         const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
         const userKey = await sha256("gms-cloudflare-usage-refresh");
