@@ -360,7 +360,7 @@ export async function readBoundedBody(request: Request, maximumBytes: number): P
 
 /**
  * SQLite-backed Durable Object. A single named instance serializes GMS-wide
- * reservations, making the three-inference daily budget atomic across admins.
+ * reservations, enforcing the monthly inference budget atomically across admins.
  */
 export class AiBudgetGuard {
   private readonly sql: SqlStorage;
