@@ -42,10 +42,11 @@ interface Env {
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
-export const MONTHLY_GMS_MODEL_CALL_LIMIT = 120;
-export const MONTHLY_ADMIN_MODEL_CALL_LIMIT = 60;
-export const MONTHLY_GMS_REQUEST_LIMIT = 600;
-export const MONTHLY_ADMIN_REQUEST_LIMIT = 200;
+export const CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT = 100_000;
+export const CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT = 10_000;
+export const CLOUDFLARE_WORKERS_OBSERVABILITY_EVENTS_DAILY_LIMIT = 200_000;
+export const GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT = Math.floor(CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT * 0.75);
+export const GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT = Math.floor(CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT * 0.75);
 const MAX_REQUEST_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 7_500;
 const MAX_COMPLETION_TOKENS = 768;
@@ -355,6 +356,86 @@ function safeErrorDetails(error: unknown): { name: string; message: string } {
 }
 
 
+/**
+ * Reads account-level Cloudflare daily analytics for the inference safety guard.
+ * Both datasets are account-wide and adaptive; the 25% headroom protects against
+ * sampling and analytics aggregation delay.
+ */
+export async function readCloudflareDailyUsage(
+  accountId: string,
+  apiToken: string,
+  now = new Date(),
+  fetcher: typeof fetch = fetch,
+): Promise<{ ok: true; neurons: number; workersRequests: number } | { ok: false }> {
+  const today = now.toISOString().slice(0, 10);
+  const variables = {
+    accountTag: accountId,
+    datetimeStart: new Date(today + "T00:00:00.000Z").toISOString(),
+    datetimeEnd: now.toISOString(),
+  };
+  const headers = {
+    Authorization: `Bearer ${apiToken}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  const neuronQuery = `query GmsWorkersAiNeuronsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
+    viewer { accounts(filter: { accountTag: $accountTag }) {
+      aiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) {
+        sum { totalNeurons }
+      }
+    } }
+  }`;
+  const requestQuery = `query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
+    viewer { accounts(filter: { accountTag: $accountTag }) {
+      workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) {
+        sum { requests }
+      }
+    } }
+  }`;
+  try {
+    const [neuronResponse, requestResponse] = await Promise.all([
+      fetcher("https://api.cloudflare.com/client/v4/graphql", {
+        method: "POST", headers, body: JSON.stringify({ query: neuronQuery, variables }),
+      }),
+      fetcher("https://api.cloudflare.com/client/v4/graphql", {
+        method: "POST", headers, body: JSON.stringify({ query: requestQuery, variables }),
+      }),
+    ]);
+    if (!neuronResponse.ok || !requestResponse.ok) return { ok: false };
+    const [neuronPayload, requestPayload] = await Promise.all([
+      neuronResponse.json() as Promise<{
+        errors?: unknown[];
+        data?: { viewer?: { accounts?: Array<{ aiInferenceAdaptiveGroups?: Array<{ sum?: { totalNeurons?: number } }> }> } };
+      }>,
+      requestResponse.json() as Promise<{
+        errors?: unknown[];
+        data?: { viewer?: { accounts?: Array<{ workersInvocationsAdaptive?: Array<{ sum?: { requests?: number } }> }> } };
+      }>,
+    ]);
+    const neuronRows = neuronPayload.data?.viewer?.accounts?.[0]?.aiInferenceAdaptiveGroups;
+    const requestRows = requestPayload.data?.viewer?.accounts?.[0]?.workersInvocationsAdaptive;
+    if (neuronPayload.errors?.length || requestPayload.errors?.length ||
+        !Array.isArray(neuronRows) || !Array.isArray(requestRows)) return { ok: false };
+    const neurons = neuronRows.reduce((total, row) => {
+      const value = Number(row.sum?.totalNeurons);
+      return Number.isFinite(value) && value > 0 ? total + value : total;
+    }, 0);
+    const workersRequests = requestRows.reduce((total, row) => {
+      const value = Number(row.sum?.requests);
+      return Number.isFinite(value) && value > 0 ? total + value : total;
+    }, 0);
+    return { ok: true, neurons, workersRequests };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export function dailySafetyLimitReason(usage: { neurons: number; workersRequests: number }): string | null {
+  if (usage.neurons >= GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT) return "workers_ai_neuron_safety_limit";
+  if (usage.workersRequests >= GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT) return "workers_request_safety_limit";
+  return null;
+}
+
 /** Reads at most the configured number of bytes and cancels oversized streams. */
 export async function readBoundedBody(request: Request, maximumBytes: number): Promise<string | null> {
   const reader = request.body?.getReader();
@@ -476,7 +557,13 @@ export class AiBudgetGuard {
           pendingCalls: this.sql.exec<{ total: number }>("SELECT COUNT(*) AS total FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ?", body.monthKey).toArray()[0]?.total ?? 0,
         },
         admins: hashedAdmins,
-        limits: { modelCalls: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminModelCalls: MONTHLY_ADMIN_MODEL_CALL_LIMIT, requests: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequests: MONTHLY_ADMIN_REQUEST_LIMIT },
+        limits: {
+          workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+          workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+          workersObservabilityEventsDaily: CLOUDFLARE_WORKERS_OBSERVABILITY_EVENTS_DAILY_LIMIT,
+          workersAiNeuronsDaily: CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+          workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+        },
         providerDailyNeurons: null,
       });
     }
@@ -502,43 +589,8 @@ export class AiBudgetGuard {
         return Response.json({ allowed: true, cached: true, explanation: cached.explanation });
       }
 
-      const userRequests = this.sql.exec<{ requests: number }>(
-        "SELECT COALESCE(SUM(requests), 0) AS requests FROM gms_ai_user_requests WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
-        body.monthKey, body.userKey,
-      ).toArray()[0]?.requests ?? 0;
-      const globalRequests = this.sql.exec<{ requests: number }>(
-        "SELECT COALESCE(SUM(requests), 0) AS requests FROM gms_ai_global_requests WHERE substr(day_key, 1, 7) = ?",
-        body.monthKey,
-      ).toArray()[0]?.requests ?? 0;
-      if (globalRequests >= MONTHLY_GMS_REQUEST_LIMIT) {
-        return Response.json({ allowed: false, reason: "gms_request_limit" }, { status: 429 });
-      }
-      if (userRequests >= MONTHLY_ADMIN_REQUEST_LIMIT) {
-        return Response.json({ allowed: false, reason: "admin_request_limit" }, { status: 429 });
-      }
-
-      const userCount = this.sql.exec<{ calls: number }>(
-        "SELECT COALESCE(SUM(calls), 0) AS calls FROM gms_ai_user_usage WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
-        body.monthKey, body.userKey,
-      ).toArray()[0]?.calls ?? 0;
-      const globalCount = this.sql.exec<{ calls: number }>(
-        "SELECT COALESCE(SUM(calls), 0) AS calls FROM gms_ai_global_usage WHERE substr(day_key, 1, 7) = ?",
-        body.monthKey,
-      ).toArray()[0]?.calls ?? 0;
-      const userPending = this.sql.exec<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
-        body.monthKey, body.userKey,
-      ).toArray()[0]?.count ?? 0;
-      const globalPending = this.sql.exec<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ?",
-        body.monthKey,
-      ).toArray()[0]?.count ?? 0;
-      if (globalCount + globalPending >= MONTHLY_GMS_MODEL_CALL_LIMIT) {
-        return Response.json({ allowed: false, reason: "gms_monthly_limit" }, { status: 429 });
-      }
-      if (userCount + userPending >= MONTHLY_ADMIN_MODEL_CALL_LIMIT) {
-        return Response.json({ allowed: false, reason: "admin_monthly_limit" }, { status: 429 });
-      }
+      // Monthly counters remain for diagnostics only. Live Cloudflare daily
+      // analytics determine whether another inference can safely run.
 
       // Reserve atomically; count the inference only after a successful model response.
       this.sql.exec(
@@ -1012,9 +1064,11 @@ export default {
           observabilityEventsStatus,
           limits: {
             ...(isRecord(usage.limits) ? usage.limits : {}),
-            workersRequestsDaily: 100_000,
-            workersObservabilityEventsDaily: 200_000,
-            workersAiNeuronsDaily: 10_000,
+            workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+            workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+            workersObservabilityEventsDaily: CLOUDFLARE_WORKERS_OBSERVABILITY_EVENTS_DAILY_LIMIT,
+            workersAiNeuronsDaily: CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+            workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
           },
           refreshedAt: new Date().toISOString(),
         }, 200, allowedOrigin);
@@ -1031,6 +1085,29 @@ export default {
     const snapshotJson = JSON.stringify(snapshot);
     if (new TextEncoder().encode(snapshotJson).length > MAX_SNAPSHOT_BYTES) {
       return jsonResponse({ error: "snapshot_too_large" }, 413, allowedOrigin);
+    }
+
+    if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_API_TOKEN) {
+      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+    }
+    const providerUsage = await readCloudflareDailyUsage(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_API_TOKEN);
+    if (!providerUsage.ok) {
+      console.error("[gms-ai] provider_daily_safety_check_unavailable", { stage: "daily_safety_check" });
+      return jsonResponse({ error: "provider_usage_unavailable" }, 503, allowedOrigin);
+    }
+    const dailyLimitReason = dailySafetyLimitReason(providerUsage);
+    if (dailyLimitReason) {
+      return jsonResponse({
+        error: "daily_free_limit_reached",
+        reason: dailyLimitReason,
+        usage: { providerDailyNeurons: providerUsage.neurons, workersRequestsToday: providerUsage.workersRequests },
+        limits: {
+          workersAiNeuronsDaily: CLOUDFLARE_WORKERS_AI_NEURONS_DAILY_LIMIT,
+          workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+          workersRequestsDaily: CLOUDFLARE_WORKERS_REQUESTS_DAILY_LIMIT,
+          workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+        },
+      }, 429, allowedOrigin);
     }
 
     const userKey = await sha256(admin.id);
@@ -1068,32 +1145,6 @@ export default {
 
     if (!reservationResponse.ok) {
       const responseBody = await reservationResponse.text().catch(() => "");
-      if (reservationResponse.status === 429) {
-        let limitReason: string | null = null;
-        try {
-          const parsed: unknown = JSON.parse(responseBody);
-          if (isRecord(parsed) && parsed.allowed === false &&
-              typeof parsed.reason === "string" &&
-              ["gms_request_limit", "admin_request_limit", "gms_monthly_limit", "admin_monthly_limit"].includes(parsed.reason)) {
-            limitReason = parsed.reason;
-          }
-        } catch {
-          // Treat an unrecognized 429 as an internal guard failure below.
-        }
-        if (limitReason) {
-          console.info("[gms-ai] budget_limit_reached", { reason: limitReason });
-          return jsonResponse({
-            error: "monthly_free_limit_reached",
-            reason: limitReason,
-            limits: {
-              gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT,
-              perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT,
-              gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT,
-              perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT,
-            },
-          }, 429, allowedOrigin);
-        }
-      }
       const guardCode = safeGuardErrorCode(responseBody);
       let bodyShape: string = "non_json";
       let responseReason: string | null = null;
@@ -1157,11 +1208,7 @@ export default {
       return jsonResponse({ explanation: reservation.explanation, cached: true }, 200, allowedOrigin);
     }
     if (reservation.allowed !== true) {
-      return jsonResponse({
-        error: "monthly_free_limit_reached",
-        reason: reservation.reason ?? "daily_limit",
-        limits: { gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT },
-      }, 429, allowedOrigin);
+      return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_denied" }, 503, allowedOrigin);
     }
 
     const messages = [
@@ -1275,7 +1322,10 @@ export default {
     return jsonResponse({
       explanation,
       cached: false,
-      limits: { gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT },
+      limits: {
+        workersAiNeuronsDailySafety: GMS_WORKERS_AI_NEURONS_DAILY_SAFETY_LIMIT,
+        workersRequestsDailySafety: GMS_WORKERS_REQUESTS_DAILY_SAFETY_LIMIT,
+      },
     }, 200, allowedOrigin);
   },
 };
