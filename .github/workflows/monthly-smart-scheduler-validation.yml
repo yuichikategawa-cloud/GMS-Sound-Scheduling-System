@@ -56,6 +56,7 @@ on:
       - "tsconfig*.json"
       - ".github/workflows/monthly-smart-scheduler-validation.yml"
       - ".github/workflows/phase-1-push-security-validation.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -110,3 +111,83 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Type-check and build
         run: npm run build
+
+  staging-worker-deploy:
+    name: Deploy isolated staging AI Worker
+    runs-on: ubuntu-latest
+    needs: [deno-tests, frontend-build]
+    if: github.ref == 'refs/heads/feature/ai-usage-report-diagnostics'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+      STAGING_GMS_APP_ORIGIN: ${{ vars.STAGING_GMS_APP_ORIGIN }}
+      CLOUDFLARE_WORKERS_FREE_CONFIRMED: ${{ vars.CLOUDFLARE_WORKERS_FREE_CONFIRMED }}
+    steps:
+      - name: Check staging-only deployment prerequisites
+        id: preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID STAGING_SUPABASE_URL STAGING_SUPABASE_ANON_KEY STAGING_GMS_APP_ORIGIN; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if [[ "$CLOUDFLARE_WORKERS_FREE_CONFIRMED" != "true" ]]; then
+            missing+=("repository variable CLOUDFLARE_WORKERS_FREE_CONFIRMED=true (confirm Workers Free plan)")
+          fi
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Staging AI Worker deployment skipped"
+              echo "The deployment workflow is ready, but these staging-only prerequisites are not configured:"
+              for item in "${missing[@]}"; do echo "- $item"; done
+              echo "No Cloudflare deployment was attempted."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$STAGING_SUPABASE_URL" != "https://uurgomjrsvzfmcpsnitu.supabase.co" ]]; then
+            echo "::error::STAGING_SUPABASE_URL does not match the approved GMS staging Supabase project."
+            exit 1
+          fi
+          case "$STAGING_SUPABASE_ANON_KEY" in
+            sb_publishable_*) ;;
+            *) echo "::error::STAGING_SUPABASE_ANON_KEY must be the staging project's publishable key."; exit 1 ;;
+          esac
+          case "$STAGING_GMS_APP_ORIGIN" in
+            https://gms-sound-scheduling-system-*.vercel.app) ;;
+            *) echo "::error::STAGING_GMS_APP_ORIGIN must be the exact GMS Vercel Preview origin."; exit 1 ;;
+          esac
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Staging-only prerequisites validated; model inference remains disabled."
+
+      - name: Check out source
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install staging Worker secrets and deploy
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          config="cloudflare/gms-ai-assistant/wrangler.staging.toml"
+          printf '%s' "$STAGING_SUPABASE_URL" | npx --yes wrangler@4 secret put SUPABASE_URL --config "$config"
+          printf '%s' "$STAGING_SUPABASE_ANON_KEY" | npx --yes wrangler@4 secret put SUPABASE_ANON_KEY --config "$config"
+          printf '%s' "$STAGING_GMS_APP_ORIGIN" | npx --yes wrangler@4 secret put GMS_APP_ORIGIN --config "$config"
+          npx --yes wrangler@4 deploy --config "$config"
+          {
+            echo "### Isolated staging AI Worker deployed"
+            echo "- Worker name: `gms-ai-assistant-staging`"
+            echo "- Config: `wrangler.staging.toml`"
+            echo "- Supabase: GMS staging project only"
+            echo "- Model inference: disabled (`GMS_AI_ENABLED=false`)"
+            echo "- Production Worker and Production Supabase were not targeted."
+          } >> "$GITHUB_STEP_SUMMARY"
+
