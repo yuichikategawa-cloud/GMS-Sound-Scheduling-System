@@ -25,19 +25,19 @@ const validSnapshot = {
     frozenServices: 0,
   },
   churches: [{
-    label: "Church 1",
+    label: "GMS Alam Sutera",
     totalServiceCount: 1,
     omittedServiceCount: 0,
     vacancySummary: [{ role: "Monitor", reason: "role_not_qualified", count: 1 }],
     services: [{
-      label: "Service 1",
+      label: "Sunday Service 1",
       date: "2026-12-25",
       startTime: "10:00",
       endTime: "12:00",
       special: true,
       frozen: false,
       assignments: [{
-        servant: "Servant 1",
+        servant: "Joshua Tan",
         role: "FOH",
         source: "proposed",
         qualifiedRoles: ["FOH", "Monitor"],
@@ -52,7 +52,7 @@ const validSnapshot = {
     }],
   }],
   workload: [{
-    servant: "Servant 1",
+    servant: "Joshua Tan",
     totalAssignments: 3,
     servingDays: 3,
     utilizationPercent: 38,
