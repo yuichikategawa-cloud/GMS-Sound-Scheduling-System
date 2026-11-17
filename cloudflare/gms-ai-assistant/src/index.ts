@@ -125,7 +125,7 @@ function isIntegerInRange(value: unknown, minimum: number, maximum: number): val
 }
 
 function isServantLabel(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0 && value.length <= 100 && !/[\\u0000-\\u001f]/.test(value);
+  return typeof value === "string" && value.trim().length > 0 && value.length <= 100 && !/[\u0000-\u001f]/.test(value);
 }
 
 function isRole(value: unknown): value is string {
@@ -155,7 +155,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
   const churches: SafeSnapshot["churches"] = [];
   for (const rawChurch of value.churches) {
     if (!isRecord(rawChurch) || typeof rawChurch.label !== "string" ||
-        rawChurch.label.trim().length === 0 || rawChurch.label.length > 100 || /[\\u0000-\\u001f]/.test(rawChurch.label) || !Array.isArray(rawChurch.services) ||
+        rawChurch.label.trim().length === 0 || rawChurch.label.length > 100 || /[\u0000-\u001f]/.test(rawChurch.label) || !Array.isArray(rawChurch.services) ||
         rawChurch.services.length > 3 || !Array.isArray(rawChurch.vacancySummary) ||
         rawChurch.vacancySummary.length > 12 ||
         !isIntegerInRange(rawChurch.totalServiceCount, 0, 100) ||
@@ -164,7 +164,7 @@ export function validateSnapshot(value: unknown): SafeSnapshot | null {
     const services: SafeSnapshot["churches"][number]["services"] = [];
     for (const rawService of rawChurch.services) {
       if (!isRecord(rawService) ||
-          typeof rawService.label !== "string" || rawService.label.trim().length === 0 || rawService.label.length > 100 || /[\\u0000-\\u001f]/.test(rawService.label) ||
+          typeof rawService.label !== "string" || rawService.label.trim().length === 0 || rawService.label.length > 100 || /[\u0000-\u001f]/.test(rawService.label) ||
           typeof rawService.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(rawService.date) ||
           typeof rawService.startTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(rawService.startTime) ||
           typeof rawService.endTime !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(rawService.endTime) ||
