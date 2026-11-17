@@ -666,7 +666,7 @@ export default function MonthlySmartScheduler({
         .map((location) => Math.ceil(preview.slots.filter((slot) => slot.location_id === location.id).length / 3)));
       // Each request analyzes up to three services per church. Bound the number
       // of sequential free inferences so one click cannot consume the full quota.
-      const maximumBatchesPerAnalysis = 8;
+      const maximumBatchesPerAnalysis = 10;
       if (batchCount > maximumBatchesPerAnalysis) {
         throw new Error(`This month contains too many services for one safe AI analysis (${batchCount} batches; maximum ${maximumBatchesPerAnalysis}). No AI requests were sent and no schedule changes were made.`);
       }
