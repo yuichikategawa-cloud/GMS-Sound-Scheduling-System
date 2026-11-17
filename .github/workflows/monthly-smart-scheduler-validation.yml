@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/monthly-smart-scheduler-engine
+      - feat/ai-usage-dashboard
       - feat/free-cloudflare-ai-scheduler
     paths:
       - "src/features/schedule/services/monthly*.ts"
