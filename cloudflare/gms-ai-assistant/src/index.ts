@@ -814,9 +814,10 @@ export default {
         if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
           const today = new Date().toISOString().slice(0, 10);
           try {
+            // The V1 billable-usage endpoint requires the requested range to include
+            // the account billing-cycle anchor day. Omit date bounds to request the
+            // current billing period, then select today's charge rows locally.
             const providerUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable-usage`);
-            providerUrl.searchParams.set("from", today);
-            providerUrl.searchParams.set("to", today);
             const providerResponse = await fetch(providerUrl, {
               headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, Accept: "application/json" },
             });
@@ -825,7 +826,9 @@ export default {
               const rows = Array.isArray(providerPayload.result) ? providerPayload.result : [];
               const neuronRows = rows.filter((row) =>
                 /workers.?ai/i.test(String(row.ServiceName ?? "") + " " + String(row.ServiceFamilyName ?? "")) &&
-                /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? ""))
+                /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? "")) &&
+                typeof row.ChargePeriodStart === "string" &&
+                row.ChargePeriodStart.slice(0, 10) === today
               );
               const total = neuronRows.reduce((sum, row) => {
                 const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
