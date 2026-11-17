@@ -522,14 +522,14 @@
 .monthly-smart-disclosure-summary .monthly-smart-title{flex:1;min-width:0}
 .monthly-smart-collapse-icon{
   flex:none;
-  width:34px;
-  height:34px;
-  padding:7px;
-  border:1px solid var(--border-strong,#dfe4ec);
-  border-radius:9px;
-  background:var(--accent-soft,#eef2ff);
-  color:var(--accent-hover,#4338ca);
-  transition:transform .18s ease,background .18s ease;
+  width:19px;
+  height:19px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--muted,#65738b);
+  transition:transform .2s ease;
 }
 .monthly-smart-disclosure[open]>.monthly-smart-disclosure-summary .monthly-smart-collapse-icon{
   transform:rotate(180deg);
@@ -562,9 +562,9 @@
   border-bottom-color:var(--border-strong,#465773);
 }
 :root[data-theme="dark"] .monthly-smart-collapse-icon{
-  background:var(--accent-soft,#393b72);
-  border-color:var(--focus-border,#9b91ff);
-  color:var(--accent-hover,#a9a2ff);
+  background:transparent;
+  border-color:transparent;
+  color:var(--text-muted,#c5d2e5);
 }
 :root[data-theme="dark"] .monthly-smart-special-mode button{
   color:#c8d3e5;
