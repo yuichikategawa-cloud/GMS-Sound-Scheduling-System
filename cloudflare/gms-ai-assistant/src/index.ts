@@ -556,7 +556,7 @@ export function resolveAllowedOrigin(requestOrigin: string, configuredOrigins: s
   }
 
   // Only generated Preview hosts belonging to this specific Vercel project.
-  if (/^gms-sound-scheduling-system-[a-z0-9-]+\\.vercel\\.app$/i.test(parsedRequest.hostname)) {
+  if (/^gms-sound-scheduling-system-[a-z0-9-]+\.vercel\.app$/i.test(parsedRequest.hostname)) {
     return requestOrigin;
   }
 
