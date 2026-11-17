@@ -218,7 +218,30 @@ export default function MonthlySmartScheduler({
   const [aiError, setAiError] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const [aiCached, setAiCached] = useState(false);
+  const [aiUsage, setAiUsage] = useState<{ month: string; global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number }; admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>; limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number }; providerDailyNeurons: number | null } | null>(null);
+  const [aiUsageError, setAiUsageError] = useState("");
+  const [aiUsageBusy, setAiUsageBusy] = useState(false);
   const initializedLocations = useRef(false);
+
+  async function loadAiUsage() {
+    if (!aiWorkerUrl || !aiAccessToken) return;
+    setAiUsageBusy(true);
+    setAiUsageError("");
+    try {
+      const response = await fetch(aiWorkerUrl.replace(/\\/$/, "") + "/v1/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiAccessToken}` },
+        body: JSON.stringify({ kind: "usage_report", month: new Date().toISOString().slice(0, 7) }),
+      });
+      const payload = await response.json() as typeof aiUsage & { error?: string };
+      if (!response.ok || !payload?.global || !payload.limits) throw new Error(payload?.error || "Usage report unavailable.");
+      setAiUsage(payload);
+    } catch (usageError) {
+      setAiUsageError(usageError instanceof Error ? usageError.message : "Usage report unavailable.");
+    } finally {
+      setAiUsageBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!locations.length) return;
@@ -918,9 +941,14 @@ export default function MonthlySmartScheduler({
               <p>Get an explanation of coverage, role qualifications, vacancies and workload balance. Servant names and personal details are removed before the request leaves this browser.</p>
               <small>Monthly allowance: up to 120 model calls across GMS and 60 per administrator, plus 600 requests across GMS and 200 per administrator. Cached results do not consume the monthly allowance.</small>
             </div>
+            <div className="monthly-smart-ai-actions">
+            <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiUsageBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()} title="Load admin-only monthly usage counters."> {aiUsageBusy ? "Loading usage…" : "View AI usage"} </button>
             <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void explainPreviewWithAi()} title={!aiWorkerUrl || !aiAccessToken ? "The free Cloudflare Worker is not configured yet." : "Use the free daily AI allowance to explain this preview."}>
               <WandSparkles size={16}/>{aiBusy ? "Analyzing preview…" : aiExplanation ? "Refresh AI explanation" : "Explain preview with AI"}
             </button>
+            </div>
+            {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
+            {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Provider daily Neurons: {aiUsage.providerDailyNeurons === null ? "Not available through this report" : aiUsage.providerDailyNeurons.toLocaleString()}.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
             {!aiWorkerUrl && <small className="monthly-smart-ai-muted">Not connected yet. The feature stays disabled until a free-only Cloudflare Worker URL is configured.</small>}
             {aiError && <p className="monthly-smart-ai-error" role="alert">{aiError}</p>}
             {aiExplanation && <div className="monthly-smart-ai-result" role="status"><div><b>AI analysis</b>{aiCached && <span>Cached result · no model call used</span>}</div><pre>{aiExplanation}</pre><small>Advice only. The AI cannot edit assignments or publish schedules; the existing optimizer and database remain authoritative.</small></div>}
