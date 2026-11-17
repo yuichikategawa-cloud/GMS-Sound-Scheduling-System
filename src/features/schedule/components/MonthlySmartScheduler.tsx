@@ -702,6 +702,9 @@ export default function MonthlySmartScheduler({
     setAiError("");
     setAiExplanation("");
     setAiCached(false);
+    setAiProgress("");
+    const explanations: string[] = [];
+    let allCached = true;
     try {
       const batchCount = Math.max(1, ...locations
         .filter((location) => selectedLocationIds.includes(location.id))
@@ -713,8 +716,6 @@ export default function MonthlySmartScheduler({
       if (batchCount > maximumBatchesPerAnalysis) {
         throw new Error(`This preview needs ${batchCount} analysis batches; the safe per-admin maximum is ${maximumBatchesPerAnalysis}. Narrow the selected churches or split the review across months. No AI requests were sent and no schedule changes were made.`);
       }
-      const explanations: string[] = [];
-      let allCached = true;
       for (let batchIndex = 0; batchIndex < batchCount; batchIndex += 1) {
         setAiProgress(`Analyzing batch ${batchIndex + 1} of ${batchCount}…`);
         const snapshot = buildAiSchedulingSnapshot({
