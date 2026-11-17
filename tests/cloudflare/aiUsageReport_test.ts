@@ -306,7 +306,7 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
     assert(requested.billing?.searchParams.get("from") === today && requested.billing?.searchParams.get("to") === today, "Workers AI Neurons must use the current UTC daily usage range.");
     assert(data.providerUsageStatus === "available", "A Workers AI Neuron usage row must be recognized.");
     assert(data.providerDailyNeurons === 386.18, "Only today's Workers AI Neurons must be summed.");
-    assert(requested.graphql?.variables && typeof requested.graphql.variables === "object", "Workers GraphQL account analytics must be queried.");
+    assert(typeof requested.graphql?.variables === "object" && requested.graphql.variables !== null, "Workers GraphQL account analytics must be queried.");
     assert(data.workersRequestsToday === 177 && data.workersRequestsStatus === "estimated", "Account Workers requests must be returned as an adaptive analytics estimate.");
     assert(requested.observability?.dry === true && requested.observability?.view === "calculations", "Observability must use a non-persisted aggregate query.");
     assert(data.observabilityEventsToday === 46 && data.observabilityEventsStatus === "available", "Stored Observability event counts must be returned.");

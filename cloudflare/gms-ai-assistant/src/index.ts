@@ -874,10 +874,11 @@ export default {
             const graphqlQuery = `query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
               viewer {
                 accounts(filter: { accountTag: $accountTag }) {
-                  workersInvocationsAdaptive(limit: 1, filter: {
+                  workersInvocationsAdaptive(limit: 10000, filter: {
                     datetime_geq: $datetimeStart,
                     datetime_leq: $datetimeEnd
                   }) {
+                    dimensions { scriptName }
                     sum { requests }
                   }
                 }
