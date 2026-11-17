@@ -243,12 +243,17 @@ export function resolveAiWorkerEndpoint(endpoint: string): string {
   const url = new URL(trimmed);
   url.search = "";
   url.hash = "";
-  // Normalize separators and remove trailing slashes before appending the route.
-  url.pathname = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "");
-  url.pathname = url.pathname.replace(/(?:\/v1\/explain)+\/?$/, "/v1/explain");
-  if (url.pathname.endsWith("/v1/explain")) return url.toString();
-  if (url.pathname.endsWith("/v1")) url.pathname += "/explain";
-  else url.pathname += "/v1/explain";
+  // Normalize the path as a string so the URL root ("/") becomes an empty base,
+  // rather than being reintroduced by URL.pathname when appending the route.
+  let pathname = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "");
+  pathname = pathname.replace(/(?:\/v1\/explain)+$/, "/v1/explain");
+  if (pathname.endsWith("/v1/explain")) {
+    url.pathname = pathname;
+    return url.toString();
+  }
+  if (pathname.endsWith("/v1")) pathname += "/explain";
+  else pathname += "/v1/explain";
+  url.pathname = pathname;
   return url.toString();
 }
 
