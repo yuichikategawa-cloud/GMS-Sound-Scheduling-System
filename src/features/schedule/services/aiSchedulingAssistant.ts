@@ -37,11 +37,6 @@ export type AiSchedulingSnapshot = {
         source: "existing" | "proposed" | "manual_preview";
         qualifiedRoles: Role[];
         availability: "available" | "unavailable" | "prefer_not" | "unknown";
-        totalAssignments: number;
-        servingDays: number;
-        eligibleOpportunities: number;
-        recent60DayAssignments: number;
-        currentMonthRoleAssignments: number;
       }>;
       vacancies: Array<{
         role: Role;
@@ -55,9 +50,7 @@ export type AiSchedulingSnapshot = {
     servant: string;
     totalAssignments: number;
     servingDays: number;
-    eligibleOpportunities: number;
     utilizationPercent: number;
-    recent60DayAssignments: number;
     roleCounts: Record<Role, number>;
   }>;
 };
@@ -131,9 +124,6 @@ export function buildAiSchedulingSnapshot(input: {
     return "unknown" as const;
   };
 
-  const currentMonthRoleAssignments = (servantId: string, role: Role) =>
-    workloadById.get(servantId)?.role_counts[role] ?? 0;
-
   const churches = churchIds.map((locationId) => {
     const churchSlots = input.slots
       .filter((slot) => slot.location_id === locationId)
@@ -156,11 +146,6 @@ export function buildAiSchedulingSnapshot(input: {
             source: isManual ? "manual_preview" as const : isTeamProposal ? "proposed" as const : "existing" as const,
             qualifiedRoles: servant?.qualified_roles ?? ROLES,
             availability: getAvailability(assignment.servant_id, slot.service_date),
-            totalAssignments: workload?.total_assignments ?? 0,
-            servingDays: workload?.serving_days ?? 0,
-            eligibleOpportunities: workload?.eligible_opportunities ?? 0,
-            recent60DayAssignments: workload?.recent_60_day_assignments ?? 0,
-            currentMonthRoleAssignments: currentMonthRoleAssignments(assignment.servant_id, assignment.role),
           };
         });
 
@@ -251,9 +236,7 @@ export function buildAiSchedulingSnapshot(input: {
       servant: servantLabels.get(workload.servant_id) ?? "Unlisted servant",
       totalAssignments: workload.total_assignments,
       servingDays: workload.serving_days,
-      eligibleOpportunities: workload.eligible_opportunities,
       utilizationPercent: Math.round(workload.utilization * 100),
-      recent60DayAssignments: workload.recent_60_day_assignments,
       roleCounts: workload.role_counts,
     })),
   };
@@ -265,13 +248,18 @@ export async function requestAiSchedulingExplanation(
   snapshot: AiSchedulingSnapshot,
   fetcher: typeof fetch = fetch,
 ): Promise<{ explanation: string; cached: boolean }> {
+  const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot });
+  const requestBytes = new TextEncoder().encode(requestBody).byteLength;
+  if (requestBytes > 7_500) {
+    throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
+  }
   const response = await fetcher(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Bearer " + accessToken,
     },
-    body: JSON.stringify({ kind: "preview_explanation", snapshot }),
+    body: requestBody,
   });
 
   const payload = await response.json().catch(() => ({})) as {
@@ -284,6 +272,7 @@ export async function requestAiSchedulingExplanation(
     const messages: Record<number, string> = {
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
       403: "The AI assistant is not enabled for this account or application origin.",
+      413: "The AI analysis payload is too large. The preview was not changed; reduce the monthly preview details and try again.",
       429: "The free GMS AI daily limit has been reached. Try again after the daily reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
