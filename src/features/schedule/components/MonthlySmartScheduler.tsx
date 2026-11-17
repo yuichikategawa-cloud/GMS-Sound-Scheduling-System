@@ -97,7 +97,7 @@ function buildOverallAiSummary(snapshot: AiSchedulingSnapshot): string {
     const total = church.vacancySummary.reduce((sum, item) => sum + item.count, 0);
     lines.push(`${church.label}: ${total} recorded vacancies`);
     for (const item of church.vacancySummary) {
-      lines.push(`• ${item.role}: ${item.count} · ${item.reason.replaceAll("_", " ")}`);
+      lines.push(`• ${item.role}: ${item.count} · ${item.reason.replace(/_/g, " ")}`);
     }
   }
   lines.push("", "Highest workload servants (whole month)");
