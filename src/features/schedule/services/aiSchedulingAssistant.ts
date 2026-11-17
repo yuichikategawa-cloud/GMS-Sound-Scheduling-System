@@ -318,23 +318,19 @@ export async function requestAiSchedulingExplanation(
     error?: unknown;
     reason?: unknown;
     limits?: {
-      gmsInferencesPerUtcDay?: number;
-      perAdminInferencesPerUtcDay?: number;
-      gmsRequestsPerUtcDay?: number;
-      perAdminRequestsPerUtcDay?: number;
+      workersAiNeuronsDailySafety?: number;
+      workersRequestsDailySafety?: number;
     };
   };
 
   if (!response.ok) {
-    if (response.status === 429 && payload.error === "monthly_free_limit_reached") {
+    if (response.status === 429 && payload.error === "daily_free_limit_reached") {
       const reasons: Record<string, string> = {
-        gms_request_limit: "The GMS monthly AI request allowance has been reached. Please try again after the next monthly reset.",
-        admin_request_limit: "Your monthly AI request allowance has been reached. Please try again after the next monthly reset.",
-        gms_monthly_limit: "The GMS monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
-        admin_monthly_limit: "Your monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
+        workers_ai_neuron_safety_limit: "The GMS daily AI safety ceiling has been reached (75% of the Cloudflare Workers AI Neuron allowance). Try again after the UTC daily reset.",
+        workers_request_safety_limit: "The GMS daily Workers request safety ceiling has been reached (75% of the Cloudflare Workers request allowance). Try again after the UTC daily reset.",
       };
       throw new Error((typeof payload.reason === "string" && reasons[payload.reason]) ||
-        "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.");
+        "The GMS daily Cloudflare safety ceiling has been reached. Try again after the UTC daily reset.");
     }
     const messages: Record<number, string> = {
       400: "The AI assistant rejected the preview data. Refresh the monthly preview and try again.",
@@ -342,7 +338,7 @@ export async function requestAiSchedulingExplanation(
       404: "The AI Worker endpoint was not found. Check that VITE_GMS_AI_WORKER_URL points to the gms-ai-assistant Worker; the /v1/explain path is added automatically.",
       403: "The AI assistant is not enabled for this account or application origin.",
       413: "The AI analysis payload is too large. No schedule changes were made; reduce the monthly preview details and try again.",
-      429: "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.",
+      429: "The GMS daily Cloudflare safety ceiling has been reached. Try again after the UTC daily reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
     const code = typeof payload.error === "string" ? payload.error : "";
