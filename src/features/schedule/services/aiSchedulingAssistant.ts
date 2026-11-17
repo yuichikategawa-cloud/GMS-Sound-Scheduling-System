@@ -282,7 +282,11 @@ export async function requestAiSchedulingExplanation(
   if (requestBytes > 7_800) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
-  const response = await fetcher(endpoint, {
+  const configuredEndpoint = endpoint.trim().replace(/\/+$/, "");
+  const requestEndpoint = configuredEndpoint.endsWith("/v1/explain")
+    ? configuredEndpoint
+    : configuredEndpoint + "/v1/explain";
+  const response = await fetcher(requestEndpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -316,13 +320,23 @@ export async function requestAiSchedulingExplanation(
         "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.");
     }
     const messages: Record<number, string> = {
+      400: "The AI assistant rejected the preview data. Refresh the monthly preview and try again.",
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
+      404: "The AI Worker endpoint was not found. Check that VITE_GMS_AI_WORKER_URL points to the gms-ai-assistant Worker; the /v1/explain path is added automatically.",
       403: "The AI assistant is not enabled for this account or application origin.",
       413: "The AI analysis payload is too large. No schedule changes were made; reduce the monthly preview details and try again.",
       429: "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
-    throw new Error(messages[response.status] ?? "The AI assistant could not complete this request. No schedule changes were made.");
+    const code = typeof payload.error === "string" ? payload.error : "";
+    const safeCodes: Record<string, string> = {
+      not_found: "The AI Worker endpoint was not found. Check the configured Worker URL; the /v1/explain path is added automatically.",
+      service_not_configured: "The AI Worker is missing a required configuration. Contact the system administrator.",
+      free_ai_disabled: "The free AI service is currently disabled. Scheduling remains available without AI.",
+      invalid_snapshot: "The AI service could not validate this preview. Refresh the monthly preview and try again.",
+      snapshot_too_large: "This preview is too large for one AI request. Reduce the preview scope and try again.",
+    };
+    throw new Error(safeCodes[code] ?? messages[response.status] ?? "The AI assistant could not complete this request. No schedule changes were made.");
   }
 
   if (typeof payload.explanation !== "string" || !payload.explanation.trim()) {
