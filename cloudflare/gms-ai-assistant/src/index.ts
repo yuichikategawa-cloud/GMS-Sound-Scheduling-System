@@ -37,6 +37,8 @@ interface Env {
   SUPABASE_ANON_KEY: string;
   GMS_APP_ORIGIN: string;
   GMS_AI_ENABLED: string;
+  CLOUDFLARE_ACCOUNT_ID?: string;
+  CLOUDFLARE_API_TOKEN?: string;
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
@@ -409,6 +411,9 @@ export class AiBudgetGuard {
     this.sql.exec(
       "CREATE TABLE IF NOT EXISTS gms_ai_pending (request_id TEXT PRIMARY KEY, day_key TEXT NOT NULL, user_key TEXT NOT NULL)"
     );
+    this.sql.exec(
+      "CREATE TABLE IF NOT EXISTS gms_ai_usage_refresh_cooldown (user_key TEXT PRIMARY KEY, refreshed_at INTEGER NOT NULL)"
+    );
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -420,6 +425,23 @@ export class AiBudgetGuard {
     }
     if (!isRecord(body) || typeof body.action !== "string") {
       return Response.json({ error: "invalid_internal_request" }, { status: 400 });
+    }
+
+    if (body.action === "reserve_usage_refresh") {
+      if (typeof body.userKey !== "string" || !/^[a-f0-9]{64}$/.test(body.userKey) ||
+          !isIntegerInRange(body.now, 0, Number.MAX_SAFE_INTEGER)) {
+        return Response.json({ error: "invalid_internal_request" }, { status: 400 });
+      }
+      const previous = this.sql.exec<{ refreshed_at: number }>(
+        "SELECT refreshed_at FROM gms_ai_usage_refresh_cooldown WHERE user_key = ? LIMIT 1", body.userKey,
+      ).toArray()[0]?.refreshed_at;
+      const retryAfterSeconds = previous === undefined ? 0 : Math.max(0, Math.ceil((60_000 - (body.now - previous)) / 1000));
+      if (retryAfterSeconds > 0) return Response.json({ allowed: false, retryAfterSeconds }, { status: 429 });
+      this.sql.exec(
+        "INSERT INTO gms_ai_usage_refresh_cooldown (user_key, refreshed_at) VALUES (?, ?) ON CONFLICT(user_key) DO UPDATE SET refreshed_at = excluded.refreshed_at",
+        body.userKey, body.now,
+      );
+      return Response.json({ allowed: true, retryAfterSeconds: 0 });
     }
 
     if (body.action === "usage") {
@@ -713,13 +735,58 @@ export default {
       const monthKey = typeof requestBody.month === "string" && /^\\d{4}-(0[1-9]|1[0-2])$/.test(requestBody.month) ? requestBody.month : utcMonth();
       try {
         const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
+        const userKey = await sha256(admin.id);
+        const reservation = await guard.fetch("https://gms-ai-budget.internal/usage-refresh", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "reserve_usage_refresh", userKey, now: Date.now() }),
+        });
+        if (reservation.status === 429) {
+          const limited = await reservation.json() as { retryAfterSeconds?: number };
+          return jsonResponse({ error: "usage_refresh_rate_limited", retryAfterSeconds: limited.retryAfterSeconds ?? 60 }, 429, allowedOrigin);
+        }
+        if (!reservation.ok) return jsonResponse({ error: "usage_refresh_unavailable" }, 503, allowedOrigin);
+
         const response = await guard.fetch("https://gms-ai-budget.internal/usage", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "usage", monthKey }),
         });
         if (!response.ok) return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
         const usage = await response.json() as Record<string, unknown>;
-        return jsonResponse(usage, 200, allowedOrigin);
+
+        let providerDailyNeurons: number | null = null;
+        let providerUsageDate: string | null = null;
+        let providerUsageStatus = "not_configured";
+        if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
+          const today = new Date().toISOString().slice(0, 10);
+          const providerUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable-usage`);
+          providerUrl.searchParams.set("from", today);
+          providerUrl.searchParams.set("to", today);
+          const providerResponse = await fetch(providerUrl, {
+            headers: { Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, Accept: "application/json" },
+          });
+          if (providerResponse.ok) {
+            const providerPayload = await providerResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
+            const rows = Array.isArray(providerPayload.result) ? providerPayload.result : [];
+            const neuronRows = rows.filter((row) =>
+              /workers.?ai/i.test(String(row.ServiceName ?? "") + " " + String(row.ServiceFamilyName ?? "")) &&
+              /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? ""))
+            );
+            const total = neuronRows.reduce((sum, row) => {
+              const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
+              return Number.isFinite(quantity) ? sum + quantity : sum;
+            }, 0);
+            if (providerPayload.success && neuronRows.length > 0) {
+              providerDailyNeurons = total;
+              providerUsageDate = today;
+              providerUsageStatus = "available";
+            } else {
+              providerUsageStatus = "metric_not_returned";
+            }
+          } else {
+            providerUsageStatus = providerResponse.status === 403 ? "permission_denied" : "provider_unavailable";
+          }
+        }
+        return jsonResponse({ ...usage, providerDailyNeurons, providerUsageDate, providerUsageStatus, refreshedAt: new Date().toISOString() }, 200, allowedOrigin);
       } catch {
         return jsonResponse({ error: "usage_report_unavailable" }, 503, allowedOrigin);
       }
