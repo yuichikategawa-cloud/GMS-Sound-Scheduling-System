@@ -164,6 +164,31 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
   assertEqual(result.cached, true, "Cached responses should be identified.");
 });
 
+Deno.test("AI explanation client gives a specific message for HTTP 413", async () => {
+  let message = "";
+  try {
+    await requestAiSchedulingExplanation(
+      "https://gms-ai.example.workers.dev/v1/explain",
+      "test-access-token",
+      buildAiSchedulingSnapshot({
+        month: "2026-12",
+        locations,
+        slots: slots.slice(0, 1),
+        generatedAssignments: generated,
+        unfilledPositions: vacancies,
+        workloads,
+        servants: [servant],
+        availability,
+      }),
+      async () => new Response(JSON.stringify({ error: "request_too_large" }), { status: 413 }),
+    );
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error);
+  }
+  assert(message.includes("payload is too large"), "HTTP 413 should explain the payload-size problem.");
+  assert(message.includes("No schedule changes were made"), "The message must reassure that the schedule was not changed.");
+});
+
 Deno.test("AI explanation client fails closed when the free quota has been reached", async () => {
   let message = "";
   try {
