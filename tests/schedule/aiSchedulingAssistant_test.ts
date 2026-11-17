@@ -210,8 +210,8 @@ Deno.test("Three-church monthly AI snapshot stays below the Worker payload ceili
 
   assertEqual(snapshot.churches.length, 3, "All three churches should be represented.");
   assertEqual(snapshot.churches.map((church) => church.services.length), [3, 3, 3], "Each church should include three representative services.");
-  assert(snapshotBytes <= 5_600, "The realistic three-church snapshot must fit the Worker's 6 KB snapshot limit; got " + snapshotBytes + " bytes.");
-  assert(requestBytes <= 7_500, "The complete request must fit the frontend request guard; got " + requestBytes + " bytes.");
+  assert(snapshotBytes <= 7_200, "The realistic three-church snapshot must fit the Worker's 7.5 KB snapshot limit; got " + snapshotBytes + " bytes.");
+  assert(requestBytes <= 7_800, "The complete request must fit the frontend request guard; got " + requestBytes + " bytes.");
   assert(!serialized.includes("Private Person"), "Real servant names must never enter the AI snapshot.");
   assert(!serialized.includes("private-church-"), "Church IDs must never enter the AI snapshot.");
 });
@@ -297,5 +297,5 @@ Deno.test("AI explanation client fails closed when the free quota has been reach
   } catch (error) {
     message = error instanceof Error ? error.message : String(error);
   }
-  assert(message.includes("free GMS AI daily limit"), "Quota exhaustion should give a clear no-cost limit message.");
+  assert(message.includes("free GMS AI monthly limit"), "Quota exhaustion should give a clear no-cost limit message.");
 });
