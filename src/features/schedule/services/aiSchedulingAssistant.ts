@@ -287,7 +287,7 @@ export async function requestAiSchedulingExplanation(
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
       403: "The AI assistant is not enabled for this account or application origin.",
       413: "The AI analysis payload is too large. The preview was not changed; reduce the monthly preview details and try again.",
-      429: "The free GMS AI daily limit has been reached. Try again after the UTC daily reset.",
+      429: "The free GMS AI monthly limit has been reached. Try again after the next monthly reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
     throw new Error(messages[response.status] ?? "The AI assistant could not complete this request. No schedule changes were made.");
