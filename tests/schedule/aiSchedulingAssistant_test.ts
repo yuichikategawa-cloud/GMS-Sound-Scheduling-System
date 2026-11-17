@@ -219,7 +219,7 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
   let capturedUrl = "";
   let capturedInit: RequestInit | undefined;
   const result = await requestAiSchedulingExplanation(
-    "https://gms-ai.example.workers.dev/v1/explain",
+    "https://gms-ai.example.workers.dev",
     "test-access-token",
     buildAiSchedulingSnapshot({
       month: "2026-12",
@@ -238,7 +238,7 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
     },
   );
 
-  assertEqual(capturedUrl, "https://gms-ai.example.workers.dev/v1/explain", "The configured Worker endpoint should be used.");
+  assertEqual(capturedUrl, "https://gms-ai.example.workers.dev/v1/explain", "The /v1/explain route should be appended when the configured value is a Worker base URL.");
   assertEqual((capturedInit?.headers as Record<string, string>).Authorization, "Bearer test-access-token", "The current Supabase access token must be sent.");
   const body = JSON.parse(String(capturedInit?.body));
   assertEqual(body.kind, "preview_explanation", "Only the supported analysis action should be sent.");
@@ -248,6 +248,32 @@ Deno.test("AI explanation client sends an authenticated, anonymized preview requ
   assert(result.explanation.includes("Private Person Name"), "Servant aliases must be restored to readable names in the UI.");
   assert(!result.explanation.includes("Church 1") && !result.explanation.includes("Service 1") && !result.explanation.includes("Servant 1"), "Internal aliases must not remain in the displayed explanation.");
   assertEqual(result.cached, true, "Cached responses should be identified.");
+});
+
+
+Deno.test("AI explanation client converts Worker not_found responses into actionable configuration guidance", async () => {
+  let message = "";
+  try {
+    await requestAiSchedulingExplanation(
+      "https://gms-ai.example.workers.dev",
+      "test-access-token",
+      buildAiSchedulingSnapshot({
+        month: "2026-12",
+        locations,
+        slots: slots.slice(0, 1),
+        generatedAssignments: generated,
+        unfilledPositions: vacancies,
+        workloads,
+        servants: [servant],
+        availability,
+      }),
+      async () => new Response(JSON.stringify({ error: "not_found" }), { status: 404 }),
+    );
+  } catch (error) {
+    message = error instanceof Error ? error.message : String(error);
+  }
+  assert(message.includes("Worker endpoint was not found"), "A raw not_found code must become actionable guidance.");
+  assert(message.includes("/v1/explain"), "The guidance must explain the expected route.");
 });
 
 Deno.test("AI explanation client gives a specific message for HTTP 413", async () => {
