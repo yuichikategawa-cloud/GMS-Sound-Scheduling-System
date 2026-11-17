@@ -517,17 +517,57 @@ async function authenticateAdmin(request: Request, env: Env): Promise<{ id: stri
   return Array.isArray(profiles) && profiles[0]?.role === "admin" ? { id: user.id } : null;
 }
 
+/**
+ * Resolves a trusted browser origin.
+ *
+ * GMS_APP_ORIGIN accepts a comma-separated list of exact origins. In addition,
+ * Vercel Preview URLs for this one GMS project are accepted so each generated
+ * deployment URL does not require a Worker secret update. This deliberately
+ * does not allow arbitrary *.vercel.app hosts or wildcard CORS.
+ */
+export function resolveAllowedOrigin(requestOrigin: string, configuredOrigins: string): string | null {
+  if (!requestOrigin) return null;
+
+  let parsedRequest: URL;
+  try {
+    parsedRequest = new URL(requestOrigin);
+  } catch {
+    return null;
+  }
+  if (parsedRequest.protocol !== "https:" || parsedRequest.origin !== requestOrigin ||
+      parsedRequest.username || parsedRequest.password || parsedRequest.port) {
+    return null;
+  }
+
+  const configured = configuredOrigins
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  for (const value of configured) {
+    try {
+      const configuredUrl = new URL(value);
+      if (configuredUrl.origin === requestOrigin && configuredUrl.protocol === "https:") {
+        return requestOrigin;
+      }
+    } catch {
+      // Ignore malformed entries; the remaining exact entries may still match.
+    }
+  }
+
+  // Only generated Preview hosts belonging to this specific Vercel project.
+  if (/^gms-sound-scheduling-system-[a-z0-9-]+\\.vercel\\.app$/i.test(parsedRequest.hostname)) {
+    return requestOrigin;
+  }
+
+  return null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    let allowedOrigin = "";
-    try {
-      allowedOrigin = env.GMS_APP_ORIGIN ? new URL(env.GMS_APP_ORIGIN).origin : "";
-    } catch {
-      return Response.json({ error: "service_not_configured" }, { status: 503 });
-    }
-
     const requestOrigin = request.headers.get("Origin") ?? "";
-    if (!allowedOrigin || requestOrigin !== allowedOrigin) {
+    const allowedOrigin = resolveAllowedOrigin(requestOrigin, env.GMS_APP_ORIGIN ?? "");
+    if (!allowedOrigin) {
       return new Response("Forbidden", { status: 403 });
     }
 
