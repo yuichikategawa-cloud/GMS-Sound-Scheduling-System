@@ -41,11 +41,6 @@ const validSnapshot = {
         source: "proposed",
         qualifiedRoles: ["FOH", "Monitor"],
         availability: "available",
-        totalAssignments: 3,
-        servingDays: 3,
-        eligibleOpportunities: 8,
-        recent60DayAssignments: 2,
-        currentMonthRoleAssignments: 3,
       }],
       vacancies: [{
         role: "Monitor",
@@ -59,9 +54,7 @@ const validSnapshot = {
     servant: "Servant 1",
     totalAssignments: 3,
     servingDays: 3,
-    eligibleOpportunities: 8,
     utilizationPercent: 38,
-    recent60DayAssignments: 2,
     roleCounts: { FOH: 3, Monitor: 2, Assistant: 0 },
   }],
 };
