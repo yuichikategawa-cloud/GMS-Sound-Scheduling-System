@@ -26,6 +26,7 @@ interface AiBinding {
     messages: Array<{ role: "system" | "user"; content: string }>;
     max_completion_tokens: number;
     temperature: number;
+    chat_template_kwargs?: { enable_thinking?: boolean; clear_thinking?: boolean };
   }): Promise<unknown>;
 }
 
@@ -45,7 +46,7 @@ export const MONTHLY_GMS_REQUEST_LIMIT = 300;
 export const MONTHLY_ADMIN_REQUEST_LIMIT = 100;
 const MAX_REQUEST_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 6_000;
-const MAX_COMPLETION_TOKENS = 200;
+const MAX_COMPLETION_TOKENS = 512;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const ROLE_VALUES = ["FOH", "Monitor", "Assistant"];
 const AVAILABILITY_VALUES = ["available", "unavailable", "prefer_not", "unknown"];
@@ -839,6 +840,8 @@ export default {
         messages,
         max_completion_tokens: MAX_COMPLETION_TOKENS,
         temperature: 0.2,
+        // This task needs a concise explanation, not a long hidden reasoning trace.
+        chat_template_kwargs: { enable_thinking: false },
       });
     } catch {
       // Release the pending reservation and request attempt after a failed free inference.
