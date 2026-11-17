@@ -39,10 +39,10 @@ interface Env {
 }
 
 const FREE_MODEL = "@cf/zai-org/glm-4.7-flash";
-export const DAILY_GMS_MODEL_CALL_LIMIT = 1;
-export const DAILY_ADMIN_MODEL_CALL_LIMIT = 1;
-export const DAILY_GMS_REQUEST_LIMIT = 10;
-export const DAILY_ADMIN_REQUEST_LIMIT = 3;
+export const MONTHLY_GMS_MODEL_CALL_LIMIT = 60;
+export const MONTHLY_ADMIN_MODEL_CALL_LIMIT = 30;
+export const MONTHLY_GMS_REQUEST_LIMIT = 300;
+export const MONTHLY_ADMIN_REQUEST_LIMIT = 100;
 const MAX_REQUEST_BYTES = 8_192;
 const MAX_SNAPSHOT_BYTES = 6_000;
 const MAX_COMPLETION_TOKENS = 200;
@@ -301,8 +301,8 @@ function jsonResponse(
   });
 }
 
-function utcDay(now = new Date()): string {
-  return now.toISOString().slice(0, 10);
+function utcMonth(now = new Date()): string {
+  return now.toISOString().slice(0, 7);
 }
 
 /** Extracts only a short machine-readable code from an internal guard response. */
@@ -399,7 +399,7 @@ export class AiBudgetGuard {
     }
 
     if (body.action === "reserve") {
-      if (typeof body.dayKey !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(body.dayKey) ||
+      if (typeof body.monthKey !== "string" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.monthKey) ||
           typeof body.userKey !== "string" || !/^[a-f0-9]{64}$/.test(body.userKey) ||
           typeof body.cacheKey !== "string" || !/^[a-f0-9]{64}$/.test(body.cacheKey) ||
           typeof body.requestId !== "string" || !/^[0-9a-f-]{36}$/i.test(body.requestId)) {
@@ -418,55 +418,55 @@ export class AiBudgetGuard {
       }
 
       const userRequests = this.sql.exec<{ requests: number }>(
-        "SELECT requests FROM gms_ai_user_requests WHERE day_key = ? AND user_key = ? LIMIT 1",
-        body.dayKey, body.userKey,
+        "SELECT COALESCE(SUM(requests), 0) AS requests FROM gms_ai_user_requests WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
+        body.monthKey, body.userKey,
       ).toArray()[0]?.requests ?? 0;
       const globalRequests = this.sql.exec<{ requests: number }>(
-        "SELECT requests FROM gms_ai_global_requests WHERE day_key = ? LIMIT 1",
-        body.dayKey,
+        "SELECT COALESCE(SUM(requests), 0) AS requests FROM gms_ai_global_requests WHERE substr(day_key, 1, 7) = ?",
+        body.monthKey,
       ).toArray()[0]?.requests ?? 0;
-      if (globalRequests >= DAILY_GMS_REQUEST_LIMIT) {
+      if (globalRequests >= MONTHLY_GMS_REQUEST_LIMIT) {
         return Response.json({ allowed: false, reason: "gms_request_limit" }, { status: 429 });
       }
-      if (userRequests >= DAILY_ADMIN_REQUEST_LIMIT) {
+      if (userRequests >= MONTHLY_ADMIN_REQUEST_LIMIT) {
         return Response.json({ allowed: false, reason: "admin_request_limit" }, { status: 429 });
       }
 
       const userCount = this.sql.exec<{ calls: number }>(
-        "SELECT calls FROM gms_ai_user_usage WHERE day_key = ? AND user_key = ? LIMIT 1",
-        body.dayKey, body.userKey,
+        "SELECT COALESCE(SUM(calls), 0) AS calls FROM gms_ai_user_usage WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
+        body.monthKey, body.userKey,
       ).toArray()[0]?.calls ?? 0;
       const globalCount = this.sql.exec<{ calls: number }>(
-        "SELECT calls FROM gms_ai_global_usage WHERE day_key = ? LIMIT 1",
-        body.dayKey,
+        "SELECT COALESCE(SUM(calls), 0) AS calls FROM gms_ai_global_usage WHERE substr(day_key, 1, 7) = ?",
+        body.monthKey,
       ).toArray()[0]?.calls ?? 0;
       const userPending = this.sql.exec<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE day_key = ? AND user_key = ?",
-        body.dayKey, body.userKey,
+        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ? AND user_key = ?",
+        body.monthKey, body.userKey,
       ).toArray()[0]?.count ?? 0;
       const globalPending = this.sql.exec<{ count: number }>(
-        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE day_key = ?",
-        body.dayKey,
+        "SELECT COUNT(*) AS count FROM gms_ai_pending WHERE substr(day_key, 1, 7) = ?",
+        body.monthKey,
       ).toArray()[0]?.count ?? 0;
-      if (globalCount + globalPending >= DAILY_GMS_MODEL_CALL_LIMIT) {
+      if (globalCount + globalPending >= MONTHLY_GMS_MODEL_CALL_LIMIT) {
         return Response.json({ allowed: false, reason: "gms_daily_limit" }, { status: 429 });
       }
-      if (userCount + userPending >= DAILY_ADMIN_MODEL_CALL_LIMIT) {
+      if (userCount + userPending >= MONTHLY_ADMIN_MODEL_CALL_LIMIT) {
         return Response.json({ allowed: false, reason: "admin_daily_limit" }, { status: 429 });
       }
 
       // Reserve atomically; count the inference only after a successful model response.
       this.sql.exec(
         "INSERT INTO gms_ai_user_requests (day_key, user_key, requests) VALUES (?, ?, 1) ON CONFLICT(day_key, user_key) DO UPDATE SET requests = requests + 1",
-        body.dayKey, body.userKey,
+        body.monthKey, body.userKey,
       );
       this.sql.exec(
         "INSERT INTO gms_ai_global_requests (day_key, requests) VALUES (?, 1) ON CONFLICT(day_key) DO UPDATE SET requests = requests + 1",
-        body.dayKey,
+        body.monthKey,
       );
       this.sql.exec(
         "INSERT INTO gms_ai_pending (request_id, day_key, user_key) VALUES (?, ?, ?)",
-        body.requestId, body.dayKey, body.userKey,
+        body.requestId, body.monthKey, body.userKey,
       );
       return Response.json({ allowed: true, cached: false, requestId: body.requestId });
     }
@@ -684,7 +684,7 @@ export default {
       reservationResponse = await guard.fetch("https://gms-ai-budget.internal/reserve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "reserve", dayKey: utcDay(), userKey, cacheKey, requestId }),
+        body: JSON.stringify({ action: "reserve", monthKey: utcMonth(), userKey, cacheKey, requestId }),
       });
     } catch (error) {
       const details = safeErrorDetails(error);
@@ -716,10 +716,10 @@ export default {
             error: "daily_free_limit_reached",
             reason: limitReason,
             limits: {
-              gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT,
-              perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT,
-              gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT,
-              perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT,
+              gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT,
+              perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT,
+              gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT,
+              perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT,
             },
           }, 429, allowedOrigin);
         }
@@ -790,7 +790,7 @@ export default {
       return jsonResponse({
         error: "daily_free_limit_reached",
         reason: reservation.reason ?? "daily_limit",
-        limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT },
+        limits: { gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT },
       }, 429, allowedOrigin);
     }
 
@@ -871,7 +871,7 @@ export default {
     return jsonResponse({
       explanation,
       cached: false,
-      limits: { gmsInferencesPerUtcDay: DAILY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcDay: DAILY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcDay: DAILY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcDay: DAILY_ADMIN_REQUEST_LIMIT },
+      limits: { gmsInferencesPerUtcMonth: MONTHLY_GMS_MODEL_CALL_LIMIT, perAdminInferencesPerUtcMonth: MONTHLY_ADMIN_MODEL_CALL_LIMIT, gmsRequestsPerUtcMonth: MONTHLY_GMS_REQUEST_LIMIT, perAdminRequestsPerUtcMonth: MONTHLY_ADMIN_REQUEST_LIMIT },
     }, 200, allowedOrigin);
   },
 };
