@@ -268,12 +268,12 @@ jobs:
           worker_url="https://gms-ai-assistant-staging.yuichikategawa.workers.dev"
           origin="$STAGING_GMS_APP_ORIGIN"
 
-          preflight_status="$(curl --silent --show-error --output "$RUNNER_TEMP/worker-options.txt" --write-out '%{http_code}' \
+          preflight_status="$(curl --silent --show-error --dump-header "$RUNNER_TEMP/worker-options-headers.txt" --output "$RUNNER_TEMP/worker-options.txt" --write-out '%{http_code}' \
             --request OPTIONS "$worker_url/v1/explain" \
             --header "Origin: $origin" \
             --header "Access-Control-Request-Method: POST" \
             --header "Access-Control-Request-Headers: authorization,content-type")"
-          if [[ "$preflight_status" != "204" ]] || ! grep -Fqi "Access-Control-Allow-Origin: $origin" "$RUNNER_TEMP/worker-options.txt"; then
+          if [[ "$preflight_status" != "204" ]] || ! grep -Fqi "Access-Control-Allow-Origin: $origin" "$RUNNER_TEMP/worker-options-headers.txt"; then
             echo "::error::Staging Worker CORS preflight check failed (HTTP $preflight_status)."
             exit 1
           fi
