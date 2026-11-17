@@ -129,6 +129,25 @@ Deno.test("AI context samples at most three services per church and reports omis
   assertEqual(snapshot.summary.unfilledRequiredPositions, 1, "Required vacancies should be counted.");
 });
 
+Deno.test("AI snapshot batches cover every service without omissions across batches", () => {
+  const batches = [0, 1, 2].map((serviceBatchIndex) => buildAiSchedulingSnapshot({
+    month: "2026-12",
+    locations,
+    slots,
+    generatedAssignments: generated,
+    unfilledPositions: vacancies,
+    workloads,
+    servants: [servant],
+    availability,
+    serviceBatchIndex,
+  }));
+  const analyzedLabels = batches.flatMap((batch) => batch.churches.flatMap((church) => church.services.map((service) => service.label)));
+  assertEqual(analyzedLabels.length, slots.length, "Every service must be included in exactly one batch.");
+  assertEqual(new Set(analyzedLabels).size, slots.length, "No service may be duplicated across batches.");
+  assertEqual(batches.map((batch) => batch.churches[0].services.length), [3, 3, 1], "Three-service batches should cover the final partial batch.");
+  assertEqual(batches[2].churches[0].omittedServiceCount, 6, "Batch metadata should identify service rows outside the current batch.");
+});
+
 Deno.test("Three-church monthly AI snapshot stays below the Worker payload ceiling", () => {
   const locations3: Location[] = Array.from({ length: 3 }, (_, churchIndex) => ({
     id: "private-church-" + churchIndex,
