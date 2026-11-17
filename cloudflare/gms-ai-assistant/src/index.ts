@@ -426,11 +426,12 @@ export class AiBudgetGuard {
       if (typeof body.monthKey !== "string" || !/^\\d{4}-(0[1-9]|1[0-2])$/.test(body.monthKey)) {
         return Response.json({ error: "invalid_internal_request" }, { status: 400 });
       }
+      const monthKey = body.monthKey;
       const global = (table: string, column: string) => this.sql.exec<{ total: number }>(
-        `SELECT COALESCE(SUM(${column}), 0) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ?`, body.monthKey,
+        `SELECT COALESCE(SUM(${column}), 0) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ?`, monthKey,
       ).toArray()[0]?.total ?? 0;
       const perAdmin = (table: string, column: string) => this.sql.exec<{ user_key: string; total: number }>(
-        `SELECT user_key, SUM(${column}) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ? GROUP BY user_key`, body.monthKey,
+        `SELECT user_key, SUM(${column}) AS total FROM ${table} WHERE substr(day_key, 1, 7) = ? GROUP BY user_key`, monthKey,
       ).toArray();
       const calls = perAdmin("gms_ai_user_usage", "calls");
       const requests = perAdmin("gms_ai_user_requests", "requests");
