@@ -735,7 +735,7 @@ export default {
       const monthKey = typeof requestBody.month === "string" && /^\\d{4}-(0[1-9]|1[0-2])$/.test(requestBody.month) ? requestBody.month : utcMonth();
       try {
         const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
-        const userKey = await sha256(admin.id);
+        const userKey = await sha256("gms-cloudflare-usage-refresh");
         const reservation = await guard.fetch("https://gms-ai-budget.internal/usage-refresh", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "reserve_usage_refresh", userKey, now: Date.now() }),
