@@ -213,7 +213,7 @@ Deno.test("AI usage Worker queries the current billing period and selects today'
   const originalFetch = globalThis.fetch;
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  let requestedProviderUrl: URL | null = null;
+  const requestedProviderRequest: { search?: string } = {};
   const usage = {
     month: today.slice(0, 7),
     global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
@@ -233,7 +233,7 @@ Deno.test("AI usage Worker queries the current billing period and selects today'
     if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
     if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
     if (url.includes("/billable-usage")) {
-      requestedProviderUrl = new URL(url);
+      requestedProviderRequest.search = new URL(url).search;
       return Response.json({
         success: true,
         result: [
@@ -278,8 +278,8 @@ Deno.test("AI usage Worker queries the current billing period and selects today'
 
     const data = await response.json();
     assert(response.status === 200, "Usage reporting must succeed with the current billing-period endpoint.");
-    assert(requestedProviderUrl !== null, "The Cloudflare billable-usage endpoint must be requested.");
-    assert(requestedProviderUrl?.search === "", "The request must omit from/to bounds that can exclude the billing-cycle anchor day.");
+    assert(requestedProviderRequest.search !== undefined, "The Cloudflare billable-usage endpoint must be requested.");
+    assert(requestedProviderRequest.search === "", "The request must omit from/to bounds that can exclude the billing-cycle anchor day.");
     assert(data.providerUsageStatus === "available", "A matching Workers AI neuron metric must be reported as available.");
     assert(data.providerDailyNeurons === 123, "Only the current day's Workers AI neuron quantity must be included.");
     assert(data.providerUsageDate === today, "The provider usage date must be today's UTC date.");
