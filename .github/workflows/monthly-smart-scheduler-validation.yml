@@ -202,11 +202,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          today="$(date -u +%F)"
           response_file="$RUNNER_TEMP/cloudflare-billable-usage.json"
           http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/billable-usage?from=$today&to=$today")"
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/billable-usage")"
           billing_status="unavailable"
           if [[ "$http_status" == "200" ]] && node --input-type=module - "$response_file" <<'NODE'
           import { readFileSync } from "node:fs";
