@@ -637,9 +637,21 @@ export default {
 
     const userKey = await sha256(admin.id);
     const cacheKey = await sha256(userKey + "|" + snapshotJson);
+    let guard: DurableObjectStubLike;
+    try {
+      guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
+    } catch (error) {
+      const details = safeErrorDetails(error);
+      console.error("[gms-ai] budget_guard_binding_failed", {
+        stage: "reserve",
+        errorName: details.name,
+        errorMessage: details.message,
+      });
+      return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_binding" }, 503, allowedOrigin);
+    }
+
     let reservationResponse: Response;
     try {
-      const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
       reservationResponse = await guard.fetch("https://gms-ai-budget.internal/reserve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
