@@ -1,0 +1,23 @@
+name = "gms-ai-assistant-staging"
+main = "src/index.ts"
+compatibility_date = "2026-11-11"
+workers_dev = true
+
+# Dedicated staging Worker. Its name creates a separate Worker and a separate
+# SQLite-backed Durable Object namespace; do not deploy this config to production.
+[ai]
+binding = "AI"
+
+[[durable_objects.bindings]]
+name = "AI_GUARD"
+class_name = "AiBudgetGuard"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AiBudgetGuard"]
+
+# Keep inference disabled while validating usage-report diagnostics.
+# The usage_report route remains available; preview_explanation fails closed.
+# Only enable after confirming the Cloudflare account is on Workers Free.
+[vars]
+GMS_AI_ENABLED = "false"
