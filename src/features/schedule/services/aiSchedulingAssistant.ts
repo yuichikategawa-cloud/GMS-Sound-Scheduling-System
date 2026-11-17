@@ -263,14 +263,31 @@ export async function requestAiSchedulingExplanation(
     explanation?: unknown;
     cached?: unknown;
     error?: unknown;
+    reason?: unknown;
+    limits?: {
+      gmsInferencesPerUtcDay?: number;
+      perAdminInferencesPerUtcDay?: number;
+      gmsRequestsPerUtcDay?: number;
+      perAdminRequestsPerUtcDay?: number;
+    };
   };
 
   if (!response.ok) {
+    if (response.status === 429 && payload.error === "daily_free_limit_reached") {
+      const reasons: Record<string, string> = {
+        gms_request_limit: "The GMS AI request allowance has been reached for today. Please try again after the UTC daily reset.",
+        admin_request_limit: "Your AI request allowance has been reached for today. Please try again after the UTC daily reset.",
+        gms_daily_limit: "The GMS has already used its one free AI analysis for today. Please try again after the UTC daily reset.",
+        admin_daily_limit: "You have already used your one free AI analysis for today. Please try again after the UTC daily reset.",
+      };
+      throw new Error((typeof payload.reason === "string" && reasons[payload.reason]) ||
+        "The free GMS AI daily limit has been reached. Try again after the UTC daily reset.");
+    }
     const messages: Record<number, string> = {
       401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
       403: "The AI assistant is not enabled for this account or application origin.",
       413: "The AI analysis payload is too large. The preview was not changed; reduce the monthly preview details and try again.",
-      429: "The free GMS AI daily limit has been reached. Try again after the daily reset.",
+      429: "The free GMS AI daily limit has been reached. Try again after the UTC daily reset.",
       503: "The free AI service is disabled or temporarily unavailable.",
     };
     throw new Error(messages[response.status] ?? "The AI assistant could not complete this request. No schedule changes were made.");
