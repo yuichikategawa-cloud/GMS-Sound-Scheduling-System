@@ -6,6 +6,7 @@ import {
   readBoundedBody,
   resolveAllowedOrigin,
   extractModelText,
+  safeGuardErrorCode,
   validateSnapshot,
 } from "../src/index.ts";
 
@@ -167,4 +168,12 @@ Deno.test("Worker bounds request streams before JSON parsing", async () => {
   });
   const rejected = await readBoundedBody(rejectedRequest, 32);
   assert(rejected === null, "Oversized request streams must be cancelled and rejected.");
+});
+
+
+Deno.test("Worker extracts only safe machine-readable budget guard error codes", () => {
+  assert(safeGuardErrorCode('{"error":"storage_unavailable"}') === "storage_unavailable", "A safe internal error code should be retained.");
+  assert(safeGuardErrorCode('{"error":"bad code with spaces"}') === null, "Free-form error text must not be exposed.");
+  assert(safeGuardErrorCode("not-json") === null, "Malformed guard responses must be treated as unknown.");
+  assert(safeGuardErrorCode('{"message":"sensitive details"}') === null, "Unrecognized response fields must not be exposed.");
 });
