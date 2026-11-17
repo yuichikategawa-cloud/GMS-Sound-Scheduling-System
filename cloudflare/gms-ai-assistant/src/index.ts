@@ -825,7 +825,7 @@ export default {
           "Give no more than three actionable recommendations.",
           "Never recommend bypassing eligibility, availability, cross-church, overlap, publication or database validation rules.",
           "Do not create, edit, publish or claim to have changed any schedule. This response is advisory only.",
-          "The snapshot includes church, servant and service display names to make recommendations actionable. Use the supplied names exactly. Never infer or invent names.",
+          "The snapshot uses anonymous labels such as Servant 1, Church 1 and Service 1. Keep these labels. Do not infer or invent real names.",
           "State when the snapshot is incomplete because some service rows were omitted.",
           "Return plain text with short headings. Keep the response below 260 words.",
         ].join(" "),
