@@ -20,16 +20,16 @@ class FakeSql {
     if (query.includes("SELECT refreshed_at")) {
       const value = this.cooldown.get(String(bindings[0]));
       rows = (value === undefined ? [] : [{ refreshed_at: value }]) as T[];
-    } else if (query.includes("SELECT COALESCE(SUM(") && table && column) {
-      const source = this.table(table);
-      const total = source.filter((r) => String(r.day_key).startsWith(month)).reduce((sum, r) => sum + Number(r[column] ?? 0), 0);
-      rows = [{ total }] as T[];
     } else if (query.includes("GROUP BY user_key") && table && column) {
       const totals = new Map<string, number>();
       for (const row of this.table(table)) {
         if (String(row.day_key).startsWith(month)) totals.set(String(row.user_key), (totals.get(String(row.user_key)) ?? 0) + Number(row[column] ?? 0));
       }
       rows = [...totals].map(([user_key, total]) => ({ user_key, total })) as T[];
+    } else if (query.includes("SELECT COALESCE(SUM(") && table && column) {
+      const source = this.table(table);
+      const total = source.filter((r) => String(r.day_key).startsWith(month)).reduce((sum, r) => sum + Number(r[column] ?? 0), 0);
+      rows = [{ total }] as T[];
     } else if (query.includes("SELECT COUNT(*) AS total FROM gms_ai_pending")) {
       rows = [{ total: this.pending.filter((r) => r.day_key.startsWith(month)).length }] as T[];
     } else if (query.includes("INSERT INTO gms_ai_usage_refresh_cooldown")) {
