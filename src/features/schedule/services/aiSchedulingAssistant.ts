@@ -243,7 +243,7 @@ export function resolveAiWorkerEndpoint(endpoint: string): string {
   const url = new URL(trimmed);
   url.search = "";
   url.hash = "";
-  url.pathname = url.pathname.replace(/\\/+$/, "");
+  url.pathname = url.pathname.replace(/\/+$/, "");
   if (url.pathname.endsWith("/v1/explain")) return url.toString();
   if (url.pathname.endsWith("/v1")) url.pathname += "/explain";
   else url.pathname += "/v1/explain";
