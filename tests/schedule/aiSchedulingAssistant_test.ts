@@ -324,7 +324,7 @@ Deno.test("AI explanation client fails closed when the free quota has been reach
   } catch (error) {
     message = error instanceof Error ? error.message : String(error);
   }
-  assert(message.includes("free GMS AI monthly limit"), "Quota exhaustion should give a clear no-cost limit message.");
+  assert(message.includes("GMS daily Cloudflare safety ceiling"), "Daily safety cap exhaustion should give a clear no-cost limit message.");
 });
 
 
