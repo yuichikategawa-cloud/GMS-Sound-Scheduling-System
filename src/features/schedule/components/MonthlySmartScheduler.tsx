@@ -705,8 +705,9 @@ export default function MonthlySmartScheduler({
     setAiProgress("");
     const explanations: string[] = [];
     let allCached = true;
+    let batchCount = 0;
     try {
-      const batchCount = Math.max(1, ...locations
+      batchCount = Math.max(1, ...locations
         .filter((location) => selectedLocationIds.includes(location.id))
         .map((location) => Math.ceil(preview.slots.filter((slot) => slot.location_id === location.id).length / 3)));
       // Each request analyzes up to three services per church. The Worker
