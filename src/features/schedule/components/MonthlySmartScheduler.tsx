@@ -16,7 +16,7 @@ import type { MonthlyScheduleSlot, MonthlySpecialServiceInput } from "../service
 import { mapHistoricalRosterProfiles } from "../services/historicalRosterProfiles";
 import type { MonthlyPlanApplyInput, MonthlyPlanAssignment, MonthlyPlanExpectedSlot } from "../services/schedulePersistence";
 import { fmtDate } from "../../../shared/formatters";
-import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation, type AiSchedulingSnapshot } from "../services/aiSchedulingAssistant";
+import { buildAiSchedulingSnapshot, requestAiSchedulingExplanation, resolveAiWorkerEndpoint, type AiSchedulingSnapshot } from "../services/aiSchedulingAssistant";
 import {
   applyMonthlyServingTeamAssignments,
   buildMonthlyServingTeamGroups,
@@ -254,7 +254,7 @@ export default function MonthlySmartScheduler({
     setAiUsageCooldown(60);
     setAiUsageError("");
     try {
-      const response = await fetch(aiWorkerUrl.replace(/\/$/, "") + "/v1/explain", {
+      const response = await fetch(resolveAiWorkerEndpoint(aiWorkerUrl), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${aiAccessToken}` },
         body: JSON.stringify({ kind: "usage_report", month: new Date().toISOString().slice(0, 7) }),
