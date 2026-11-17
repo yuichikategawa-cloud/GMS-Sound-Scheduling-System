@@ -200,7 +200,7 @@ export default function MonthlySmartScheduler({
 }: MonthlySmartSchedulerProps) {
   const [month, setMonth] = useState(nextMonthKey);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  const [includeAssistant, setIncludeAssistant] = useState(true);
+  const [includeAssistant, setIncludeAssistant] = useState(false);
   const [specialServices, setSpecialServices] = useState<MonthlySpecialServiceInput[]>([]);
   const [specialServiceMode, setSpecialServiceMode] = useState<"single" | "lineup">("single");
   const [specialServiceLineupDay, setSpecialServiceLineupDay] = useState(0);
@@ -684,7 +684,7 @@ export default function MonthlySmartScheduler({
 
   return (
     <section className="monthly-smart-scheduler">
-      <details className="monthly-smart-disclosure" open>
+      <details className="monthly-smart-disclosure">
         <summary className="monthly-smart-header monthly-smart-disclosure-summary">
           <div className="monthly-smart-title">
             <span className="monthly-smart-icon"><WandSparkles size={18}/></span>
@@ -900,7 +900,7 @@ export default function MonthlySmartScheduler({
                 <span className="monthly-smart-ai-free-label">Free pilot · hard capped</span>
               </div>
               <p>Get an explanation of coverage, role qualifications, vacancies and workload balance. Servant names and personal details are removed before the request leaves this browser.</p>
-              <small>Limit: 1 model call per GMS per UTC day, 3 requests per administrator and 10 requests across GMS. Identical cached results do not use another model call.</small>
+              <small>Monthly allowance: up to 60 model calls across GMS and 30 per administrator, plus 300 requests across GMS and 100 per administrator. Cached results do not consume the monthly allowance.</small>
             </div>
             <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void explainPreviewWithAi()} title={!aiWorkerUrl || !aiAccessToken ? "The free Cloudflare Worker is not configured yet." : "Use the free daily AI allowance to explain this preview."}>
               <WandSparkles size={16}/>{aiBusy ? "Analyzing preview…" : aiExplanation ? "Refresh AI explanation" : "Explain preview with AI"}
