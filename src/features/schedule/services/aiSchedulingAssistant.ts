@@ -273,12 +273,12 @@ export async function requestAiSchedulingExplanation(
   };
 
   if (!response.ok) {
-    if (response.status === 429 && payload.error === "daily_free_limit_reached") {
+    if (response.status === 429 && payload.error === "monthly_free_limit_reached") {
       const reasons: Record<string, string> = {
-        gms_request_limit: "The GMS AI request allowance has been reached for today. Please try again after the UTC daily reset.",
-        admin_request_limit: "Your AI request allowance has been reached for today. Please try again after the UTC daily reset.",
-        gms_daily_limit: "The GMS has already used its one free AI analysis for today. Please try again after the UTC daily reset.",
-        admin_daily_limit: "You have already used your one free AI analysis for today. Please try again after the UTC daily reset.",
+        gms_request_limit: "The GMS monthly AI request allowance has been reached. Please try again after the next monthly reset.",
+        admin_request_limit: "Your monthly AI request allowance has been reached. Please try again after the next monthly reset.",
+        gms_daily_limit: "The GMS monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
+        admin_daily_limit: "Your monthly free AI inference allowance has been reached. Please try again after the next monthly reset.",
       };
       throw new Error((typeof payload.reason === "string" && reasons[payload.reason]) ||
         "The free GMS AI daily limit has been reached. Try again after the UTC daily reset.");
