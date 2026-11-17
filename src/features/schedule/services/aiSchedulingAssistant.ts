@@ -69,6 +69,7 @@ export function buildAiSchedulingSnapshot(input: {
   workloads: readonly MonthlyServantWorkload[];
   servants: readonly Servant[];
   availability: readonly AvailabilityRecord[];
+  serviceBatchIndex?: number;
 }): AiSchedulingSnapshot {
   const servantIds = new Set<string>();
   for (const slot of input.slots) {
@@ -183,7 +184,8 @@ export function buildAiSchedulingSnapshot(input: {
       a.date.localeCompare(b.date) ||
       a.startTime.localeCompare(b.startTime)
     );
-    const sampledServices = priorityServices.slice(0, 3).sort((a, b) =>
+    const batchIndex = Math.max(0, Math.floor(input.serviceBatchIndex ?? 0));
+    const sampledServices = priorityServices.slice(batchIndex * 3, (batchIndex + 1) * 3).sort((a, b) =>
       a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
     );
     const vacancyCounts = new Map<string, { role: Role; reason: string; count: number }>();
