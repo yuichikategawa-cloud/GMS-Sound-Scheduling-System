@@ -116,6 +116,8 @@ After deployment, configure `VITE_GMS_AI_WORKER_URL` for the exact Vercel Previe
 
 ### Automated staging-only deployment
 
+Deployment configuration is validated by the branch-specific CI workflow before any staging Worker changes.
+
 The repository's Monthly Smart Scheduler validation workflow can deploy the isolated staging Worker after Deno tests and the frontend build both pass. It runs only for the branch `feature/ai-usage-report-diagnostics`.
 
 Configure these GitHub repository Actions secrets (never put their values in source control):
