@@ -640,3 +640,19 @@
     grid-row:1;
   }
 }
+
+
+.monthly-smart-ai-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.monthly-smart-ai-usage{
+  display:grid;gap:10px;width:100%;padding:13px;border:1px solid var(--border-color,#dbe2ee);
+  border-radius:10px;background:var(--surface-muted,#f5f7fb);text-align:left;
+}
+.monthly-smart-ai-usage>b{font-size:12px}
+.monthly-smart-ai-usage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.monthly-smart-ai-usage-grid>span{display:grid;gap:4px;color:var(--text-muted,#667085);font-size:10px}
+.monthly-smart-ai-usage-grid strong{color:var(--text-primary,#243047);font-size:17px;font-variant-numeric:tabular-nums}
+.monthly-smart-ai-usage>small{color:var(--text-muted,#667085);font-size:10px;line-height:1.5}
+.monthly-smart-ai-usage ul{display:grid;gap:4px;margin:0;padding-left:18px;color:var(--text-primary,#344054);font-size:10px}
+:root[data-theme="dark"] .monthly-smart-ai-usage{background:#1a2940;border-color:#35455e}
+:root[data-theme="dark"] .monthly-smart-ai-usage-grid strong,:root[data-theme="dark"] .monthly-smart-ai-usage ul{color:#eaf0fa}
+@media(max-width:520px){.monthly-smart-ai-usage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.monthly-smart-ai-actions{display:grid;width:100%}.monthly-smart-ai-actions .btn{width:100%}}
