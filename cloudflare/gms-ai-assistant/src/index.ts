@@ -305,6 +305,31 @@ function utcDay(now = new Date()): string {
   return now.toISOString().slice(0, 10);
 }
 
+/** Extracts only a short machine-readable code from an internal guard response. */
+export function safeGuardErrorCode(body: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (!isRecord(parsed) || typeof parsed.error !== "string") return null;
+    return /^[a-zA-Z0-9_.-]{1,80}$/.test(parsed.error) ? parsed.error : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Avoid logging request data, credentials, or arbitrary upstream response bodies. */
+function safeErrorDetails(error: unknown): { name: string; message: string } {
+  if (error instanceof Error) {
+    return {
+      name: error.name.slice(0, 80),
+      message: error.message
+        .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
+        .replace(/(?:token|secret|key)=?[^\\s&]+/gi, "[redacted]")
+        .slice(0, 240),
+    };
+  }
+  return { name: "UnknownError", message: "Non-Error value thrown" };
+}
+
 
 /** Reads at most the configured number of bytes and cancels oversized streams. */
 export async function readBoundedBody(request: Request, maximumBytes: number): Promise<string | null> {
@@ -612,22 +637,57 @@ export default {
 
     const userKey = await sha256(admin.id);
     const cacheKey = await sha256(userKey + "|" + snapshotJson);
-    const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
-    const reservationResponse = await guard.fetch("https://gms-ai-budget.internal/reserve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reserve", dayKey: utcDay(), userKey, cacheKey }),
-    }).catch(() => null);
-    if (!reservationResponse?.ok) {
-      return jsonResponse({ error: "free_budget_guard_unavailable" }, 503, allowedOrigin);
+    let reservationResponse: Response;
+    try {
+      const guard = env.AI_GUARD.get(env.AI_GUARD.idFromName("gms-global-ai-budget"));
+      reservationResponse = await guard.fetch("https://gms-ai-budget.internal/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reserve", dayKey: utcDay(), userKey, cacheKey }),
+      });
+    } catch (error) {
+      const details = safeErrorDetails(error);
+      console.error("[gms-ai] budget_guard_fetch_failed", {
+        stage: "reserve",
+        errorName: details.name,
+        errorMessage: details.message,
+      });
+      return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_transport" }, 503, allowedOrigin);
     }
 
-    const reservation = await reservationResponse.json() as {
+    if (!reservationResponse.ok) {
+      const responseBody = await reservationResponse.text().catch(() => "");
+      const guardCode = safeGuardErrorCode(responseBody);
+      console.error("[gms-ai] budget_guard_http_error", {
+        stage: "reserve",
+        status: reservationResponse.status,
+        errorCode: guardCode ?? "unrecognized_guard_response",
+      });
+      return jsonResponse({
+        error: "free_budget_guard_unavailable",
+        guardStage: "reserve_response",
+        guardStatus: reservationResponse.status,
+        guardCode: guardCode ?? undefined,
+      }, 503, allowedOrigin);
+    }
+
+    let reservation: {
       allowed?: boolean;
       cached?: boolean;
       explanation?: string;
       reason?: string;
     };
+    try {
+      reservation = await reservationResponse.json() as typeof reservation;
+    } catch (error) {
+      const details = safeErrorDetails(error);
+      console.error("[gms-ai] budget_guard_invalid_json", {
+        stage: "reserve",
+        errorName: details.name,
+        errorMessage: details.message,
+      });
+      return jsonResponse({ error: "free_budget_guard_unavailable", guardStage: "reserve_invalid_json" }, 503, allowedOrigin);
+    }
     if (reservation.cached === true && typeof reservation.explanation === "string") {
       return jsonResponse({ explanation: reservation.explanation, cached: true }, 200, allowedOrigin);
     }
