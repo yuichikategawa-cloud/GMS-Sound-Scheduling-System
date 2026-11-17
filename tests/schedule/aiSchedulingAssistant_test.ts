@@ -1,3 +1,4 @@
+import { isMonthKey } from "../../cloudflare/gms-ai-assistant/src/index.ts";
 import {
   buildAiSchedulingSnapshot,
   requestAiSchedulingExplanation,
@@ -343,4 +344,16 @@ Deno.test("AI Worker endpoint normalization removes duplicate slashes and repeat
     "https://gms-ai.example.workers.dev/v1/explain",
     "A base URL with a trailing slash must resolve to the canonical route.",
   );
+});
+
+
+Deno.test("AI usage month validation accepts YYYY-MM and rejects malformed months", () => {
+  assert(isMonthKey("2026-11"), "A valid year-month should be accepted.");
+  assert(isMonthKey("2026-01"), "January should be accepted.");
+  assert(isMonthKey("2026-12"), "December should be accepted.");
+  assert(!isMonthKey("2026-00"), "Month zero must be rejected.");
+  assert(!isMonthKey("2026-13"), "Month thirteen must be rejected.");
+  assert(!isMonthKey("26-11"), "A two-digit year must be rejected.");
+  assert(!isMonthKey("2026/11"), "A slash separator must be rejected.");
+  assert(!isMonthKey(null), "Non-string values must be rejected.");
 });
