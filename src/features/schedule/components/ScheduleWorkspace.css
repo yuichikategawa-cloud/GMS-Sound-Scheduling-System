@@ -2559,10 +2559,10 @@
 }
 
 
-/* One collapsible assignment center: automatic planning first, manual tools second. */
-.assignment-tools-menu{
+/* Independent Manual assignment accordion; Automatic is the Monthly Smart Scheduler disclosure. */
+.assignment-tools-section.assignment-tools-manual{
   display:block;
-  margin:16px 0;
+  margin:16px 0 0;
   overflow:hidden;
   border:1px solid var(--line,#dfe5f2);
   border-radius:16px;
@@ -2574,6 +2574,7 @@
   align-items:center;
   justify-content:space-between;
   gap:16px;
+  min-height:78px;
   padding:17px 20px;
   cursor:pointer;
   list-style:none;
@@ -2590,75 +2591,57 @@
   margin:4px 0 0;
   color:var(--muted,#65738b);
   font-size:12px;
-  line-height:1.45;
+  line-height:1.5;
 }
 .assignment-tools-summary>svg{
   flex:none;
   color:var(--muted,#65738b);
   transition:transform .18s ease;
 }
-.assignment-tools-menu[open]>.assignment-tools-summary>svg{transform:rotate(180deg)}
+.assignment-tools-manual[open]>.assignment-tools-summary>svg{transform:rotate(180deg)}
 .assignment-tools-summary:focus-visible{
   outline:3px solid var(--focus-border,#818cf8);
   outline-offset:-3px;
 }
-.assignment-tools-content{
+.assignment-tools-manual-content{
   display:grid;
-  gap:18px;
+  gap:16px;
   padding:0 18px 18px;
 }
-.assignment-tools-section{
-  display:grid;
-  gap:10px;
-  min-width:0;
-}
-.assignment-tools-section-heading{
-  display:grid;
-  gap:4px;
-  padding-top:15px;
-  border-top:1px solid var(--line,#e5e9f1);
-}
-.assignment-tools-section-heading .assignment-tools-mode{
-  color:var(--accent-hover,#4f46e5);
-  font-size:10px;
-  font-weight:850;
-  letter-spacing:.07em;
-  text-transform:uppercase;
-}
-.assignment-tools-section-heading p{
-  margin:0;
-  color:var(--muted,#65738b);
-  font-size:11px;
-  line-height:1.45;
-}
-.assignment-tools-automatic .monthly-smart-scheduler{margin:0}
 .assignment-tools-manual .bulk-assignment-center,
-.assignment-tools-manual .generate-panel{
-  margin:0;
-}
-.bulk-assignment-summary{cursor:default}
-.generate-panel-summary{cursor:default}
+.assignment-tools-manual .generate-panel{margin:0}
+.bulk-assignment-summary,.generate-panel-summary{cursor:default}
 
-:root[data-theme="dark"] .assignment-tools-menu{
+:root[data-theme="dark"] .assignment-tools-section.assignment-tools-manual{
   background:#1b263a;
   border-color:#3a4963;
   box-shadow:0 5px 18px rgba(0,0,0,.16);
 }
-:root[data-theme="dark"] .assignment-tools-summary h2{color:#f3f6fc}
-:root[data-theme="dark"] .assignment-tools-summary p,
-:root[data-theme="dark"] .assignment-tools-section-heading p{color:#c3d0e3}
-:root[data-theme="dark"] .assignment-tools-summary>svg{color:#c5d2e5}
-:root[data-theme="dark"] .assignment-tools-section-heading{border-top-color:#40516d}
-:root[data-theme="dark"] .assignment-tools-section-heading .assignment-tools-mode{color:#c9caff}
+:root[data-theme="dark"] .assignment-tools-summary h2{color:#f7f9ff}
+:root[data-theme="dark"] .assignment-tools-summary p{color:#e0e9f6}
+:root[data-theme="dark"] .assignment-tools-summary>svg{color:#e3ebf7}
 :root[data-theme="dark"] .assignment-tools-manual .bulk-assignment-center{
   background:#1b263a;
   border-color:#40516d;
 }
-:root[data-theme="dark"] .assignment-tools-manual .bulk-assignment-summary h2{color:#f0f4fb}
-:root[data-theme="dark"] .assignment-tools-manual .bulk-assignment-summary .subtle{color:#c3d0e3}
+:root[data-theme="dark"] .assignment-tools-manual .bulk-assignment-summary h2{color:#f7f9ff}
+:root[data-theme="dark"] .assignment-tools-manual .bulk-assignment-summary .subtle{color:#d4e0ef}
+
+/* The selected template count is a status chip, not muted body copy. */
+:root[data-theme="dark"] .template-picker-head>span{
+  color:#ffffff!important;
+  background:#354675!important;
+  border:1px solid #7186c0!important;
+  border-radius:999px!important;
+  padding:6px 11px!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  line-height:1.35!important;
+  opacity:1!important;
+  text-shadow:none!important;
+}
 
 @media(max-width:760px){
   .assignment-tools-summary{align-items:flex-start;padding:15px}
-  .assignment-tools-content{gap:14px;padding:0 12px 13px}
-  .assignment-tools-section-heading{padding-top:13px}
+  .assignment-tools-manual-content{gap:14px;padding:0 12px 13px}
 }

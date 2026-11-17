@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, WandSparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type { AvailabilityRecord } from "../../availability/services/recurringAvailability";
 import type { ServingPreferenceRecord } from "../../availability/services/availabilityData";
@@ -812,19 +812,19 @@ export default function MonthlySmartScheduler({
 
 
   return (
-    <section className="monthly-smart-scheduler">
-      <div className="monthly-smart-disclosure">
-        <div className="monthly-smart-header monthly-smart-disclosure-summary">
-          <div className="monthly-smart-title">
-            <span className="monthly-smart-icon"><WandSparkles size={18}/></span>
-            <div>
-              <h2>Monthly Smart Scheduler</h2>
-              <p>Automatic assignment · Generate a balanced proposal from active weekend templates, availability and serving history.</p>
-            </div>
+    <details className="monthly-smart-scheduler monthly-smart-disclosure">
+      <summary className="monthly-smart-header monthly-smart-disclosure-summary">
+        <div className="monthly-smart-title">
+          <span className="monthly-smart-icon"><WandSparkles size={18}/></span>
+          <div>
+            <h2>Automatic assignment</h2>
+            <p>Monthly Smart Scheduler · Generate a balanced proposal from active weekend templates, availability and serving history.</p>
           </div>
-          <span className="monthly-smart-admin-only">Admin planning tool</span>
         </div>
-        <div className="monthly-smart-content">
+        <span className="monthly-smart-admin-only">Admin planning tool</span>
+        <ChevronDown className="monthly-smart-collapse-icon" size={19} aria-hidden="true"/>
+      </summary>
+      <div className="monthly-smart-content">
       {inputErrors.length > 0 && (
         <div className="monthly-smart-alert is-blocking" role="alert">
           <AlertTriangle size={16}/>
@@ -1232,8 +1232,7 @@ export default function MonthlySmartScheduler({
           </button>
         </div>
       )}
-        </div>
       </div>
-    </section>
+    </details>
   );
 }
