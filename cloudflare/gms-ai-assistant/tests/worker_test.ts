@@ -1,8 +1,8 @@
 import {
-  DAILY_ADMIN_MODEL_CALL_LIMIT,
-  DAILY_ADMIN_REQUEST_LIMIT,
-  DAILY_GMS_MODEL_CALL_LIMIT,
-  DAILY_GMS_REQUEST_LIMIT,
+  MONTHLY_ADMIN_MODEL_CALL_LIMIT,
+  MONTHLY_ADMIN_REQUEST_LIMIT,
+  MONTHLY_GMS_MODEL_CALL_LIMIT,
+  MONTHLY_GMS_REQUEST_LIMIT,
   readBoundedBody,
   resolveAllowedOrigin,
   extractModelText,
@@ -138,11 +138,11 @@ Deno.test("Worker rejects service samples that exceed the prompt-size policy", (
   assert(validateSnapshot(invalid) === null, "More than three sample services per church must be rejected.");
 });
 
-Deno.test("Worker hard-codes small daily inference budgets", () => {
-  assert(DAILY_GMS_MODEL_CALL_LIMIT === 1, "GMS-wide model calls must be capped at one per UTC day.");
-  assert(DAILY_ADMIN_MODEL_CALL_LIMIT === 1, "Each administrator must be capped at one model call per UTC day.");
-  assert(DAILY_GMS_REQUEST_LIMIT === 10, "GMS-wide Worker requests must be capped at ten per UTC day.");
-  assert(DAILY_ADMIN_REQUEST_LIMIT === 3, "Each administrator must be capped at three Worker requests per UTC day.");
+Deno.test("Worker enforces the approved monthly free AI budgets", () => {
+  assert(MONTHLY_GMS_MODEL_CALL_LIMIT === 60, "GMS-wide successful model calls must be capped at 60 per UTC month.");
+  assert(MONTHLY_ADMIN_MODEL_CALL_LIMIT === 30, "Each administrator must be capped at 30 successful model calls per UTC month.");
+  assert(MONTHLY_GMS_REQUEST_LIMIT === 300, "GMS-wide request attempts must be capped at 300 per UTC month.");
+  assert(MONTHLY_ADMIN_REQUEST_LIMIT === 100, "Each administrator must be capped at 100 request attempts per UTC month.");
 });
 
 Deno.test("Worker extracts supported plain-text responses only", () => {
