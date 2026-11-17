@@ -6,6 +6,7 @@ on:
       - feat/monthly-smart-scheduler-engine
       - feat/ai-usage-dashboard
       - feat/free-cloudflare-ai-scheduler
+      - feature/ai-usage-and-explanation-clarity
     paths:
       - "src/features/schedule/services/monthly*.ts"
       - "src/features/schedule/services/aiSchedulingAssistant.ts"
@@ -36,6 +37,7 @@ on:
       - "src/App.tsx"
       - "tests/schedule/monthly*_test.ts"
       - "tests/schedule/aiSchedulingAssistant_test.ts"
+      - "tests/cloudflare/aiUsageReport_test.ts"
       - "tests/schedule/historicalRosterProfiles_test.ts"
       - "tests/schedule/schedulePersistence_test.ts"
       - "tests/servants/servantManagement_test.ts"
@@ -70,7 +72,7 @@ jobs:
       - name: Test shared date and timestamp formatters
         run: deno test --no-lock tests/shared/formatters_test.ts
       - name: Test free AI scheduling context and worker guard
-        run: deno test --no-lock tests/schedule/aiSchedulingAssistant_test.ts cloudflare/gms-ai-assistant/tests/worker_test.ts
+        run: deno test --no-lock tests/schedule/aiSchedulingAssistant_test.ts cloudflare/gms-ai-assistant/tests/worker_test.ts tests/cloudflare/aiUsageReport_test.ts
       - name: Type-check free Cloudflare Worker source
         run: deno check cloudflare/gms-ai-assistant/src/index.ts
       - name: Test monthly slot generation
