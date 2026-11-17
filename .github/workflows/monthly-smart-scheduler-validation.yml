@@ -224,47 +224,43 @@ jobs:
             echo "- Workers requests are sourced from Cloudflare's adaptive GraphQL dataset and are shown as estimates."
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Check Cloudflare daily Workers AI Neuron usage
+      - name: Check Cloudflare Workers AI Neuron analytics
         id: neuron_usage
         if: steps.preflight.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           today="$(date -u +%Y-%m-%d)"
-          response_file="$RUNNER_TEMP/cloudflare-daily-usage-v2.json"
+          response_file="$RUNNER_TEMP/cloudflare-ai-neuron-analytics.json"
+          query='query GmsWorkersAiNeuronsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) { viewer { accounts(filter: { accountTag: $accountTag }) { aiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) { dimensions { datetimeHour } sum { totalNeurons } } } } }'
           http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --request POST https://api.cloudflare.com/client/v4/graphql \
             --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/billable/usage?from=$today&to=$today")"
+            --header "Content-Type: application/json" \
+            --data "$(jq -n --arg query "$query" --arg accountTag "$CLOUDFLARE_ACCOUNT_ID" --arg start "${today}T00:00:00.000Z" --arg end "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" '{query:$query,variables:{accountTag:$accountTag,datetimeStart:$start,datetimeEnd:$end}}')")"
 
           neuron_status="unavailable"
           neuron_rows=0
           neuron_total="unavailable"
-          if [[ "$http_status" == "200" ]] && jq -e '.success == true and (.result | type == "array")' "$response_file" >/dev/null; then
-            neuron_rows="$(jq --arg today "$today" '[.result[] |
-              select(([.x_ProductFamilyName // "", .x_BillableMetricName // "", .x_BillableMetricId // "", .ChargeDescription // ""] | join(" ") | test("workers.?ai"; "i")) and
-              ((.ConsumedUnit // .PricingUnit // "") | tostring | test("neuron"; "i")) and
-              ((.ChargePeriodStart // "") | tostring | startswith($today))] | length' "$response_file")"
-            neuron_total="$(jq --arg today "$today" '[.result[] |
-              select(([.x_ProductFamilyName // "", .x_BillableMetricName // "", .x_BillableMetricId // "", .ChargeDescription // ""] | join(" ") | test("workers.?ai"; "i")) and
-              ((.ConsumedUnit // .PricingUnit // "") | tostring | test("neuron"; "i")) and
-              ((.ChargePeriodStart // "") | tostring | startswith($today)) |
-              (.ConsumedQuantity // .PricingQuantity // 0)] | add // 0' "$response_file")"
+          if [[ "$http_status" == "200" ]] && jq -e '((.errors // []) | length == 0) and ((.data.viewer.accounts // []) | length > 0)' "$response_file" >/dev/null; then
+            neuron_rows="$(jq '[.data.viewer.accounts[0].aiInferenceAdaptiveGroups[]?] | length' "$response_file")"
+            neuron_total="$(jq '[.data.viewer.accounts[0].aiInferenceAdaptiveGroups[]?.sum.totalNeurons // 0] | add // 0' "$response_file")"
             if [[ "$neuron_rows" -gt 0 ]]; then
-              neuron_status="available"
+              neuron_status="estimated"
             else
               neuron_status="metric_not_returned"
             fi
-          elif [[ "$http_status" == "403" ]]; then
+          elif [[ "$http_status" == "403" ]] || jq -e 'any(.errors[]?; .extensions.code == "authz" or (.message | test("not authorized|permission";"i")))' "$response_file" >/dev/null 2>&1; then
             neuron_status="permission_denied"
           fi
           echo "status=$neuron_status" >> "$GITHUB_OUTPUT"
-          echo "Cloudflare daily Workers AI Neurons: $neuron_status (HTTP $http_status; matching rows $neuron_rows; total $neuron_total)"
+          echo "Cloudflare Workers AI Neuron analytics: $neuron_status (HTTP $http_status; hourly rows $neuron_rows; total $neuron_total)"
           {
-            echo "### Cloudflare daily Workers AI Neuron metric"
-            echo "- Endpoint access: $neuron_status (HTTP $http_status)."
-            echo "- Matching daily Workers AI Neuron rows: $neuron_rows."
-            echo "- Neurons used today: $neuron_total."
-            echo "- The workflow does not substitute zero when Cloudflare omits the metric."
+            echo "### Cloudflare daily Workers AI Neuron analytics"
+            echo "- GraphQL aiInferenceAdaptiveGroups: $neuron_status (HTTP $http_status)."
+            echo "- Hourly rows returned: $neuron_rows."
+            echo "- Neurons used today (adaptive estimate): $neuron_total."
+            echo "- Missing/error metrics are not substituted with zero."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check Cloudflare Workers Observability permission

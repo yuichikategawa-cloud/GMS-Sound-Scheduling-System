@@ -825,42 +825,62 @@ export default {
             Accept: "application/json",
           };
 
-          // Workers AI Neurons: use the newer daily usage endpoint first. It includes
-          // metered usage covered by free-tier allocations and is date-scoped.
+          // Workers AI Neurons: account-level GraphQL adaptive inference analytics.
+          // Cloudflare's v2 Billable Usage endpoint is alpha/restricted for some accounts;
+          // aiInferenceAdaptiveGroups exposes totalNeurons to Analytics-authorized tokens.
           try {
-            const usageUrl = new URL(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(env.CLOUDFLARE_ACCOUNT_ID)}/billable/usage`);
-            usageUrl.searchParams.set("from", today);
-            usageUrl.searchParams.set("to", today);
-            const usageResponse = await fetch(usageUrl, { headers: authHeaders });
-            if (usageResponse.ok) {
-              const usagePayload = await usageResponse.json() as { success?: boolean; result?: Array<Record<string, unknown>> };
-              const rows = Array.isArray(usagePayload.result) ? usagePayload.result : [];
-              const neuronRows = rows.filter((row) => {
-                const product = String(row.x_ProductFamilyName ?? "");
-                const metric = String(row.x_BillableMetricName ?? "") + " " +
-                  String(row.x_BillableMetricId ?? "") + " " + String(row.ChargeDescription ?? "");
-                return /workers.?ai/i.test(product + " " + metric) &&
-                  /neuron/i.test(String(row.ConsumedUnit ?? row.PricingUnit ?? "")) &&
-                  typeof row.ChargePeriodStart === "string" &&
-                  row.ChargePeriodStart.slice(0, 10) === today;
-              });
-              if (usagePayload.success && neuronRows.length > 0) {
-                providerDailyNeurons = neuronRows.reduce((sum, row) => {
-                  const quantity = Number(row.ConsumedQuantity ?? row.PricingQuantity);
-                  return Number.isFinite(quantity) ? sum + quantity : sum;
+            const neuronQuery = `query GmsWorkersAiNeuronsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) {
+              viewer {
+                accounts(filter: { accountTag: $accountTag }) {
+                  aiInferenceAdaptiveGroups(limit: 10000, filter: {
+                    datetime_geq: $datetimeStart,
+                    datetime_leq: $datetimeEnd
+                  }) {
+                    dimensions { datetimeHour }
+                    sum { totalNeurons }
+                  }
+                }
+              }
+            }`;
+            const neuronResponse = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+              method: "POST",
+              headers: { ...authHeaders, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                query: neuronQuery,
+                variables: {
+                  accountTag: env.CLOUDFLARE_ACCOUNT_ID,
+                  datetimeStart: startOfUtcDay.toISOString(),
+                  datetimeEnd: now.toISOString(),
+                },
+              }),
+            });
+            if (neuronResponse.ok) {
+              const neuronPayload = await neuronResponse.json() as {
+                errors?: Array<{ message?: string; extensions?: { code?: string } }>;
+                data?: { viewer?: { accounts?: Array<{ aiInferenceAdaptiveGroups?: Array<{ sum?: { totalNeurons?: number } }> }> } };
+              };
+              const account = neuronPayload.data?.viewer?.accounts?.[0];
+              const rows = account?.aiInferenceAdaptiveGroups;
+              if (!neuronPayload.errors?.length && Array.isArray(rows) && rows.length > 0) {
+                providerDailyNeurons = rows.reduce((sum, row) => {
+                  const value = Number(row.sum?.totalNeurons);
+                  return Number.isFinite(value) ? sum + value : sum;
                 }, 0);
                 providerUsageDate = today;
-                providerUsageStatus = "available";
+                providerUsageStatus = "estimated";
+              } else if (neuronPayload.errors?.some((item) =>
+                item.extensions?.code === "authz" || /not authorized|permission/i.test(item.message ?? "")
+              )) {
+                providerUsageStatus = "permission_denied";
               } else {
                 providerUsageStatus = "metric_not_returned";
               }
             } else {
-              providerUsageStatus = usageResponse.status === 403 ? "permission_denied" :
-                usageResponse.status === 404 ? "v2_unavailable" : "provider_unavailable";
+              providerUsageStatus = neuronResponse.status === 403 ? "permission_denied" : "provider_unavailable";
             }
           } catch (error) {
             const details = safeErrorDetails(error);
-            console.error("[gms-ai] provider_neuron_usage_fetch_failed", {
+            console.error("[gms-ai] provider_neuron_analytics_failed", {
               stage: "provider_neurons",
               errorName: details.name,
               errorMessage: details.message,

@@ -215,7 +215,7 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
   const originalFetch = globalThis.fetch;
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const requested: { billing?: URL; graphql?: Record<string, unknown>; observability?: Record<string, unknown> } = {};
+  const requested: { aiGraphql?: Record<string, unknown>; graphql?: Record<string, unknown>; observability?: Record<string, unknown> } = {};
   const usage = {
     month: today.slice(0, 7),
     global: { modelCalls: 2, requests: 3, cacheHits: 1, pendingCalls: 0 },
@@ -234,30 +234,24 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
     const url = String(input);
     if (url.endsWith("/auth/v1/user")) return Response.json({ id: "123e4567-e89b-12d3-a456-426614174000" });
     if (url.includes("/rest/v1/profiles")) return Response.json([{ role: "admin" }]);
-    if (url.includes("/billable/usage")) {
-      requested.billing = new URL(url);
-      return Response.json({
-        success: true,
-        result: [
-          {
-            x_ProductFamilyName: "Workers",
-            x_BillableMetricName: "Workers AI Inference Neurons",
-            ConsumedUnit: "Neurons",
-            ConsumedQuantity: 386.18,
-            ChargePeriodStart: today + "T00:00:00Z",
-          },
-          {
-            x_ProductFamilyName: "Workers",
-            x_BillableMetricName: "Workers AI Inference Neurons",
-            ConsumedUnit: "Neurons",
-            ConsumedQuantity: 999,
-            ChargePeriodStart: yesterday + "T00:00:00Z",
-          },
-        ],
-      });
-    }
     if (url.endsWith("/graphql")) {
-      requested.graphql = JSON.parse(String(init?.body ?? "{}"));
+      const body = JSON.parse(String(init?.body ?? "{}")) as { query?: string };
+      if (body.query?.includes("aiInferenceAdaptiveGroups")) {
+        requested.aiGraphql = body as unknown as Record<string, unknown>;
+        return Response.json({
+          data: {
+            viewer: {
+              accounts: [{
+                aiInferenceAdaptiveGroups: [
+                  { dimensions: { datetimeHour: today + "T10:00:00Z" }, sum: { totalNeurons: 386.18 } },
+                  { dimensions: { datetimeHour: today + "T11:00:00Z" }, sum: { totalNeurons: 0 } },
+                ],
+              }],
+            },
+          },
+        });
+      }
+      requested.graphql = body as unknown as Record<string, unknown>;
       return Response.json({
         data: {
           viewer: {
@@ -303,9 +297,9 @@ Deno.test("AI usage Worker reports daily Neurons, Workers requests and Observabi
 
     const data = await response.json();
     assert(response.status === 200, "Cloudflare metric failures must never break the GMS usage report.");
-    assert(requested.billing?.searchParams.get("from") === today && requested.billing?.searchParams.get("to") === today, "Workers AI Neurons must use the current UTC daily usage range.");
-    assert(data.providerUsageStatus === "available", "A Workers AI Neuron usage row must be recognized.");
-    assert(data.providerDailyNeurons === 386.18, "Only today's Workers AI Neurons must be summed.");
+    assert(typeof requested.aiGraphql?.query === "string" && String(requested.aiGraphql.query).includes("aiInferenceAdaptiveGroups"), "Workers AI must use the account GraphQL inference dataset.");
+    assert(data.providerUsageStatus === "estimated", "Workers AI adaptive Neuron analytics must be marked as an estimate.");
+    assert(data.providerDailyNeurons === 386.18, "Today’s Workers AI Neurons must be summed across hourly rows.");
     assert(typeof requested.graphql?.variables === "object" && requested.graphql.variables !== null, "Workers GraphQL account analytics must be queried.");
     assert(data.workersRequestsToday === 177 && data.workersRequestsStatus === "estimated", "Account Workers requests must be returned as an adaptive analytics estimate.");
     assert(requested.observability?.dry === true && requested.observability?.view === "calculations", "Observability must use a non-persisted aggregate query.");
