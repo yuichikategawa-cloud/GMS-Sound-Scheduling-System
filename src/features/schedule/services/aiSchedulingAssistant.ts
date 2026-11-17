@@ -246,7 +246,28 @@ export async function requestAiSchedulingExplanation(
   if (snapshotBytes > 5_600) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
   }
-  const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot });
+  const privateNames = new Map<string, string>();
+  const safeSnapshot: AiSchedulingSnapshot = structuredClone(snapshot);
+  const getServantAlias = (name: string) => {
+    if (!privateNames.has(name)) privateNames.set(name, "Servant " + (privateNames.size + 1));
+    return privateNames.get(name)!;
+  };
+  safeSnapshot.churches.forEach((church, churchIndex) => {
+    const churchName = church.label;
+    church.label = "Church " + (churchIndex + 1);
+    const serviceNames = new Map<string, string>();
+    church.services.forEach((service, serviceIndex) => {
+      serviceNames.set(service.label, "Service " + (serviceIndex + 1));
+      service.label = "Service " + (serviceIndex + 1);
+      service.assignments.forEach((assignment) => assignment.servant = getServantAlias(assignment.servant));
+    });
+    church.vacancySummary = church.vacancySummary;
+    // Keep a local-only lookup for translating the model's anonymous references.
+    privateNames.set("Church " + (churchIndex + 1), churchName);
+    for (const [name, alias] of serviceNames) privateNames.set(alias + "@" + churchIndex, name);
+  });
+  safeSnapshot.workload.forEach((item) => item.servant = getServantAlias(item.servant));
+  const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot: safeSnapshot });
   const requestBytes = new TextEncoder().encode(requestBody).byteLength;
   if (requestBytes > 7_500) {
     throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
@@ -299,7 +320,14 @@ export async function requestAiSchedulingExplanation(
   }
 
   return {
-    explanation: payload.explanation.slice(0, 4000),
+    explanation: [...privateNames.entries()]
+      .filter(([key]) => key.startsWith("Church ") || key.startsWith("Service "))
+      .reduce((text, [key, value]) => text.replaceAll(key.split("@")[0], value), payload.explanation)
+      .replace(/Servant ([1-9][0-9]*)/g, (match) => {
+        const original = [...privateNames.entries()].find(([, alias]) => alias === match);
+        return original?.[0] ?? match;
+      })
+      .slice(0, 4000),
     cached: payload.cached === true,
   };
 }
