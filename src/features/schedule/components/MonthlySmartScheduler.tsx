@@ -221,10 +221,12 @@ export default function MonthlySmartScheduler({
   const [aiUsage, setAiUsage] = useState<{ month: string; global: { modelCalls: number; requests: number; cacheHits: number; pendingCalls: number }; admins: Array<{ admin: string; modelCalls: number; requests: number; cacheHits: number }>; limits: { modelCalls: number; perAdminModelCalls: number; requests: number; perAdminRequests: number }; providerDailyNeurons: number | null } | null>(null);
   const [aiUsageError, setAiUsageError] = useState("");
   const [aiUsageBusy, setAiUsageBusy] = useState(false);
+  const [aiUsageCooldown, setAiUsageCooldown] = useState(0);
+  const aiUsageCooldownUntil = useRef(0);
   const initializedLocations = useRef(false);
 
   async function loadAiUsage() {
-    if (!aiWorkerUrl || !aiAccessToken) return;
+    if (!aiWorkerUrl || !aiAccessToken || aiUsageBusy || Date.now() < aiUsageCooldownUntil.current) return;
     setAiUsageBusy(true);
     setAiUsageError("");
     try {
@@ -234,7 +236,15 @@ export default function MonthlySmartScheduler({
         body: JSON.stringify({ kind: "usage_report", month: new Date().toISOString().slice(0, 7) }),
       });
       const payload = await response.json() as typeof aiUsage & { error?: string };
+      if (response.status === 429) {
+        const retry = Number(payload?.retryAfterSeconds ?? 60);
+        aiUsageCooldownUntil.current = Date.now() + Math.max(1, retry) * 1000;
+        setAiUsageCooldown(Math.max(1, retry));
+        throw new Error("Please wait before refreshing usage again.");
+      }
       if (!response.ok || !payload?.global || !payload.limits) throw new Error(payload?.error || "Usage report unavailable.");
+      aiUsageCooldownUntil.current = Date.now() + 60_000;
+      setAiUsageCooldown(60);
       setAiUsage(payload);
     } catch (usageError) {
       setAiUsageError(usageError instanceof Error ? usageError.message : "Usage report unavailable.");
@@ -242,6 +252,12 @@ export default function MonthlySmartScheduler({
       setAiUsageBusy(false);
     }
   }
+
+  useEffect(() => {
+    if (aiUsageCooldown <= 0) return;
+    const timer = window.setTimeout(() => setAiUsageCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [aiUsageCooldown]);
 
   useEffect(() => {
     if (!locations.length) return;
@@ -907,9 +923,9 @@ export default function MonthlySmartScheduler({
       {error && <div className="monthly-smart-alert is-blocking" role="alert"><AlertTriangle size={16}/><span>{error}</span></div>}
 
       <section className="monthly-smart-ai-usage-entry" aria-label="AI usage reporting">
-        <button type="button" className="btn secondary" disabled={aiUsageBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()}>{aiUsageBusy ? "Loading AI usage…" : "View monthly AI usage"}</button>
+        <button type="button" className="btn secondary" disabled={aiUsageBusy || aiUsageCooldown > 0 || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()}>{aiUsageBusy ? "Refreshing AI usage…" : aiUsageCooldown > 0 ? `Refresh available in ${aiUsageCooldown}s` : "Refresh AI usage"}</button>
         {aiUsageError && <p className="monthly-smart-ai-error" role="alert">{aiUsageError}</p>}
-        {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Provider daily Neurons: not available through this report.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
+        {aiUsage && <div className="monthly-smart-ai-usage" aria-live="polite"><b>AI usage · {aiUsage.month} UTC</b><div className="monthly-smart-ai-usage-grid"><span><strong>{aiUsage.global.modelCalls}/{aiUsage.limits.modelCalls}</strong>Successful model calls</span><span><strong>{aiUsage.global.requests}/{aiUsage.limits.requests}</strong>Request attempts</span><span><strong>{aiUsage.global.cacheHits}</strong>Cache hits</span><span><strong>{aiUsage.global.pendingCalls}</strong>Pending calls</span></div><small>Per-admin caps: {aiUsage.limits.perAdminModelCalls} successful calls and {aiUsage.limits.perAdminRequests} requests. Individual admins are anonymized. Cloudflare daily Neurons: {aiUsage.providerDailyNeurons === null ? (aiUsage.providerUsageStatus === "not_configured" ? "Not connected yet" : aiUsage.providerUsageStatus) : aiUsage.providerDailyNeurons.toLocaleString()} · Last refresh: {aiUsage.refreshedAt ? new Date(aiUsage.refreshedAt).toLocaleTimeString() : "—"}.</small>{aiUsage.admins.length > 0 && <ul>{aiUsage.admins.map((admin) => <li key={admin.admin}>{admin.admin}: {admin.modelCalls} calls · {admin.requests} requests · {admin.cacheHits} cache hits</li>)}</ul>}</div>}
       </section>
 
       <div className="monthly-smart-actions">
@@ -948,7 +964,7 @@ export default function MonthlySmartScheduler({
               <small>Monthly allowance: up to 120 model calls across GMS and 60 per administrator, plus 600 requests across GMS and 200 per administrator. Cached results do not consume the monthly allowance.</small>
             </div>
             <div className="monthly-smart-ai-actions">
-            <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiUsageBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void loadAiUsage()} title="Load admin-only monthly usage counters."> {aiUsageBusy ? "Loading usage…" : "View AI usage"} </button>
+            
             <button type="button" className="btn secondary monthly-smart-ai-button" disabled={aiBusy || !aiWorkerUrl || !aiAccessToken} onClick={() => void explainPreviewWithAi()} title={!aiWorkerUrl || !aiAccessToken ? "The free Cloudflare Worker is not configured yet." : "Use the free daily AI allowance to explain this preview."}>
               <WandSparkles size={16}/>{aiBusy ? "Analyzing preview…" : aiExplanation ? "Refresh AI explanation" : "Explain preview with AI"}
             </button>
