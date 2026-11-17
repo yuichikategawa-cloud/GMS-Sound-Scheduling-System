@@ -322,7 +322,11 @@ export async function requestAiSchedulingExplanation(
   return {
     explanation: [...privateNames.entries()]
       .filter(([key]) => key.startsWith("Church ") || key.startsWith("Service "))
-      .reduce((text, [key, value]) => text.replace(new RegExp(key.split("@")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\text.replaceAll(key.split("@")[0], value)"), "g"), value), payload.explanation)
+      .reduce((text, [key, value]) => {
+        const alias = key.split("@")[0];
+        const escapedAlias = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        return text.replace(new RegExp(escapedAlias, "g"), value);
+      }, payload.explanation)
       .replace(/Servant ([1-9][0-9]*)/g, (match) => {
         const original = [...privateNames.entries()].find(([, alias]) => alias === match);
         return original?.[0] ?? match;
