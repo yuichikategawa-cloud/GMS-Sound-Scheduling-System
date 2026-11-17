@@ -322,8 +322,8 @@ function safeErrorDetails(error: unknown): { name: string; message: string } {
     return {
       name: error.name.slice(0, 80),
       message: error.message
-        .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
-        .replace(/(?:token|secret|key)=?[^\\s&]+/gi, "[redacted]")
+        .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+        .replace(/(?:token|secret|key)=?[^\s&]+/gi, "[redacted]")
         .slice(0, 240),
     };
   }
