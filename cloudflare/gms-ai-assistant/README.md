@@ -90,3 +90,26 @@ deno test --no-lock tests/schedule/aiSchedulingAssistant_test.ts
 deno test --no-lock cloudflare/gms-ai-assistant/tests/worker_test.ts
 deno check cloudflare/gms-ai-assistant/src/index.ts
 ```
+
+
+## Isolated staging Worker
+
+For staging diagnostics, use `wrangler.staging.toml` only. It deploys a separate Worker named `gms-ai-assistant-staging` with its own SQLite-backed Durable Object namespace. It does not reuse the production Worker's Durable Object namespace.
+
+The staging config intentionally sets `GMS_AI_ENABLED = "false"`. The authenticated `usage_report` route is still available for diagnostics, while model inference is disabled. Do not change it to `true` until the Cloudflare account's Workers Free plan has been verified.
+
+Set these secrets on the staging Worker only (never copy production secrets):
+
+```sh
+npx wrangler secret put SUPABASE_URL --config cloudflare/gms-ai-assistant/wrangler.staging.toml
+npx wrangler secret put SUPABASE_ANON_KEY --config cloudflare/gms-ai-assistant/wrangler.staging.toml
+npx wrangler secret put GMS_APP_ORIGIN --config cloudflare/gms-ai-assistant/wrangler.staging.toml
+```
+
+Use the staging Supabase URL and its matching public anon/publishable key. Set `GMS_APP_ORIGIN` to the exact Vercel Preview origin used for the staging app. Deploy only with:
+
+```sh
+npx wrangler deploy --config cloudflare/gms-ai-assistant/wrangler.staging.toml
+```
+
+After deployment, configure `VITE_GMS_AI_WORKER_URL` for the exact Vercel Preview branch to the staging Worker's `/v1/explain` endpoint. Never set this value for Production as part of the staging pilot.
