@@ -4,6 +4,7 @@ import {
   DAILY_GMS_MODEL_CALL_LIMIT,
   DAILY_GMS_REQUEST_LIMIT,
   readBoundedBody,
+  resolveAllowedOrigin,
   extractModelText,
   validateSnapshot,
 } from "../src/index.ts";
@@ -64,6 +65,44 @@ const validSnapshot = {
     roleCounts: { FOH: 3, Monitor: 2, Assistant: 0 },
   }],
 };
+
+Deno.test("Worker allows exact configured origins and comma-separated origin lists", () => {
+  assert(
+    resolveAllowedOrigin("https://gms.example.com", "https://gms.example.com") === "https://gms.example.com",
+    "An explicitly configured HTTPS origin should be accepted.",
+  );
+  assert(
+    resolveAllowedOrigin("https://preview.example.com", "https://gms.example.com, https://preview.example.com") === "https://preview.example.com",
+    "A matching origin in a comma-separated allowlist should be accepted.",
+  );
+});
+
+Deno.test("Worker accepts only this GMS project's HTTPS Vercel Preview hosts", () => {
+  assert(
+    resolveAllowedOrigin(
+      "https://gms-sound-scheduling-system-8kysal6gb-mike-s6.vercel.app",
+      "https://gms.example.com",
+    ) === "https://gms-sound-scheduling-system-8kysal6gb-mike-s6.vercel.app",
+    "A generated Preview URL for the GMS project should be accepted.",
+  );
+  assert(
+    resolveAllowedOrigin("https://another-project-123.vercel.app", "https://gms.example.com") === null,
+    "Unrelated Vercel projects must remain blocked.",
+  );
+  assert(
+    resolveAllowedOrigin("https://gms-sound-scheduling-system-abc.vercel.app.attacker.example", "") === null,
+    "Lookalike hostnames must remain blocked.",
+  );
+  assert(
+    resolveAllowedOrigin("http://gms-sound-scheduling-system-abc.vercel.app", "") === null,
+    "HTTP origins must remain blocked.",
+  );
+});
+
+Deno.test("Worker rejects malformed and non-origin Origin header values", () => {
+  assert(resolveAllowedOrigin("not a URL", "https://gms.example.com") === null, "Malformed origins must be rejected.");
+  assert(resolveAllowedOrigin("https://gms.example.com/path", "https://gms.example.com") === null, "Origin headers must not contain paths.");
+});
 
 Deno.test("Worker validates the allowlisted, anonymized scheduling snapshot", () => {
   const validated = validateSnapshot(validSnapshot);
