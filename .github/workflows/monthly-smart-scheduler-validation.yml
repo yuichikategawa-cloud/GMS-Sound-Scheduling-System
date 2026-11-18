@@ -56,6 +56,10 @@ on:
       - "tsconfig*.json"
       - ".github/workflows/monthly-smart-scheduler-validation.yml"
       - ".github/workflows/phase-1-push-security-validation.yml"
+  pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 permissions:
