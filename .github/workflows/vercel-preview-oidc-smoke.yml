@@ -1,0 +1,60 @@
+name: Vercel protected Preview OIDC smoke test
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-preview-oidc-smoke-develop
+  cancel-in-progress: true
+
+jobs:
+  protected-preview:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Verify unauthenticated access is blocked and GitHub OIDC is accepted
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_URL: https://gms-sound-scheduling-system-git-develop-mike-s6.vercel.app/
+          OIDC_AUDIENCE: https://github.com/yuichikategawa-cloud
+        with:
+          script: |
+            const previewUrl = process.env.PREVIEW_URL;
+            const expectedHost = new URL(previewUrl).host;
+
+            const unauthenticated = await fetch(previewUrl, { redirect: "manual" });
+            core.info(`Unauthenticated request: HTTP ${unauthenticated.status}`);
+            if (![302, 401, 403].includes(unauthenticated.status)) {
+              throw new Error("Preview protection check failed: unauthenticated request was not denied.");
+            }
+
+            const idToken = await core.getIDToken(process.env.OIDC_AUDIENCE);
+            core.setSecret(idToken);
+
+            const authenticated = await fetch(previewUrl, {
+              headers: { "x-vercel-trusted-oidc-idp-token": idToken },
+              redirect: "follow"
+            });
+            const responseBody = await authenticated.text();
+            core.info(`OIDC-authenticated request: HTTP ${authenticated.status}`);
+
+            if (authenticated.status !== 200) {
+              throw new Error(`Vercel did not grant OIDC access (HTTP ${authenticated.status}).`);
+            }
+            if (new URL(authenticated.url).host !== expectedHost) {
+              throw new Error("OIDC request ended outside the protected Preview host.");
+            }
+            if (!/<title>\\s*GMS Sound Scheduling System\\s*<\\/title>/i.test(responseBody)) {
+              throw new Error("OIDC request returned a page other than the GMS Sound Scheduling System Preview.");
+            }
+
+            core.info("PASS: unauthenticated access remains blocked; GitHub Actions OIDC can access the protected develop Preview.");
