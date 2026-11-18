@@ -67,6 +67,10 @@
 .monthly-smart-alert svg{flex:none;margin-top:1px}
 .monthly-smart-alert.is-blocking{border:1px solid #e8b2b8;background:#fff3f3;color:#8d303d}
 .monthly-smart-alert.is-caution{border:1px solid #e8cf9d;background:#fff9ea;color:#76511b}
+.monthly-smart-alert.is-info{border:1px solid #c7d8ee;background:#f0f6ff;color:#274d7a}
+.monthly-smart-alert.is-info>div{min-width:0}
+.monthly-smart-alert.is-info b{display:block;margin-bottom:3px}
+.monthly-smart-alert.is-info small{overflow-wrap:anywhere}
 .monthly-smart-alert ul{margin:5px 0;padding-left:18px}
 .monthly-smart-alert small{display:block;margin-top:4px;color:inherit;opacity:.82}
 .monthly-smart-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -158,6 +162,7 @@
 :root[data-theme="dark"] .monthly-smart-secondary-metrics b{color:#f0f4fb}
 :root[data-theme="dark"] .monthly-smart-alert.is-blocking{background:#482d39;border-color:#805060;color:#ffd4dd}
 :root[data-theme="dark"] .monthly-smart-alert.is-caution,:root[data-theme="dark"] .monthly-smart-issues{background:#443725;border-color:#735c39;color:#ffe2b0}
+:root[data-theme="dark"] .monthly-smart-alert.is-info{background:#263c58;border-color:#405e80;color:#d9e8ff}
 :root[data-theme="dark"] .monthly-smart-secondary-metrics{color:#b9c7db}
 :root[data-theme="dark"] .monthly-smart-table-wrap{border-color:#40516d}
 :root[data-theme="dark"] .monthly-smart-table th,:root[data-theme="dark"] .monthly-smart-workload-table th{background:#273852;color:#d6e1f0;border-color:#40516d}
@@ -559,12 +564,10 @@
   outline-offset:1px;
   border-color:var(--focus-border,#818cf8);
 }
-.monthly-smart-disclosure-summary:hover{background:var(--surface-muted,#f5f7fb)}
 .monthly-smart-collapse-icon{flex:none;color:var(--muted,#65738b);transition:transform .2s ease}
 .monthly-smart-disclosure[open]>.monthly-smart-disclosure-summary .monthly-smart-collapse-icon{transform:rotate(180deg)}
 .monthly-smart-disclosure-summary:focus-visible{outline:3px solid var(--focus-border,#818cf8);outline-offset:3px;border-radius:8px}
 :root[data-theme="dark"] .monthly-smart-disclosure-summary{border-bottom-color:#536580}
-:root[data-theme="dark"] .monthly-smart-disclosure-summary:hover{background:#24344d}
 :root[data-theme="dark"] .monthly-smart-collapse-icon{color:#e3ebf7}
 :root[data-theme="dark"] .monthly-smart-collapse-icon{
   background:transparent;
