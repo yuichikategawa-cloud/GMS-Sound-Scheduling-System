@@ -125,6 +125,16 @@ BEGIN
   VALUES (v_prefix || '_role_limited', true, ARRAY['FOH']::text[])
   RETURNING id INTO v_role_limited;
 
+  -- Provision church-specific qualifications for every synthetic servant
+  -- before assignments are inserted, matching the production role trigger.
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  SELECT s.id, l.id, r.role
+  FROM public.servants s
+  CROSS JOIN public.locations l
+  CROSS JOIN LATERAL unnest(s.qualified_roles) AS r(role)
+  WHERE s.full_name LIKE v_prefix || '%'
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
+
   INSERT INTO public.service_templates(
     location_id, day_of_week, service_name, start_time, end_time, active
   ) VALUES
