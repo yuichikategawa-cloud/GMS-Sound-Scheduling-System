@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, WandSparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, Info, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type { AvailabilityRecord, ServingPreferenceRecord, ServingRequestRecord } from "../../../shared/contracts/scheduling.ts";
 import { buildMonthlyScheduleSlots } from "../services/monthlyScheduleGeneration";
