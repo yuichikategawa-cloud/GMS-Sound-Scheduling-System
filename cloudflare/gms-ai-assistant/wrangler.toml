@@ -17,6 +17,16 @@ class_name = "AiBudgetGuard"
 tag = "v1"
 new_sqlite_classes = ["AiBudgetGuard"]
 
-# Leave disabled until the Cloudflare account is confirmed to be on Workers Free.
+# Production AI is approved for the confirmed Cloudflare Workers Free account.
+# The Worker still fails closed if analytics credentials or usage data are unavailable.
+[secrets]
+required = [
+  "SUPABASE_URL",
+  "SUPABASE_ANON_KEY",
+  "GMS_APP_ORIGIN",
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_API_TOKEN",
+]
+
 [vars]
-GMS_AI_ENABLED = "false"
+GMS_AI_ENABLED = "true"
