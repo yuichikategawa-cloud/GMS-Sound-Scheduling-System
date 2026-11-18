@@ -179,22 +179,49 @@ jobs:
         run: test -n "$STAGING_DATABASE_URL" || (echo "STAGING_DATABASE_URL is required and must point only to staging" && exit 1)
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes postgresql-client
-      - name: Apply assignment-confirmation notification idempotency migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261107182600_gms_assignment_confirmation_notification_idempotency.sql
-      - name: Apply authenticated TRUNCATE hardening migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261109112851_revoke_authenticated_public_truncate.sql
-      - name: Apply additive monthly schedule plan RPC to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111113446_gms_monthly_schedule_plan_apply.sql
-      - name: Harden monthly RPC temporary tables in staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111114149_gms_monthly_schedule_plan_temp_table_hardening.sql
-      - name: Add one-off special services and servant role qualifications
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261111163911_gms_special_service_and_servant_role_qualifications.sql
-      - name: Apply bulk-assignment pending-request guard migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261116000000_gms_bulk_assignment_pending_request_guard.sql
-      - name: Apply atomic weekend-template replacement migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261117000000_gms_atomic_weekend_schedule_replace.sql
-      - name: Apply anonymous public privilege hardening migration to staging
-        run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/migrations/20261118000000_gms_anonymous_public_privilege_hardening.sql
+      - name: Verify staging target and required schema without replaying migrations
+        shell: bash
+        run: |
+          case "$STAGING_DATABASE_URL" in
+            *uurgomjrsvzfmcpsnitu*) ;;
+            *)
+              echo "Refusing SQL validation: STAGING_DATABASE_URL is not the approved staging project."
+              exit 1
+              ;;
+          esac
+          psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --command "
+          DO \$schema_check\$
+          DECLARE
+            monthly_rpc regprocedure := to_regprocedure('public.admin_apply_monthly_schedule_plan(date,jsonb,jsonb,boolean)');
+          BEGIN
+            IF monthly_rpc IS NULL THEN
+              RAISE EXCEPTION 'Staging schema is missing admin_apply_monthly_schedule_plan';
+            END IF;
+            IF position('new_special' in pg_get_functiondef(monthly_rpc)) = 0 THEN
+              RAISE EXCEPTION 'Staging monthly RPC is stale: special-service support is missing';
+            END IF;
+            IF position('gms_availability_rule_matches' in pg_get_functiondef(monthly_rpc)) = 0 THEN
+              RAISE EXCEPTION 'Staging monthly RPC is stale: recurring availability guard is missing';
+            END IF;
+            IF to_regclass('public.servant_location_roles') IS NULL THEN
+              RAISE EXCEPTION 'Staging schema is missing servant_location_roles';
+            END IF;
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_trigger
+              WHERE tgname = 'gms_enforce_servant_location_role'
+                AND tgrelid = 'public.assignments'::regclass
+                AND NOT tgisinternal
+            ) THEN
+              RAISE EXCEPTION 'Staging schema is missing church-specific assignment qualification enforcement';
+            END IF;
+            IF to_regprocedure('public.admin_bulk_assignments_grouped(jsonb,text)') IS NULL THEN
+              RAISE EXCEPTION 'Staging schema is missing grouped bulk assignment guard';
+            END IF;
+            IF to_regprocedure('public.admin_replace_generated_weekend_schedules(jsonb)') IS NULL THEN
+              RAISE EXCEPTION 'Staging schema is missing atomic weekend schedule replacement';
+            END IF;
+          END
+          \$schema_check\$;";
       - name: Run rollback-only assignment-confirmation notification idempotency regression
         run: psql "$STAGING_DATABASE_URL" --no-psqlrc --set ON_ERROR_STOP=1 --file supabase/tests/assignment_confirmation_notification_idempotency.sql
       - name: Run rollback-only bulk-assignment pending-request guard regression
