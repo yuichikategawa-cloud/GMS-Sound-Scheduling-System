@@ -158,6 +158,12 @@ const HISTORICAL_PRIMARY_ROLES: Readonly<Record<string, Role>> = {
 
 const MANUAL_ONLY_NAMES = new Set(["David Karel", "Deddy", "Kevin Award"]);
 
+// A confirmed historical label variation. Keep all other names exact-match only:
+// retired team members must never be fuzzy-matched to a current servant.
+const HISTORICAL_NAME_ALIASES: Readonly<Record<string, string>> = {
+  "John Wesley": "Jhon Wesley",
+};
+
 function normalizeName(value: string): string {
   return value.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ");
 }
@@ -212,7 +218,8 @@ export function mapHistoricalRosterProfiles(
   const ambiguousManualOnlyServantIds: string[] = [];
 
   for (const entry of readHistoricalWorkloadRows()) {
-    const matches = servantsByName.get(normalizeName(entry.name)) ?? [];
+    const currentName = HISTORICAL_NAME_ALIASES[entry.name] ?? entry.name;
+    const matches = servantsByName.get(normalizeName(currentName)) ?? [];
     const isManualOnly = MANUAL_ONLY_NAMES.has(entry.name);
 
     if (matches.length !== 1) {
