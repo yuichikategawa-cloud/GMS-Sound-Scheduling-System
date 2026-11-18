@@ -4,7 +4,7 @@ import type {
   RecurringAvailabilityRule,
 } from "./recurringAvailability.ts";
 import type { ServingPreferenceRecord } from "../../../shared/contracts/scheduling.ts";
-export type { ServingPreferenceRecord } from "../../../shared/contracts/scheduling.ts";
+export type { ServingPreferenceRecord, ServingPreferenceRuleType } from "../../../shared/contracts/scheduling.ts";
 
 interface AvailabilityQueryResult<T> {
   data: T | null;
