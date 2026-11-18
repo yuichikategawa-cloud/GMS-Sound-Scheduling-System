@@ -3,23 +3,8 @@ import type {
   AvailabilityRecord,
   RecurringAvailabilityRule,
 } from "./recurringAvailability.ts";
-
-export type ServingPreferenceRuleType = "allowed_time_window" | "allowed_service_scope";
-
-export interface ServingPreferenceRecord {
-  id: string;
-  servant_id: string;
-  rule_type: ServingPreferenceRuleType;
-  days_of_week?: number[] | null;
-  start_time?: string | null;
-  end_time?: string | null;
-  location_id?: string | null;
-  service_names?: string[] | null;
-  notes?: string | null;
-  active: boolean;
-  effective_from?: string | null;
-  effective_until?: string | null;
-}
+import type { ServingPreferenceRecord } from "../../../shared/contracts/scheduling.ts";
+export type { ServingPreferenceRecord } from "../../../shared/contracts/scheduling.ts";
 
 interface AvailabilityQueryResult<T> {
   data: T | null;
