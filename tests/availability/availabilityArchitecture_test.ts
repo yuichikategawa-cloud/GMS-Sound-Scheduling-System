@@ -17,8 +17,10 @@ Deno.test("Availability owns its workspace UI, orchestration, and read boundary"
     readRepoFile("src/app/services/dashboardData.ts"),
     readRepoFile("src/app/hooks/useDashboardLoader.ts"),
   ]);
-  assert(app.includes('import AvailabilityWorkspace from "./features/availability/components/AvailabilityWorkspace";'),
-    "App should compose the Availability-owned workspace component.");
+  assert(
+    app.includes('const AvailabilityWorkspace = lazy(() => import("./features/availability/components/AvailabilityWorkspace"));'),
+    "App should lazy-compose the Availability-owned workspace component through its app boundary.",
+  );
   assert(app.includes("useAvailabilityActions("), "App should compose Availability actions through the feature hook.");
   assert(app.includes('from "./app/hooks/useDashboardLoader"') &&
     dashboardLoader.includes('from "../services/dashboardData"'),
@@ -63,8 +65,10 @@ Deno.test("Requests and Inbox accept Notifications through app composition, not 
     assert(source.includes("notificationSettings:ReactNode") && source.includes("{notificationSettings}"),
       path + " must render notification settings through its composition slot.");
   }
-  assert(app.includes('import PushNotificationSettings from "./features/notifications/components/PushNotificationSettings";'),
-    "App should compose the Notifications presentation component.");
+  assert(
+    app.includes('const PushNotificationSettings = lazy(() => import("./features/notifications/components/PushNotificationSettings"));'),
+    "App should lazy-compose the Notifications presentation component through its app boundary.",
+  );
   assert((app.match(/notificationSettings=\{/g) ?? []).length === 2,
     "App should supply settings to admin Requests and member Inbox.");
 });
