@@ -40,6 +40,9 @@ BEGIN
   INSERT INTO public.servants(full_name,active,auth_user_id)
   VALUES('GMS rollback-only temporal test servant',true,v_servant_user)
   RETURNING id INTO v_servant;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES (v_servant, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   UPDATE public.profiles SET role='servant' WHERE id=v_servant_user;
   PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
   IF public.is_admin() THEN RAISE EXCEPTION 'Temporary servant JWT unexpectedly resolves as admin'; END IF;
