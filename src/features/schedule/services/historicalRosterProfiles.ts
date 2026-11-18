@@ -188,8 +188,9 @@ function readHistoricalWorkloadRows(): HistoricalRosterProfile[] {
 }
 
 /**
- * Exact normalized full-name matching only. Spreadsheet row keys are never
- * treated as Supabase servant IDs. No substring or fuzzy matching is allowed.
+ * Exact normalized full-name matching plus explicitly confirmed historical
+ * aliases only. Spreadsheet row keys are never treated as Supabase servant IDs.
+ * No substring or fuzzy matching is allowed.
  *
  * The workbook's inactive color is not imported: Servant.active remains the
  * authoritative live eligibility flag. Manual-only names are excluded from
