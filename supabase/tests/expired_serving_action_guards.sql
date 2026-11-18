@@ -41,7 +41,9 @@ BEGIN
   VALUES('GMS rollback-only temporal test servant',true,v_servant_user)
   RETURNING id INTO v_servant;
   INSERT INTO public.servant_location_roles (servant_id, location_id, role)
-  VALUES (v_servant, v_location, 'FOH')
+  VALUES
+    (v_servant, v_location, 'FOH'),
+    (v_target_servant, v_location, 'FOH')
   ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   UPDATE public.profiles SET role='servant' WHERE id=v_servant_user;
   PERFORM set_config('request.jwt.claim.sub',v_servant_user::text,true);
