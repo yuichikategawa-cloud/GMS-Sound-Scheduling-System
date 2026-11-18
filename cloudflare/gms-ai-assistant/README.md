@@ -57,7 +57,7 @@ The AI response is advisory text only. Existing eligibility rules, the determini
 
 ## Configuration
 
-The Worker is **disabled by default** in `wrangler.toml`: `GMS_AI_ENABLED = "false"`.
+The Production Worker is **disabled by default** in `wrangler.toml`: `GMS_AI_ENABLED = "false"`. Keep it false unless a separate production release is explicitly approved after the Cloudflare account plan and safeguards have been verified.
 
 Before deploying, confirm the Cloudflare account is Workers Free and create these Worker secrets:
 
@@ -104,7 +104,7 @@ deno check cloudflare/gms-ai-assistant/src/index.ts
 
 For staging diagnostics, use `wrangler.staging.toml` only. It deploys a separate Worker named `gms-ai-assistant-staging` with its own SQLite-backed Durable Object namespace. It does not reuse the production Worker's Durable Object namespace.
 
-The staging config intentionally sets `GMS_AI_ENABLED = "false"`. The authenticated `usage_report` route is still available for diagnostics, while model inference is disabled. Do not change it to `true` until the Cloudflare account's Workers Free plan has been verified.
+The isolated staging config currently sets `GMS_AI_ENABLED = "true"` for the approved staging-only AI pilot. Keep this configuration isolated from Production and verify that the Cloudflare account is on Workers Free before deploying or invoking inference. The Production config remains `false`.
 
 Set these secrets on the staging Worker only (never copy production secrets):
 
@@ -140,4 +140,4 @@ Configure these GitHub repository Actions variables:
 - `STAGING_GMS_APP_ORIGIN`: the exact HTTPS origin of the GMS Preview deployment, under `gms-sound-scheduling-system-*.vercel.app`.
 - `CLOUDFLARE_WORKERS_FREE_CONFIRMED`: set to `true` only after confirming the Cloudflare account is on Workers Free.
 
-The workflow checks the staging Supabase project URL and the publishable-key format before deployment. If any required secret or the Workers Free confirmation variable is missing, it skips the deployment and lists only the missing setting names. It never prints secret values. The staging Worker remains configured with `GMS_AI_ENABLED=false`, so this deployment is for authenticated usage-report diagnostics and does not invoke the model.
+The workflow checks the staging Supabase project URL, publishable-key format and explicit Workers Free confirmation before deployment. If any required secret or confirmation is missing, it skips deployment and lists only missing setting names. It never prints secret values. The isolated staging Worker configuration is enabled for the staging pilot; do not copy that setting into Production.
