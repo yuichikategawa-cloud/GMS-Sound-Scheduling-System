@@ -43,9 +43,9 @@ Deno.test("Servant management workflows are owned by the Servants feature hook",
     "Every administrative Servants action must retain the existing client and admin guard.");
   assert(panel.includes("onToggle") && panel.includes("onLink") && panel.includes("onAdd"),
     "Servant information presentation must continue to receive its actions through callbacks.");
-  assert(app.includes('import AddServantDialog from "./features/servants/components/AddServantDialog";') &&
+  assert(app.includes('const AddServantDialog = lazy(() => import("./features/servants/components/AddServantDialog"));') &&
     app.includes("<AddServantDialog onClose={()=>setModal(null)} onSave={servantActions.savePerson}/>"),
-    "App must compose the Add Servant dialog from the Servants feature.");
+    "App must lazy-compose the Add Servant dialog through the Servants feature boundary.");
   assert(!app.includes("function PersonModal(") && !app.includes("function PeoplePanel("),
     "Servants presentation components must not remain embedded in App.");
   assert(addDialog.includes("onSave") && addDialog.includes("onClose") &&

@@ -1,0 +1,92 @@
+name: Vercel protected Preview OIDC smoke test
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-preview-oidc-smoke-develop
+  cancel-in-progress: true
+
+jobs:
+  protected-preview:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Install Playwright and Chromium
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/gms-oidc-playwright" --no-audit --no-fund playwright
+          "$RUNNER_TEMP/gms-oidc-playwright/node_modules/.bin/playwright" install --with-deps chromium
+
+      - name: Verify protection and open the protected Preview in Chromium
+        uses: actions/github-script@v9
+        env:
+          PREVIEW_URL: https://gms-sound-scheduling-system-git-develop-mike-s6.vercel.app/
+          OIDC_AUDIENCE: https://github.com/yuichikategawa-cloud
+        with:
+          script: |
+            const playwrightPath = process.env.RUNNER_TEMP + "/gms-oidc-playwright/node_modules/playwright";
+            const { chromium } = require(playwrightPath);
+            const previewUrl = process.env.PREVIEW_URL;
+            const expectedOrigin = new URL(previewUrl).origin;
+
+            const unauthenticated = await fetch(previewUrl, { redirect: "manual" });
+            core.info("Unauthenticated request: HTTP " + unauthenticated.status);
+            if (![302, 401, 403].includes(unauthenticated.status)) {
+              throw new Error("Preview protection check failed: unauthenticated request was not denied.");
+            }
+
+            const idToken = await core.getIDToken(process.env.OIDC_AUDIENCE);
+            core.setSecret(idToken);
+
+            const browser = await chromium.launch({ headless: true });
+            try {
+              const page = await browser.newPage();
+              await page.route("**/*", async (route) => {
+                const requestUrl = new URL(route.request().url());
+                if (requestUrl.origin === expectedOrigin) {
+                  const headers = {
+                    ...route.request().headers(),
+                    "x-vercel-trusted-oidc-idp-token": idToken
+                  };
+                  await route.continue({ headers });
+                } else {
+                  await route.continue();
+                }
+              });
+
+              const response = await page.goto(previewUrl, {
+                waitUntil: "domcontentloaded",
+                timeout: 45000
+              });
+              const status = response ? response.status() : 0;
+              const finalOrigin = new URL(page.url()).origin;
+              const title = await page.title();
+
+              core.info("Chromium navigation response: HTTP " + status);
+              core.info("Chromium page title: " + title);
+
+              if (status !== 200) {
+                throw new Error("Chromium did not receive HTTP 200 from the protected Preview.");
+              }
+              if (finalOrigin !== expectedOrigin) {
+                throw new Error("Chromium was redirected outside the protected Preview origin.");
+              }
+              if (title !== "GMS Sound Scheduling System") {
+                throw new Error("Chromium did not load the expected GMS application page.");
+              }
+
+              core.info("PASS: unauthenticated access is blocked and Chromium loads the protected Preview using GitHub OIDC.");
+            } finally {
+              await browser.close();
+            }
