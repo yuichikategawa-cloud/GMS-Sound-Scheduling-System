@@ -1,6 +1,6 @@
 import { localDateKey } from "../../../shared/formatters.ts";
-
-export type AvailabilityStatus = "available" | "unavailable" | "prefer_not";
+import type { AvailabilityRecord, AvailabilityStatus } from "../../../shared/contracts/scheduling.ts";
+export type { AvailabilityRecord, AvailabilityStatus } from "../../../shared/contracts/scheduling.ts";
 export type RecurringAvailabilityPattern =
   | "weekday"
   | "saturday"
@@ -22,16 +22,6 @@ export interface RecurringAvailabilityRule {
   ordinal?: string | number | null;
   weekdays?: number[] | null;
   interval_weeks?: string | number | null;
-}
-
-export interface AvailabilityRecord {
-  id?: string;
-  servant_id: string;
-  service_date: string;
-  status: AvailabilityStatus;
-  notes?: string | null;
-  is_recurring?: boolean;
-  rule_id?: string;
 }
 
 export interface VirtualAvailabilityRecord extends AvailabilityRecord {
