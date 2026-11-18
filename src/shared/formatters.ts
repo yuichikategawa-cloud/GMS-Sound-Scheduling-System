@@ -47,13 +47,28 @@ export function isScheduleUpcoming(serviceDate: string, startTime: string, now =
   return serviceWallTime > nowWallTime;
 }
 
-export const fmtDate = (d: string) =>
-  new Date(`${d}T12:00:00`).toLocaleDateString("en-US", {
+/** Display dates consistently as "Fri, Nov 20, 2026" across the application. */
+export const fmtDate = (value: string): string => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return value;
+
+  const date = new Date(`${value}T12:00:00`);
+  if (!Number.isFinite(date.getTime()) || localDateKey(date) !== value) return value;
+
+  return date.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
   });
+};
+
+/** Display a timestamp with the shared date format and browser-local time. */
+export const fmtDateTime = (value: string): string => {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  return `${fmtDate(localDateKey(date))} · ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+};
 
 export const shortTime = (t: string) => t?.slice(0, 5) ?? "";
 

@@ -20,6 +20,8 @@ export interface AvailabilityRulePayload {
   effective_until: string | null;
   weekday: number;
   ordinal: number;
+  weekdays: number[];
+  interval_weeks: number;
   notes: string;
 }
 

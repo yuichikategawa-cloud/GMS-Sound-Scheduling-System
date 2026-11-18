@@ -1,0 +1,366 @@
+import type { Location, Role, Servant } from "../../../types.ts";
+import type { AvailabilityRecord } from "../../../shared/contracts/scheduling.ts";
+import type {
+  MonthlyGeneratedAssignment,
+  MonthlyServantWorkload,
+  MonthlyUnfilledPosition,
+} from "./monthlyAssignmentOptimizer.ts";
+import type { MonthlyScheduleSlot } from "./monthlyScheduleGeneration.ts";
+
+const ROLES: Role[] = ["FOH", "Monitor", "Assistant"];
+
+export type AiSchedulingSnapshot = {
+  month: string;
+  summary: {
+    serviceCount: number;
+    requiredPositions: number;
+    filledRequiredPositions: number;
+    unfilledRequiredPositions: number;
+    proposedAssignments: number;
+    frozenServices: number;
+  };
+  churches: Array<{
+    label: string;
+    totalServiceCount: number;
+    omittedServiceCount: number;
+    vacancySummary: Array<{ role: Role; reason: string; count: number }>;
+    services: Array<{
+      label: string;
+      date: string;
+      startTime: string;
+      endTime: string;
+      special: boolean;
+      frozen: boolean;
+      assignments: Array<{
+        servant: string;
+        role: Role;
+        source: "existing" | "proposed" | "manual_preview";
+        qualifiedRoles: Role[];
+        availability: "available" | "unavailable" | "prefer_not" | "unknown";
+      }>;
+      vacancies: Array<{
+        role: Role;
+        required: boolean;
+        reason: string;
+        blockedCandidateCount: number;
+      }>;
+    }>;
+  }>;
+  workload: Array<{
+    servant: string;
+    totalAssignments: number;
+    servingDays: number;
+    utilizationPercent: number;
+    roleCounts: Record<Role, number>;
+  }>;
+};
+
+/**
+ * Builds a minimized AI context with church, servant and service display names
+ * so administrators can identify issues. IDs, emails, contact details, CG data,
+ * notes and authentication metadata are never sent to the AI provider.
+ */
+export function buildAiSchedulingSnapshot(input: {
+  month: string;
+  locations: readonly Location[];
+  slots: readonly MonthlyScheduleSlot[];
+  generatedAssignments: readonly MonthlyGeneratedAssignment[];
+  unfilledPositions: readonly MonthlyUnfilledPosition[];
+  workloads: readonly MonthlyServantWorkload[];
+  servants: readonly Servant[];
+  availability: readonly AvailabilityRecord[];
+  serviceBatchIndex?: number;
+}): AiSchedulingSnapshot {
+  const servantIds = new Set<string>();
+  for (const slot of input.slots) {
+    for (const assignment of slot.assignments) {
+      if (assignment.servant_id) servantIds.add(assignment.servant_id);
+    }
+  }
+  for (const assignment of input.generatedAssignments) servantIds.add(assignment.servant_id);
+  for (const workload of input.workloads) servantIds.add(workload.servant_id);
+
+  const orderedServantIds = [...servantIds].sort();
+  const servantsById = new Map(input.servants.map((servant) => [servant.id, servant]));
+  const servantLabels = new Map(orderedServantIds.map((id) => [id, servantsById.get(id)?.full_name?.trim() || "Unknown servant"]));
+  const generatedBySlot = new Map<string, MonthlyGeneratedAssignment[]>();
+  for (const assignment of input.generatedAssignments) {
+    const items = generatedBySlot.get(assignment.schedule_key) ?? [];
+    items.push(assignment);
+    generatedBySlot.set(assignment.schedule_key, items);
+  }
+  const vacanciesBySlot = new Map<string, MonthlyUnfilledPosition[]>();
+  for (const vacancy of input.unfilledPositions) {
+    const items = vacanciesBySlot.get(vacancy.schedule_key) ?? [];
+    items.push(vacancy);
+    vacanciesBySlot.set(vacancy.schedule_key, items);
+  }
+
+  const includedChurchIds = new Set(input.slots.map((slot) => slot.location_id));
+  const churchIds = [
+    ...input.locations.filter((location) => includedChurchIds.has(location.id)).map((location) => location.id),
+    ...[...includedChurchIds].filter((id) => !input.locations.some((location) => location.id === id)),
+  ];
+  const churchLabels = new Map(churchIds.map((id) => [id, input.locations.find((location) => location.id === id)?.name?.trim() || "Unknown church"]));
+  const serviceLabels = new Map<string, string>();
+  for (const locationId of churchIds) {
+    const services = input.slots
+      .filter((slot) => slot.location_id === locationId)
+      .slice()
+      .sort((a, b) =>
+        a.service_date.localeCompare(b.service_date) ||
+        a.start_time.localeCompare(b.start_time) ||
+        a.service_name.localeCompare(b.service_name)
+      );
+    services.forEach((slot) => serviceLabels.set(slot.key, slot.service_name));
+  }
+
+  const getAvailability = (servantId: string, date: string) => {
+    const statuses = input.availability
+      .filter((item) => item.servant_id === servantId && item.service_date === date)
+      .map((item) => item.status);
+    if (statuses.includes("unavailable")) return "unavailable" as const;
+    if (statuses.includes("prefer_not")) return "prefer_not" as const;
+    if (statuses.includes("available")) return "available" as const;
+    return "unknown" as const;
+  };
+
+  const churches = churchIds.map((locationId) => {
+    const churchSlots = input.slots
+      .filter((slot) => slot.location_id === locationId)
+      .slice()
+      .sort((a, b) =>
+        a.service_date.localeCompare(b.service_date) ||
+        a.start_time.localeCompare(b.start_time) ||
+        a.service_name.localeCompare(b.service_name)
+      );
+
+    const allServices = churchSlots.map((slot) => {
+        const assignments: AiSchedulingSnapshot["churches"][number]["services"][number]["assignments"] = slot.assignments.map((assignment) => {
+          const servant = servantsById.get(assignment.servant_id);
+          const isManual = Boolean(assignment.preview_manual);
+          const isTeamProposal = Boolean(assignment.preview_team);
+          return {
+            servant: servantLabels.get(assignment.servant_id) ?? "Unlisted servant",
+            role: assignment.role,
+            source: isManual ? "manual_preview" as const : isTeamProposal ? "proposed" as const : "existing" as const,
+            qualifiedRoles: servant?.qualified_roles ?? ROLES,
+            availability: getAvailability(assignment.servant_id, slot.service_date),
+          };
+        });
+
+        for (const assignment of generatedBySlot.get(slot.key) ?? []) {
+          if (assignments.some((item) => item.role === assignment.role)) continue;
+          const servant = servantsById.get(assignment.servant_id);
+          assignments.push({
+            servant: servantLabels.get(assignment.servant_id) ?? "Unlisted servant",
+            role: assignment.role,
+            source: assignment.preview_manual ? "manual_preview" : "proposed",
+            qualifiedRoles: servant?.qualified_roles ?? ROLES,
+            availability: getAvailability(assignment.servant_id, slot.service_date),
+          });
+        }
+
+        return {
+          label: serviceLabels.get(slot.key) ?? "Service",
+          date: slot.service_date,
+          startTime: slot.start_time.slice(0, 5),
+          endTime: slot.end_time.slice(0, 5),
+          special: slot.status === "new_special" || slot.template_id === null,
+          frozen: slot.blocked_reason !== null,
+          assignments,
+          vacancies: (vacanciesBySlot.get(slot.key) ?? []).map((vacancy) => ({
+            role: vacancy.role,
+            required: vacancy.required,
+            reason: vacancy.reason,
+            blockedCandidateCount: vacancy.blocked_candidate_count,
+          })),
+        };
+      });
+    const priorityServices = allServices.slice().sort((a, b) =>
+      (b.vacancies.length - a.vacancies.length) ||
+      (Number(b.special) - Number(a.special)) ||
+      (Number(a.frozen) - Number(b.frozen)) ||
+      a.date.localeCompare(b.date) ||
+      a.startTime.localeCompare(b.startTime)
+    );
+    const batchIndex = Math.max(0, Math.floor(input.serviceBatchIndex ?? 0));
+    const sampledServices = priorityServices.slice(batchIndex * 3, (batchIndex + 1) * 3).sort((a, b) =>
+      a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)
+    );
+    const vacancyCounts = new Map<string, { role: Role; reason: string; count: number }>();
+    for (const vacancy of input.unfilledPositions.filter((item) => item.location_id === locationId)) {
+      const key = vacancy.role + "|" + vacancy.reason;
+      const current = vacancyCounts.get(key) ?? { role: vacancy.role, reason: vacancy.reason, count: 0 };
+      current.count += 1;
+      vacancyCounts.set(key, current);
+    }
+
+    return {
+      label: churchLabels.get(locationId) ?? "Church",
+      totalServiceCount: churchSlots.length,
+      omittedServiceCount: Math.max(0, churchSlots.length - sampledServices.length),
+      vacancySummary: [...vacancyCounts.values()].slice(0, 12),
+      services: sampledServices,
+    };
+  });
+
+  const filledRequiredPositions = input.slots.reduce((count, slot) => {
+    const filledRoles = new Set<Role>();
+    for (const assignment of slot.assignments) {
+      if (assignment.role === "FOH" || assignment.role === "Monitor") filledRoles.add(assignment.role);
+    }
+    for (const assignment of generatedBySlot.get(slot.key) ?? []) {
+      if (assignment.role === "FOH" || assignment.role === "Monitor") filledRoles.add(assignment.role);
+    }
+    return count + filledRoles.size;
+  }, 0);
+
+  return {
+    month: input.month,
+    summary: {
+      serviceCount: input.slots.length,
+      requiredPositions: input.slots.length * 2,
+      filledRequiredPositions,
+      unfilledRequiredPositions: input.unfilledPositions.filter((item) => item.required).length,
+      proposedAssignments: input.generatedAssignments.length,
+      frozenServices: input.slots.filter((slot) => slot.blocked_reason !== null).length,
+    },
+    churches,
+    workload: input.workloads.slice().sort((a, b) => b.utilization - a.utilization).slice(0, 8).map((workload) => ({
+      servant: servantLabels.get(workload.servant_id) ?? "Unlisted servant",
+      totalAssignments: workload.total_assignments,
+      servingDays: workload.serving_days,
+      utilizationPercent: Math.round(workload.utilization * 100),
+      roleCounts: workload.role_counts,
+    })),
+  };
+}
+
+export function resolveAiWorkerEndpoint(endpoint: string): string {
+  const trimmed = endpoint.trim();
+  if (!trimmed) throw new Error("The free AI Worker URL is not configured.");
+  const url = new URL(trimmed);
+  url.search = "";
+  url.hash = "";
+  // Normalize the path as a string so the URL root ("/") becomes an empty base,
+  // rather than being reintroduced by URL.pathname when appending the route.
+  let pathname = url.pathname.replace(/\/{2,}/g, "/").replace(/\/+$/, "");
+  pathname = pathname.replace(/(?:\/v1\/explain)+$/, "/v1/explain");
+  if (pathname.endsWith("/v1/explain")) {
+    url.pathname = pathname;
+    return url.toString();
+  }
+  if (pathname.endsWith("/v1")) pathname += "/explain";
+  else pathname += "/v1/explain";
+  url.pathname = pathname;
+  return url.toString();
+}
+
+export async function requestAiSchedulingExplanation(
+  endpoint: string,
+  accessToken: string,
+  snapshot: AiSchedulingSnapshot,
+  fetcher: typeof fetch = fetch,
+): Promise<{ explanation: string; cached: boolean }> {
+  const snapshotJson = JSON.stringify(snapshot);
+  const snapshotBytes = new TextEncoder().encode(snapshotJson).byteLength;
+  if (snapshotBytes > 7_200) {
+    throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
+  }
+  const privateNames = new Map<string, string>();
+  const aliasToDisplayName = new Map<string, string>();
+  const safeSnapshot: AiSchedulingSnapshot = structuredClone(snapshot);
+  const getServantAlias = (name: string) => {
+    if (!privateNames.has(name)) {
+      const alias = "Servant " + (privateNames.size + 1);
+      privateNames.set(name, alias);
+      aliasToDisplayName.set(alias, name);
+    }
+    return privateNames.get(name)!;
+  };
+  let serviceAliasIndex = 0;
+  safeSnapshot.churches.forEach((church, churchIndex) => {
+    const churchAlias = "Church " + (churchIndex + 1);
+    aliasToDisplayName.set(churchAlias, church.label);
+    church.label = churchAlias;
+    church.services.forEach((service) => {
+      serviceAliasIndex += 1;
+      const serviceAlias = "Service " + serviceAliasIndex;
+      aliasToDisplayName.set(serviceAlias, service.label);
+      service.label = serviceAlias;
+      service.assignments.forEach((assignment) => {
+        assignment.servant = getServantAlias(assignment.servant);
+      });
+    });
+  });
+  safeSnapshot.workload.forEach((item) => {
+    item.servant = getServantAlias(item.servant);
+  });
+  const requestBody = JSON.stringify({ kind: "preview_explanation", snapshot: safeSnapshot });
+  const requestBytes = new TextEncoder().encode(requestBody).byteLength;
+  if (requestBytes > 7_800) {
+    throw new Error("The AI analysis summary is too large to send safely. Reduce the monthly preview details and try again. No schedule changes were made.");
+  }
+  const requestEndpoint = resolveAiWorkerEndpoint(endpoint);
+  const response = await fetcher(requestEndpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + accessToken,
+    },
+    body: requestBody,
+  });
+
+  const payload = await response.json().catch(() => ({})) as {
+    explanation?: unknown;
+    cached?: unknown;
+    error?: unknown;
+    reason?: unknown;
+    limits?: {
+      workersAiNeuronsDailySafety?: number;
+      workersRequestsDailySafety?: number;
+    };
+  };
+
+  if (!response.ok) {
+    if (response.status === 429 && payload.error === "daily_free_limit_reached") {
+      const reasons: Record<string, string> = {
+        workers_ai_neuron_safety_limit: "The GMS daily AI safety ceiling has been reached (75% of the Cloudflare Workers AI Neuron allowance). Try again after the UTC daily reset.",
+        workers_request_safety_limit: "The GMS daily Workers request safety ceiling has been reached (75% of the Cloudflare Workers request allowance). Try again after the UTC daily reset.",
+      };
+      throw new Error((typeof payload.reason === "string" && reasons[payload.reason]) ||
+        "The GMS daily Cloudflare safety ceiling has been reached. Try again after the UTC daily reset.");
+    }
+    const messages: Record<number, string> = {
+      400: "The AI assistant rejected the preview data. Refresh the monthly preview and try again.",
+      401: "Your sign-in session is no longer valid. Sign in again before using the AI assistant.",
+      404: "The AI Worker endpoint was not found. Check that VITE_GMS_AI_WORKER_URL points to the gms-ai-assistant Worker; the /v1/explain path is added automatically.",
+      403: "The AI assistant is not enabled for this account or application origin.",
+      413: "The AI analysis payload is too large. No schedule changes were made; reduce the monthly preview details and try again.",
+      429: "The GMS daily Cloudflare safety ceiling has been reached. Try again after the UTC daily reset.",
+      503: "The free AI service is disabled or temporarily unavailable.",
+    };
+    const code = typeof payload.error === "string" ? payload.error : "";
+    const safeCodes: Record<string, string> = {
+      not_found: "The AI Worker endpoint was not found. Check the configured Worker URL; the /v1/explain path is added automatically.",
+      service_not_configured: "The AI Worker is missing a required configuration. Contact the system administrator.",
+      free_ai_disabled: "The free AI service is currently disabled. Scheduling remains available without AI.",
+      invalid_snapshot: "The AI service could not validate this preview. Refresh the monthly preview and try again.",
+      snapshot_too_large: "This preview is too large for one AI request. Reduce the preview scope and try again.",
+    };
+    throw new Error(safeCodes[code] ?? messages[response.status] ?? "The AI assistant could not complete this request. No schedule changes were made.");
+  }
+
+  if (typeof payload.explanation !== "string" || !payload.explanation.trim()) {
+    throw new Error("The AI service returned an empty explanation.");
+  }
+
+  const restoredExplanation = [...aliasToDisplayName.entries()]
+    .sort(([a], [b]) => b.length - a.length)
+    .reduce((text, [alias, displayName]) => text.split(alias).join(displayName), payload.explanation);
+  return {
+    explanation: restoredExplanation.slice(0, 4000),
+    cached: payload.cached === true,
+  };
+}

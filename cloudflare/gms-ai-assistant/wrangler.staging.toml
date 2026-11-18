@@ -1,0 +1,32 @@
+name = "gms-ai-assistant-staging"
+main = "src/index.ts"
+compatibility_date = "2026-11-11"
+workers_dev = true
+
+# Dedicated staging Worker. Its name creates a separate Worker and a separate
+# SQLite-backed Durable Object namespace; do not deploy this config to production.
+[ai]
+binding = "AI"
+
+[[durable_objects.bindings]]
+name = "AI_GUARD"
+class_name = "AiBudgetGuard"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AiBudgetGuard"]
+
+# Enable invocation logs only for this dedicated staging Worker so its
+# Observability events can be queried. Do not enable logging on other Workers here.
+[observability]
+enabled = true
+
+[observability.logs]
+invocation_logs = true
+head_sampling_rate = 1
+
+# Re-enable free AI inference on the isolated staging Worker.
+# Provider analytics enforce the GMS 75% daily Neuron and request safety ceilings.
+# Production Worker configuration remains unchanged.
+[vars]
+GMS_AI_ENABLED = "true"

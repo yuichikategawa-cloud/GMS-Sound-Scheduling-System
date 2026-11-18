@@ -4,10 +4,14 @@ import {
   createServantRecord,
   linkServantAccountRecord,
   loadServantRecords,
+  loadServantLocationRoleRecords,
+  setServantLocationRoles,
   setServantActive,
+  setServantQualifiedRoles,
   type ServantManagementClient,
   type ServantManagementResponse,
   type ServantRecordsResponse,
+  type ServantLocationRoleRecordsResponse,
 } from "../../src/features/servants/services/servantManagement.ts";
 import type { Servant } from "../../src/types.ts";
 
@@ -36,6 +40,7 @@ interface RecordedCalls {
 function createFakeClient(
   response: ServantManagementResponse = { error: null },
   recordsResponse: ServantRecordsResponse = { data: [], error: null },
+  locationRoleRecordsResponse: ServantLocationRoleRecordsResponse = { data: [], error: null },
 ): {
   client: ServantManagementClient;
   calls: RecordedCalls;
@@ -53,24 +58,32 @@ function createFakeClient(
   const client: ServantManagementClient = {
     from(tableName) {
       calls.from.push(tableName);
+      if (tableName === "servant_location_roles") {
+        return {
+          select: (columns: "*") => {
+            calls.select.push(columns);
+            return locationRoleRecordsResponse;
+          },
+        };
+      }
       return {
-        insert: async values => {
+        insert: async (values: { full_name: string; active: true }) => {
           calls.insert.push(values);
           return response;
         },
-        update: values => {
+        update: (values: { active: boolean } | { qualified_roles: import("../../src/types.ts").Role[] }) => {
           calls.update.push(values);
           return {
-            eq: async (column, value) => {
+            eq: async (column: "id", value: string) => {
               calls.eq.push({ column, value });
               return response;
             },
           };
         },
-        select: columns => {
+        select: (columns: "*") => {
           calls.select.push(columns);
           return {
-            order: async column => {
+            order: async (column: "full_name") => {
               calls.order.push(column);
               return recordsResponse;
             },
@@ -86,6 +99,42 @@ function createFakeClient(
 
   return { client, calls };
 }
+
+Deno.test("servant management loads church-specific role permission rows", async () => {
+  const roleRows = [
+    { servant_id: "servant-1", location_id: "karawaci", role: "FOH" as const },
+    { servant_id: "servant-1", location_id: "alam", role: "Monitor" as const },
+  ];
+  const response = { data: roleRows, error: null };
+  const { client, calls } = createFakeClient({ error: null }, { data: [], error: null }, response);
+  const result = await loadServantLocationRoleRecords(client);
+
+  assertEqual(calls.from, ["servant_location_roles"], "Church qualifications must load from the normalized permission table.");
+  assertEqual(calls.select, ["*"], "The loader must retrieve the complete permission rows.");
+  assertSame(result, response, "Permission records and database errors must pass through unchanged.");
+});
+
+Deno.test("servant management replaces a complete deduplicated church role matrix through the guarded admin RPC", async () => {
+  const { client, calls } = createFakeClient();
+  await setServantLocationRoles(client, "servant-123", {
+    karawaci: ["FOH", "FOH"],
+    alam: ["Monitor"],
+    bsd: [],
+  });
+
+  assertEqual(calls.rpc, [{
+    functionName: "admin_set_servant_location_roles",
+    args: {
+      p_servant_id: "servant-123",
+      p_roles_by_location: {
+        karawaci: ["FOH"],
+        alam: ["Monitor"],
+        bsd: [],
+      },
+    },
+  }], "The admin RPC must receive the full church matrix with duplicate roles removed.");
+  assertEqual(calls.from, [], "The role matrix must be saved transactionally through its admin RPC.");
+});
 
 Deno.test("servant management loads all servant columns ordered by full name", async () => {
   const servantRows: Servant[] = [
@@ -146,6 +195,15 @@ Deno.test("servant management changes only the active flag for the selected serv
     assertEqual(calls.insert, [], "Status changes must not insert a new servant.");
     assertEqual(calls.rpc, [], "Status changes must not invoke an unrelated RPC.");
   }
+});
+
+Deno.test("servant management saves unique qualified sound roles for one servant", async () => {
+  const { client, calls } = createFakeClient();
+  await setServantQualifiedRoles(client, "servant-123", ["FOH", "Monitor", "FOH"]);
+
+  assertEqual(calls.update, [{ qualified_roles: ["FOH", "Monitor"] }], "Role qualifications should be deduplicated before updating.");
+  assertEqual(calls.eq, [{ column: "id", value: "servant-123" }], "Role qualification updates must target the selected servant.");
+  assertEqual(calls.insert, [], "Role qualifications must not create a separate servant record.");
 });
 
 Deno.test("servant management links through the existing admin RPC and trims verified NIJ", async () => {

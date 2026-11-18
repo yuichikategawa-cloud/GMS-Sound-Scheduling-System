@@ -16,8 +16,8 @@ Deno.test("Statistics feature owns presentation and pure calculation", async () 
     readRepoFile("src/features/statistics/components/StatisticsPanel.css"),
   ]);
 
-  assert(app.includes('import StatisticsPanel from "./features/statistics/components/StatisticsPanel";'),
-    "App must compose Statistics through its feature-owned panel.");
+  assert(app.includes('const StatisticsPanel = lazy(() => import("./features/statistics/components/StatisticsPanel"));'),
+    "App must lazy-compose Statistics through its feature-owned panel.");
   assert(app.includes("const statisticsSchedules = useMemo(") &&
     app.includes('schedule.status === "published" && schedule.service_date >= today()') &&
     app.includes('<StatisticsPanel schedules={statisticsSchedules} servants={servants}/>') &&

@@ -70,6 +70,10 @@ BEGIN
   VALUES ('__notification_regression_fixture__', v_owner_user_id)
   RETURNING id INTO v_servant_id;
 
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES (v_servant_id, v_location_id, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
+
   v_service_name := '__notification_regression_' || gen_random_uuid()::text;
 
   INSERT INTO public.schedules (

@@ -3,8 +3,8 @@ import { createPortal } from "react-dom";
 import "./ServantInformationPanel.css";
 import type { ReactNode } from "react";
 import { ChevronDown, Plus, X } from "lucide-react";
-import type { Location, ScheduleView, Servant } from "../../../types";
-import { displayList, errorText } from "../../../shared/formatters";
+import type { Location, Role, ScheduleView, Servant } from "../../../types";
+import { displayList, errorText, fmtDate } from "../../../shared/formatters";
 
 type ServantInformationPanelProps = {
   isAdmin: boolean;
@@ -16,6 +16,7 @@ type ServantInformationPanelProps = {
   requests: any[];
   onAdd: () => void;
   onToggle: (servant: Servant) => void;
+  onSaveLocationRoles: (servant: Servant, rolesByLocation: Record<string, Role[]>) => Promise<boolean>;
   onLink: (servant: Servant, userId: string, verifiedNij: string) => Promise<boolean>;
 };
 
@@ -29,6 +30,7 @@ export default function ServantInformationPanel({
   requests,
   onAdd,
   onToggle,
+  onSaveLocationRoles,
   onLink,
 }: ServantInformationPanelProps) {
   const [query, setQuery] = useState("");
@@ -48,6 +50,10 @@ export default function ServantInformationPanel({
   const [linkBusy, setLinkBusy] = useState<Record<string, boolean>>({});
   const [linkErrors, setLinkErrors] = useState<Record<string, string>>({});
   const [linkingServant, setLinkingServant] = useState<Servant | null>(null);
+  const [roleMatrixDrafts, setRoleMatrixDrafts] = useState<Record<string, Record<string, Role[]>>>({});
+  const [roleBusy, setRoleBusy] = useState<Record<string, boolean>>({});
+  const soundRoles: Role[] = ["FOH", "Monitor", "Assistant"];
+
 
   useEffect(() => {
     if (!linkingServant) return;
@@ -134,6 +140,64 @@ export default function ServantInformationPanel({
   const toggle = (id: string) => setExpanded(current =>
     current.includes(id) ? current.filter(value => value !== id) : [...current, id]
   );
+
+  const roleMatrixFor = (servant: Servant): Record<string, Role[]> => {
+    const saved = servant.qualified_roles_by_location;
+    const fallbackRoles = servant.qualified_roles ?? soundRoles;
+    const matrix = roleMatrixDrafts[servant.id] ?? saved ??
+      Object.fromEntries(locations.map((location) => [location.id, fallbackRoles.slice()]));
+    return Object.fromEntries(locations.map((location) => [
+      location.id,
+      (matrix[location.id] ?? []).slice(),
+    ]));
+  };
+
+  const saveLocationRoles = async (servant: Servant) => {
+    const rolesByLocation = roleMatrixFor(servant);
+    setRoleBusy((current) => ({ ...current, [servant.id]: true }));
+    try {
+      const saved = await onSaveLocationRoles(servant, rolesByLocation);
+      if (saved) {
+        setRoleMatrixDrafts((current) => {
+          const next = { ...current };
+          delete next[servant.id];
+          return next;
+        });
+      }
+    } finally {
+      setRoleBusy((current) => ({ ...current, [servant.id]: false }));
+    }
+  };
+
+  const toggleLocationRole = (
+    servant: Servant,
+    locationId: string,
+    role: Role,
+    checked: boolean,
+  ) => {
+    const current = roleMatrixFor(servant);
+    const selected = current[locationId] ?? [];
+    const next = checked
+      ? [...new Set([...selected, role])]
+      : selected.filter((item) => item !== role);
+    setRoleMatrixDrafts((drafts) => ({
+      ...drafts,
+      [servant.id]: { ...current, [locationId]: next },
+    }));
+  };
+
+  const matrixHasChanges = (servant: Servant): boolean => {
+    const current = roleMatrixFor(servant);
+    const saved = servant.qualified_roles_by_location ??
+      Object.fromEntries(locations.map((location) => [
+        location.id,
+        (servant.qualified_roles ?? soundRoles).slice(),
+      ]));
+    return locations.some((location) =>
+      JSON.stringify([...(current[location.id] ?? [])].sort()) !==
+      JSON.stringify([...(saved[location.id] ?? [])].sort())
+    );
+  };
 
   const submitLink = async (servant: Servant) => {
     const userId = linkChoices[servant.id] ?? "";
@@ -332,12 +396,71 @@ export default function ServantInformationPanel({
                     <p><b>CG Leader:</b> {value({ servant, profile }, "cg_leader_name") || "—"}</p>
                     <p><b>Leader phone(s):</b> {displayList(value({ servant, profile }, "leader_phone_numbers")) || "—"}</p>
                     <p><b>Account:</b> {profile?.username || "No username linked"}</p>
-                    <p><b>Profile verified:</b> {profile?.last_verified_at ? new Date(profile.last_verified_at).toLocaleDateString() : "Not yet verified"}</p>
+                    <p><b>Profile verified:</b> {profile?.last_verified_at ? fmtDate(new Date(profile.last_verified_at).toLocaleDateString("en-CA")) : "Not yet verified"}</p>
                     <p><b>Serving status:</b> {servant.active ? "Active" : "Inactive"}</p>
 
                     <button className={`btn tiny servant-status-toggle ${servant.active ? "danger" : "primary"}`} onClick={() => onToggle(servant)}>
                       {servant.active ? "Deactivate servant" : "Activate servant"}
                     </button>
+                  </div>
+                  <div className="servant-role-qualification">
+                    <div className="servant-role-qualification-heading">
+                      <div>
+                        <span className="servant-role-qualification-eyebrow">SMART SCHEDULING</span>
+                        <h4>Church-specific sound role qualifications</h4>
+                        <p>Approve each position separately for every church. An unchecked church has no eligible roles for this servant.</p>
+                      </div>
+                      <span className="servant-role-qualification-count">
+                        {locations.reduce((count, location) => count + roleMatrixFor(servant)[location.id].length, 0)} role permissions
+                      </span>
+                    </div>
+                    <div className="servant-location-role-grid">
+                      {locations.map((location) => {
+                        const selected = roleMatrixFor(servant)[location.id] ?? [];
+                        return (
+                          <section className="servant-location-role-card" key={location.id} aria-label={location.name + " qualifications"}>
+                            <div className="servant-location-role-heading">
+                              <b>{location.name}</b>
+                              <span>{selected.length ? selected.length + " of 3 roles" : "Not eligible"}</span>
+                            </div>
+                            {isAdmin ? (
+                              <div className="servant-role-qualification-options">
+                                {soundRoles.map((role) => {
+                                  const checked = selected.includes(role);
+                                  return (
+                                    <label key={role} className={checked ? "is-selected" : ""}>
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onChange={(event) => toggleLocationRole(servant, location.id, role, event.target.checked)}
+                                      />
+                                      <span>{role}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="servant-role-readonly-list">
+                                {selected.length
+                                  ? selected.map((role) => <span key={role}>{role}</span>)
+                                  : <small>Not qualified for this church.</small>}
+                              </div>
+                            )}
+                          </section>
+                        );
+                      })}
+                    </div>
+                    {isAdmin && (
+                      <div className="servant-location-role-actions">
+                        <small>These permissions are enforced by Smart Scheduling and the database when assignments are saved.</small>
+                        <button
+                          type="button"
+                          className="btn tiny primary"
+                          disabled={roleBusy[servant.id] || !matrixHasChanges(servant)}
+                          onClick={() => void saveLocationRoles(servant)}
+                        >{roleBusy[servant.id] ? "Saving…" : "Save church qualifications"}</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

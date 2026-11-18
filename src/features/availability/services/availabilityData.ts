@@ -3,23 +3,8 @@ import type {
   AvailabilityRecord,
   RecurringAvailabilityRule,
 } from "./recurringAvailability.ts";
-
-export type ServingPreferenceRuleType = "allowed_time_window" | "allowed_service_scope";
-
-export interface ServingPreferenceRecord {
-  id: string;
-  servant_id: string;
-  rule_type: ServingPreferenceRuleType;
-  days_of_week?: number[] | null;
-  start_time?: string | null;
-  end_time?: string | null;
-  location_id?: string | null;
-  service_names?: string[] | null;
-  notes?: string | null;
-  active: boolean;
-  effective_from?: string | null;
-  effective_until?: string | null;
-}
+import type { ServingPreferenceRecord } from "../../../shared/contracts/scheduling.ts";
+export type { ServingPreferenceRecord, ServingPreferenceRuleType } from "../../../shared/contracts/scheduling.ts";
 
 interface AvailabilityQueryResult<T> {
   data: T | null;
@@ -32,6 +17,7 @@ export interface AvailabilityWorkspaceData {
   preferences: ServingPreferenceRecord[];
   deadline: string;
   optionalErrors: string[];
+  generationErrors: string[];
 }
 
 /** Loads Availability-owned reads and materializes the two-year recurring-rule view. */
@@ -62,6 +48,9 @@ export async function loadAvailabilityWorkspaceData(
   const explicitAvailability = availabilityResult.error ? [] : (availabilityResult.data ?? []);
   const preferences = preferencesResult.error ? [] : (preferencesResult.data ?? []);
   const deadline = deadlineResult.error ? "" : (deadlineResult.data?.value ?? "");
+  const generationErrors = [availabilityResult, rulesResult, preferencesResult]
+    .filter(result => result.error)
+    .map(result => result.error?.message ?? "Availability data required for schedule generation could not be loaded.");
   const optionalErrors = [availabilityResult, rulesResult, preferencesResult, deadlineResult]
     .filter(result => result.error)
     .map(result => result.error?.message ?? "Availability data could not be loaded.");
@@ -72,5 +61,6 @@ export async function loadAvailabilityWorkspaceData(
     preferences,
     deadline,
     optionalErrors,
+    generationErrors,
   };
 }

@@ -1279,8 +1279,20 @@ Deno.test("App owns the startup and profile centering wrapper", async () => {
 
   assert(app.includes('import "./App.css";'),
     "App.tsx must load the stylesheet that owns its centering wrapper.");
-  assert((app.match(/className="center-screen"/g) || []).length === 3,
-    "App must retain its startup, profile-error and profile-loading wrappers.");
+  // Suspense fallbacks also use this App-owned wrapper, so assert the three
+  // required application states rather than an incidental total occurrence count.
+  assert(
+    app.includes('if(!isSupabaseConfigured)return <Suspense fallback={<div className="center-screen">'),
+    "App must retain its startup/setup centering wrapper.",
+  );
+  assert(
+    app.includes('if(!profile)return profileError\n    ? <div className="center-screen"'),
+    "App must retain its profile-error centering wrapper.",
+  );
+  assert(
+    app.includes(': <div className="center-screen"><GmsLoader label="Loading your profile…"/>'),
+    "App must retain its profile-loading centering wrapper.",
+  );
   assert(appCss.includes(".center-screen{"),
     "App.css must own the centering wrapper base layout.");
   assert(appCss.includes(':root[data-theme="dark"] .center-screen{'),
