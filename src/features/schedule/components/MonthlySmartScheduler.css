@@ -564,12 +564,10 @@
   outline-offset:1px;
   border-color:var(--focus-border,#818cf8);
 }
-.monthly-smart-disclosure-summary:hover{background:var(--surface-muted,#f5f7fb)}
 .monthly-smart-collapse-icon{flex:none;color:var(--muted,#65738b);transition:transform .2s ease}
 .monthly-smart-disclosure[open]>.monthly-smart-disclosure-summary .monthly-smart-collapse-icon{transform:rotate(180deg)}
 .monthly-smart-disclosure-summary:focus-visible{outline:3px solid var(--focus-border,#818cf8);outline-offset:3px;border-radius:8px}
 :root[data-theme="dark"] .monthly-smart-disclosure-summary{border-bottom-color:#536580}
-:root[data-theme="dark"] .monthly-smart-disclosure-summary:hover{background:#24344d}
 :root[data-theme="dark"] .monthly-smart-collapse-icon{color:#e3ebf7}
 :root[data-theme="dark"] .monthly-smart-collapse-icon{
   background:transparent;
