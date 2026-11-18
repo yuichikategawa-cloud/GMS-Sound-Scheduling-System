@@ -57,27 +57,27 @@ The AI response is advisory text only. Existing eligibility rules, the determini
 
 ## Configuration
 
-The Production Worker is **disabled by default** in `wrangler.toml`: `GMS_AI_ENABLED = "false"`. Keep it false unless a separate production release is explicitly approved after the Cloudflare account plan and safeguards have been verified.
+The Production Worker is configured with `GMS_AI_ENABLED = "true"` following explicit approval and confirmation that the Cloudflare account is on Workers Free. The configuration declares all five runtime secrets as required, so Wrangler will refuse a deploy if any are missing.
 
-Before deploying, confirm the Cloudflare account is Workers Free and create these Worker secrets:
+Before deployment, open **Workers & Pages → gms-ai-assistant → Settings → Variables and Secrets** and create all of the following as Secret values. Add them together before deploying; do not deploy a partially configured Worker.
 
-```sh
-npx wrangler secret put SUPABASE_URL --config cloudflare/gms-ai-assistant/wrangler.toml
-npx wrangler secret put SUPABASE_ANON_KEY --config cloudflare/gms-ai-assistant/wrangler.toml
-npx wrangler secret put GMS_APP_ORIGIN --config cloudflare/gms-ai-assistant/wrangler.toml
-```
+- `SUPABASE_URL`: `https://zqpmzvhudxprzdfijrtu.supabase.co`.
+- `SUPABASE_ANON_KEY`: the production Supabase publishable/anon key only. Never use a service-role key.
+- `GMS_APP_ORIGIN`: `https://gms-sound-scheduling-system.vercel.app`.
+- `CLOUDFLARE_ACCOUNT_ID`: the account identifier used for daily Workers AI analytics.
+- `CLOUDFLARE_API_TOKEN`: a token with **Account Analytics: Read** only, used by the Worker to query daily Neuron and request usage. This runtime token is separate from the Wrangler login used to deploy.
 
-- `SUPABASE_URL`: the existing GMS Supabase project URL.
-- `SUPABASE_ANON_KEY`: the existing public or anon key only. Never use a service-role key.
-- `GMS_APP_ORIGIN`: one exact origin, including scheme, for example `https://your-preview-domain.example`. Wildcards are rejected.
+Use the Cloudflare dashboard to add the five secrets together, then click Deploy once. Wrangler's `secret put` command creates and deploys a new Worker version immediately, so adding required secrets one at a time through that command can attempt intermediate deployments. Secret values must never be committed to Git or pasted into chat.
 
-Only after those values and the Workers Free plan are reviewed should an administrator manually change `GMS_AI_ENABLED` to `"true"` in the Worker configuration and deploy it:
+After verifying that all five names are present, authenticate Wrangler with device login if localhost callbacks are unavailable, then deploy the production config only:
 
 ```sh
+npx wrangler login --device --browser=false
+npx wrangler whoami
 npx wrangler deploy --config cloudflare/gms-ai-assistant/wrangler.toml
 ```
 
-This repository change does not deploy the Worker or change any Cloudflare account setting.
+Do not use `wrangler.staging.toml` for production. The deploy command validates the five required secret names before uploading. After deployment, confirm the Worker version is active and run the authentication, origin, and fail-closed usage checks documented in the release checklist.
 
 ## Connect a non-production GMS Preview
 
