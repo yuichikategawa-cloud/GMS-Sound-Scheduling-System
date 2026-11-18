@@ -1,0 +1,1038 @@
+/// <reference lib="deno.ns" />
+
+import {
+  getMonthlyAssignmentCandidates,
+  optimizeMonthlyAssignments,
+  type MonthlyAssignmentOptimizerInput,
+} from "../../src/features/schedule/services/monthlyAssignmentOptimizer.ts";
+import type { Role, ScheduleView, Servant } from "../../src/types.ts";
+import type { MonthlyScheduleSlot } from "../../src/features/schedule/services/monthlyScheduleGeneration.ts";
+
+function assertEqual(actual: unknown, expected: unknown, message: string): void {
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(
+      message + "\nExpected: " + JSON.stringify(expected) + "\nActual: " + JSON.stringify(actual),
+    );
+  }
+}
+
+function createServant(id: string, active = true): Servant {
+  return { id, full_name: id.toUpperCase(), active, auth_user_id: null };
+}
+
+function createSlot(
+  date: string,
+  service: string,
+  start: string,
+  end: string,
+  assignments: Array<{ role: Role; servant_id: string }> = [],
+  location = "loc-as",
+): MonthlyScheduleSlot {
+  const key = date + "|" + location + "|" + service;
+  return {
+    key,
+    template_id: "template-" + service.toLowerCase().replace(/\\s+/g, "-"),
+    schedule_id: null,
+    service_date: date,
+    location_id: location,
+    service_name: service,
+    start_time: start,
+    end_time: end,
+    status: "new",
+    assignments: assignments.map((assignment) => ({
+      role: assignment.role,
+      servant_id: assignment.servant_id,
+      servant_name: assignment.servant_id.toUpperCase(),
+      confirmation_status: "pending",
+    })),
+    blocked_reason: null,
+  };
+}
+
+function createSchedule(
+  id: string,
+  date: string,
+  location: string,
+  service: string,
+  start: string,
+  end: string,
+  assigned: Array<{ role: Role; servant_id: string }>,
+): ScheduleView {
+  return {
+    id,
+    service_date: date,
+    location_id: location,
+    service_name: service,
+    start_time: start,
+    end_time: end,
+    status: "draft",
+    location_name: location,
+    assignments: assigned.map((assignment) => ({
+      role: assignment.role,
+      servant_id: assignment.servant_id,
+      servant_name: assignment.servant_id.toUpperCase(),
+      confirmation_status: "pending",
+    })),
+  };
+}
+
+function baseInput(
+  slots: MonthlyScheduleSlot[],
+  servants: Servant[],
+): MonthlyAssignmentOptimizerInput {
+  return {
+    slots,
+    servants,
+    availability: [],
+    preferences: [],
+    schedules: [],
+    includeAssistant: false,
+  };
+}
+
+Deno.test("monthly optimizer treats missing availability as eligible", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const result = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("servant-a"), createServant("servant-b")],
+  ));
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.length, 2, "Both required positions should be filled without explicit availability.");
+  assertEqual(result.unfilledRequiredPositionCount, 0, "Missing availability must not create a vacancy.");
+});
+
+Deno.test("monthly optimizer excludes explicitly unavailable servants", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("unavailable"), createServant("available")],
+  );
+  input.availability = [
+    { servant_id: "unavailable", service_date: "2026-11-08", status: "unavailable" },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.map((assignment) => assignment.servant_id), ["available"], "Unavailable servant must never be assigned.");
+});
+
+Deno.test("monthly optimizer avoids prefer-not candidates when a reasonable alternative exists", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("prefer-not"), createServant("available")],
+  );
+  input.availability = [
+    { servant_id: "prefer-not", service_date: "2026-11-08", status: "prefer_not" },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "available", "The normal candidate should be preferred.");
+  assertEqual(result.warnings.length, 0, "No warning is needed when prefer-not is avoided.");
+});
+
+Deno.test("monthly optimizer can use prefer-not as a visible fallback when no alternative exists", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("prefer-not")],
+  );
+  input.availability = [
+    { servant_id: "prefer-not", service_date: "2026-11-08", status: "prefer_not" },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "prefer-not", "Prefer-not must remain a soft restriction.");
+  assertEqual(result.preferNotWarnings.length, 1, "The use of prefer-not must be disclosed separately from operational warnings.");
+});
+
+Deno.test("monthly optimizer preserves existing assignments and only fills vacant roles", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "locked-foh" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-foh"), createServant("monitor-candidate")],
+  );
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.lockedAssignmentCount, 1, "Existing assignment must be counted as locked.");
+  assertEqual(result.assignments.map((assignment) => assignment.role), ["Monitor"], "Only the vacant Monitor role may be generated.");
+  assertEqual(result.assignments.some((assignment) => assignment.servant_id === "locked-foh"), false, "Existing servant must not be moved or reused in the same service.");
+});
+
+Deno.test("monthly optimizer blocks a servant already committed at another church on the same day", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const schedules = [
+    createSchedule("bsd-existing", "2026-11-08", "loc-bsd", "BSD Service", "17:00", "19:00", [
+      { role: "FOH", servant_id: "cross-church" },
+    ]),
+  ];
+  const input = {
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("cross-church"),
+      createServant("local-candidate"),
+    ]),
+    schedules,
+  };
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "local-candidate", "Different church assignment must block the candidate regardless of time.");
+});
+
+Deno.test("monthly optimizer blocks overlapping services at the same church", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "10:00", "12:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const schedules = [
+    createSchedule("overlap", "2026-11-08", "loc-as", "Earlier Service", "09:00", "11:00", [
+      { role: "FOH", servant_id: "overlapping-candidate" },
+    ]),
+  ];
+  const input = {
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("overlapping-candidate"),
+      createServant("safe-candidate"),
+    ]),
+    schedules,
+  };
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "safe-candidate", "Overlapping service must block the candidate.");
+});
+
+Deno.test("monthly optimizer permits adjacent same-church services", () => {
+  const slot = createSlot("2026-11-08", "Next Service", "11:00", "13:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const schedules = [
+    createSchedule("adjacent", "2026-11-08", "loc-as", "Earlier Service", "09:00", "11:00", [
+      { role: "FOH", servant_id: "candidate" },
+    ]),
+  ];
+  const input = { ...baseInput([slot], [createServant("locked-monitor"), createServant("candidate")]), schedules };
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "candidate", "A service beginning at the prior service's end time is allowed.");
+});
+
+Deno.test("monthly optimizer applies saved time and service-scope restrictions as hard constraints", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("restricted"), createServant("permitted")],
+  );
+  input.preferences = [
+    {
+      servant_id: "restricted",
+      active: true,
+      rule_type: "allowed_service_scope",
+      location_id: "loc-bsd",
+      service_names: ["BSD Service"],
+    },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "permitted", "A servant outside saved service scope must not be selected.");
+});
+
+Deno.test("monthly optimizer assigns constrained positions before positions with more candidates", () => {
+  const slots = [
+    createSlot("2026-11-07", "Service 1", "09:00", "11:00", [
+      { role: "Monitor", servant_id: "monitor-1" },
+    ]),
+    createSlot("2026-11-08", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: "monitor-2" },
+    ]),
+  ];
+  const input = baseInput(
+    slots,
+    [
+      createServant("monitor-1"),
+      createServant("monitor-2"),
+      createServant("flexible"),
+      createServant("service-one-only"),
+    ],
+  );
+  input.preferences = [
+    {
+      servant_id: "service-one-only",
+      active: true,
+      rule_type: "allowed_service_scope",
+      location_id: "loc-as",
+      service_names: ["Service 1"],
+    },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const serviceOne = result.assignments.find((assignment) => assignment.service_name === "Service 1");
+  const serviceTwo = result.assignments.find((assignment) => assignment.service_name === "Service 2");
+  assertEqual(serviceTwo?.servant_id, "flexible", "The flexible candidate should be reserved for the less constrained position.");
+  assertEqual(serviceOne?.servant_id, "service-one-only", "The only eligible candidate should fill their constrained position.");
+});
+
+Deno.test("monthly optimizer uses historical primary-role preference as a soft ranking signal", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("a-general"), createServant("z-foh")],
+  );
+  input.historicalProfiles = [
+    { servant_id: "z-foh", primary_role: "FOH", role_counts: { FOH: 4 } },
+    { servant_id: "a-general", primary_role: "Monitor", role_counts: { Monitor: 4 } },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "z-foh", "Primary role familiarity should outweigh a stable ID tie-break.");
+});
+
+Deno.test("monthly optimizer counts practical service opportunities once per service, not once per role", () => {
+  const slots = [
+    createSlot("2026-11-07", "Service 1", "09:00", "11:00", [
+      { role: "Monitor", servant_id: "monitor-1" },
+    ]),
+    createSlot("2026-11-08", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: "monitor-2" },
+    ]),
+  ];
+  const input = baseInput(
+    slots,
+    [
+      createServant("monitor-1"),
+      createServant("monitor-2"),
+      createServant("flexible"),
+      createServant("service-one-only"),
+    ],
+  );
+  input.preferences = [{
+    servant_id: "service-one-only",
+    active: true,
+    rule_type: "allowed_service_scope",
+    location_id: "loc-as",
+    service_names: ["Service 1"],
+  }];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const flexible = result.workloads.find((item) => item.servant_id === "flexible");
+  const constrained = result.workloads.find((item) => item.servant_id === "service-one-only");
+  assertEqual(flexible?.eligible_opportunities, 2, "Flexible servant has two unique service opportunities.");
+  assertEqual(constrained?.eligible_opportunities, 1, "Constrained servant has one unique service opportunity.");
+});
+
+Deno.test("monthly optimizer treats Assistant as optional and can omit it", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "locked-foh" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const servants = [createServant("locked-foh"), createServant("locked-monitor"), createServant("assistant")];
+
+  const omitted = optimizeMonthlyAssignments({ ...baseInput([slot], servants), includeAssistant: false });
+  if (!omitted.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(omitted.assignments.length, 0, "Assistant is not generated when disabled.");
+  assertEqual(omitted.unfilledRequiredPositionCount, 0, "Optional Assistant does not create a required gap.");
+
+  const included = optimizeMonthlyAssignments({ ...baseInput([slot], servants), includeAssistant: true });
+  if (!included.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(included.assignments.map((assignment) => assignment.role), ["Assistant"], "Assistant is generated when enabled and eligible.");
+});
+
+Deno.test("monthly optimizer stops when an availability or preference read failed", () => {
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")], [createServant("a"), createServant("b")]),
+    dataErrors: ["Availability query failed."],
+  });
+
+  assertEqual(result, {
+    ok: false,
+    reason: "data_unavailable",
+    errors: ["Availability query failed."],
+  }, "A failed data read must fail closed.");
+});
+
+Deno.test("monthly optimizer excludes manual-only servants from automatic allocation", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("manual-only"), createServant("automatic")],
+  );
+  input.autoAssignmentExcludedServantIds = ["manual-only"];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "automatic", "Manual-only servants must remain available for manual selection but not auto-assignment.");
+});
+
+Deno.test("monthly optimizer distinguishes manual-only roster entries from an inactive roster", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const manualOnly = optimizeMonthlyAssignments({
+    ...baseInput([slot], [createServant("manual-a"), createServant("manual-b")]),
+    autoAssignmentExcludedServantIds: ["manual-a", "manual-b"],
+  });
+  if (!manualOnly.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(manualOnly.unfilledPositions.map((position) => position.reason), ["no_auto_assignable_servants", "no_auto_assignable_servants"], "Active manual-only servants must not be reported as inactive.");
+
+  const inactive = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("inactive-a", false), createServant("inactive-b", false)],
+  ));
+  if (!inactive.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(inactive.unfilledPositions.map((position) => position.reason), ["no_active_servants", "no_active_servants"], "An all-inactive roster must be identified separately.");
+});
+
+Deno.test("monthly optimizer freezes a service when a preserved assignment already violates a hard conflict", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "cross-church-servant" },
+  ]);
+  const schedules = [
+    createSchedule("bsd-existing", "2026-11-08", "loc-bsd", "BSD Service", "17:00", "19:00", [
+      { role: "Monitor", servant_id: "cross-church-servant" },
+    ]),
+  ];
+  const input = {
+    ...baseInput([slot], [
+      createServant("cross-church-servant"),
+      createServant("otherwise-eligible"),
+    ]),
+    schedules,
+  };
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(result.assignments.length, 0, "A slot with an existing hard conflict must be frozen.");
+  assertEqual(result.unfilledPositions.map((position) => position.reason), ["preexisting_conflict"], "The vacancy should explain why the service was frozen.");
+  assertEqual(result.skippedServiceCount, 1, "The frozen service should be counted as skipped.");
+});
+
+Deno.test("monthly optimizer uses the historical workbook as a low-weight long-term workload signal", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [createServant("locked-monitor"), createServant("high-history"), createServant("low-history")],
+  );
+  input.historicalProfiles = [
+    {
+      servant_id: "high-history",
+      primary_role: "FOH",
+      role_counts: { FOH: 80 },
+      historical_assignments: 172,
+      historical_serving_days: 59,
+      history_as_of: "2026-11-01",
+    },
+    {
+      servant_id: "low-history",
+      primary_role: "FOH",
+      role_counts: { FOH: 10 },
+      historical_assignments: 10,
+      historical_serving_days: 5,
+      history_as_of: "2026-11-01",
+    },
+  ];
+
+  const result = optimizeMonthlyAssignments(input);
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "low-history", "A lower long-term historic workload should be preferred when all current constraints and recent workload are equal.");
+  const high = result.workloads.find((workload) => workload.servant_id === "high-history");
+  assertEqual(high?.historical_assignments, 172, "The preview should surface the historical assignment baseline.");
+  assertEqual(high?.historical_serving_days, 59, "The preview should surface distinct historical serving days.");
+});
+
+Deno.test("monthly optimizer preserves declined assignments but reports them as uncovered and excludes them from workload", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "declined-servant" },
+    { role: "Monitor", servant_id: "pending-servant" },
+  ]);
+  slot.assignments[0].confirmation_status = "declined";
+  slot.assignments[1].confirmation_status = "pending";
+
+  const result = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("declined-servant"), createServant("pending-servant"), createServant("otherwise-free")],
+  ));
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.length, 0, "Existing declined role rows are preserved and not automatically replaced.");
+  assertEqual(result.lockedAssignmentCount, 2, "Both existing role rows remain preserved.");
+  assertEqual(result.declinedAssignmentCount, 1, "The declined commitment must be counted separately.");
+  assertEqual(result.filledRequiredPositionCount, 1, "A declined assignment is not considered covered.");
+  assertEqual(result.unfilledRequiredPositionCount, 1, "A declined required assignment remains a manual-review gap.");
+  assertEqual(result.unfilledPositions[0].reason, "declined_assignment", "The preview must explain the declined role.");
+  assertEqual(result.workloads.some((workload) => workload.servant_id === "declined-servant"), false, "Declined assignment is excluded from workload.");
+});
+
+Deno.test("monthly optimizer avoids assigning the same servant on both days of a weekend when an alternative exists", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const schedules = [
+    createSchedule("saturday-existing", "2026-11-07", "loc-as", "Saturday Service", "16:00", "18:00", [
+      { role: "FOH", servant_id: "served-saturday" },
+    ]),
+  ];
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("served-saturday"),
+      createServant("fresh-weekend"),
+    ]),
+    schedules,
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments[0].servant_id, "fresh-weekend", "A fresh candidate should be preferred over a servant already assigned Saturday.");
+});
+
+Deno.test("monthly workload history excludes declined assignments from the recent 60-day display", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const oldDeclined = createSchedule("declined-old", "2026-10-25", "loc-as", "Prior Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "declined-servant" },
+  ]);
+  oldDeclined.assignments[0].confirmation_status = "declined";
+
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-foh"),
+      createServant("locked-monitor"),
+      createServant("declined-servant"),
+    ]),
+    schedules: [oldDeclined],
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const workload = result.workloads.find((item) => item.servant_id === "declined-servant");
+  assertEqual(workload?.recent_60_day_assignments, 0, "Declined assignments must not inflate recent workload.");
+  assertEqual(workload?.recent_60_day_days, 0, "Declined assignments must not count as recent serving days.");
+});
+
+Deno.test("monthly fairness counts preserved existing service assignments as practical opportunities", () => {
+  const slot = createSlot("2026-11-15", "New Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const publishedHistory = createSchedule(
+    "published-history",
+    "2026-11-01",
+    "loc-as",
+    "Earlier Published Service",
+    "09:00",
+    "11:00",
+    [{ role: "FOH", servant_id: "history-servant" }],
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([slot], [
+      createServant("locked-monitor"),
+      createServant("history-servant"),
+      createServant("fresh-servant"),
+    ]),
+    schedules: [publishedHistory],
+  });
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  const workload = result.workloads.find((item) => item.servant_id === "history-servant");
+  assertEqual(workload?.existing_assignments, 1, "The preserved historical-month commitment remains part of total workload.");
+  assertEqual(workload?.eligible_opportunities, 2, "The existing commitment and a new eligible service both count as practical opportunities.");
+  assertEqual(workload?.utilization, 0.5, "One preserved assignment across two practical opportunities should produce 50% utilization.");
+});
+
+Deno.test("monthly manual preview candidate lookup excludes hard conflicts and manual-only roster members", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  const input = baseInput(
+    [slot],
+    [
+      createServant("locked-monitor"),
+      createServant("unavailable"),
+      createServant("manual-only"),
+      createServant("available"),
+    ],
+  );
+  input.availability = [
+    { servant_id: "unavailable", service_date: "2026-11-08", status: "unavailable" },
+  ];
+  input.autoAssignmentExcludedServantIds = ["manual-only"];
+
+  const candidates = getMonthlyAssignmentCandidates(input, slot, "FOH");
+  assertEqual(candidates.map((servant) => servant.id), ["available"], "Manual preview selection should offer only live, auto-assignable, conflict-free candidates.");
+});
+
+Deno.test("monthly manual preview candidates retain the current role selection while allowing alternatives", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "manual-selected" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  slot.assignments[0].preview_manual = true;
+
+  const candidates = getMonthlyAssignmentCandidates(
+    baseInput([slot], [
+      createServant("manual-selected"),
+      createServant("locked-monitor"),
+      createServant("alternative"),
+    ]),
+    slot,
+    "FOH",
+  );
+
+  assertEqual(candidates.map((servant) => servant.id), ["alternative", "manual-selected"], "The currently selected manual servant remains selectable, but another locked role blocks that servant.");
+});
+
+Deno.test("monthly optimizer treats manual preview selections as generated, not preserved database assignments", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00", [
+    { role: "FOH", servant_id: "manual-foh" },
+    { role: "Monitor", servant_id: "locked-monitor" },
+  ]);
+  slot.assignments[0].preview_manual = true;
+  const result = optimizeMonthlyAssignments(baseInput(
+    [slot],
+    [createServant("manual-foh"), createServant("locked-monitor")],
+  ));
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.lockedAssignmentCount, 1, "Only the persisted Monitor assignment is locked.");
+  assertEqual(result.generatedAssignmentCount, 1, "The manual preview choice is a generated plan item.");
+  assertEqual(result.assignments[0].preview_manual, true, "The result keeps manual preview provenance.");
+  assertEqual(result.filledRequiredPositionCount, 2, "Manual preview choices count once toward required coverage.");
+  assertEqual(result.workloads.find((item) => item.servant_id === "manual-foh")?.existing_assignments, 0, "A preview-only choice is not reported as an existing persisted assignment.");
+  assertEqual(result.workloads.find((item) => item.servant_id === "manual-foh")?.generated_assignments, 1, "A preview-only choice is included in proposed workload.");
+});
+
+Deno.test("monthly optimizer assigns each role only to servants qualified for that role", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const fohOnly = { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] };
+  const monitorOnly = { ...createServant("monitor-only"), qualified_roles: ["Monitor" as Role] };
+  const result = optimizeMonthlyAssignments(baseInput([slot], [fohOnly, monitorOnly]));
+
+  if (!result.ok) throw new Error("Expected generation to succeed.");
+  assertEqual(result.assignments.map((item) => [item.role, item.servant_id]), [
+    ["FOH", "foh-only"],
+    ["Monitor", "monitor-only"],
+  ], "A servant may only receive a role explicitly listed in their qualifications.");
+});
+
+Deno.test("monthly optimizer reports a role qualification gap instead of assigning an unqualified servant", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const fohOnly = { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] };
+  const result = optimizeMonthlyAssignments(baseInput([slot], [fohOnly]));
+
+  if (!result.ok) throw new Error("Expected a valid partial preview.");
+  assertEqual(result.assignments.map((item) => item.role), ["FOH"], "The qualified FOH position should be filled.");
+  assertEqual(result.unfilledPositions.find((item) => item.role === "Monitor")?.reason, "role_not_qualified", "An unqualified Monitor vacancy should be explained clearly.");
+});
+
+Deno.test("monthly manual candidate lookup filters by role qualifications", () => {
+  const slot = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const candidates = getMonthlyAssignmentCandidates(baseInput(
+    [slot],
+    [
+      { ...createServant("foh-only"), qualified_roles: ["FOH" as Role] },
+      { ...createServant("monitor-only"), qualified_roles: ["Monitor" as Role] },
+    ],
+  ), slot, "Monitor");
+
+  assertEqual(candidates.map((item) => item.id), ["monitor-only"], "Manual preview dropdowns must not offer a servant who is not qualified for the selected role.");
+});
+
+Deno.test("monthly optimizer is deterministic and does not mutate its inputs", () => {
+  const slots = [createSlot("2026-11-08", "Sunday Service", "09:00", "11:00")];
+  const input = baseInput(slots, [createServant("servant-b"), createServant("servant-a")]);
+  const before = JSON.stringify(input);
+  const first = optimizeMonthlyAssignments(input);
+  const second = optimizeMonthlyAssignments(input);
+
+  assertEqual(JSON.stringify(input), before, "Optimizer inputs must not be mutated.");
+  assertEqual(first, second, "The same inputs must produce the same plan.");
+});
+
+
+Deno.test("monthly optimizer applies church-specific qualifications instead of the compatibility role union", () => {
+  const timothy: Servant = {
+    ...createServant("timothy"),
+    qualified_roles: ["FOH", "Monitor"],
+    qualified_roles_by_location: {
+      "loc-karawaci": ["FOH"],
+      "loc-as": ["Monitor"],
+      "loc-bsd": [],
+    },
+  };
+
+  const karawaci = createSlot("2026-11-08", "Service 1", "09:00", "11:00", [], "loc-karawaci");
+  const alamMonitor = createSlot("2026-11-15", "Service 1", "09:00", "11:00", [], "loc-as");
+  const bsd = createSlot("2026-11-22", "Service 1", "09:00", "11:00", [], "loc-bsd");
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([karawaci], [timothy]), karawaci, "FOH").map(item => item.id),
+    ["timothy"],
+    "Timothy should be an FOH candidate at GMS Karawaci.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([alamMonitor], [timothy]), alamMonitor, "Monitor").map(item => item.id),
+    ["timothy"],
+    "Timothy should be a Monitor candidate at GMS Alam Sutera.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([alamMonitor], [timothy]), alamMonitor, "FOH"),
+    [],
+    "Timothy must not be offered as FOH at GMS Alam Sutera.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([karawaci], [timothy]), karawaci, "Monitor"),
+    [],
+    "Timothy must not be offered as Monitor at GMS Karawaci.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(baseInput([bsd], [timothy]), bsd, "FOH"),
+    [],
+    "An explicit empty role list must make Timothy ineligible at GMS BSD despite the compatibility union.",
+  );
+});
+
+Deno.test("monthly optimizer leaves a church role unfilled when a servant is not qualified at that location", () => {
+  const timothy: Servant = {
+    ...createServant("timothy"),
+    qualified_roles: ["FOH", "Monitor"],
+    qualified_roles_by_location: {
+      "loc-karawaci": ["FOH"],
+      "loc-as": ["Monitor"],
+      "loc-bsd": [],
+    },
+  };
+  const bsd = createSlot("2026-11-22", "Service 1", "09:00", "11:00", [], "loc-bsd");
+  const result = optimizeMonthlyAssignments(baseInput([bsd], [timothy]));
+
+  if (!result.ok) throw new Error("Expected a valid partial preview.");
+  assertEqual(result.assignments, [], "No role should be assigned at a church where the servant has no qualification.");
+  assertEqual(
+    result.unfilledPositions.map(item => [item.role, item.reason]),
+    [["FOH", "role_not_qualified"], ["Monitor", "role_not_qualified"]],
+    "The preview should explain the location-specific qualification gap.",
+  );
+});
+
+
+Deno.test("monthly optimizer blocks assignments on the previous or next calendar day across church locations", () => {
+  const servant = createServant("consecutive-day-servant");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const previousDay = createSchedule(
+    "previous-day",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  const nextDay = createSchedule(
+    "next-day",
+    "2026-11-09",
+    "loc-karawaci",
+    "Monday Service",
+    "19:00",
+    "21:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [previousDay] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [],
+    "A servant assigned on the previous calendar day must not be offered, even at another church.",
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [nextDay] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [],
+    "A servant assigned on the next calendar day must not be offered, even at another church.",
+  );
+});
+
+Deno.test("monthly optimizer permits serving again after one full calendar day of rest", () => {
+  const servant = createServant("rested-servant");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const twoDaysPrior = createSchedule(
+    "two-days-prior",
+    "2026-11-06",
+    "loc-bsd",
+    "Friday Service",
+    "19:00",
+    "21:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [twoDaysPrior] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "A non-consecutive assignment two calendar days earlier must remain eligible.",
+  );
+});
+
+Deno.test("monthly optimizer enforces a maximum of four distinct service slots per servant per day", () => {
+  const servant = createServant("daily-limit-servant");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const priorServices = [
+    createSchedule("service-1", "2026-11-08", "loc-as", "Service 1", "07:00", "09:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-2", "2026-11-08", "loc-as", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+    createSchedule("service-3", "2026-11-08", "loc-as", "Service 3", "11:00", "13:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-4", "2026-11-08", "loc-as", "Service 4", "13:00", "15:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+  ];
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: priorServices },
+      target,
+      "FOH",
+    ),
+    [],
+    "A fifth distinct service on the same calendar day must be blocked.",
+  );
+});
+
+Deno.test("monthly optimizer allows the fourth service but never a fifth on the same day", () => {
+  const servant = createServant("fourth-service-servant");
+  const fourth = createSlot("2026-11-08", "Service 4", "13:00", "15:00");
+  const priorServices = [
+    createSchedule("service-1", "2026-11-08", "loc-as", "Service 1", "07:00", "09:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+    createSchedule("service-2", "2026-11-08", "loc-as", "Service 2", "09:00", "11:00", [
+      { role: "Monitor", servant_id: servant.id },
+    ]),
+    createSchedule("service-3", "2026-11-08", "loc-as", "Service 3", "11:00", "13:00", [
+      { role: "FOH", servant_id: servant.id },
+    ]),
+  ];
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fourth], [servant]), schedules: priorServices },
+      fourth,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "Exactly four services in one day is still permitted.",
+  );
+});
+
+Deno.test("monthly optimizer reports a consecutive-day reason when that is the only blocker", () => {
+  const servant = createServant("consecutive-day-only");
+  const target = createSlot("2026-11-08", "Sunday Service", "09:00", "11:00");
+  const previousDay = createSchedule(
+    "previous-day-only",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [servant]),
+    schedules: [previousDay],
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map(position => position.reason),
+    ["consecutive_day_conflict", "consecutive_day_conflict"],
+    "Both required role vacancies should explain that the only servant served on an adjacent day.",
+  );
+});
+
+Deno.test("monthly optimizer reports the four-service daily limit as the vacancy reason", () => {
+  const servant = createServant("daily-limit-only");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const existingServices = [1, 2, 3, 4].map((number) =>
+    createSchedule(
+      "daily-service-" + number,
+      "2026-11-08",
+      "loc-as",
+      "Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: number % 2 ? "FOH" : "Monitor", servant_id: servant.id }],
+    )
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [servant]),
+    schedules: existingServices,
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map(position => position.reason),
+    ["daily_service_limit", "daily_service_limit"],
+    "The preview should explain that all remaining role slots exceed the four-service daily cap.",
+  );
+});
+
+Deno.test("declined assignments do not count toward consecutive-day or daily service limits", () => {
+  const servant = createServant("declined-does-not-count");
+  const target = createSlot("2026-11-08", "Service 5", "15:00", "17:00");
+  const declinedPrevious = createSchedule(
+    "declined-previous",
+    "2026-11-07",
+    "loc-bsd",
+    "Saturday Service",
+    "16:00",
+    "18:00",
+    [{ role: "FOH", servant_id: servant.id }],
+  );
+  declinedPrevious.assignments[0].confirmation_status = "declined";
+  const declinedServices = [1, 2, 3, 4].map((number) => {
+    const schedule = createSchedule(
+      "declined-service-" + number,
+      "2026-11-08",
+      "loc-as",
+      "Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: servant.id }],
+    );
+    schedule.assignments[0].confirmation_status = "declined";
+    return schedule;
+  });
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([target], [servant]), schedules: [declinedPrevious, ...declinedServices] },
+      target,
+      "FOH",
+    ).map(item => item.id),
+    [servant.id],
+    "Declined service assignments are not actual service commitments and must not block eligibility.",
+  );
+});
+
+
+Deno.test("monthly optimizer allows a fourth consecutive service but blocks returning after a skipped service", () => {
+  const abe = createServant("abe");
+  const firstThree = [1, 2, 3].map((number) =>
+    createSchedule(
+      "christmas-" + number,
+      "2026-12-25",
+      "loc-as",
+      "Christmas Special Service - Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: abe.id }],
+    )
+  );
+  const fourth = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 4",
+    "13:00",
+    "15:00",
+  );
+  const fifth = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 5",
+    "15:00",
+    "17:00",
+  );
+
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fourth], [abe]), schedules: firstThree },
+      fourth,
+      "FOH",
+    ).map((servant) => servant.id),
+    [abe.id],
+    "A servant who served Services 1–3 may continue with Service 4 as one uninterrupted block.",
+  );
+
+  const serviceFourTaken = createSchedule(
+    "christmas-4-taken",
+    "2026-12-25",
+    "loc-as",
+    "Christmas Special Service - Service 4",
+    "13:00",
+    "15:00",
+    [{ role: "FOH", servant_id: "another-servant" }],
+  );
+  assertEqual(
+    getMonthlyAssignmentCandidates(
+      { ...baseInput([fifth], [abe]), schedules: [...firstThree, serviceFourTaken] },
+      fifth,
+      "FOH",
+    ),
+    [],
+    "A servant assigned to Services 1–3 cannot return for Service 5 after being skipped for Service 4, even though the daily cap is not reached.",
+  );
+});
+
+Deno.test("monthly optimizer explains when a numbered service would split a servant's continuous block", () => {
+  const abe = createServant("abe");
+  const target = createSlot(
+    "2026-12-25",
+    "Christmas Special Service - Service 5",
+    "15:00",
+    "17:00",
+  );
+  const priorServices = [1, 2, 3, 4].map((number) =>
+    createSchedule(
+      "christmas-sequence-" + number,
+      "2026-12-25",
+      "loc-as",
+      "Christmas Special Service - Service " + number,
+      String(7 + (number - 1) * 2).padStart(2, "0") + ":00",
+      String(9 + (number - 1) * 2).padStart(2, "0") + ":00",
+      [{ role: "FOH", servant_id: number === 4 ? "another-servant" : abe.id }],
+    )
+  );
+  const result = optimizeMonthlyAssignments({
+    ...baseInput([target], [abe]),
+    schedules: priorServices,
+  });
+
+  if (!result.ok) throw new Error("Expected a reviewable partial result.");
+  assertEqual(
+    result.unfilledPositions.map((position) => position.reason),
+    ["service_sequence_gap", "service_sequence_gap"],
+    "The preview should explain that the remaining roles cannot be assigned by skipping Service 4 and returning at Service 5.",
+  );
+});

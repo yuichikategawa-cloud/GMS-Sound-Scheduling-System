@@ -65,6 +65,17 @@ BEGIN
   VALUES ('GMS Bulk Guard New Assignee', true)
   RETURNING id INTO v_servant_new;
 
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  SELECT fixture.servant_id, v_location, 'FOH'
+  FROM (VALUES
+    (v_servant_replacement),
+    (v_servant_swap_source),
+    (v_servant_swap_target),
+    (v_servant_available),
+    (v_servant_new)
+  ) AS fixture(servant_id)
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
+
   v_prefix := 'GMS_TEST_BULK_GUARD_' || left(md5(txid_current()::text), 10);
 
   v_schedule_replacement := public.admin_save_schedule_with_assignments(

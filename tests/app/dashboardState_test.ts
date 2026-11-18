@@ -67,6 +67,7 @@ Deno.test("dashboard state starts with empty collections and enabled notificatio
   assertEqual(state.memberProfile, null, "The member profile should start unset.");
   assertEqual(state.notificationPrefs, defaultNotificationPreferences,
     "Missing preferences should preserve the all-enabled default.");
+  assertEqual(state.scheduleGenerationErrors, [], "Scheduler readiness should start with no stale errors.");
 });
 
 Deno.test("dashboard hydration replaces all dashboard-owned state atomically", () => {
@@ -103,6 +104,7 @@ Deno.test("dashboard hydration replaces all dashboard-owned state atomically", (
       availability_deadlines: false,
       request_updates: true,
     },
+    scheduleGenerationErrors: ["Rules read failed."],
     optionalErrors: [],
   };
 
@@ -112,6 +114,7 @@ Deno.test("dashboard hydration replaces all dashboard-owned state atomically", (
   assertEqual(next.requests, data.requests, "Hydration should install serving requests.");
   assertEqual(next.notificationPrefs, data.notificationPrefs, "Hydration should install notification preferences.");
   assertEqual(next.auditLogs, data.auditLogs, "Hydration should install audit history.");
+  assertEqual(next.scheduleGenerationErrors, data.scheduleGenerationErrors, "Hydration should retain scheduler readiness errors.");
 });
 
 Deno.test("targeted collection updates support functional updates against the latest state", () => {
@@ -180,5 +183,6 @@ Deno.test("session identity reset clears every previous account dashboard datase
   assertEqual(cleared.auditLogs, [], "Audit data from the previous account must be cleared.");
   assertEqual(cleared.accountProfiles, [], "Account lookup data from the previous account must be cleared.");
   assertEqual(cleared.availabilityDeadline, "", "The previous account's deadline state must be reset.");
+  assertEqual(cleared.scheduleGenerationErrors, [], "Scheduler readiness errors must be cleared on identity change.");
   assertEqual(cleared.notificationPrefs, defaultNotificationPreferences, "Notification preferences must return to defaults before the new account loads.");
 });

@@ -307,3 +307,76 @@ Deno.test("recurring availability helpers do not mutate rules, availability, or 
     "Recurring availability helpers should leave all supplied inputs unchanged.",
   );
 });
+
+
+Deno.test("custom weekly recurrence supports multiple weekdays and an every-N-weeks interval", () => {
+  const records = expandRecurringAvailabilityRule(
+    rule({
+      pattern: "custom_weekly",
+      weekdays: [1, 3],
+      interval_weeks: 2,
+      effective_from: "2026-11-02",
+      effective_until: "2026-12-01",
+    }),
+    new Date("2026-12-01T12:00:00"),
+  );
+
+  assertEqual(
+    records.map(record => record.service_date),
+    ["2026-11-02", "2026-11-04", "2026-11-16", "2026-11-18", "2026-11-30"],
+    "Custom weekly rules should repeat selected weekdays every two Monday-based weeks from the effective start week.",
+  );
+});
+
+Deno.test("custom weekly recurrence supports every week and Sunday selection", () => {
+  const records = expandRecurringAvailabilityRule(
+    rule({
+      pattern: "custom_weekly",
+      weekdays: [0, 6],
+      interval_weeks: 1,
+      effective_from: "2026-11-06",
+      effective_until: "2026-11-15",
+    }),
+    new Date("2026-11-15T12:00:00"),
+  );
+
+  assertEqual(
+    records.map(record => record.service_date),
+    ["2026-11-07", "2026-11-08", "2026-11-14", "2026-11-15"],
+    "Custom recurrence should support Saturday and Sunday with the existing Sunday=0 weekday convention.",
+  );
+});
+
+Deno.test("custom weekly recurrence validation rejects empty, duplicate, invalid, or out-of-range inputs", () => {
+  const invalidRules = [
+    rule({ pattern: "custom_weekly", weekdays: [], interval_weeks: 1 }),
+    rule({ pattern: "custom_weekly", weekdays: [1, 1], interval_weeks: 1 }),
+    rule({ pattern: "custom_weekly", weekdays: [7], interval_weeks: 1 }),
+    rule({ pattern: "custom_weekly", weekdays: [1], interval_weeks: 0 }),
+    rule({ pattern: "custom_weekly", weekdays: [1], interval_weeks: 53 }),
+  ];
+
+  for (const candidate of invalidRules) {
+    assertEqual(
+      validateRecurringAvailabilityRule(candidate, [], [], horizon),
+      { ok: false, reason: "invalid_pattern" },
+      "Invalid custom recurrence settings must be rejected before persistence.",
+    );
+  }
+});
+
+Deno.test("custom weekly recurrence validation accepts a valid selected-day interval", () => {
+  const candidate = rule({
+    pattern: "custom_weekly",
+    weekdays: [1, 3, 5],
+    interval_weeks: 3,
+    effective_from: "2026-11-02",
+    effective_until: "2026-12-31",
+  });
+
+  assertEqual(
+    validateRecurringAvailabilityRule(candidate, [], [], horizon),
+    { ok: true },
+    "A non-empty unique weekday selection and an interval from one to 52 weeks should be accepted.",
+  );
+});

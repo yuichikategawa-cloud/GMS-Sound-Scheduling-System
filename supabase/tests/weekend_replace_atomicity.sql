@@ -89,6 +89,12 @@ BEGIN
   VALUES (v_prefix || '_b', true)
   RETURNING id INTO v_servant_b;
 
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_servant_a, v_location, 'FOH'),
+    (v_servant_b, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
+
   v_schedule_a := public.admin_save_schedule_with_assignments(
     NULL,
     jsonb_build_object(
@@ -275,6 +281,12 @@ BEGIN
   VALUES (v_prefix || '_cross', true)
   RETURNING id INTO v_cross_servant;
 
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_cross_servant, v_location, 'FOH'),
+    (v_cross_servant, v_other_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
+
   v_schedule_cross_a := public.admin_save_schedule_with_assignments(
     NULL,
     jsonb_build_object('service_date', '2099-12-26', 'location_id', v_location, 'service_name', v_prefix || '_cross_a', 'start_time', '13:00', 'end_time', '14:00'),
@@ -315,6 +327,11 @@ BEGIN
   INSERT INTO public.servants(full_name, active)
   VALUES (v_prefix || '_overlap', true)
   RETURNING id INTO v_overlap_servant;
+
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_overlap_servant, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
 
   v_schedule_overlap_a := public.admin_save_schedule_with_assignments(
     NULL,
@@ -357,6 +374,11 @@ BEGIN
   INSERT INTO public.servants(full_name, active)
   VALUES (v_prefix || '_swap', true)
   RETURNING id INTO v_swap_servant;
+
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_swap_servant, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
 
   v_schedule_swap_a := public.admin_save_schedule_with_assignments(
     NULL,

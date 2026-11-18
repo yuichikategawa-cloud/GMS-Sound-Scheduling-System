@@ -1,0 +1,419 @@
+name: Monthly Smart Scheduler validation
+
+on:
+  push:
+    branches:
+      - feat/monthly-smart-scheduler-engine
+      - feat/ai-usage-dashboard
+      - feat/free-cloudflare-ai-scheduler
+      - feature/ai-usage-and-explanation-clarity
+      - feature/ai-usage-report-diagnostics
+    paths:
+      - "src/features/schedule/services/monthly*.ts"
+      - "src/features/schedule/services/aiSchedulingAssistant.ts"
+      - "cloudflare/gms-ai-assistant/**"
+      - "src/features/schedule/services/historicalRosterProfiles.ts"
+      - "src/features/schedule/components/MonthlySmartScheduler.*"
+      - "src/features/schedule/components/ScheduleWorkspace.tsx"
+      - "src/App.tsx"
+      - "src/features/servants/**"
+      - "src/features/auth/components/MemberProfilePanel.tsx"
+      - "src/features/audit/components/AuditPanel.tsx"
+      - "src/features/requests/components/RequestsPanel.tsx"
+      - "src/features/requests/components/ServantInbox.tsx"
+      - "src/features/schedule/components/ScheduleWorkspace.tsx"
+      - "src/features/schedule/hooks/useScheduleActions.ts"
+      - "src/features/schedule/services/schedulePersistence.ts"
+      - "src/features/availability/services/availabilityData.ts"
+      - "src/features/availability/services/availabilityPersistence.ts"
+      - "src/features/availability/services/recurringAvailability.ts"
+      - "src/features/availability/components/AvailabilityWorkspace.*"
+      - "src/features/availability/hooks/useAvailabilityActions.ts"
+      - "tests/availability/availabilityPersistence_test.ts"
+      - "tests/availability/recurringAvailability_test.ts"
+      - "supabase/migrations/20261112092936_gms_custom_weekly_availability_rules.sql"
+      - "src/shared/formatters.ts"
+      - "src/app/services/dashboardData.ts"
+      - "src/app/state/dashboardState.ts"
+      - "src/App.tsx"
+      - "tests/schedule/monthly*_test.ts"
+      - "tests/schedule/aiSchedulingAssistant_test.ts"
+      - "tests/cloudflare/aiUsageReport_test.ts"
+      - "tests/schedule/historicalRosterProfiles_test.ts"
+      - "tests/schedule/schedulePersistence_test.ts"
+      - "tests/servants/servantManagement_test.ts"
+      - "tests/availability/availabilityData_test.ts"
+      - "tests/shared/formatters_test.ts"
+      - "supabase/migrations/20261111113446_gms_monthly_schedule_plan_apply.sql"
+      - "supabase/migrations/20261111163911_gms_special_service_and_servant_role_qualifications.sql"
+      - "supabase/migrations/20261112104554_gms_church_specific_servant_role_qualifications.sql"
+# Church-specific qualifications migration filename is kept in sync with the applied staging version.
+      - "supabase/tests/monthly_schedule_plan_apply.sql"
+      - "tests/app/dashboardData_test.ts"
+      - "tests/app/dashboardState_test.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - ".github/workflows/monthly-smart-scheduler-validation.yml"
+      - ".github/workflows/phase-1-push-security-validation.yml"
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test shared date and timestamp formatters
+        run: deno test --no-lock tests/shared/formatters_test.ts
+      - name: Test free AI scheduling context and worker guard
+        run: deno test --no-lock tests/schedule/aiSchedulingAssistant_test.ts cloudflare/gms-ai-assistant/tests/worker_test.ts tests/cloudflare/aiUsageReport_test.ts
+      - name: Type-check free Cloudflare Worker source
+        run: deno check cloudflare/gms-ai-assistant/src/index.ts
+      - name: Test monthly slot generation
+        run: deno test --no-lock tests/schedule/monthlyScheduleGeneration_test.ts
+      - name: Test weekly church serving team patterns
+        run: deno test --no-lock tests/schedule/monthlyServingTeams_test.ts
+      - name: Test monthly assignment optimizer
+        run: deno test --no-lock tests/schedule/monthlyAssignmentOptimizer_test.ts
+      - name: Test servant management and role qualification persistence
+        run: deno test --no-lock tests/servants/servantManagement_test.ts
+      - name: Run read-only December pilot against the inspected Staging snapshot
+        run: deno test --no-lock tests/schedule/monthlyScheduleStagingPilot_test.ts
+      - name: Test historical servant roster mapping
+        run: deno test --no-lock tests/schedule/historicalRosterProfiles_test.ts
+      - name: Test schedule persistence RPC adapters
+        run: deno test --no-lock tests/schedule/schedulePersistence_test.ts
+      - name: Test availability data readiness
+        run: deno test --no-lock tests/availability/availabilityData_test.ts
+      - name: Test recurring availability patterns and persistence
+        run: deno test --no-lock tests/availability/recurringAvailability_test.ts tests/availability/availabilityPersistence_test.ts
+      - name: Test dashboard scheduler readiness propagation
+        run: deno test --no-lock tests/app/dashboardData_test.ts tests/app/dashboardState_test.ts
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Type-check and build
+        run: npm run build
+
+  staging-worker-deploy:
+    name: Deploy isolated staging AI Worker
+    runs-on: ubuntu-latest
+    needs: [deno-tests, frontend-build]
+    if: github.ref == 'refs/heads/feature/ai-usage-report-diagnostics'
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      STAGING_SUPABASE_ANON_KEY: ${{ secrets.STAGING_SUPABASE_ANON_KEY }}
+      STAGING_GMS_APP_ORIGIN: ${{ vars.STAGING_GMS_APP_ORIGIN }}
+      CLOUDFLARE_WORKERS_FREE_CONFIRMED: ${{ vars.CLOUDFLARE_WORKERS_FREE_CONFIRMED }}
+    steps:
+      - name: Check staging-only deployment prerequisites
+        id: preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID STAGING_SUPABASE_URL STAGING_SUPABASE_ANON_KEY STAGING_GMS_APP_ORIGIN; do
+            if [[ -z "${!name:-}" ]]; then missing+=("$name"); fi
+          done
+          if [[ "$CLOUDFLARE_WORKERS_FREE_CONFIRMED" != "true" ]]; then
+            missing+=("repository variable CLOUDFLARE_WORKERS_FREE_CONFIRMED=true (confirm Workers Free plan)")
+          fi
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Staging AI Worker deployment skipped"
+              echo "The deployment workflow is ready, but these staging-only prerequisites are not configured:"
+              for item in "${missing[@]}"; do echo "- $item"; done
+              echo "No Cloudflare deployment was attempted."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [[ "$STAGING_SUPABASE_URL" != "https://uurgomjrsvzfmcpsnitu.supabase.co" ]]; then
+            echo "::error::STAGING_SUPABASE_URL does not match the approved GMS staging Supabase project."
+            exit 1
+          fi
+          case "$STAGING_SUPABASE_ANON_KEY" in
+            sb_publishable_*) ;;
+            *) echo "::error::STAGING_SUPABASE_ANON_KEY must be the staging project's publishable key."; exit 1 ;;
+          esac
+          case "$STAGING_GMS_APP_ORIGIN" in
+            https://gms-sound-scheduling-system-*.vercel.app) ;;
+            *) echo "::error::STAGING_GMS_APP_ORIGIN must be the exact GMS Vercel Preview origin."; exit 1 ;;
+          esac
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Staging-only prerequisites validated; model inference remains disabled."
+
+      - name: Check out source
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.preflight.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Cloudflare API token authentication
+        id: cloudflare_auth
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$RUNNER_TEMP/cloudflare-token-verify.json"
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify)"
+          if [[ "$http_status" != "200" ]]; then
+            echo "::error::Cloudflare API token verification failed (HTTP $http_status)."
+            exit 1
+          fi
+          node --input-type=module - "$response_file" <<'NODE'
+          import { readFileSync } from "node:fs";
+          const payload = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          if (payload.success !== true || payload.result?.status !== "active") {
+            console.error("Cloudflare API token is not active.");
+            process.exit(1);
+          }
+          NODE
+          echo "Cloudflare API token is active."
+
+      - name: Check Cloudflare Account Analytics Read permission
+        id: analytics_access
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          today="$(date -u +%Y-%m-%d)"
+          response_file="$RUNNER_TEMP/cloudflare-workers-analytics.json"
+          query='query GmsWorkersRequestsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) { viewer { accounts(filter: { accountTag: $accountTag }) { workersInvocationsAdaptive(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) { dimensions { scriptName } sum { requests } } } } }'
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --request POST https://api.cloudflare.com/client/v4/graphql \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$(jq -n --arg query "$query" --arg accountTag "$CLOUDFLARE_ACCOUNT_ID" --arg start "${today}T00:00:00.000Z" --arg end "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" '{query:$query,variables:{accountTag:$accountTag,datetimeStart:$start,datetimeEnd:$end}}')")"
+          analytics_status="unavailable"
+          request_rows=0
+          request_total="unavailable"
+          if [[ "$http_status" == "200" ]] && jq -e '((.errors // []) | length == 0) and ((.data.viewer.accounts // []) | length > 0)' "$response_file" >/dev/null; then
+            request_rows="$(jq '[.data.viewer.accounts[0].workersInvocationsAdaptive[]?] | length' "$response_file")"
+            request_total="$(jq '[.data.viewer.accounts[0].workersInvocationsAdaptive[]?.sum.requests // 0] | add // 0' "$response_file")"
+            if [[ "$request_rows" -gt 0 ]]; then
+              analytics_status="estimated"
+            else
+              analytics_status="metric_not_returned"
+            fi
+          elif [[ "$http_status" == "403" ]]; then
+            analytics_status="permission_denied"
+          fi
+          echo "status=$analytics_status" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Account Analytics Read: $analytics_status (HTTP $http_status; rows $request_rows; requests $request_total)"
+          {
+            echo "### Cloudflare Workers request analytics"
+            echo "- Account Analytics Read: $analytics_status."
+            echo "- Workers requests today (adaptive estimate): $request_total across $request_rows script rows."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check Cloudflare Workers AI Neuron analytics
+        id: neuron_usage
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          today="$(date -u +%Y-%m-%d)"
+          response_file="$RUNNER_TEMP/cloudflare-ai-neuron-analytics.json"
+          query='query GmsWorkersAiNeuronsToday($accountTag: string!, $datetimeStart: string!, $datetimeEnd: string!) { viewer { accounts(filter: { accountTag: $accountTag }) { aiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $datetimeStart, datetime_leq: $datetimeEnd }) { dimensions { datetimeHour } sum { totalNeurons } } } } }'
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --request POST https://api.cloudflare.com/client/v4/graphql \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$(jq -n --arg query "$query" --arg accountTag "$CLOUDFLARE_ACCOUNT_ID" --arg start "${today}T00:00:00.000Z" --arg end "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" '{query:$query,variables:{accountTag:$accountTag,datetimeStart:$start,datetimeEnd:$end}}')")"
+
+          neuron_status="unavailable"
+          neuron_rows=0
+          neuron_total="unavailable"
+          if [[ "$http_status" == "200" ]] && jq -e '((.errors // []) | length == 0) and ((.data.viewer.accounts // []) | length > 0)' "$response_file" >/dev/null; then
+            neuron_rows="$(jq '[.data.viewer.accounts[0].aiInferenceAdaptiveGroups[]?] | length' "$response_file")"
+            neuron_total="$(jq '[.data.viewer.accounts[0].aiInferenceAdaptiveGroups[]?.sum.totalNeurons // 0] | add // 0' "$response_file")"
+            if [[ "$neuron_rows" -gt 0 ]]; then
+              neuron_status="estimated"
+            else
+              neuron_status="metric_not_returned"
+            fi
+          elif [[ "$http_status" == "403" ]] || jq -e 'any(.errors[]?; .extensions.code == "authz" or (.message | test("not authorized|permission";"i")))' "$response_file" >/dev/null 2>&1; then
+            neuron_status="permission_denied"
+          fi
+          echo "status=$neuron_status" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Workers AI Neuron analytics: $neuron_status (HTTP $http_status; hourly rows $neuron_rows; total $neuron_total)"
+          {
+            echo "### Cloudflare daily Workers AI Neuron analytics"
+            echo "- GraphQL aiInferenceAdaptiveGroups: $neuron_status (HTTP $http_status)."
+            echo "- Hourly rows returned: $neuron_rows."
+            echo "- Neurons used today (adaptive estimate): $neuron_total."
+            echo "- Missing/error metrics are not substituted with zero."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check Cloudflare Workers Observability permission
+        id: observability_access
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          now_ms="$(date -u +%s%3N)"
+          start_ms="$((now_ms - 3600000))"
+          response_file="$RUNNER_TEMP/cloudflare-observability-check.json"
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --request POST "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/observability/telemetry/query" \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "$(jq -n --argjson from "$start_ms" --argjson to "$now_ms" '{queryId:"gms-workers-observability-permission-check",timeframe:{from:$from,to:$to},view:"calculations",chartType:"aggregate",ignoreSeries:true,dry:true,parameters:{datasets:["cloudflare-workers"],calculations:[{operator:"count",alias:"events"}]}}')")"
+          observability_status="unavailable"
+          event_count="unavailable"
+          sample_interval="unknown"
+          if [[ "$http_status" == "200" ]] && jq -e '.success == true and ((.result.calculations // []) | type == "array")' "$response_file" >/dev/null; then
+            event_count="$(jq '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.value] | add // 0' "$response_file")"
+            sample_interval="$(jq '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.sampleInterval] | max // 1' "$response_file")"
+            if jq -e '.result.calculations | length > 0' "$response_file" >/dev/null; then
+              if jq -e '[.result.calculations[] | select(.alias == "events" or .calculation == "count") | .aggregates[]?.sampleInterval // 1] | any(. > 1)' "$response_file" >/dev/null; then
+                observability_status="estimated"
+              else
+                observability_status="available"
+              fi
+            else
+              observability_status="metric_not_returned"
+            fi
+          elif [[ "$http_status" == "403" ]]; then
+            observability_status="permission_denied"
+          fi
+          echo "status=$observability_status" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Workers Observability query: $observability_status (HTTP $http_status; events $event_count; sample interval $sample_interval)"
+          {
+            echo "### Cloudflare Workers Observability"
+            echo "- Workers Observability Write: $observability_status."
+            echo "- Events observed in the last hour (dry-run): $event_count."
+            echo "- Sample interval: $sample_interval (values above 1 indicate sampled estimates)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check Cloudflare Billing Read permission
+        id: billing_access
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          response_file="$RUNNER_TEMP/cloudflare-billable-usage.json"
+          http_status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+            --header "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/billable-usage")"
+          billing_status="unavailable"
+          if [[ "$http_status" == "200" ]] && node --input-type=module - "$response_file" <<'NODE'
+          import { readFileSync } from "node:fs";
+          const payload = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          process.exit(payload.success === true && Array.isArray(payload.result) ? 0 : 1);
+          NODE
+          then
+            billing_status="available"
+          elif [[ "$http_status" == "403" ]]; then
+            billing_status="permission_denied"
+          fi
+          echo "status=$billing_status" >> "$GITHUB_OUTPUT"
+          echo "Cloudflare Billing Read permission: $billing_status (HTTP $http_status)"
+          {
+            echo "### Cloudflare billing API permission"
+            if [[ "$billing_status" == "available" ]]; then
+              echo "- Billing Read permission: confirmed."
+            elif [[ "$billing_status" == "permission_denied" ]]; then
+              echo "- Billing Read permission: denied. Add Account > Billing > Read to the API token for provider usage metrics."
+            else
+              echo "- Billing API check: unavailable (HTTP $http_status). Core Worker deployment can still proceed; provider metrics will report unavailable."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install staging Worker secrets and deploy
+        id: deploy
+        if: steps.preflight.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          config="cloudflare/gms-ai-assistant/wrangler.staging.toml"
+          printf '%s' "$STAGING_SUPABASE_URL" | npx --yes wrangler@4 secret put SUPABASE_URL --config "$config"
+          printf '%s' "$STAGING_SUPABASE_ANON_KEY" | npx --yes wrangler@4 secret put SUPABASE_ANON_KEY --config "$config"
+          printf '%s' "$STAGING_GMS_APP_ORIGIN" | npx --yes wrangler@4 secret put GMS_APP_ORIGIN --config "$config"
+          printf '%s' "$CLOUDFLARE_API_TOKEN" | npx --yes wrangler@4 secret put CLOUDFLARE_API_TOKEN --config "$config"
+          printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | npx --yes wrangler@4 secret put CLOUDFLARE_ACCOUNT_ID --config "$config"
+          npx --yes wrangler@4 deploy --config "$config" 2>&1 | tee "$RUNNER_TEMP/wrangler-deploy.log"
+          version_id="$(awk '/^Current Version ID:/ { print $4 }' "$RUNNER_TEMP/wrangler-deploy.log" | tail -n 1)"
+          if [[ -z "$version_id" ]]; then
+            echo "::error::Worker deployment completed without a readable version ID."
+            exit 1
+          fi
+          echo "version_id=$version_id" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Isolated staging AI Worker deployed"
+            echo "- Worker name: gms-ai-assistant-staging"
+            echo "- Config: wrangler.staging.toml"
+            echo "- Version ID: $version_id"
+            echo "- Supabase: GMS staging project only"
+            echo "- Cloudflare Billing Read: ${{ steps.billing_access.outputs.status }}"
+            echo "- Cloudflare Account Analytics Read: ${{ steps.analytics_access.outputs.status }}"
+            echo "- Cloudflare daily Neuron usage: ${{ steps.neuron_usage.outputs.status }}"
+            echo "- Cloudflare Workers Observability: ${{ steps.observability_access.outputs.status }}"
+            echo "- Model inference: disabled (GMS_AI_ENABLED=false)"
+            echo "- Production Worker and Production Supabase were not targeted."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify deployed staging Worker endpoint
+        if: steps.preflight.outputs.ready == 'true' && steps.deploy.outputs.version_id != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          worker_url="https://gms-ai-assistant-staging.yuichikategawa.workers.dev"
+          origin="$STAGING_GMS_APP_ORIGIN"
+
+          preflight_status="$(curl --silent --show-error --dump-header "$RUNNER_TEMP/worker-options-headers.txt" --output "$RUNNER_TEMP/worker-options.txt" --write-out '%{http_code}' \
+            --request OPTIONS "$worker_url/v1/explain" \
+            --header "Origin: $origin" \
+            --header "Access-Control-Request-Method: POST" \
+            --header "Access-Control-Request-Headers: authorization,content-type")"
+          if [[ "$preflight_status" != "204" ]] || ! grep -Fqi "Access-Control-Allow-Origin: $origin" "$RUNNER_TEMP/worker-options-headers.txt"; then
+            echo "::error::Staging Worker CORS preflight check failed (HTTP $preflight_status)."
+            exit 1
+          fi
+
+          auth_status="$(curl --silent --show-error --output "$RUNNER_TEMP/worker-auth.json" --write-out '%{http_code}' \
+            --request POST "$worker_url/v1/explain" \
+            --header "Origin: $origin" \
+            --header "Content-Type: application/json" \
+            --data '{"kind":"usage_report"}')"
+          if [[ "$auth_status" != "401" ]] || ! grep -Fq '"error":"unauthorized"' "$RUNNER_TEMP/worker-auth.json"; then
+            echo "::error::Staging Worker unauthenticated request guard returned an unexpected response (HTTP $auth_status)."
+            exit 1
+          fi
+          {
+            echo "### Staging Worker endpoint smoke test"
+            echo "- CORS preflight: passed (HTTP 204)."
+            echo "- Authentication guard: passed (HTTP 401 without a Supabase session)."
+            echo "- Full usage-report response requires an authenticated staging admin session."
+          } >> "$GITHUB_STEP_SUMMARY"
+

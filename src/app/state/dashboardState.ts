@@ -32,6 +32,7 @@ export function createInitialDashboardState(): DashboardState {
     memberProfile: null,
     accountProfiles: [],
     notificationPrefs: { ...defaultNotificationPreferences },
+    scheduleGenerationErrors: [],
   };
 }
 
@@ -86,6 +87,7 @@ export function dashboardStateReducer(
         memberProfile: data.memberProfile,
         accountProfiles: data.accountProfiles,
         notificationPrefs: data.notificationPrefs,
+        scheduleGenerationErrors: data.scheduleGenerationErrors ?? [],
       };
     }
     case "clear-member-data":

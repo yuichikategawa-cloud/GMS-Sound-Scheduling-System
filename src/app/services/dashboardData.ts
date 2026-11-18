@@ -25,7 +25,7 @@ import type {
 export type { NotificationPreferenceState } from "../../features/notifications/services/notificationData";
 import type { AuditLogRecord } from "../../features/audit/services/auditData";
 import { loadAvailabilityWorkspaceData } from "../../features/availability/services/availabilityData";
-import { loadServantRecords, type ServantRecordsResponse } from "../../features/servants/services/servantManagement";
+import { loadServantLocationRoleRecords, loadServantRecords } from "../../features/servants/services/servantManagement";
 import { loadServantDirectoryData, type ServantDirectoryData } from "../../features/servants/services/servantDirectory";
 import { loadServingRequestData, type ServingRequestData } from "../../features/requests/services/requestData";
 import { loadServingNotificationData, type ServingNotificationData } from "../../features/notifications/services/notificationData";
@@ -34,6 +34,7 @@ import { loadRecentAuditLogs, type AuditQueryResponse } from "../../features/aud
 export interface DashboardDataLoaders {
   loadScheduleWorkspaceData: typeof loadScheduleWorkspaceData;
   loadServantRecords: typeof loadServantRecords;
+  loadServantLocationRoleRecords: typeof loadServantLocationRoleRecords;
   loadAvailabilityWorkspaceData: typeof loadAvailabilityWorkspaceData;
   loadServingRequestData: typeof loadServingRequestData;
   loadServingNotificationData: typeof loadServingNotificationData;
@@ -58,12 +59,14 @@ export interface DashboardData {
   memberProfile: ServantDirectoryMember | null;
   accountProfiles: ServantDirectoryAccountProfile[];
   notificationPrefs: NotificationPreferenceState;
+  scheduleGenerationErrors: string[];
   optionalErrors: string[];
 }
 
 const defaultLoaders: DashboardDataLoaders = {
   loadScheduleWorkspaceData,
   loadServantRecords,
+  loadServantLocationRoleRecords,
   loadAvailabilityWorkspaceData,
   loadServingRequestData,
   loadServingNotificationData,
@@ -87,6 +90,7 @@ export async function loadDashboardData(
   const [
     scheduleDataRes,
     servantRes,
+    servantLocationRolesRes,
     availabilityDataRes,
     requestDataRes,
     notificationDataRes,
@@ -95,6 +99,7 @@ export async function loadDashboardData(
   ] = await Promise.all([
     loaders.loadScheduleWorkspaceData(client),
     loaders.loadServantRecords(client),
+    loaders.loadServantLocationRoleRecords(client),
     loaders.loadAvailabilityWorkspaceData(client),
     loaders.loadServingRequestData(client),
     loaders.loadServingNotificationData(client, notificationCutoff, userId),
@@ -111,6 +116,27 @@ export async function loadDashboardData(
     if (result.error) throw result.error;
   }
 
+  const scheduleGenerationErrors = [
+    ...availabilityDataRes.generationErrors,
+    ...(servantLocationRolesRes.error
+      ? [(
+        typeof servantLocationRolesRes.error === "object" &&
+        servantLocationRolesRes.error !== null &&
+        "message" in servantLocationRolesRes.error &&
+        typeof servantLocationRolesRes.error.message === "string"
+      )
+        ? servantLocationRolesRes.error.message
+        : servantLocationRolesRes.error instanceof Error
+        ? servantLocationRolesRes.error.message
+        : "Church-specific servant qualifications could not be loaded. Smart Scheduling is unavailable until they can be verified."]
+      : []),
+    ...(scheduleDataRes.templates.error
+      ? [scheduleDataRes.templates.error.message || "Service templates could not be loaded."]
+      : []),
+    ...(requestDataRes.requests.error
+      ? [requestDataRes.requests.error.message || "Pending serving requests could not be loaded."]
+      : []),
+  ];
   const optionalErrors = [
     ...availabilityDataRes.optionalErrors,
     ...[
@@ -128,7 +154,23 @@ export async function loadDashboardData(
   ];
 
   const locations = (scheduleDataRes.locations.data ?? []) as Location[];
-  const servants = (servantRes.data ?? []) as Servant[];
+  const locationRolesByServant = new Map<string, Record<string, import("../../types").Role[]>>();
+  for (const servant of (servantRes.data ?? []) as Servant[]) {
+    locationRolesByServant.set(
+      servant.id,
+      Object.fromEntries(locations.map((location) => [location.id, []])),
+    );
+  }
+  for (const permission of servantLocationRolesRes.data ?? []) {
+    const byLocation = locationRolesByServant.get(permission.servant_id);
+    if (!byLocation || !locations.some((location) => location.id === permission.location_id)) continue;
+    const current = byLocation[permission.location_id] ?? [];
+    byLocation[permission.location_id] = [...current, permission.role];
+  }
+  const servants = ((servantRes.data ?? []) as Servant[]).map((servant) => ({
+    ...servant,
+    qualified_roles_by_location: locationRolesByServant.get(servant.id) ?? {},
+  }));
   const assignments = (scheduleDataRes.assignments.data ?? []) as Assignment[];
   const schedules = mapSchedules(
     (scheduleDataRes.schedules.data ?? []) as Schedule[],
@@ -169,6 +211,7 @@ export async function loadDashboardData(
         request_updates: true,
       }
       : notificationDataRes.preferences.data,
+    scheduleGenerationErrors,
     optionalErrors,
   };
 }

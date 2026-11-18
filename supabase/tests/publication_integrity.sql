@@ -20,6 +20,10 @@ BEGIN
   v_prefix := 'GMS_TEST_PUBLISH_' || left(md5(txid_current()::text),10);
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_inactive',true) RETURNING id INTO v_inactive;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_inactive, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_inactive_schedule := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-20','location_id',v_location,'service_name',v_prefix||'_inactive','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_inactive)));
@@ -33,6 +37,10 @@ BEGIN
   END;
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_dated',true) RETURNING id INTO v_dated;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_dated, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_dated_schedule := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-21','location_id',v_location,'service_name',v_prefix||'_dated','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_dated)));
@@ -47,6 +55,10 @@ BEGIN
   END;
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_recurring',true) RETURNING id INTO v_recurring;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_recurring, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_recurring_schedule := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-23','location_id',v_location,'service_name',v_prefix||'_recurring','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_recurring)));
@@ -62,6 +74,10 @@ BEGIN
   END;
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_preference',true) RETURNING id INTO v_preference;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_preference, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_preference_schedule := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-24','location_id',v_location,'service_name',v_prefix||'_restricted','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_preference)));
@@ -76,6 +92,11 @@ BEGIN
   END;
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_cross',true) RETURNING id INTO v_cross;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_cross, v_location, 'FOH'),
+    (v_cross, v_other_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_cross_source := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-27','location_id',v_location,'service_name',v_prefix||'_cross_a','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_cross)));
@@ -92,6 +113,10 @@ BEGIN
   END;
 
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_overlap',true) RETURNING id INTO v_overlap;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_overlap, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_overlap_source := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-29','location_id',v_location,'service_name',v_prefix||'_overlap_a','start_time','08:00','end_time','09:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_overlap)));
@@ -111,6 +136,10 @@ BEGIN
     RAISE EXCEPTION 'A rejected publication changed schedule status';
   END IF;
   INSERT INTO public.servants(full_name,active) VALUES(v_prefix||'_valid',true) RETURNING id INTO v_valid;
+  INSERT INTO public.servant_location_roles (servant_id, location_id, role)
+  VALUES
+    (v_valid, v_location, 'FOH')
+  ON CONFLICT (servant_id, location_id, role) DO NOTHING;
   v_valid_schedule := public.admin_save_schedule_with_assignments(NULL,
     jsonb_build_object('service_date','2099-12-31','location_id',v_location,'service_name',v_prefix||'_valid','start_time','11:00','end_time','12:00'),
     jsonb_build_array(jsonb_build_object('role','FOH','servant_id',v_valid)));

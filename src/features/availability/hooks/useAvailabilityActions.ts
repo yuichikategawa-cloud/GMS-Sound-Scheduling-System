@@ -143,6 +143,10 @@ export function useAvailabilityActions(dependencies: AvailabilityActionDependenc
           setMessage("Choose a valid start date and ensure the optional end date is on or after the start date.");
           return false;
         }
+        if (validation.reason === "invalid_pattern") {
+          setMessage("Choose at least one weekday and a repeat interval between 1 and 52 weeks for a custom recurrence.");
+          return false;
+        }
         if (validation.reason === "overlapping_rule") {
           setMessage("This recurring rule overlaps an existing rule with a different status. Review or remove the existing rule first.");
           return false;

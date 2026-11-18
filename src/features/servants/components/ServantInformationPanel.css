@@ -374,3 +374,292 @@
   background: #60313c !important;
 }
 .servant-status-toggle{ min-width: 190px; }
+
+.servant-role-qualification{
+  min-width:0;padding:14px;border:1px solid var(--border-color,#d8e0ec);
+  border-radius:10px;background:var(--surface-muted,#f7f9fc)
+}
+.servant-role-qualification h4{margin:0 0 5px}
+.servant-role-qualification>p{margin:0 0 12px;color:var(--text-muted,#667085);font-size:12px;line-height:1.45}
+.servant-role-qualification-options{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.servant-role-qualification-options label{
+  display:flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid var(--border-color,#d8e0ec);
+  border-radius:8px;background:var(--surface,#fff);font-size:12px;font-weight:650
+}
+.servant-role-qualification-options input{accent-color:var(--accent,#5968c9)}
+.servant-role-empty-warning{display:block;margin-bottom:10px;color:#b54708;font-size:11px}
+:root[data-theme="dark"] .servant-role-qualification{background:#19283e;border-color:#405571}
+:root[data-theme="dark"] .servant-role-qualification-options label{background:#142136;border-color:#405571;color:#edf2fa}
+
+
+/* Sound role qualifications are a dedicated full-width section below the
+   three information columns, not an orphaned fourth grid cell. */
+.servant-record-detail>.servant-role-qualification{
+  grid-column:1 / -1;
+  display:grid;
+  gap:13px;
+  min-width:0;
+  padding:16px 18px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:12px;
+  background:var(--surface-muted,#f7f9fc);
+}
+.servant-role-qualification-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.servant-role-qualification-heading>div{min-width:0}
+.servant-role-qualification-eyebrow{
+  display:block;
+  margin-bottom:4px;
+  color:var(--accent-hover,#5968c9);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.servant-role-qualification h4{margin:0 0 4px;font-size:13px}
+.servant-role-qualification>p,
+.servant-role-qualification-heading p{
+  margin:0;
+  color:var(--text-muted,#667085);
+  font-size:11px;
+  line-height:1.45;
+}
+.servant-role-qualification-count{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:999px;
+  background:var(--surface,#fff);
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  font-weight:700;
+}
+.servant-role-qualification-controls{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.servant-role-qualification-options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0;
+}
+.servant-role-qualification-options label{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:7px 13px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:9px;
+  background:var(--surface,#fff);
+  color:var(--text-secondary,#475467);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;
+}
+.servant-role-qualification-options label.is-selected{
+  border-color:var(--accent,#6673d3);
+  background:var(--accent-soft,#eef0ff);
+  color:var(--accent-hover,#4d56ad);
+}
+.servant-role-qualification-options input{
+  width:14px;
+  height:14px;
+  margin:0;
+  accent-color:var(--accent,#5968c9);
+}
+.servant-role-qualification-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-left:auto;
+}
+.servant-role-empty-warning{
+  max-width:300px;
+  margin:0;
+  color:var(--status-warning-text,#9a5b12);
+  font-size:10px;
+  line-height:1.4;
+}
+.servant-role-readonly-list{display:flex;flex-wrap:wrap;gap:7px}
+.servant-role-readonly-list span{
+  padding:6px 10px;
+  border-radius:999px;
+  background:var(--accent-soft,#eef0ff);
+  color:var(--accent-hover,#4d56ad);
+  font-size:11px;
+  font-weight:700;
+}
+:root[data-theme="dark"] .servant-record-detail>.servant-role-qualification{
+  background:#19283e;border-color:#405571
+}
+:root[data-theme="dark"] .servant-role-qualification-count{
+  background:#142136;border-color:#405571;color:#d3dbea
+}
+:root[data-theme="dark"] .servant-role-qualification-options label{
+  background:#142136;border-color:#405571;color:#edf2fa
+}
+:root[data-theme="dark"] .servant-role-qualification-options label.is-selected{
+  background:#29375d;border-color:#7887e0;color:#dce2ff
+}
+:root[data-theme="dark"] .servant-role-readonly-list span{
+  background:#29375d;color:#dce2ff
+}
+@media(max-width:600px){
+  .servant-role-qualification{padding:13px}
+  .servant-role-qualification-heading{align-items:flex-start;flex-direction:column}
+  .servant-role-qualification-controls{align-items:flex-start;flex-direction:column}
+  .servant-role-qualification-options{width:100%}
+  .servant-role-qualification-options label{flex:1 1 auto;justify-content:center}
+  .servant-role-qualification-actions{width:100%;justify-content:space-between;margin:0}
+}
+
+
+/* Restore the qualification card's full light-mode separation in dark mode.
+   The broad servant-detail rule above removes borders/padding from all direct
+   children; this equally-specific, later rule intentionally opts this card out. */
+:root[data-theme="dark"] .servant-record-detail>.servant-role-qualification{
+  display:grid!important;
+  min-width:0!important;
+  padding:16px 18px!important;
+  border:1px solid var(--border-strong,#465773)!important;
+  border-radius:12px!important;
+  background:var(--surface-muted,#202f46)!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.16)!important;
+  color:var(--text-primary,#f2f5fb)!important;
+}
+:root[data-theme="dark"] .servant-role-qualification-heading p{
+  color:var(--text-secondary,#b5c1d5)!important;
+}
+:root[data-theme="dark"] .servant-role-qualification-eyebrow{
+  color:var(--accent-hover,#a9a2ff)!important;
+}
+.servant-role-qualification-options label.is-selected{
+  border-color:var(--focus-border,#818cf8);
+  background:var(--accent-soft,#eef2ff);
+  color:var(--accent-hover,#4338ca);
+}
+.servant-role-qualification-options input{accent-color:var(--accent-primary,#4f46e5)}
+:root[data-theme="dark"] .servant-role-qualification-options label.is-selected{
+  border-color:var(--focus-border,#9b91ff)!important;
+  background:var(--accent-soft,#393b72)!important;
+  color:var(--accent-hover,#a9a2ff)!important;
+}
+:root[data-theme="dark"] .servant-role-readonly-list span{
+  background:var(--accent-soft,#393b72)!important;
+  color:var(--accent-hover,#a9a2ff)!important;
+}
+
+
+/* Church-specific sound role qualification matrix. */
+.servant-location-role-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  min-width:0;
+}
+.servant-location-role-card{
+  display:grid;
+  align-content:start;
+  gap:12px;
+  min-width:0;
+  padding:13px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:11px;
+  background:var(--surface,#fff);
+}
+.servant-location-role-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.servant-location-role-heading b{
+  color:var(--text-primary,#1f2937);
+  font-size:12px;
+  line-height:1.35;
+}
+.servant-location-role-heading span{
+  flex:0 0 auto;
+  padding:4px 7px;
+  border:1px solid var(--border-color,#d8e0ec);
+  border-radius:999px;
+  background:var(--surface-muted,#f7f9fc);
+  color:var(--text-muted,#667085);
+  font-size:9px;
+  font-weight:750;
+  white-space:nowrap;
+}
+.servant-location-role-card .servant-role-qualification-options{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6px;
+}
+.servant-location-role-card .servant-role-qualification-options label{
+  justify-content:flex-start;
+  min-height:31px;
+  padding:6px 9px;
+}
+.servant-location-role-card .servant-role-readonly-list{
+  min-height:34px;
+  align-content:start;
+}
+.servant-location-role-card .servant-role-readonly-list small{
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.4;
+}
+.servant-location-role-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  padding-top:10px;
+  border-top:1px solid var(--border-color,#d8e0ec);
+}
+.servant-location-role-actions>small{
+  max-width:540px;
+  color:var(--text-muted,#667085);
+  font-size:10px;
+  line-height:1.45;
+}
+:root[data-theme="dark"] .servant-location-role-card{
+  background:#142136;
+  border-color:#465773;
+}
+:root[data-theme="dark"] .servant-location-role-heading b{
+  color:var(--text-primary,#f2f5fb);
+}
+:root[data-theme="dark"] .servant-location-role-heading span{
+  background:#1d2b42;
+  border-color:#465773;
+  color:#c5d2e5;
+}
+:root[data-theme="dark"] .servant-location-role-card .servant-role-readonly-list small,
+:root[data-theme="dark"] .servant-location-role-actions>small{
+  color:#c5d2e5;
+}
+:root[data-theme="dark"] .servant-location-role-actions{
+  border-top-color:#465773;
+}
+@media(max-width:900px){
+  .servant-location-role-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .servant-location-role-grid{grid-template-columns:1fr}
+  .servant-location-role-actions{align-items:stretch;flex-direction:column}
+  .servant-location-role-actions .btn{width:100%}
+  .servant-location-role-card .servant-role-qualification-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .servant-location-role-card .servant-role-qualification-options label{justify-content:center;padding:6px 5px}
+}

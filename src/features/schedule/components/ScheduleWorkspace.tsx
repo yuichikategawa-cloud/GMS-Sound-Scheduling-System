@@ -1,9 +1,17 @@
+import { lazy, Suspense } from "react";
 import { BarChart3, CalendarDays, Users, Plus, Download, Search, ChevronDown } from "lucide-react";
 import "./ScheduleWorkspace.css";
 import type { Location, ScheduleView, Servant } from "../../../types";
 import type { ScheduleWorkspaceState } from "../hooks/useScheduleWorkspace";
-import { AssignmentOverview, BulkAssignmentCenter, ChurchBulkActions, GeneratePanel } from "./ScheduleManagementPanels";
-import { DailySummary, MyScheduleSummary, MyUpcomingAssignments } from "./ScheduleDisplayComponents";
+import type { MonthlyPlanApplyInput } from "../services/schedulePersistence";
+const AssignmentOverview = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.AssignmentOverview })));
+const BulkAssignmentCenter = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.BulkAssignmentCenter })));
+const ChurchBulkActions = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.ChurchBulkActions })));
+const GeneratePanel = lazy(() => import("./ScheduleManagementPanels").then((module) => ({ default: module.GeneratePanel })));
+const DailySummary = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.DailySummary })));
+const MyScheduleSummary = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.MyScheduleSummary })));
+const MyUpcomingAssignments = lazy(() => import("./ScheduleDisplayComponents").then((module) => ({ default: module.MyUpcomingAssignments })));
+const MonthlySmartScheduler = lazy(() => import("./MonthlySmartScheduler"));
 
 type ScheduleWorkspaceProps = {
   workspace: ScheduleWorkspaceState;
@@ -13,10 +21,13 @@ type ScheduleWorkspaceProps = {
   servants: Servant[];
   availability: any[];
   preferences: any[];
+  scheduleGenerationErrors: string[];
   locations: Location[];
   templates: any[];
   loading: boolean;
   myServant: Servant | undefined;
+  aiWorkerUrl?: string;
+  aiAccessToken?: string;
   onOpenNewSchedule: () => void;
   onAddLocation: () => void;
   onAddRecurringTemplate: () => void;
@@ -24,6 +35,7 @@ type ScheduleWorkspaceProps = {
   onUnpublishLocation: (locationId: string) => void;
   onDeleteLocationSchedules: (locationId: string) => void;
   onApplyBulkAssignments: (rows: any[]) => Promise<boolean>;
+  onApplyMonthlyPlan: (input: MonthlyPlanApplyInput) => Promise<boolean>;
   onEditSchedule: (schedule: ScheduleView) => void;
   onPublishSchedule: (schedule: ScheduleView) => void;
   onDeleteSchedule: (schedule: ScheduleView) => void;
@@ -38,9 +50,9 @@ type ScheduleWorkspaceProps = {
 
 export default function ScheduleWorkspace({
   workspace, isAdmin, schedules, requests, servants, availability, preferences,
-  locations, templates, loading, myServant, onOpenNewSchedule, onAddLocation,
-  onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
-  onDeleteLocationSchedules, onApplyBulkAssignments, onEditSchedule,
+  scheduleGenerationErrors, locations, templates, loading, myServant, aiWorkerUrl, aiAccessToken, onOpenNewSchedule,
+  onAddLocation, onAddRecurringTemplate, onPublishLocation, onUnpublishLocation,
+  onDeleteLocationSchedules, onApplyBulkAssignments, onApplyMonthlyPlan, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
   onDeleteTemplate, onExportCsv, onExportScheduleHistory,
   onConfirmAssignment, onSubmitServingRequest
@@ -65,6 +77,7 @@ export default function ScheduleWorkspace({
   };
 
   return (
+    <Suspense fallback={<div className="workspace-loading"><span className="spinner" aria-hidden="true"/>Loading schedule tools…</div>}>
     <>
       {!isAdmin && <MyScheduleSummary daysServed={myDaysServed} upcoming={nextMySchedule} servantId={myServant?.id ?? ""}/>}
       {!isAdmin && <MyUpcomingAssignments items={myUpcomingSchedules} servantId={myServant?.id ?? ""} onConfirm={onConfirmAssignment} onRequest={onSubmitServingRequest}/>}
@@ -76,10 +89,10 @@ export default function ScheduleWorkspace({
             <button type="button" role="tab" aria-selected={adminScheduleView === "assignments"} className={adminScheduleView === "assignments" ? "selected" : ""} onClick={() => setAdminScheduleView("assignments")}><Users size={16}/> Assignments</button>
             <button type="button" role="tab" aria-selected={adminScheduleView === "calendar"} className={adminScheduleView === "calendar" ? "selected" : ""} onClick={() => setAdminScheduleView("calendar")}><CalendarDays size={16}/> Calendar</button>
           </div>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "overview"}>
+          {adminScheduleView === "overview" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule overview">
             <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability}/>
-          </section>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "assignments"}>
+          </section>}
+          {adminScheduleView === "assignments" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Assignment management">
             <div className="toolbar assignment-workspace-heading">
               <div><h2>Assignment management</h2><p className="subtle">Create services, manage church-wide actions and assign servants across multiple services.</p></div>
               <div className="toolbar-actions assignment-management-actions">
@@ -89,10 +102,22 @@ export default function ScheduleWorkspace({
               </div>
             </div>
             <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
-            <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
-            <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
-          </section>
-          <section className="schedule-workspace-panel" role="tabpanel" hidden={adminScheduleView !== "calendar"}>
+            <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
+            <details className="assignment-tools-section assignment-tools-manual">
+              <summary className="assignment-tools-summary" aria-label="Expand or collapse manual assignment tools">
+                <div>
+                  <h2>Manual assignment</h2>
+                  <p>Bulk Assignment Center · Edit multiple services, copy previous assignments and generate recurring weekend slots.</p>
+                </div>
+                <ChevronDown size={20} aria-hidden="true"/>
+              </summary>
+              <div className="assignment-tools-manual-content">
+                <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
+                <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
+              </div>
+            </details>
+          </section>}
+          {adminScheduleView === "calendar" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule calendar">
             <div className="toolbar calendar-workspace-heading">
               <div><h2>Schedule calendar</h2><p className="subtle">Browse the daily schedule by church. Use Assignments to edit, publish or remove individual services.</p></div>
               <div className="toolbar-actions">
@@ -116,7 +141,7 @@ export default function ScheduleWorkspace({
               <summary><span><b>{calendarView === "week" ? "Weekly calendar" : "Monthly calendar"} · Daily overview</b><small>{dailyGroups.length} days · summary by church location</small></span><ChevronDown size={20}/></summary>
               {calendarSections.length > 0 ? calendarSections.map(section => <section className="calendar-period" key={section.key}><h3>{section.label}</h3><div className="daily-overview">{section.groups.map(group => <DailySummary key={group.date} date={group.date} items={group.items} isAdmin={isAdmin}/>)}</div></section>) : <div className="empty-state"><b>No published schedules match these filters.</b><p>Draft and unpublished schedules remain available in Assignment management.</p></div>}
             </details>
-          </section>
+          </section>}
         </>
       ) : (
         <>
@@ -144,5 +169,6 @@ export default function ScheduleWorkspace({
         </>
       )}
     </>
+    </Suspense>
   );
 }
