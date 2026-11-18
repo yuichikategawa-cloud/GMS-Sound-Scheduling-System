@@ -19,21 +19,29 @@ Cloudflare's pricing changes over time. Re-check the official pages before enabl
 
 **Important billing boundary:** code cannot change or inspect the billing plan of the Cloudflare account. If the account is on Workers Paid, Cloudflare may bill usage beyond its included AI allocation. To keep this at $0, verify that the account is actually on Workers Free before deploying or enabling this Worker. Do not enable it on a paid account.
 
-## Built-in hard limits
+## GMS safety thresholds and enforcement
 
-The Worker intentionally imposes much lower limits than Cloudflare's free allowance:
+The Worker is designed for a Workers Free account only. The source currently sets these account-level safety thresholds:
 
-- Maximum **1 model inference across all GMS administrators per UTC day**.
-- Maximum **1 model inference per administrator per UTC day**.
-- Maximum **10 Worker requests across GMS per UTC day** and **3 requests per administrator per UTC day**, including cache hits.
-- Identical requests are cached for 24 hours; a cache hit does not invoke the model.
-- Maximum **8 KB streamed request body** and **6 KB normalized scheduling snapshot**.
-- At most **3 sampled services per church** and 8 workload rows are sent to AI.
-- Maximum **200 completion tokens** per model response.
-- No retries, no automatic fallback, no paid-model selection, no AI Gateway, and no browser-side model key.
-- When a quota is reached or the service is unavailable, the request fails closed. Scheduling and the normal deterministic optimizer continue to work.
+- **7,500 Workers AI Neurons per UTC day** (75% of the 10,000-Neuron Free allocation).
+- **75,000 Workers requests per UTC day** (75% of the 100,000-request Workers Free allocation).
 
-The global and per-administrator counters are serialized by one SQLite-backed Durable Object. A reservation is consumed before inference; failed model calls are not refunded, preventing retry loops from bypassing the cap.
+The explain route checks Cloudflare account analytics before serving a cached explanation or starting a model inference. If the analytics query is unavailable, the route fails closed. If either threshold has been reached, it refuses further work. The provider's Free-plan limits remain the final platform-level boundary.
+
+**Important enforcement limitation:** Cloudflare account analytics are not an atomic quota-reservation API. The checks are based on the usage visible when each request queries analytics; concurrent requests or analytics reporting delay can allow the observed usage to cross the GMS safety threshold before every request sees the updated total. These thresholds must therefore not be described as a mathematically strict atomic cap. Do not use a Workers Paid account, enable paid AI Gateway credits, or assume this code can prevent charges on a paid account.
+
+The SQLite-backed Durable Object serializes GMS usage accounting, records pending model requests and successful calls, stores cached explanations, and rate-limits manual usage refreshes. Its counters support diagnostics; they do not atomically reserve Cloudflare account Neurons or total account Worker requests.
+
+Other request limits in the Worker:
+
+- **8 KB** maximum streamed request body.
+- **7.5 KB** maximum normalized scheduling snapshot.
+- At most **3 sampled services per church** and **8 workload rows** are sent to AI.
+- **768 completion tokens** maximum per model response.
+- Identical explanations are cached for **24 hours**. Cache hits do not invoke the model but still consume a Worker request.
+- No paid-model fallback, no AI Gateway, no browser-side model key, and no automatic inference retry.
+
+When a quota is reached or the service is unavailable, the request fails closed. The normal deterministic scheduler remains available and authoritative.
 
 ## Privacy and authorization
 
