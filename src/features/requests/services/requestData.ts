@@ -1,4 +1,4 @@
-import type { ServingRequestRecord } from "../../../shared/contracts/scheduling.ts";
+import type { ServingRequestRecord, ServingRequestStatus, ServingRequestType } from "../../../shared/contracts/scheduling.ts";
 export type { ServingRequestRecord, ServingRequestStatus, ServingRequestType } from "../../../shared/contracts/scheduling.ts";
 
 
