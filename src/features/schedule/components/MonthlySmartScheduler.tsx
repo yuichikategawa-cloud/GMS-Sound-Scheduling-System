@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
-import type { AvailabilityRecord } from "../../availability/services/recurringAvailability";
-import type { ServingPreferenceRecord } from "../../availability/services/availabilityData";
-import type { ServingRequestRecord } from "../../requests/services/requestData";
+import type { AvailabilityRecord, ServingPreferenceRecord, ServingRequestRecord } from "../../../shared/contracts/scheduling.ts";
 import { buildMonthlyScheduleSlots } from "../services/monthlyScheduleGeneration";
 import {
   getMonthlyAssignmentCandidates,
