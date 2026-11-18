@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, WandSparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, Info, WandSparkles } from "lucide-react";
 import type { Location, Role, ScheduleView, Servant, ServiceTemplate } from "../../../types";
 import type { AvailabilityRecord, ServingPreferenceRecord, ServingRequestRecord } from "../../../shared/contracts/scheduling.ts";
 import { buildMonthlyScheduleSlots } from "../services/monthlyScheduleGeneration";
@@ -425,6 +425,10 @@ export default function MonthlySmartScheduler({
 
   const unmatchedManualOnly = historicalRoster.unmatchedManualOnlyNames;
   const unmatchedHistorical = historicalRoster.unmatchedHistoricalNames;
+  const archivedHistoricalNames = [...new Set([
+    ...unmatchedManualOnly,
+    ...unmatchedHistorical,
+  ])].sort((first, second) => first.localeCompare(second));
   const ambiguousManualOnlyServants = historicalRoster.ambiguousManualOnlyServantIds.map((id) => {
     const servant = servants.find((item) => item.id === id);
     return servant ? `${servant.full_name} (${id})` : id;
@@ -1189,7 +1193,7 @@ export default function MonthlySmartScheduler({
             ) : <p className="monthly-smart-muted">No active servants had an eligible position in this preview.</p>}
           </div>
 
-          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || preview.result.preferNotWarnings.length > 0 || unmatchedManualOnly.length > 0 || unmatchedHistorical.length > 0 || historicalRoster.ambiguousNames.length > 0 || ambiguousManualOnlyServants.length > 0) && (
+          {(preview.result.unfilledPositions.length > 0 || preview.result.warnings.length > 0 || preview.result.preferNotWarnings.length > 0 || historicalRoster.ambiguousNames.length > 0 || ambiguousManualOnlyServants.length > 0) && (
             <div className="monthly-smart-section monthly-smart-issues">
               <h4>Review required</h4>
               {preview.result.unfilledPositions.length > 0 && (
@@ -1222,18 +1226,6 @@ export default function MonthlySmartScheduler({
                   </label>
                 </div>
               )}
-              {unmatchedManualOnly.length > 0 && (
-                <div className="monthly-smart-alert is-caution">
-                  <AlertTriangle size={16}/>
-                  <span>Manual-only roster names not matched to the current GMS servant directory: {unmatchedManualOnly.join(", ")}. Reconcile these names before applying a plan.</span>
-                </div>
-              )}
-              {unmatchedHistorical.length > 0 && (
-                <div className="monthly-smart-alert is-caution">
-                  <AlertTriangle size={16}/>
-                  <span>Historical names not matched to the current GMS servant directory: {unmatchedHistorical.slice(0, 20).join(", ")}{unmatchedHistorical.length > 20 ? ` and ${unmatchedHistorical.length - 20} more` : ""}. These names were not fuzzy-matched and their historical preferences were not applied.</span>
-                </div>
-              )}
               {historicalRoster.ambiguousNames.length > 0 && (
                 <div className="monthly-smart-alert is-caution">
                   <AlertTriangle size={16}/>
@@ -1246,6 +1238,17 @@ export default function MonthlySmartScheduler({
                   <span>Ambiguous manual-only roster matches are excluded from automatic allocation until the servant directory is reconciled: {ambiguousManualOnlyServants.join(", ")}.</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {archivedHistoricalNames.length > 0 && (
+            <div className="monthly-smart-alert is-info" role="status">
+              <Info size={16}/>
+              <div>
+                <b>Archived historical roster · {archivedHistoricalNames.length} former member(s)</b>
+                <span>These names are retained for historical reference only because they are not in the current servant directory. They are excluded from current assignments and workload balancing. No identity was inferred.</span>
+                <small>{archivedHistoricalNames.join(", ")}</small>
+              </div>
             </div>
           )}
 
