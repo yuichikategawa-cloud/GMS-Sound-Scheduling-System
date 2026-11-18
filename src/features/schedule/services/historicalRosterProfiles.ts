@@ -158,6 +158,12 @@ const HISTORICAL_PRIMARY_ROLES: Readonly<Record<string, Role>> = {
 
 const MANUAL_ONLY_NAMES = new Set(["David Karel", "Deddy", "Kevin Award"]);
 
+// A confirmed historical label variation. Keep all other names exact-match only:
+// retired team members must never be fuzzy-matched to a current servant.
+const HISTORICAL_NAME_ALIASES: Readonly<Record<string, string>> = {
+  "John Wesley": "Jhon Wesley",
+};
+
 function normalizeName(value: string): string {
   return value.trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ");
 }
@@ -182,8 +188,9 @@ function readHistoricalWorkloadRows(): HistoricalRosterProfile[] {
 }
 
 /**
- * Exact normalized full-name matching only. Spreadsheet row keys are never
- * treated as Supabase servant IDs. No substring or fuzzy matching is allowed.
+ * Exact normalized full-name matching plus explicitly confirmed historical
+ * aliases only. Spreadsheet row keys are never treated as Supabase servant IDs.
+ * No substring or fuzzy matching is allowed.
  *
  * The workbook's inactive color is not imported: Servant.active remains the
  * authoritative live eligibility flag. Manual-only names are excluded from
@@ -212,7 +219,8 @@ export function mapHistoricalRosterProfiles(
   const ambiguousManualOnlyServantIds: string[] = [];
 
   for (const entry of readHistoricalWorkloadRows()) {
-    const matches = servantsByName.get(normalizeName(entry.name)) ?? [];
+    const currentName = HISTORICAL_NAME_ALIASES[entry.name] ?? entry.name;
+    const matches = servantsByName.get(normalizeName(currentName)) ?? [];
     const isManualOnly = MANUAL_ONLY_NAMES.has(entry.name);
 
     if (matches.length !== 1) {
