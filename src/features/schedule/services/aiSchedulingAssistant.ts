@@ -1,5 +1,5 @@
 import type { Location, Role, Servant } from "../../../types.ts";
-import type { AvailabilityRecord } from "../../availability/services/recurringAvailability.ts";
+import type { AvailabilityRecord } from "../../../shared/contracts/scheduling.ts";
 import type {
   MonthlyGeneratedAssignment,
   MonthlyServantWorkload,
