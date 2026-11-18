@@ -85,3 +85,49 @@ Deno.test("historical inactive color is not used to override current servant act
   assertEqual(result.profiles[0].role_counts, { FOH: 28, Monitor: 7, Assistant: 9 }, "Historical assignments should be mapped even without a color-coded primary role.");
   assertEqual(result.autoAssignmentExcludedServantIds, [], "Historical inactive status must not be imported as a live hard block.");
 });
+
+Deno.test("confirmed John Wesley alias maps to Jhon Wesley without merging Hansel into Michael Hansel", () => {
+  const result = mapHistoricalRosterProfiles([
+    servant("uuid-jhon", "Jhon Wesley"),
+    servant("uuid-michael-hansel", "Michael Hansel"),
+  ]);
+
+  const jhon = result.profiles.find((profile) => profile.servant_id === "uuid-jhon");
+  assertEqual(
+    jhon,
+    {
+      servant_id: "uuid-jhon",
+      primary_role: "Assistant",
+      role_counts: { FOH: 0, Monitor: 9, Assistant: 23 },
+      historical_assignments: 32,
+      historical_serving_days: 16,
+      history_as_of: "2026-11-01",
+    },
+    "The confirmed John Wesley history should be attributed to Jhon Wesley.",
+  );
+
+  const michaelHansel = result.profiles.find((profile) => profile.servant_id === "uuid-michael-hansel");
+  assertEqual(
+    michaelHansel,
+    {
+      servant_id: "uuid-michael-hansel",
+      primary_role: "Monitor",
+      role_counts: { FOH: 0, Monitor: 12, Assistant: 8 },
+      historical_assignments: 20,
+      historical_serving_days: 12,
+      history_as_of: "2026-11-01",
+    },
+    "Michael Hansel should retain only his exact-name historical profile.",
+  );
+  assertEqual(
+    result.unmatchedHistoricalNames.includes("Hansel"),
+    true,
+    "The separate former Hansel record must not be merged into Michael Hansel.",
+  );
+  assertEqual(
+    result.unmatchedHistoricalNames.includes("John Wesley"),
+    false,
+    "The confirmed John Wesley alias should no longer be reported as unmatched.",
+  );
+});
+
