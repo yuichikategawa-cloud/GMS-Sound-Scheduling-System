@@ -1377,8 +1377,20 @@
 }
 :root[data-theme="dark"] .rule-custom-weekly b,
 :root[data-theme="dark"] .rule-custom-weekdays small{color:var(--text-secondary)}
-.availability-quick-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.availability-quick-nav a{display:inline-flex;align-items:center;min-height:34px;padding:0 11px;border:1px solid var(--border,#e3e7f0);border-radius:999px;background:var(--panel,#fff);color:var(--text,#263248);font-size:11px;font-weight:700;text-decoration:none}
-.availability-quick-nav a:hover,.availability-quick-nav a:focus-visible{border-color:var(--accent,#7256ae);color:var(--accent,#7256ae)}
+.availability-quick-nav{margin:0 0 14px}
+.availability-nav-groups{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}
+.availability-nav-group{display:grid;align-content:start;gap:7px;min-width:0;padding:9px 10px;border:1px solid var(--line,#e3e7f0);border-radius:12px;background:var(--panel,#fff)}
+.availability-nav-group-label{color:var(--muted,#667085);font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.availability-nav-pills{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.availability-quick-nav button{display:inline-flex;align-items:center;min-height:34px;padding:0 11px;border:1px solid var(--border,#e3e7f0);border-radius:999px;background:var(--panel,#fff);color:var(--text,#263248);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.availability-quick-nav button:hover,.availability-quick-nav button:focus-visible{border-color:var(--accent,#7256ae);color:var(--accent,#7256ae)}
+.availability-quick-nav button.active{border-color:var(--accent,#5145e8);background:#f0efff;color:var(--accent,#5145e8)}
+.availability-section-panel{display:grid;gap:18px;min-width:0}
+.availability-section-panel>[hidden]{display:none!important}
+.availability-section-panel>.availability-form-panel,.availability-section-panel>.availability-overview,.availability-section-panel>.availability-filter{margin-bottom:0}
 #availability-entry,#availability-overview,#availability-recurring,#availability-preferences,#availability-deadline{scroll-margin-top:20px}
-:root[data-theme="dark"] .availability-quick-nav a{background:var(--panel,#1b263a);border-color:#40516d;color:#e6edf7}
+:root[data-theme="dark"] .availability-nav-group{background:var(--panel,#1b263a);border-color:#40516d}
+:root[data-theme="dark"] .availability-nav-group-label{color:var(--text-secondary,#bdcbe0)}
+:root[data-theme="dark"] .availability-quick-nav button{background:var(--panel,#1b263a);border-color:#40516d;color:#e6edf7}
+:root[data-theme="dark"] .availability-quick-nav button.active{background:#303867;border-color:#8177ff;color:#ffffff}
+@media(max-width:760px){.availability-nav-groups,.availability-nav-group{width:100%}.availability-nav-pills{align-items:stretch}.availability-quick-nav button{min-height:40px}}

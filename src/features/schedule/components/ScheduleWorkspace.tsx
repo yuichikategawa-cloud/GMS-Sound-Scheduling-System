@@ -104,9 +104,10 @@ export default function ScheduleWorkspace({
             </div>
             <details className="assignment-tools-section church-wide-actions">
               <summary className="assignment-tools-summary">
-                <div><h2>Church-wide actions</h2><p>Publish, unpublish or clear schedules for a whole location.</p></div>
+                <div><h2>Church-wide actions</h2><p>Publish, unpublish or permanently delete schedules for one church or all church locations.</p></div>
+                <ChevronDown size={20} aria-hidden="true"/>
               </summary>
-              <div className="assignment-tools-manual-content">
+              <div className="assignment-tools-content">
                 <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
               </div>
             </details>
@@ -119,7 +120,7 @@ export default function ScheduleWorkspace({
                 </div>
                 <ChevronDown size={20} aria-hidden="true"/>
               </summary>
-              <div className="assignment-tools-manual-content">
+              <div className="assignment-tools-content">
                 <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
                 <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
               </div>

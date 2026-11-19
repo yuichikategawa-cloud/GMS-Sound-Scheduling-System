@@ -37,6 +37,7 @@ export default function ServantInformationPanel({
   const [locationFilter, setLocationFilter] = useState("");
   const [cgFilter, setCgFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [openSummary, setOpenSummary] = useState({
     overview: true,
     church: true,
@@ -136,6 +137,10 @@ export default function ServantInformationPanel({
             : row.servant.active
       ));
   });
+  const pageSize = 10;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visiblePage = Math.min(currentPage, pageCount);
+  const paginatedFiltered = filtered.slice((visiblePage - 1) * pageSize, visiblePage * pageSize);
 
   const toggle = (id: string) => setExpanded(current =>
     current.includes(id) ? current.filter(value => value !== id) : [...current, id]
@@ -318,22 +323,33 @@ export default function ServantInformationPanel({
           <b>{filtered.length} records</b>
         </div>
         <div className="servant-filters">
-          <input aria-label="Search servant" placeholder="Search name, username, email, phone or CG" value={query} onChange={event => setQuery(event.target.value)} />
-          <select value={locationFilter} onChange={event => setLocationFilter(event.target.value)}>
+          <input aria-label="Search servant" placeholder="Search name, username, email, phone or CG" value={query} onChange={event => { setQuery(event.target.value); setCurrentPage(1); }} />
+          <select value={locationFilter} onChange={event => { setLocationFilter(event.target.value); setCurrentPage(1); }}>
             <option value="">All locations</option>
             {locations.map(location => <option key={location.id} value={location.id}>{location.name}</option>)}
           </select>
-          <select value={cgFilter} onChange={event => setCgFilter(event.target.value)}>
+          <select value={cgFilter} onChange={event => { setCgFilter(event.target.value); setCurrentPage(1); }}>
             <option value="">All CG categories</option>
             {["AOG Teen", "AOG Youth", "Young Adult", "Family", "Senior"].map(category => <option key={category}>{category}</option>)}
           </select>
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+          <select value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setCurrentPage(1); }}>
             <option value="">All accounts/status</option>
             <option value="linked">Linked account</option>
             <option value="unlinked">Not linked</option>
             <option value="active">Active only</option>
           </select>
         </div>
+
+        {filtered.length > pageSize && (
+          <div className="servant-pagination">
+            <span>Showing {(visiblePage - 1) * pageSize + 1}–{Math.min(visiblePage * pageSize, filtered.length)} of {filtered.length} servants</span>
+            <nav className="servant-pagination-controls" aria-label="Servant record pages">
+              <button type="button" className="btn tiny secondary" disabled={visiblePage === 1} onClick={() => setCurrentPage(Math.max(1, visiblePage - 1))}>Previous</button>
+              <span aria-live="polite">Page {visiblePage} of {pageCount}</span>
+              <button type="button" className="btn tiny secondary" disabled={visiblePage === pageCount} onClick={() => setCurrentPage(Math.min(pageCount, visiblePage + 1))}>Next</button>
+            </nav>
+          </div>
+        )}
 
         <div className="servant-record-list">
           {filtered.length === 0 ? (
@@ -345,9 +361,10 @@ export default function ServantInformationPanel({
                 setLocationFilter("");
                 setCgFilter("");
                 setStatusFilter("");
+                setCurrentPage(1);
               }}>Clear filters</button>
             </div>
-          ) : filtered.map(({ servant, profile }) => (
+          ) : paginatedFiltered.map(({ servant, profile }) => (
             <article className="servant-record" key={servant.id}>
               <div className="servant-record-heading">
                 <button className="servant-record-summary" onClick={() => toggle(servant.id)}>
