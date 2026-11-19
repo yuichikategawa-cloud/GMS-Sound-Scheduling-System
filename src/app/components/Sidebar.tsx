@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardCheck,
+  LifeBuoy,
   Inbox as InboxIcon,
   LogOut,
   Users
@@ -18,7 +19,8 @@ export type SidebarTab =
   | "audit"
   | "profile"
   | "inbox"
-  | "requests";
+  | "requests"
+  | "coverage";
 
 type SidebarProps = {
   activeTab: SidebarTab;
@@ -26,6 +28,7 @@ type SidebarProps = {
   displayName: string;
   unreadServantRequestCount: number;
   adminRequestCount: number;
+  coverageCaseCount: number;
   onSelectTab: (tab: SidebarTab) => void;
   onCloseMobileNav: () => void;
   onSignOut: () => void;
@@ -37,6 +40,7 @@ export default function Sidebar({
   displayName,
   unreadServantRequestCount,
   adminRequestCount,
+  coverageCaseCount,
   onSelectTab,
   onCloseMobileNav,
   onSignOut
@@ -59,6 +63,12 @@ export default function Sidebar({
       <button className={"nav-item " + (activeTab === "schedule" ? "active" : "")} onClick={() => selectTab("schedule")}>
         <CalendarDays size={18} /> Schedule
       </button>
+      {isAdmin && (
+        <button className={"nav-item " + (activeTab === "coverage" ? "active" : "")} onClick={() => selectTab("coverage")}>
+          <LifeBuoy size={18} /> Coverage
+          {coverageCaseCount > 0 && <span className="inbox-count">{coverageCaseCount}</span>}
+        </button>
+      )}
       <button className={"nav-item " + (activeTab === "availability" ? "active" : "")} onClick={() => selectTab("availability")}>
         <ClipboardCheck size={18} /> Availability
       </button>

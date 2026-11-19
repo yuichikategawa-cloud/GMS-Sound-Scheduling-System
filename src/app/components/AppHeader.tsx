@@ -27,7 +27,8 @@ const PAGE_TITLES: Record<SidebarTab, string> = {
   audit: "Audit log",
   profile: "My profile",
   inbox: "Inbox",
-  requests: "Servant Requests"
+  requests: "Servant Requests",
+  coverage: "Coverage"
 };
 
 export default function AppHeader({
