@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Inbox as InboxIcon,
+  LifeBuoy,
   LogOut,
   MoreHorizontal,
   Moon,
@@ -22,6 +23,7 @@ type MobileNavigationProps = {
   pwaInstalled: boolean;
   theme: "light" | "dark";
   showInboxBadge: boolean;
+  coverageCaseCount: number;
   onSelectTab: (tab: SidebarTab) => void;
   onToggleMenu: () => void;
   onCloseMenu: () => void;
@@ -37,6 +39,7 @@ export default function MobileNavigation({
   pwaInstalled,
   theme,
   showInboxBadge,
+  coverageCaseCount,
   onSelectTab,
   onToggleMenu,
   onCloseMenu,
@@ -48,6 +51,7 @@ export default function MobileNavigation({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const closeMenuRef = useRef(onCloseMenu);
   closeMenuRef.current = onCloseMenu;
+  const isMoreTab = activeTab === "coverage" || activeTab === "servantInfo" || activeTab === "statistics" || activeTab === "audit" || activeTab === "profile";
 
   useEffect(() => {
     if (!open) return;
@@ -111,7 +115,7 @@ export default function MobileNavigation({
           {showInboxBadge && <i className="mobile-nav-badge" />}
         </button>
         <button
-          className={"mobile-nav-item " + (open ? "active" : "")}
+          className={"mobile-nav-item " + (open || isMoreTab ? "active" : "")}
           ref={triggerRef}
           aria-expanded={open}
           aria-controls="mobile-more-menu"
@@ -149,6 +153,10 @@ export default function MobileNavigation({
             )}
             {isAdmin && (
               <>
+                <button onClick={() => selectTab("coverage")}>
+                  <LifeBuoy size={18} /> Coverage
+                  {coverageCaseCount > 0 && <span className="coverage-mobile-count">{coverageCaseCount}</span>}
+                </button>
                 <button onClick={() => selectTab("servantInfo")}>
                   <Users size={18} /> Servant Information
                 </button>

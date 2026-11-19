@@ -4,7 +4,7 @@ import type { Location, Role, ScheduleView, Servant } from "../../../types";
 import { today, fmtDate, shortTime } from "../../../shared/formatters";
 import { ROLES } from "../constants";
 
-export function AssignmentOverview({schedules,requests,servants,availability}:{schedules:ScheduleView[];requests:any[];servants:Servant[];availability:any[]}){
+export function AssignmentOverview({schedules,requests,servants,availability,onOpenCoverage}:{schedules:ScheduleView[];requests:any[];servants:Servant[];availability:any[];onOpenCoverage:(requestId?:string)=>void}){
  const upcoming=schedules.filter(s=>s.service_date>=today());
  const required=upcoming.length*2;
  const filled=upcoming.reduce((n,s)=>n+s.assignments.filter(a=>(a.role==="FOH"||a.role==="Monitor")&&!!a.servant_id).length,0);
@@ -12,6 +12,8 @@ export function AssignmentOverview({schedules,requests,servants,availability}:{s
  const groups=[...new Map(upcoming.map(s=>[s.location_id,{id:s.location_id,name:s.location_name}])).values()];
  const incomplete=upcoming.filter(s=>!["FOH","Monitor"].every(role=>s.assignments.some(a=>a.role===role&&a.servant_id)));
  const pending=requests.filter(r=>r.status==="pending").length;
+ const pendingCoverage=requests.filter(r=>r.request_type==="replacement"&&r.status==="pending").length;
+ const coverQueue=requests.filter(r=>r.request_type==="replacement"&&r.status==="pending").slice(0,4);
  const awaiting=upcoming.reduce((n,s)=>n+s.assignments.filter(a=>a.servant_id&&a.confirmation_status!=="confirmed").length,0);
  const crossChurch=upcoming.filter(s=>s.assignments.some(a=>a.servant_id&&upcoming.some(other=>other.id!==s.id&&other.service_date===s.service_date&&other.location_id!==s.location_id&&other.assignments.some(x=>x.servant_id===a.servant_id))));
  const unavailable=upcoming.flatMap(s=>s.assignments.filter(a=>a.servant_id&&availability.some(v=>v.servant_id===a.servant_id&&v.service_date===s.service_date&&v.status==="unavailable")).map(a=>({name:a.servant_name,service:s.service_name,date:s.service_date})));
@@ -21,7 +23,7 @@ export function AssignmentOverview({schedules,requests,servants,availability}:{s
  const high=workload.filter(p=>p.days>=5);
  const coverage=required?Math.round(filled/required*100):100;
  return <section className="assignment-overview-card">
-  <div className="assignment-overview-heading"><div><h2>Assignment overview</h2><p className="subtle">Coverage, confirmations and scheduling health across all church locations.</p></div><span className={`assignment-coverage-pill ${coverage<70?"needs-attention":""}`}>{coverage}% covered</span></div>
+  <div className="assignment-overview-heading"><div><h2>Assignment overview</h2><p className="subtle">Coverage, confirmations and scheduling health across all church locations.</p></div><div className="assignment-overview-heading-actions">{pendingCoverage>0&&<button type="button" className="btn tiny secondary" onClick={()=>onOpenCoverage()}>Find cover · {pendingCoverage}</button>}<span className={`assignment-coverage-pill ${coverage<70?"needs-attention":""}`}>{coverage}% covered</span></div></div>
   <div className="assignment-overview-stats">
    <div><small>Upcoming services</small><b>{upcoming.length}</b></div>
    <div><small>Required roles filled</small><b>{filled} / {required}</b></div>
@@ -35,6 +37,7 @@ export function AssignmentOverview({schedules,requests,servants,availability}:{s
    <div><small>Awaiting confirmation</small><b>{awaiting}</b></div>
    <div><small>Validation flags</small><b className={validationCount?"attention-number":""}>{validationCount}</b></div>
   </div>
+  {coverQueue.length>0&&<div className="assignment-overview-cover-queue"><b>Replacement requests</b>{coverQueue.map(request=>{const service=upcoming.find(item=>item.id===request.schedule_id);const assignment=service?.assignments.find(item=>item.id===request.assignment_id);return <div className="assignment-overview-cover-row" key={request.id}><span><strong>{assignment?.servant_name??"Servant"}</strong><small>{service?`${fmtDate(service.service_date)} · ${service.service_name} · ${assignment?.role??"Role"}`:"Schedule unavailable"}</small></span><button type="button" className="btn tiny secondary" onClick={()=>onOpenCoverage(request.id)}>Find cover</button></div>;})}{pendingCoverage>coverQueue.length&&<button type="button" className="assignment-overview-more-cover" onClick={()=>onOpenCoverage()}>View {pendingCoverage-coverQueue.length} more</button>}</div>}
   {(incomplete.length>0||crossChurch.length>0||unavailable.length>0)&&<div className="assignment-overview-alerts">
    {incomplete.length>0&&<div className="control-center-alert"><AlertTriangle size={15}/><span>{incomplete.length} service(s) need FOH or Monitor coverage.</span></div>}
    {crossChurch.length>0&&<div className="control-center-alert"><AlertTriangle size={15}/><span>{crossChurch.length} service(s) have a servant assigned at another church on the same day.</span></div>}

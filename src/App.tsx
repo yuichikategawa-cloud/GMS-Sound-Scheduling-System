@@ -68,6 +68,7 @@ const PushNotificationSettings = lazy(() => import("./features/notifications/com
 const ServantInformationPanel = lazy(() => import("./features/servants/components/ServantInformationPanel"));
 const ServantInbox = lazy(() => import("./features/requests/components/ServantInbox"));
 const RequestsPanel = lazy(() => import("./features/requests/components/RequestsPanel"));
+const CoverageWorkspace = lazy(() => import("./features/coverage/components/CoverageWorkspace"));
 const AuditPanel = lazy(() => import("./features/audit/components/AuditPanel"));
 const StatisticsPanel = lazy(() => import("./features/statistics/components/StatisticsPanel"));
 const ScheduleWorkspace = lazy(() => import("./features/schedule/components/ScheduleWorkspace"));
@@ -122,7 +123,8 @@ export default function App() {
   const setAvailabilityDeadline = (value: string) =>
     dispatchDashboardState({ type: "set-availability-deadline", value });
 
-  const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox"|"requests">("schedule");
+  const [tab,setTab] = useState<"schedule"|"people"|"servantInfo"|"availability"|"statistics"|"audit"|"profile"|"inbox"|"requests"|"coverage">("schedule");
+  const [coverageRequestId,setCoverageRequestId] = useState<string | null>(null);
   const previousTab = useRef(tab);
   useEffect(() => {
     if (previousTab.current !== tab) {
@@ -341,6 +343,7 @@ export default function App() {
           import("./features/statistics/components/StatisticsPanel"),
           import("./features/audit/components/AuditPanel"),
           import("./features/requests/components/RequestsPanel"),
+          import("./features/coverage/components/CoverageWorkspace"),
           import("./features/schedule/components/MonthlySmartScheduler"),
           import("./features/schedule/components/ScheduleManagementPanels"),
           import("./features/schedule/components/ScheduleDisplayComponents"),
@@ -483,6 +486,7 @@ export default function App() {
         requests.filter(r => r.status === "pending").length +
         notifications.filter(n => n.recipient_user_id === session?.user?.id && !n.is_read).length
       }
+      coverageCaseCount={requests.filter(r => r.request_type === "replacement" && r.status === "pending").length}
       onSelectTab={setTab}
       onCloseMobileNav={() => setMobileNav(false)}
       onSignOut={signOut}
@@ -503,6 +507,7 @@ export default function App() {
       pwaInstalled={pwaInstalled}
       theme={theme}
       showInboxBadge={(isAdmin ? (requests.filter(r => r.status === "pending").length + notifications.filter(n => n.recipient_user_id === session?.user?.id && !n.is_read).length) : requests.filter(r => r.requester_servant_id === myServant?.id && ["approved", "declined", "rejected"].includes(String(r.status).toLowerCase()) && !requestReads.some(x => x.request_id === r.id && x.user_id === session?.user?.id)).length) > 0}
+      coverageCaseCount={requests.filter(r => r.request_type === "replacement" && r.status === "pending").length}
       onSelectTab={setTab}
       onToggleMenu={() => setMobileNav(value => !value)}
       onCloseMenu={() => setMobileNav(false)}
@@ -524,7 +529,11 @@ export default function App() {
 
         {!isAdmin&&memberProfile?.last_verified_at&&((Date.now()-new Date(memberProfile.last_verified_at).getTime())>90*86400000)&&<div className="message-banner profile-reminder"><span><b>Profile verification reminder:</b> Please review your member information. It has been more than 3 months since your last verification.</span><button className="btn tiny secondary" onClick={()=>setTab("profile")}>Review profile</button></div>}{message&&<div className="message-banner app-message-banner" role="status" aria-live="polite"><span>{message}</span><button className="icon-btn" aria-label="Dismiss message" onClick={()=>setMessage("")}><X size={16}/></button></div>}{!isOnline&&<div className="offline-status-banner"><WifiOff size={16}/>You are offline. Schedule data is not refreshed or saved for offline use; reconnect before making assignment changes.</div>}
         <Suspense fallback={<div className="workspace-loading"><GmsLoader label="Loading workspace…"/></div>}>
-        {tab==="schedule" ? <ScheduleWorkspace
+        {tab==="coverage"&&isAdmin ? <CoverageWorkspace
+          requests={requests} schedules={schedules} servants={servants} availability={availability}
+          preferences={servingPreferences} loading={loading} focusedRequestId={coverageRequestId}
+          onAssignCover={requestActions.resolveReplacement}
+        />:tab==="schedule" ? <ScheduleWorkspace
           workspace={scheduleWorkspace} isAdmin={isAdmin} schedules={schedules}
           requests={requests} servants={servants} availability={availability}
           preferences={servingPreferences} locations={locations} templates={templates}
@@ -548,6 +557,7 @@ export default function App() {
           onDeleteTemplate={scheduleActions.archiveServiceTemplate}
           onExportCsv={scheduleExportActions.exportCsv} onExportScheduleHistory={scheduleExportActions.exportScheduleHistory}
           onConfirmAssignment={assignmentConfirmationActions.confirmAssignment} onSubmitServingRequest={requestActions.submitServingRequest}
+          onOpenCoverage={(requestId)=>{setCoverageRequestId(requestId ?? null);setTab("coverage");}}
         />:tab==="servantInfo"?<ServantInformationPanel isAdmin={isAdmin} servants={servants} memberDirectory={memberDirectory} accountCandidates={servantAccountCandidates} locations={locations} schedules={schedules} requests={requests} onAdd={()=>setModal("person")} onToggle={servantActions.togglePerson} onSaveLocationRoles={servantActions.saveServantLocationRoles} onLink={servantActions.linkServantAccount}/>:tab==="inbox"&&!isAdmin?<ServantInbox requests={requests.filter(r=>r.requester_servant_id===myServant?.id)} schedules={schedules} reads={requestReads} onRead={requestActions.markRequestRead} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="requests"&&isAdmin?<RequestsPanel requests={requests} schedules={schedules} servants={servants} onReview={requestActions.reviewRequest} onResolve={requestActions.resolveReplacement} notifications={notifications.filter(n=>n.recipient_user_id===session?.user?.id)} notificationSettings={<PushNotificationSettings enabled={pushActions.pushEnabled} busy={pushActions.pushBusy} onEnable={pushActions.enablePushNotifications} onDisable={pushActions.disablePushNotifications} preferences={notificationPrefs} onSavePreferences={notificationActions.saveNotificationPreferences}/>} onNotificationRead={notificationActions.markNotificationRead}/>:tab==="availability"?<AvailabilityWorkspace servants={servants} availability={availability} rules={availabilityRules} preferences={servingPreferences} locations={locations} schedules={schedules} templates={templates} isAdmin={isAdmin} currentUserId={session.user.id} onSave={availabilityActions.saveAvailability} onBulkSave={availabilityActions.saveBulkAvailability} onSaveRule={availabilityActions.saveAvailabilityRule} onSavePreference={availabilityActions.saveServingPreference} onDeletePreference={availabilityActions.deleteServingPreference} onDeleteRule={async(id)=>{const ok=await askAction("Delete recurring restriction?","Future dates generated by this rule will no longer be treated as unavailable. Existing dated availability records will remain unchanged.","Delete rule",true);if(ok)await availabilityActions.deleteAvailabilityRule(id);}} onDelete={availabilityActions.deleteAvailability} deadline={availabilityDeadline} onSaveDeadline={availabilityActions.saveDeadline}/>:tab==="statistics"?<StatisticsPanel schedules={statisticsSchedules} servants={servants}/>:tab==="audit"?<AuditPanel logs={auditLogs} onDownload={auditActions.exportAuditHistory}/>:(!isAdmin&&tab==="profile")?<MemberProfilePanel profile={memberProfile} isAdmin={false} directory={[]} onSave={memberProfileActions.saveProfile}/>:null}
         </Suspense>
       </AppLayout>
