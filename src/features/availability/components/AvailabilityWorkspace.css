@@ -1377,3 +1377,8 @@
 }
 :root[data-theme="dark"] .rule-custom-weekly b,
 :root[data-theme="dark"] .rule-custom-weekdays small{color:var(--text-secondary)}
+.availability-quick-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.availability-quick-nav a{display:inline-flex;align-items:center;min-height:34px;padding:0 11px;border:1px solid var(--border,#e3e7f0);border-radius:999px;background:var(--panel,#fff);color:var(--text,#263248);font-size:11px;font-weight:700;text-decoration:none}
+.availability-quick-nav a:hover,.availability-quick-nav a:focus-visible{border-color:var(--accent,#7256ae);color:var(--accent,#7256ae)}
+#availability-entry,#availability-overview,#availability-recurring,#availability-preferences,#availability-deadline{scroll-margin-top:20px}
+:root[data-theme="dark"] .availability-quick-nav a{background:var(--panel,#1b263a);border-color:#40516d;color:#e6edf7}

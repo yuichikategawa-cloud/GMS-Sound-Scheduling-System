@@ -48,6 +48,7 @@ export default function MobileNavigation({
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const closeMenuRef = useRef(onCloseMenu);
   closeMenuRef.current = onCloseMenu;
+  const isMoreTab = activeTab === "servantInfo" || activeTab === "statistics" || activeTab === "audit" || activeTab === "profile";
 
   useEffect(() => {
     if (!open) return;
@@ -111,7 +112,7 @@ export default function MobileNavigation({
           {showInboxBadge && <i className="mobile-nav-badge" />}
         </button>
         <button
-          className={"mobile-nav-item " + (open ? "active" : "")}
+          className={"mobile-nav-item " + (open || isMoreTab ? "active" : "")}
           ref={triggerRef}
           aria-expanded={open}
           aria-controls="mobile-more-menu"

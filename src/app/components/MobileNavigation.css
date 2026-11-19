@@ -52,6 +52,7 @@ width:100%;display:flex;align-items:center;gap:11px;padding:12px 10px;border:0;b
 background:#f2f3fa
 }}
 
+
 @media(max-width:760px){.mobile-more-menu .mobile-more-signout{
 color:#be123c;border-top:1px solid #edf0f5;border-radius:0;margin-top:5px
 }}
