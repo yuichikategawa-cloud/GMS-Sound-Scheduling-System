@@ -11,7 +11,6 @@ import {
 
 export type SidebarTab =
   | "schedule"
-  | "people"
   | "servantInfo"
   | "availability"
   | "statistics"
@@ -72,7 +71,7 @@ export default function Sidebar({
       )}
       {isAdmin && (
         <button className={"nav-item " + (activeTab === "requests" ? "active" : "")} onClick={() => selectTab("requests")}>
-          <InboxIcon size={18} /> Servant Requests
+          <InboxIcon size={18} /> Requests & notifications
           {adminRequestCount > 0 && (
             <span className="inbox-count">{adminRequestCount}</span>
           )}

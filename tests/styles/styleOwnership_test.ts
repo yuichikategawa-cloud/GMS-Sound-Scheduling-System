@@ -5,7 +5,7 @@ function assert(condition: unknown, message: string): asserts condition {
 }
 
 async function readRepoFile(path: string): Promise<string> {
-  return await Deno.readTextFile(new URL("../../" + path, import.meta.url));
+  return (await Deno.readTextFile(new URL("../../" + path, import.meta.url))).replace(/\r\n/g, "\n");
 }
 
 async function readGlobalStyles(): Promise<string> {
