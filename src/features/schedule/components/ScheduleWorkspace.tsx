@@ -46,6 +46,7 @@ type ScheduleWorkspaceProps = {
   onExportScheduleHistory: () => void;
   onConfirmAssignment: (schedule: ScheduleView, status: "confirmed" | "declined") => void;
   onSubmitServingRequest: (schedule: ScheduleView, kind: "replacement" | "swap") => void;
+  onOpenCoverage: (requestId?: string) => void;
 };
 
 export default function ScheduleWorkspace({
@@ -55,7 +56,7 @@ export default function ScheduleWorkspace({
   onDeleteLocationSchedules, onApplyBulkAssignments, onApplyMonthlyPlan, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
   onDeleteTemplate, onExportCsv, onExportScheduleHistory,
-  onConfirmAssignment, onSubmitServingRequest
+  onConfirmAssignment, onSubmitServingRequest, onOpenCoverage
 }: ScheduleWorkspaceProps) {
   const {
     adminScheduleView, setAdminScheduleView,
@@ -90,7 +91,7 @@ export default function ScheduleWorkspace({
             <button type="button" role="tab" aria-selected={adminScheduleView === "calendar"} className={adminScheduleView === "calendar" ? "selected" : ""} onClick={() => setAdminScheduleView("calendar")}><CalendarDays size={16}/> Calendar</button>
           </div>
           {adminScheduleView === "overview" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule overview">
-            <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability}/>
+            <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability} onOpenCoverage={onOpenCoverage}/>
           </section>}
           {adminScheduleView === "assignments" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Assignment management">
             <div className="toolbar assignment-workspace-heading">
