@@ -20,15 +20,13 @@ type AppHeaderProps = {
 
 const PAGE_TITLES: Record<SidebarTab, string> = {
   schedule: "Serving schedule",
-  people: "Serving statistics",
   servantInfo: "Servant Information",
   availability: "Availability management",
   statistics: "Serving statistics",
   audit: "Audit log",
   profile: "My profile",
   inbox: "Inbox",
-  requests: "Servant Requests",
-  coverage: "Coverage"
+  requests: "Requests & notifications"
 };
 
 export default function AppHeader({

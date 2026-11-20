@@ -15,21 +15,22 @@ type CoverageWorkspaceProps = {
   loading: boolean;
   focusedRequestId: string | null;
   onAssignCover: (request: ServingRequestRecord, servantId: string) => void;
+  onDecline: (request: ServingRequestRecord) => void;
 };
 
 export default function CoverageWorkspace({
-  requests, schedules, servants, availability, preferences, loading, focusedRequestId, onAssignCover,
+  requests, schedules, servants, availability, preferences, loading, focusedRequestId, onAssignCover, onDecline,
 }: CoverageWorkspaceProps) {
   const openRequests = useMemo(() => requests
     .filter(request => request.request_type === "replacement" && request.status === "pending")
     .sort((left, right) => Number(right.id === focusedRequestId) - Number(left.id === focusedRequestId) || left.created_at.localeCompare(right.created_at)), [requests, focusedRequestId]);
 
   return (
-    <main className="coverage-workspace">
+    <section className="coverage-workspace">
       <header className="coverage-heading">
         <div>
-          <h2>Coverage</h2>
-          <p className="subtle">Review replacement requests and find an eligible servant for each service.</p>
+          <h2>Needs cover</h2>
+          <p className="subtle">Review replacement requests and assign an eligible servant.</p>
         </div>
         <span className="coverage-open-count"><AlertTriangle size={15} /> {openRequests.length} open</span>
       </header>
@@ -69,7 +70,7 @@ export default function CoverageWorkspace({
 
                 {!current ? (
                   <div className="coverage-case-warning" role="status">
-                    <AlertTriangle size={15} /> This request no longer matches an upcoming published assignment. Review it in Servant Requests.
+                    <AlertTriangle size={15} /> This request no longer matches an upcoming published assignment. Decline it or refresh the schedule before assigning cover.
                   </div>
                 ) : candidates.length === 0 ? (
                   <div className="coverage-case-warning" role="status">
@@ -99,11 +100,14 @@ export default function CoverageWorkspace({
                     ))}
                   </div>
                 )}
+                <div className="coverage-case-actions">
+                  <button type="button" className="btn tiny secondary" disabled={loading} onClick={() => onDecline(request)}>Decline cover request</button>
+                </div>
               </article>
             );
           })}
         </div>
       )}
-    </main>
+    </section>
   );
 }

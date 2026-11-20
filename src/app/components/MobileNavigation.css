@@ -52,7 +52,6 @@ width:100%;display:flex;align-items:center;gap:11px;padding:12px 10px;border:0;b
 background:#f2f3fa
 }}
 
-.coverage-mobile-count{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#8060c5;color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
 
 @media(max-width:760px){.mobile-more-menu .mobile-more-signout{
 color:#be123c;border-top:1px solid #edf0f5;border-radius:0;margin-top:5px

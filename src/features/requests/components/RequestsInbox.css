@@ -509,3 +509,15 @@ gap:13px
   background: #174b38 !important;
   color: #b8f2d2 !important;
 }
+.requests-center-heading{margin:2px 0 12px}
+.requests-center-heading h2{margin:0;font-size:21px;letter-spacing:-.02em}
+.requests-center-heading p{margin:5px 0 0;font-size:12px}
+.requests-center-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:5px;border:1px solid var(--border,#e3e7f0);border-radius:12px;background:var(--panel,#fff)}
+.requests-center-tabs button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--text,#263248);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.requests-center-tabs button.selected{background:var(--navy,#183154);color:#fff}
+.requests-center-tabs button span{min-width:20px;padding:2px 6px;border-radius:999px;background:rgba(127,140,160,.16);text-align:center;font-size:10px}
+.requests-center-tabs button.selected span{background:rgba(255,255,255,.2)}
+:root[data-theme="dark"] .requests-center-tabs{background:var(--panel,#1b263a);border-color:#40516d}
+:root[data-theme="dark"] .requests-center-tabs button{color:#e6edf7}
+:root[data-theme="dark"] .requests-center-tabs button.selected{background:#55448c;color:#fff}
+@media(max-width:560px){.requests-center-tabs{display:grid;grid-template-columns:1fr}.requests-center-tabs button{justify-content:flex-start}}

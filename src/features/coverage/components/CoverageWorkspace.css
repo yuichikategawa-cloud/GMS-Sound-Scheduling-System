@@ -31,6 +31,7 @@
 .coverage-assign-button{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .coverage-case-warning{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid #f1d8ab;border-radius:10px;background:#fffaf1;color:#805317;font-size:11px;line-height:1.5}
 .coverage-case-warning svg{flex:none;margin-top:1px}
+.coverage-case-actions{display:flex;justify-content:flex-end;margin-top:11px}
 .coverage-empty-card{display:flex;align-items:center;gap:12px;padding:20px}
 .coverage-empty-card b{font-size:13px}
 .coverage-empty-card p{margin:3px 0 0;color:var(--muted,#64748b);font-size:11px}

@@ -46,7 +46,7 @@ type ScheduleWorkspaceProps = {
   onExportScheduleHistory: () => void;
   onConfirmAssignment: (schedule: ScheduleView, status: "confirmed" | "declined") => void;
   onSubmitServingRequest: (schedule: ScheduleView, kind: "replacement" | "swap") => void;
-  onOpenCoverage: (requestId?: string) => void;
+  onOpenRequests: (requestId?: string) => void;
 };
 
 export default function ScheduleWorkspace({
@@ -56,7 +56,7 @@ export default function ScheduleWorkspace({
   onDeleteLocationSchedules, onApplyBulkAssignments, onApplyMonthlyPlan, onEditSchedule,
   onPublishSchedule, onDeleteSchedule, onGenerate, onAddTemplate,
   onDeleteTemplate, onExportCsv, onExportScheduleHistory,
-  onConfirmAssignment, onSubmitServingRequest, onOpenCoverage
+  onConfirmAssignment, onSubmitServingRequest, onOpenRequests
 }: ScheduleWorkspaceProps) {
   const {
     adminScheduleView, setAdminScheduleView,
@@ -87,11 +87,11 @@ export default function ScheduleWorkspace({
           <div className="toolbar schedule-page-heading"><div><h2>Schedule management</h2><p className="subtle">Manage coverage, servant assignments and service calendars across all church locations.</p></div></div>
           <div className="schedule-workspace-tabs" role="tablist" aria-label="Schedule workspace">
             <button type="button" role="tab" aria-selected={adminScheduleView === "overview"} className={adminScheduleView === "overview" ? "selected" : ""} onClick={() => setAdminScheduleView("overview")}><BarChart3 size={16}/> Overview</button>
-            <button type="button" role="tab" aria-selected={adminScheduleView === "assignments"} className={adminScheduleView === "assignments" ? "selected" : ""} onClick={() => setAdminScheduleView("assignments")}><Users size={16}/> Assignments</button>
-            <button type="button" role="tab" aria-selected={adminScheduleView === "calendar"} className={adminScheduleView === "calendar" ? "selected" : ""} onClick={() => setAdminScheduleView("calendar")}><CalendarDays size={16}/> Calendar</button>
+            <button type="button" role="tab" aria-selected={adminScheduleView === "assignments"} className={adminScheduleView === "assignments" ? "selected" : ""} onClick={() => setAdminScheduleView("assignments")}><Users size={16}/> Build schedule</button>
+            <button type="button" role="tab" aria-selected={adminScheduleView === "calendar"} className={adminScheduleView === "calendar" ? "selected" : ""} onClick={() => setAdminScheduleView("calendar")}><CalendarDays size={16}/> View calendar</button>
           </div>
           {adminScheduleView === "overview" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Schedule overview">
-            <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability} onOpenCoverage={onOpenCoverage}/>
+            <AssignmentOverview schedules={schedules} requests={requests} servants={servants} availability={availability} onOpenRequests={onOpenRequests}/>
           </section>}
           {adminScheduleView === "assignments" && <section className="schedule-workspace-panel" role="tabpanel" aria-label="Assignment management">
             <div className="toolbar assignment-workspace-heading">
@@ -102,7 +102,15 @@ export default function ScheduleWorkspace({
                 <button className="btn secondary" onClick={onAddRecurringTemplate}><Plus size={16}/> Add recurring service</button>
               </div>
             </div>
-            <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
+            <details className="assignment-tools-section church-wide-actions">
+              <summary className="assignment-tools-summary">
+                <div><h2>Church-wide actions</h2><p>Publish, unpublish or permanently delete schedules for one church or all church locations.</p></div>
+                <ChevronDown size={20} aria-hidden="true"/>
+              </summary>
+              <div className="assignment-tools-content">
+                <ChurchBulkActions locations={locations} disabled={loading} onPublish={onPublishLocation} onUnpublish={onUnpublishLocation} onDelete={onDeleteLocationSchedules}/>
+              </div>
+            </details>
             <MonthlySmartScheduler locations={locations} templates={templates} schedules={schedules} servants={servants} availability={availability} preferences={preferences} requests={requests} inputErrors={scheduleGenerationErrors} aiWorkerUrl={aiWorkerUrl} aiAccessToken={aiAccessToken} onApplyPlan={onApplyMonthlyPlan}/>
             <details className="assignment-tools-section assignment-tools-manual">
               <summary className="assignment-tools-summary" aria-label="Expand or collapse manual assignment tools">
@@ -112,7 +120,7 @@ export default function ScheduleWorkspace({
                 </div>
                 <ChevronDown size={20} aria-hidden="true"/>
               </summary>
-              <div className="assignment-tools-manual-content">
+              <div className="assignment-tools-content">
                 <BulkAssignmentCenter schedules={schedules} servants={servants} availability={availability} preferences={preferences} disabled={loading} onApply={onApplyBulkAssignments} onEditSchedule={onEditSchedule} onPublishSchedule={onPublishSchedule} onDeleteSchedule={onDeleteSchedule}/>
                 <GeneratePanel templates={templates} locations={locations} onGenerate={onGenerate} onAddTemplate={onAddTemplate} onDeleteTemplate={onDeleteTemplate}/>
               </div>
