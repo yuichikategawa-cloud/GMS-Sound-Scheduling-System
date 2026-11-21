@@ -754,3 +754,24 @@
   .monthly-smart-ai-allowance{grid-template-columns:1fr;gap:12px}
   .monthly-smart-ai-allowance-card.is-neurons{grid-column:auto}
 }
+
+
+/* Mobile containment: prevent the native month control's intrinsic width from
+   extending beyond the planning-controls card. */
+@media(max-width:600px){
+  .monthly-smart-controls{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .monthly-smart-controls>label,
+  .monthly-smart-location-control{
+    width:100%;
+    min-width:0;
+  }
+  .monthly-smart-controls input[type="month"]{
+    display:block;
+    box-sizing:border-box;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+  }
+}

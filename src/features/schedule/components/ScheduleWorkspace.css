@@ -2661,3 +2661,22 @@
   .assignment-tools-summary{align-items:flex-start;padding:15px}
   .assignment-tools-content{gap:14px;padding:0 12px 13px}
 }
+
+
+/* Keep the coverage status below the copy on narrow screens so it cannot
+   overlap the assignment overview title or description. */
+@media(max-width:600px){
+  .assignment-overview-heading{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:10px;
+  }
+  .assignment-overview-heading>div:first-child{
+    width:100%;
+    min-width:0;
+  }
+  .assignment-overview-heading-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+}
